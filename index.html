@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rustwar RTS Prototype</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main id="gameShell" aria-label="Rustwar RTS Prototype">
+      <canvas id="gameCanvas"></canvas>
+
+      <section id="topbar" aria-label="Battle status">
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <span>Rustwar RTS</span>
+        </div>
+        <div class="stat"><span>资源</span><strong id="metalValue">0</strong></div>
+        <div class="stat"><span>收入</span><strong id="incomeValue">+0/s</strong></div>
+        <div class="stat"><span>人口</span><strong id="supplyValue">0/0</strong></div>
+        <div class="stat"><span>敌军</span><strong id="enemyValue">侦测中</strong></div>
+        <div class="stat objective"><span>目标</span><strong id="objectiveText">摧毁红方指挥中心</strong></div>
+        <div class="top-actions">
+          <button id="campaignBtn" class="icon-btn" title="战役模式">CP</button>
+          <button id="skirmishBtn" class="icon-btn" title="遭遇战模式">SK</button>
+          <button id="survivalBtn" class="icon-btn" title="生存模式">SV</button>
+          <button id="challengeBtn" class="icon-btn" title="挑战模式">CH</button>
+          <button id="sandboxBtn" class="icon-btn" title="沙盒编辑器">SB</button>
+          <button id="mapBtn" class="icon-btn wide" title="切换地图">MP 海岸</button>
+          <button id="aiBtn" class="icon-btn wide" title="切换 AI 难度">AI 普通</button>
+          <button id="statsBtn" class="icon-btn" title="战场统计">ST</button>
+          <button id="pauseBtn" class="icon-btn" title="暂停 / 继续">II</button>
+          <button id="speedBtn" class="icon-btn" title="切换速度">1x</button>
+          <button id="saveBtn" class="icon-btn" title="保存">S</button>
+          <button id="loadBtn" class="icon-btn" title="读取">L</button>
+          <button id="restartBtn" class="icon-btn danger" title="重新开始">R</button>
+        </div>
+      </section>
+
+      <canvas id="minimap" width="228" height="164" aria-label="Minimap"></canvas>
+
+      <aside id="commandPanel" aria-label="Command panel">
+        <div class="panel-header">
+          <div>
+            <h1 id="selectionTitle">未选择</h1>
+            <p id="selectionMeta">框选单位或建筑</p>
+          </div>
+          <div id="selectionBadge">0</div>
+        </div>
+
+        <div class="meter">
+          <div class="meter-label">
+            <span>生命值</span>
+            <span id="hpLabel">-</span>
+          </div>
+          <div class="meter-track"><div id="hpFill"></div></div>
+        </div>
+
+        <div id="queueBox" class="queue-box"></div>
+        <div id="commandButtons" class="command-grid"></div>
+      </aside>
+
+      <aside id="sandboxPanel" class="sandbox-panel" aria-label="Sandbox editor" hidden>
+        <div class="sandbox-head">
+          <strong>沙盒编辑</strong>
+          <span id="sandboxModeLabel">冻结</span>
+        </div>
+        <div class="sandbox-row tools">
+          <button id="sandboxSelectBtn" class="sandbox-btn">选择</button>
+          <button id="sandboxPlaceBtn" class="sandbox-btn active">放置</button>
+          <button id="sandboxEraseBtn" class="sandbox-btn">删除</button>
+        </div>
+        <div class="sandbox-row">
+          <button id="sandboxPlayerBtn" class="sandbox-btn active">绿方</button>
+          <button id="sandboxEnemyBtn" class="sandbox-btn enemy">红方</button>
+        </div>
+        <label class="sandbox-label" for="sandboxType">对象</label>
+        <select id="sandboxType" class="sandbox-select"></select>
+        <div class="sandbox-row">
+          <button id="sandboxCombatBtn" class="sandbox-btn">战斗:停</button>
+          <button id="sandboxFundsBtn" class="sandbox-btn">资源+5000</button>
+        </div>
+        <div class="sandbox-row">
+          <button id="sandboxClearBtn" class="sandbox-btn">清弹药</button>
+          <button id="sandboxRevealBtn" class="sandbox-btn">全图视野</button>
+        </div>
+        <div class="sandbox-row">
+          <button id="sandboxExportBtn" class="sandbox-btn">导出场景</button>
+          <button id="sandboxImportBtn" class="sandbox-btn">导入场景</button>
+        </div>
+        <input id="sandboxImportFile" type="file" accept="application/json,.json" hidden />
+      </aside>
+
+      <section id="feed" aria-label="Battle feed"></section>
+      <section id="statsPanel" class="stats-panel" aria-label="Battle statistics" hidden>
+        <div class="stats-header">
+          <strong>战场统计</strong>
+          <button id="statsClose" class="icon-btn" title="关闭统计">X</button>
+        </div>
+        <canvas id="statsChart" width="360" height="118" aria-label="战力历史图"></canvas>
+        <div id="statsBody" class="stats-body"></div>
+      </section>
+      <div id="placeHint" hidden></div>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
