@@ -70,3 +70,11 @@
 - 增加更多战役地图、地图导入/导出、更完整的任务脚本和过场目标提示。
 - 补更完整的寻路、阵型、视野阻挡、单位优先级与 AI 战术。
 - 替换为正式像素资源、爆炸音效和 UI 音效。
+
+## 项目协作与文档
+
+- `AGENT.md`：后续 Codex Agent 的项目入口规则和 Agent A/B/C 迭代工作流。
+- `update_log.md`：版本更新记录、关键决策、完成事项和遗留问题。
+- `md/test/test.md`：测试分层、命令、触发条件和当前验证基线。
+- `md/flow/flow.md` 与 `md/flow/flowchart.md`：当前核心逻辑、数据流、执行流和 Mermaid 流程图。
+- `md/prompt/`：每轮 Agent A 写给 Agent B 的详细实现提示词目录。
