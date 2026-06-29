@@ -15,7 +15,7 @@
 - 运行入口：直接打开 `index.html`。
 - 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
-- 当前文档体系已建立：`AGENT.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
+- 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 
 ## 历史记录
 
@@ -53,12 +53,11 @@
 
 - 建立项目入口记忆和 Agent A/B/C 迭代流程。
 - 新增更新日志、测试规范、核心流程文档、Mermaid 流程图和提示词目录说明。
-- 标准入口改为 `AGENT.md`。当前 macOS 工作区大小写不敏感，不能同时稳定保留 `AGENT.md` 和 `agent.md` 两个文件名；以 `AGENT.md` 为准。
+- 标准入口改为 `AGENTS.md`。
 
 关键文件：
 
-- `AGENT.md`
-- `agent.md`
+- `AGENTS.md`
 - `update_log.md`
 - `md/prompt/README.md`
 - `md/test/test.md`
@@ -75,3 +74,30 @@
 
 - 后续功能开发时需要按 `md/test/test.md` 补充更细的手动回归记录。
 - 若引入自动化浏览器测试，应更新测试规范和当前基线。
+
+### v0.3 / 调整 Agent C 自动提交流程
+
+日期：2026-06-29
+
+核心变更：
+
+- 明确 Agent C 验收不通过时不得提交，必须退回 Agent B 并列出修复事项。
+- 明确 Agent C 验收通过后按版本号自动 git commit。
+- 规定提交信息以版本号开头，并简要概括本版本工作内容。
+- 更新 Agent 迭代 Mermaid 流程图，加入验收分支和提交节点。
+
+关键文件：
+
+- `AGENTS.md`
+- `md/flow/flowchart.md`
+- `update_log.md`
+
+验证结果：
+
+- `node --check app.js` 通过。
+- `git diff --check` 通过。
+- 本轮只改工作流文档，未做浏览器手动业务回归。
+
+遗留事项：
+
+- 后续 Agent C 执行真实验收时，应在最终汇报中包含提交哈希和版本摘要。
