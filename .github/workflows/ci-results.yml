@@ -12,11 +12,15 @@ permissions:
 jobs:
   ci-results:
     name: Build CI result package
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     env:
-      CI_FLOW_VERSION: v0.4
+      CI_FLOW_VERSION: v1.0
       PROJECT_NAME: Rustwar
       WORKFLOW_DISPLAY_NAME: Rustwar CI Results
+      IOS_PROJECT: ios/RustwarIOS/RustwarIOS.xcodeproj
+      IOS_SCHEME: RustwarIOS
+      IOS_DESTINATION: generic/platform=iOS Simulator
+      SWIFT_PACKAGE_PATH: swift/RustwarCore
 
     steps:
       - name: Checkout
@@ -42,7 +46,7 @@ jobs:
             echo "ARTIFACT_NAME=$artifact_name"
           } >> "$GITHUB_ENV"
 
-      - name: Run lightweight checks and write result package
+      - name: Run checks and write result package
         shell: bash
         env:
           BEFORE_SHA: ${{ github.event.before }}
@@ -56,6 +60,10 @@ jobs:
             echo "commit=${GITHUB_SHA}"
             echo "run_id=${GITHUB_RUN_ID}"
             echo "run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "swift_package=${SWIFT_PACKAGE_PATH}"
+            echo "ios_project=${IOS_PROJECT}"
+            echo "ios_scheme=${IOS_SCHEME}"
+            echo "ios_destination=${IOS_DESTINATION}"
             echo
           } > "$build_log"
 
@@ -83,18 +91,54 @@ jobs:
           echo "node --check app.js exit=$node_status" >> "$build_log"
           echo >> "$build_log"
 
+          echo "== swift test --package-path ${SWIFT_PACKAGE_PATH} ==" >> "$build_log"
+          swift test --package-path "$SWIFT_PACKAGE_PATH" >> "$build_log" 2>&1
+          swift_status=$?
+          echo "swift test exit=$swift_status" >> "$build_log"
+          echo >> "$build_log"
+
+          echo "== xcodebuild -list ==" >> "$build_log"
+          if [[ -d "$IOS_PROJECT" ]]; then
+            xcodebuild -list -project "$IOS_PROJECT" >> "$build_log" 2>&1
+            xcode_list_status=$?
+          else
+            echo "Skipped: ${IOS_PROJECT} does not exist." >> "$build_log"
+            xcode_list_status=77
+          fi
+          echo "xcodebuild -list exit=$xcode_list_status" >> "$build_log"
+          echo >> "$build_log"
+
+          echo "== xcodebuild iOS build ==" >> "$build_log"
+          if [[ "$xcode_list_status" -eq 0 ]]; then
+            xcodebuild \
+              -project "$IOS_PROJECT" \
+              -scheme "$IOS_SCHEME" \
+              -destination "$IOS_DESTINATION" \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGN_IDENTITY="" \
+              build >> "$build_log" 2>&1
+            xcode_build_status=$?
+          else
+            echo "Skipped: xcodebuild -list did not succeed." >> "$build_log"
+            xcode_build_status=77
+          fi
+          echo "xcodebuild build exit=$xcode_build_status" >> "$build_log"
+          echo >> "$build_log"
+
           {
             echo "## CI Failure Summary"
             echo
-            if [[ "$diff_status" -eq 0 && "$node_status" -eq 0 ]]; then
+            if [[ "$diff_status" -eq 0 && "$node_status" -eq 0 && "$swift_status" -eq 0 && "$xcode_list_status" -eq 0 && "$xcode_build_status" -eq 0 ]]; then
               echo "- Result: success"
             else
               echo "- Result: failure"
             fi
             echo "- git diff --check: $([[ "$diff_status" -eq 0 ]] && echo success || echo failure)"
             echo "- node --check app.js: $([[ "$node_status" -eq 0 ]] && echo success || echo failure)"
+            echo "- swift test --package-path ${SWIFT_PACKAGE_PATH}: $([[ "$swift_status" -eq 0 ]] && echo success || echo failure)"
+            echo "- xcodebuild -list ${IOS_PROJECT}: $([[ "$xcode_list_status" -eq 0 ]] && echo success || echo failure)"
+            echo "- xcodebuild ${IOS_SCHEME}: $([[ "$xcode_build_status" -eq 0 ]] && echo success || echo failure)"
             echo "- Browser smoke/regression: skipped; Rustwar currently has no headless browser CI."
-            echo "- Build step: treated as app.js syntax check because the project has no build chain."
           } > ci-results/ci-failure-summary.md
 
           {
@@ -105,7 +149,7 @@ jobs:
             git log --oneline -5
           } > ci-results/repo-state.txt
 
-          if [[ "$diff_status" -eq 0 && "$node_status" -eq 0 ]]; then
+          if [[ "$diff_status" -eq 0 && "$node_status" -eq 0 && "$swift_status" -eq 0 && "$xcode_list_status" -eq 0 && "$xcode_build_status" -eq 0 ]]; then
             overall="success"
           else
             overall="failure"
@@ -114,6 +158,9 @@ jobs:
 
           CHECK_DIFF_STATUS="$diff_status" \
           CHECK_NODE_STATUS="$node_status" \
+          CHECK_SWIFT_STATUS="$swift_status" \
+          CHECK_XCODE_LIST_STATUS="$xcode_list_status" \
+          CHECK_XCODE_BUILD_STATUS="$xcode_build_status" \
           OVERALL_STATUS="$overall" \
           node <<'NODE'
           const fs = require("fs");
@@ -134,7 +181,24 @@ jobs:
             {
               name: "node --check app.js",
               ok: process.env.CHECK_NODE_STATUS === "0",
-              message: "JavaScript syntax check for the single-file game runtime."
+              message: "JavaScript syntax check for the web RTS runtime."
+            },
+            {
+              name: "swift test RustwarCore",
+              ok: process.env.CHECK_SWIFT_STATUS === "0",
+              message: "Swift package tests for shared native RTS core."
+            },
+            {
+              name: "xcodebuild -list RustwarIOS",
+              ok: process.env.CHECK_XCODE_LIST_STATUS === "0",
+              skipped: process.env.CHECK_XCODE_LIST_STATUS === "77",
+              message: "Xcode project and scheme discovery for the native iOS app."
+            },
+            {
+              name: "xcodebuild RustwarIOS",
+              ok: process.env.CHECK_XCODE_BUILD_STATUS === "0",
+              skipped: process.env.CHECK_XCODE_BUILD_STATUS === "77",
+              message: "Native iOS app build with code signing disabled."
             },
             {
               name: "browser smoke regression",
@@ -143,7 +207,7 @@ jobs:
             }
           ];
 
-          const failures = checks.filter((check) => check.ok === false).length;
+          const failures = checks.filter((check) => check.ok === false && !check.skipped).length;
           const skipped = checks.filter((check) => check.skipped).length;
           const cases = checks.map((check) => {
             if (check.skipped) {
@@ -176,15 +240,19 @@ jobs:
             workflowName: process.env.WORKFLOW_DISPLAY_NAME,
             createdAt: new Date().toISOString(),
             projectName: process.env.PROJECT_NAME,
-            scheme: null,
-            destination: null,
+            scheme: process.env.IOS_SCHEME,
+            destination: process.env.IOS_DESTINATION,
             resultBundlePath: null,
             junitPath: "ci-results/junit.xml",
             buildLogPath: "ci-results/build.log",
             failureSummaryPath: "ci-results/ci-failure-summary.md",
-            staticChecksOutcome: process.env.CHECK_DIFF_STATUS === "0" ? "success" : "failure",
-            buildOutcome: process.env.CHECK_NODE_STATUS === "0" ? "success" : "failure",
-            testOutcome: "skipped",
+            staticChecksOutcome: process.env.CHECK_DIFF_STATUS === "0" && process.env.CHECK_NODE_STATUS === "0" ? "success" : "failure",
+            buildOutcome: process.env.CHECK_XCODE_BUILD_STATUS === "0" ? "success" : "failure",
+            testOutcome: process.env.CHECK_SWIFT_STATUS === "0" ? "success" : "failure",
+            swiftPackagePath: process.env.SWIFT_PACKAGE_PATH,
+            swiftPackageOutcome: process.env.CHECK_SWIFT_STATUS === "0" ? "success" : "failure",
+            xcodeProject: process.env.IOS_PROJECT,
+            xcodeListOutcome: process.env.CHECK_XCODE_LIST_STATUS === "0" ? "success" : "failure",
             projectSpecificReports: [
               "ci-results/repo-state.txt"
             ]
@@ -200,7 +268,7 @@ jobs:
           path: ci-results
           if-no-files-found: error
 
-      - name: Fail when lightweight checks failed
+      - name: Fail when checks failed
         if: always()
         shell: bash
         run: |

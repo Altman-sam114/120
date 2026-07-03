@@ -45,6 +45,23 @@ flowchart TD
   N --> A
 ```
 
+## 原生 iOS 迁移地基流程图
+
+读图说明：这张图描述 v1.0 新增的原生 iOS 首屏链路。它只表示迁移地基，不表示 Web 版完整 RTS 已迁移完成。
+
+```mermaid
+flowchart TD
+  P["RustwarCore MapPreset<br/>中文注释：三张地图的基础坐标、资源和初始单位建筑"] --> S["GameState<br/>中文注释：Swift 原生状态快照，包含资源、单位、建筑、金属和选择"]
+  S --> E["GameEngine.update / select<br/>中文注释：推进基础收入 tick，并处理点选命中"]
+  E --> C["GameController @Observable<br/>中文注释：持有 engine、camera 和 HUD 可观察状态"]
+  C --> H["SwiftUI RootGameView / GameHUDView<br/>中文注释：显示资源、收入、人口和选择反馈"]
+  C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、双方初始建筑和单位"]
+  T["SpatialTap / Drag / Magnify<br/>中文注释：iOS 触摸选择、拖拽平移和捏合缩放"] --> C
+  C --> E
+  B --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html"]
+  H --> O
+```
+
 ## Agent 迭代流程图
 
 读图说明：这张图描述后续开发管理流程。人工先给目标，Agent A 写实现提示词，Agent B 在 `main` 上实现并直接 push 到 `origin/main`，GitHub Actions 生成未加密结果包，Agent C 下载复判；不通过就退回 Agent B 在 `main` 追加修复 commit，通过后回到人工复核。
@@ -78,9 +95,13 @@ flowchart TD
   P["push 到 origin/main<br/>中文注释：Agent B 或必要时 Agent C 推送最新 main"] --> W["Rustwar CI Results workflow<br/>中文注释：GitHub Actions 在 main push 或手动触发时运行"]
   M["workflow_dispatch<br/>中文注释：人工或 Agent 可手动重跑"] --> W
   W --> D["git diff --check<br/>中文注释：检查本次提交差异的空白和冲突标记"]
-  W --> N["node --check app.js<br/>中文注释：检查核心脚本语法"]
+  W --> N["node --check app.js<br/>中文注释：检查 Web 核心脚本语法"]
+  W --> SW["swift test --package-path swift/RustwarCore<br/>中文注释：检查共享 Swift core"]
+  W --> XB["xcodebuild RustwarIOS<br/>中文注释：检查原生 iOS target 构建"]
   D --> L["ci-results/build.log<br/>中文注释：记录实际命令输出"]
   N --> L
+  SW --> L
+  XB --> L
   L --> J["ci-results/junit.xml<br/>中文注释：机器可读通过、失败和跳过摘要"]
   L --> F["ci-results/ci-failure-summary.md<br/>中文注释：人工可读失败或跳过说明"]
   L --> S["ci-results/repo-state.txt<br/>中文注释：记录分支、状态和最近提交"]

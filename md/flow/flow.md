@@ -2,7 +2,7 @@
 
 ## 0. 一句话总览
 
-当前项目的主链路是：浏览器事件驱动 `input` 和 `selectedIds`，命令函数修改集中式 `state`，`requestAnimationFrame(loop)` 每帧执行模拟更新、UI 刷新和 Canvas 渲染。
+当前 Web 完整玩法主链路是：浏览器事件驱动 `input` 和 `selectedIds`，命令函数修改集中式 `state`，`requestAnimationFrame(loop)` 每帧执行模拟更新、UI 刷新和 Canvas 渲染。
 
 ```text
 用户输入 / URL 参数 / localStorage / 沙盒 JSON
@@ -16,6 +16,17 @@
 ```
 
 当前协作链路是：Agent A 写版本化提示词，Agent B 在 `main` 上实现、轻量检查、commit 并 push 到 `origin/main`，GitHub Actions 生成未加密 CI 结果包，Agent C 下载结果包核对 manifest / JUnit / 日志 / 失败摘要后验收；失败时退回 Agent B 在 `main` 上追加修复 commit。
+
+v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前只覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放和经济 tick。
+
+```text
+RustwarCore MapPreset / GameState / GameEngine
+  -> ios/RustwarIOS GameController(@Observable)
+  -> SwiftUI RootGameView / GameHUDView
+  -> SpriteKit BattlefieldScene 渲染地形、资源、单位和建筑
+  -> SpatialTapGesture / DragGesture / MagnifyGesture
+  -> CameraState / GameEngine.select / GameEngine.update
+```
 
 ```text
 人工目标
@@ -306,6 +317,54 @@
 - 在没有 `origin`、无权限或 Actions 未运行时伪造云端验收。
 - 引入 AITRANS 的项目特例，例如漫画探针、GGUF、模型 Release、`smalldata_test` 或候选分支流。
 
+### 1.12 原生迁移地基：`swift/RustwarCore`
+
+职责：
+
+- 保存 iOS 迁移使用的共享 Swift 数据模型和小步确定性逻辑。
+- 定义 `MapPreset`、`TerrainGrid`、`ResourceNode`、`UnitSnapshot`、`BuildingSnapshot`、`GameState`、`GameEngine`。
+- 初始化三张 Web 地图对应的基础首屏布局。
+- 计算收入、人口、简单 tick 和实体命中选择。
+
+输入：
+
+- `MapID`、`GameMode` 和后续原生命令。
+
+输出：
+
+- 原生 iOS App 可读取的 Swift 状态快照。
+- Swift package tests 的可验证逻辑。
+
+禁止：
+
+- 不把 Web `app.js` 自动转译为 Swift。
+- 不在 core 里写 SwiftUI、SpriteKit 或平台 UI。
+- 不宣称已经迁移完整战斗、AI、生产、存档或沙盒 parity。
+
+### 1.13 原生 iOS App：`ios/RustwarIOS`
+
+职责：
+
+- 使用 SwiftUI 提供 App 壳和 HUD。
+- 使用 SpriteKit 通过 `SpriteView` 渲染首屏战场。
+- 用 `GameController` 持有 `GameEngine` 和 `CameraState`。
+- 支持 tap 选择、拖拽平移、捏合缩放和基础 economy tick。
+
+输入：
+
+- `RustwarCore` 的初始状态。
+- iOS 触摸手势。
+
+输出：
+
+- 原生战场画面、资源/收入/人口 HUD 和选择反馈。
+
+禁止：
+
+- 禁止用 `WKWebView` 包装 `index.html`。
+- 禁止在 SwiftUI view body 内堆叠玩法逻辑。
+- 禁止让渲染函数推进复杂模拟；模拟推进应通过 `GameEngine.update`。
+
 ## 2. 核心流程
 
 ### 2.1 启动流程
@@ -367,7 +426,7 @@
 3. Agent B 读取提示词和必读文档，执行 `git fetch origin`、`git switch main`、`git pull --ff-only origin main`、`git status --short --branch`；若没有 `origin` 或权限不足，停止远端步骤并说明阻塞。
 4. Agent B 小步实现，运行本地轻量检查，提交本轮相关文件。
 5. Agent B `git push origin main` 触发 `Rustwar CI Results` workflow。
-6. GitHub Actions 运行 `git diff --check` 和 `node --check app.js`，生成 manifest、JUnit、主日志、失败摘要和仓库状态文件。
+6. GitHub Actions 运行 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore` 和 iOS `xcodebuild` 检查，生成 manifest、JUnit、主日志、失败摘要和仓库状态文件。
 7. Agent C 定位 `origin/main` 最新 commit 对应 run，用 `gh auth login` 后下载 artifact 到 `/private/tmp/rustwar-c-review-<run_id>/`。
 8. Agent C 核对 manifest 的 `branch`、`commitSha`、run id、run attempt 与 `origin/main` 最新 commit 和下载结果一致。
 9. 若 CI 或验收失败，Agent C 输出退回清单，Agent B 在 `main` 上追加修复 commit 并重新 push。
@@ -375,17 +434,22 @@
 
 ## 3. 架构边界
 
-- 前端：`index.html`、`styles.css`、`app.js`。
+- Web 前端：`index.html`、`styles.css`、`app.js`。
+- Swift core：`swift/RustwarCore/`。
+- iOS App：`ios/RustwarIOS/`。
 - 后端：无。
-- 数据层：内存中的 `state`，浏览器 `localStorage`，沙盒 JSON 文件。
-- 模型层：`unitTypes`、`buildingTypes`、`mapPresets`、实体对象和订单对象。
-- 测试层：当前是本地轻量检查 + GitHub Actions 结果包；浏览器 Smoke / Regression 仍需人工明确要求或未来新增自动化浏览器测试。
+- Web 数据层：内存中的 `state`，浏览器 `localStorage`，沙盒 JSON 文件。
+- Web 模型层：`unitTypes`、`buildingTypes`、`mapPresets`、实体对象和订单对象。
+- 原生模型层：`MapPreset`、`GameState`、`GameEngine` 和 Swift value snapshots。
+- 测试层：当前是本地轻量检查 + GitHub Actions 结果包；浏览器 Smoke / Regression 与 iOS UI 自动化仍需人工明确要求或未来新增自动化测试。
 
 ## 4. 测试映射
 
 - 文档-only：本地至少 `git diff --check`，再通过 `main` push 触发 CI artifact。
 - 改 `.github/workflows/ci-results.yml`：本地 YAML 解析检查 + `git diff --check`，再通过云端 workflow 自检 artifact。
 - 改 `app.js` 语法或逻辑：本地至少 `node --check app.js` 和 `git diff --check`，CI 重跑同类检查。
+- 改 `swift/RustwarCore/`：本地尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 阻塞，至少尝试 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 并记录工具链错误。
+- 改 `ios/RustwarIOS/`：本地尽量跑 `xcodebuild -list` 和 iOS build；若只有 Command Line Tools 或 Swift/SDK 不匹配，记录阻塞并由云端 macOS artifact 复验。
 - 改 HTML id 或 UI 引用：云端轻量检查之外，若人工要求则做 Smoke 浏览器验证。
 - 改输入/命令：人工要求本机回归时验证主地图、迷你地图、Shift 追加、Esc 取消。
 - 改战斗/AI/存档/沙盒：人工要求本机回归时执行 Stage Regression。
@@ -409,10 +473,12 @@
 - 单位/建筑配置拆分为数据文件。
 - 自动化浏览器 Smoke / Regression 测试，并将截图或报告纳入 CI 结果包。
 - 正式像素素材、爆炸音效和 UI 音效。
+- Swift/iOS 逐步迁移 Web 命令体系、战斗、AI、存档和沙盒。
 
 ## 7. 不允许破坏的行为
 
 - 直接打开 `index.html` 可运行。
+- `ios/RustwarIOS` 不能用 WebView 冒充原生迁移。
 - README 中列出的模式、地图、操作和核心 RTS 回路。
 - 保存/读取基本兼容。
 - 沙盒放置、删除、导出和导入。

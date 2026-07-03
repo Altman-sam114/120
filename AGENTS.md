@@ -26,8 +26,10 @@
 
 ## 2. 项目基本规则
 
-- 当前项目是纯前端 Canvas RTS 原型，入口是 `index.html`，核心逻辑在 `app.js`。
-- 默认不引入构建工具、前端框架、包管理器、后端服务或网络依赖。
+- 当前项目由完整可玩的 Web Canvas RTS 原型和 v1.0 起新增的原生 Swift/iOS 迁移地基组成。
+- Web 原型入口是 `index.html`，核心逻辑在 `app.js`，必须保持直接用浏览器打开可运行。
+- 原生迁移路径集中在 `swift/RustwarCore/` 和 `ios/RustwarIOS/`，只在明确 Swift/iOS 任务中使用 SwiftPM、Xcode project、SwiftUI、SpriteKit 等 Apple 原生工具。
+- Web 侧默认不引入构建工具、前端框架、包管理器、后端服务或网络依赖。
 - 保持直接用浏览器打开 `index.html` 可运行。
 - 延续当前单文件游戏逻辑和配置表驱动风格；只在复杂度确实需要时小步拆分。
 - `README.md` 面向玩家，`AGENTS.md` 面向后续 Agent，`md/flow` 面向架构理解，`md/test` 面向验证，`update_log.md` 面向历史记录。
@@ -51,6 +53,8 @@
 - `index.html` 只负责 DOM 骨架、Canvas、HUD、面板和按钮挂载点。
 - `styles.css` 只负责视觉布局和响应式面板样式。
 - `app.js` 负责游戏数据表、全局状态、输入处理、命令派发、模拟更新、AI、渲染、存档和沙盒导入导出。
+- `swift/RustwarCore/` 负责原生 iOS 迁移的共享 Swift 数据模型、初始状态、地形、经济 tick 和可测试小逻辑。
+- `ios/RustwarIOS/` 负责原生 SwiftUI/SpriteKit App 壳、HUD、战场渲染和触摸输入；禁止用 `WKWebView` 包装 Web 版。
 - 核心状态集中在 `state`、`camera`、`input`、`selectedIds` 和 `controlGroups`。
 - 主循环是 `requestAnimationFrame(loop)`，每帧执行 `update()`、按需 `refreshUI()`、再 `render()`。
 - 存档使用 `localStorage`；沙盒场景导入导出使用 JSON 文件，不依赖服务器。
@@ -111,6 +115,8 @@ Agent C 必须：
 - 每次实现前先读 `md/test/test.md`。
 - 默认云端重验证，本机只跑轻量检查。
 - 当前固定轻量检查至少包含 `git diff --check`；修改 `app.js` 时必须加跑 `node --check app.js`。
+- 修改 `swift/RustwarCore/` 时必须尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 或 Swift/SDK 工具链阻塞，必须写明真实错误，并至少尝试直接 Swift typecheck。
+- 修改 `ios/RustwarIOS/` 时必须尽量跑 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 iOS build；若本机没有完整 Xcode 或工具链不匹配，必须如实说明。
 - 修改 `.github/workflows/ci-results.yml` 时必须做 YAML 解析检查。
 - 文档-only 修改可不跑浏览器完整验证，但必须说明原因，并由 GitHub Actions 上传结果包供 Agent C 复判。
 - 只有人工明确要求“本机测试”“本地 build”“本地跑浏览器验证”时，才把本机完整验证作为默认路径。
@@ -119,6 +125,7 @@ Agent C 必须：
 ## 7. 文档规则
 
 - 新功能、玩法、操作、模式、单位、建筑、AI 行为变化必须更新 `README.md`。
+- Swift/iOS 迁移路径、原生 App 能力、构建方式或 CI 覆盖变化必须更新 `README.md`、`md/flow`、`md/test` 和 `update_log.md`。
 - 核心状态流、执行流、模块边界变化必须更新 `md/flow/flow.md` 和 `md/flow/flowchart.md`。
 - 测试命令、触发条件、基线变化必须更新 `md/test/test.md`。
 - 正式版本、重要任务、关键决策、遗留问题必须更新 `update_log.md`。
@@ -139,9 +146,10 @@ Agent C 必须：
 
 ## 9. 禁止项
 
-- 不要把项目误判为 Rust/Cargo 项目。
+- 不要把项目误判为 Rust/Cargo 项目；`RustwarCore` 是 Swift package，不是 Rust crate。
 - 不要在未获明确要求时引入框架、构建链、远程依赖或后端。
 - 不要删除已实现玩法、存档兼容、沙盒能力或用户资源文件。
+- 不要用 `WKWebView` 或网页打包冒充原生 iOS 迁移成果。
 - 不要擅自扩大任务范围。
 - 不要创建 PR、等待 PR merge 或写成候选分支合并制度，除非人工后续明确改规则。
 - 不要把旧 artifact、旧截图或 checkout 自带报告冒充本轮云端结果。

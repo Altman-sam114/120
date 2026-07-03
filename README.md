@@ -1,14 +1,35 @@
 # Rustwar RTS Prototype
 
-一个参考 Rusted Warfare 俯视战场与 RTS 玩法回路的纯前端原型。当前版本使用 Canvas 绘制地图、单位和建筑，用简单符号代替正式素材，重点先落地可玩的经济、生产、建造、战斗和 AI。
+一个参考 Rusted Warfare 俯视战场与 RTS 玩法回路的 RTS 原型。当前完整可玩版本仍是纯前端 Canvas：用 Canvas 绘制地图、单位和建筑，用简单符号代替正式素材，重点先落地可玩的经济、生产、建造、战斗和 AI。v1.0 起新增原生 Swift/iOS 迁移地基，用于逐步把核心模型和首屏战场移向原生 App。
 
 ## 运行
+
+### Web 原型
 
 直接用浏览器打开 `index.html`。
 
 也可以用查询参数直接进入模式和地图：`index.html?mode=campaign`、`index.html?mode=survival`、`index.html?mode=challenge`、`index.html?mode=sandbox`，以及 `index.html?map=islands` 或 `index.html?map=lava`。
 
+### 原生 iOS 迁移地基
+
+当前 iOS 版本是迁移地基，不是完整玩法 parity。它新增：
+
+- `swift/RustwarCore/`：无第三方依赖的 Swift core package，包含地图常量、三张地图初始布局、单位/建筑/资源模型、地形网格、初始状态、收入/人口计算和命中选择辅助。
+- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位和 HUD；支持 tap 选择、拖拽平移、捏合缩放，并通过简单 economy tick 推进金属收入。
+
+本机验证命令：
+
+```sh
+swift test --package-path swift/RustwarCore
+xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj
+xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+```
+
+如果本机只有 Command Line Tools 或 Swift/SDK 版本不匹配，iOS 构建可能需要完整 Xcode 或 GitHub Actions 的 macOS runner 复验。
+
 ## 已实现
+
+### Web 原型
 
 - 海岸、群岛、熔岩 3 张地图预设；不同地图有独立资源点、基地位置、初始单位和地形分布。
 - 资源点、资源采集器、资源制造器、人口容量和持续收入。
@@ -66,6 +87,7 @@
 
 ## 下一步复刻方向
 
+- 继续把 Web 版核心 RTS 命令、战斗、AI、存档和沙盒能力分阶段迁移到 `RustwarCore` 与原生 iOS。
 - 增加更多原作单位线，例如更多海军、空军和实验变体。
 - 增加更多战役地图、地图导入/导出、更完整的任务脚本和过场目标提示。
 - 补更完整的寻路、阵型、视野阻挡、单位优先级与 AI 战术。
@@ -78,7 +100,9 @@
 - `md/test/test.md`：测试分层、命令、触发条件和当前验证基线。
 - `md/flow/flow.md` 与 `md/flow/flowchart.md`：当前核心逻辑、数据流、执行流和 Mermaid 流程图。
 - `md/prompt/`：每轮 Agent A 写给 Agent B 的详细实现提示词目录。
+- `swift/RustwarCore/`：原生迁移使用的共享 Swift core package。
+- `ios/RustwarIOS/`：原生 SwiftUI/SpriteKit iOS App 地基。
 
 ## 协作与云端验证
 
-后续 Agent A/B/C 迭代默认使用 `main` 直推和 GitHub Actions 重验证：Agent B 本地只跑轻量检查后提交并 push 到 `origin/main`，Actions 上传未加密 CI 结果包，Agent C 下载并核对 manifest、JUnit、日志和失败摘要后再给出验收结论。详细规则见 `AGENTS.md`、`md/test/test.md` 和 `md/flow/flow.md`。
+后续 Agent A/B/C 迭代默认使用 `main` 直推和 GitHub Actions 重验证：Agent B 本地只跑轻量检查后提交并 push 到 `origin/main`，Actions 上传未加密 CI 结果包，Agent C 下载并核对 manifest、JUnit、日志和失败摘要后再给出验收结论。v1.0 起 CI 结果包除 Web 轻量检查外，也记录 `swift test --package-path swift/RustwarCore` 和 `xcodebuild` iOS 构建结果。详细规则见 `AGENTS.md`、`md/test/test.md` 和 `md/flow/flow.md`。

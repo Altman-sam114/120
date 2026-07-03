@@ -4,10 +4,11 @@
 
 ## 固定前缀 / 环境要求
 
-- 项目无构建步骤、无包管理器、无后端、无数据库、无容器依赖。
-- 推荐环境：能运行 Node.js、Git、GitHub CLI；人工明确要求本机浏览器验证时还需要本地浏览器。
+- Web 原型无构建步骤、无包管理器、无后端、无数据库、无容器依赖。
+- v1.0 起新增原生迁移路径：`swift/RustwarCore/` 使用 SwiftPM，`ios/RustwarIOS/` 使用 Xcode project；这不改变 Web 版直接打开 `index.html` 的运行方式。
+- 推荐环境：能运行 Node.js、Git、GitHub CLI；修改 Swift core 时需要 Swift toolchain；修改 iOS App 时需要完整 Xcode；人工明确要求本机浏览器验证时还需要本地浏览器。
 - 运行目录：仓库根目录 `/Users/a114514/Desktop/codex/Rustwar`。
-- 默认无需启动服务；直接打开 `index.html` 即可运行。
+- Web 默认无需启动服务；直接打开 `index.html` 即可运行。iOS App 通过 Xcode 或 `xcodebuild` 构建运行。
 - 如果需要本地 HTTP 访问，可临时使用静态服务器，但不要把服务依赖写入项目运行前提。
 - 默认云端重验证：Agent B 本地只跑轻量检查，commit 后 push 到 `origin/main`，由 GitHub Actions 上传未加密 CI 结果包。
 
@@ -67,6 +68,44 @@ git diff --check
 - YAML 能被 Ruby 解析。
 - `git diff --check` 应通过。
 
+### 4. Swift core 检查
+
+触发条件：
+
+- 新增或修改 `swift/RustwarCore/`。
+
+命令：
+
+```sh
+swift test --package-path swift/RustwarCore
+git diff --check
+```
+
+当前基线：
+
+- `RustwarCore` tests 应通过，并覆盖地图/状态初始化、收入/人口计算、基础 tick 和选择命中。
+- 若本机 SwiftPM、PackageDescription、Swift/SDK 版本或权限导致 `swift test` 无法进入源码编译，必须记录原始错误；可额外执行 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 区分源码错误和工具链错误。
+
+### 5. iOS App 检查
+
+触发条件：
+
+- 新增或修改 `ios/RustwarIOS/`。
+
+命令：
+
+```sh
+xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj
+xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+git diff --check
+```
+
+当前基线：
+
+- `xcodebuild -list` 应能发现 `RustwarIOS` scheme。
+- iOS build 应使用原生 SwiftUI/SpriteKit target，并通过本地 Swift package 引入 `RustwarCore`。
+- 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
+
 ## 云端重验证
 
 ### 1. 默认触发
@@ -89,17 +128,20 @@ git push origin main
 
 `.github/workflows/ci-results.yml` 在 `main` push 和 `workflow_dispatch` 时运行。
 
-当前 Rustwar CI 做轻量重验证：
+当前 Rustwar CI 在 `macos-latest` 上做轻量重验证：
 
 - `git diff --check`：检查本次提交差异。
 - `node --check app.js`：检查核心脚本语法。
+- `swift test --package-path swift/RustwarCore`：检查共享 Swift core。
+- `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj`：检查 iOS project / scheme。
+- `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`：检查原生 iOS App 构建。
 - 生成 `ci-results/build.log`：主日志。
 - 生成 `ci-results/junit.xml`：CI 可读摘要。
 - 生成 `ci-results/ci-failure-summary.md`：失败或跳过说明。
 - 生成 `ci-results/ci-artifact-manifest.json`：Agent C 核对用 manifest。
 - 生成 `ci-results/repo-state.txt`：分支、状态和最近提交记录。
 
-当前不在 CI 中跑浏览器 Smoke、Stage Regression 或 Full。需要这些验证时，由人工明确要求本机验证，或后续新增 headless browser workflow 后再更新本文件。
+当前不在 CI 中跑浏览器 Smoke、Stage Regression 或 Full，也不跑 iOS UI 自动化。需要这些验证时，由人工明确要求本机验证，或后续新增 headless browser / XCUITest workflow 后再更新本文件。
 
 ### 3. 结果包要求
 
@@ -126,6 +168,9 @@ rustwar-ci-${version}-${branch_slug}-${short_sha}-run${run_id}-attempt${run_atte
 - `staticChecksOutcome`
 - `buildOutcome`
 - `testOutcome`
+- `swiftPackageOutcome`
+- `xcodeProject`
+- `xcodeListOutcome`
 - `projectSpecificReports`
 
 ## Agent C 结果包复判
@@ -145,6 +190,7 @@ Agent C 必须核对：
 - manifest 的 `runId`、`runAttempt` 与下载的 Actions run 一致。
 - `junit.xml` 中失败、跳过和通过项与 `ci-failure-summary.md` 一致。
 - 主日志包含实际命令输出，而不是旧 artifact 或 checkout 自带报告。
+- v1.0 起还要确认 manifest 中 `scheme=RustwarIOS`、`destination=generic/platform=iOS Simulator`，并核对 Swift/iOS 检查项真实执行或真实失败。
 
 CI 失败时：
 
@@ -190,6 +236,7 @@ CI 失败时：
 - 每次实现前先读本文件。
 - 默认本地轻量检查 + 云端重验证，不默认本机完整回归。
 - 文档-only 修改可只跑本地轻量检查，但仍应通过 main push 触发云端结果包。
+- Swift/iOS 修改可因本机缺少完整 Xcode 或工具链不匹配而无法本机全量构建，但必须记录命令、错误和云端 artifact 复验要求。
 - 不得伪造测试结果、Actions run、artifact、manifest 或浏览器运行结果。
 - 不得把“未发现问题”写成“完整通过”。
 - 最终回复必须列出具体命令、结果、云端 run / artifact 状态和未跑测试原因。
