@@ -6,7 +6,7 @@ import Testing
 
     #expect(state.map.id == .coast)
     #expect(state.resources.count == 14)
-    #expect(state.buildings.count == 7)
+    #expect(state.buildings.count == 8)
     #expect(state.units.count == 8)
     #expect(state.terrain.columns == 96)
     #expect(state.terrain.rows == 64)

@@ -17,7 +17,7 @@ final class BattlefieldScene: SKScene {
         configureScene()
     }
 
-    init() {
+    override init() {
         super.init(size: .zero)
         configureScene()
     }
