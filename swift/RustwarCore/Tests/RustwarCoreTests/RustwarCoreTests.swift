@@ -43,3 +43,37 @@ import Testing
     #expect(target?.displayName == "Command Center")
     #expect(engine.state.selectionSummary() == "Green Command Center")
 }
+
+@Test func moveCommandRejectsMissingOrInvalidSelection() {
+    var engine = GameEngine(mapID: .coast)
+
+    #expect(engine.issueMove(to: WorldPoint(1_200, 2_000)) == .noSelection)
+
+    _ = engine.select(at: WorldPoint(3_180, 720), includeEnemies: true)
+
+    #expect(engine.issueMove(to: WorldPoint(3_000, 700)) == .selectedEntityCannotMove)
+}
+
+@Test func moveCommandMovesSelectedPlayerUnitAndClearsOnArrival() throws {
+    var engine = GameEngine(mapID: .coast)
+
+    let target = try #require(engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false))
+    let result = engine.issueMove(to: WorldPoint(1_130, 2_020))
+
+    #expect(result == .issued)
+    #expect(engine.state.units.first { $0.id == target.id }?.order != nil)
+
+    engine.update(deltaTime: 1)
+
+    let movingUnit = try #require(engine.state.units.first { $0.id == target.id })
+    #expect(movingUnit.position.x > 1_100)
+    #expect(movingUnit.position.x < 1_130)
+    #expect(movingUnit.order != nil)
+
+    engine.update(deltaTime: 1)
+
+    let arrivedUnit = try #require(engine.state.units.first { $0.id == target.id })
+    #expect(abs(arrivedUnit.position.x - 1_130) < 0.001)
+    #expect(abs(arrivedUnit.position.y - 2_020) < 0.001)
+    #expect(arrivedUnit.order == nil)
+}

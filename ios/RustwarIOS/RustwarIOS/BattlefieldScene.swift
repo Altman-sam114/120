@@ -126,6 +126,10 @@ final class BattlefieldScene: SKScene {
 
     private func drawUnit(_ unit: UnitSnapshot, selectedID: String?) {
         let definition = GameDefinitions.unit(unit.type)
+        if case let .move(destination)? = unit.order {
+            drawMoveOrder(from: unit.position, to: destination, isSelected: unit.id == selectedID)
+        }
+
         let node = SKShapeNode(circleOfRadius: definition.radius)
         node.position = spritePoint(for: unit.position)
         node.fillColor = teamColor(unit.team)
@@ -139,6 +143,26 @@ final class BattlefieldScene: SKScene {
         label.verticalAlignmentMode = .center
         node.addChild(label)
         entityNode.addChild(node)
+    }
+
+    private func drawMoveOrder(from start: WorldPoint, to destination: WorldPoint, isSelected: Bool) {
+        let color = isSelected ? SKColor.systemYellow : SKColor.white.withAlphaComponent(0.45)
+        let path = CGMutablePath()
+        path.move(to: spritePoint(for: start))
+        path.addLine(to: spritePoint(for: destination))
+
+        let line = SKShapeNode(path: path)
+        line.strokeColor = color.withAlphaComponent(isSelected ? 0.75 : 0.35)
+        line.lineWidth = isSelected ? 3 : 1.5
+        line.lineCap = .round
+        entityNode.addChild(line)
+
+        let marker = SKShapeNode(circleOfRadius: isSelected ? 9 : 7)
+        marker.position = spritePoint(for: destination)
+        marker.fillColor = .clear
+        marker.strokeColor = color
+        marker.lineWidth = isSelected ? 3 : 1.5
+        entityNode.addChild(marker)
     }
 
     private func spritePoint(for point: WorldPoint) -> CGPoint {

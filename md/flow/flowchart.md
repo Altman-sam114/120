@@ -52,11 +52,13 @@ flowchart TD
 ```mermaid
 flowchart TD
   P["RustwarCore MapPreset<br/>中文注释：三张地图的基础坐标、资源和初始单位建筑"] --> S["GameState<br/>中文注释：Swift 原生状态快照，包含资源、单位、建筑、金属和选择"]
-  S --> E["GameEngine.update / select<br/>中文注释：推进基础收入 tick，并处理点选命中"]
-  E --> C["GameController @Observable<br/>中文注释：持有 engine、camera 和 HUD 可观察状态"]
+  S --> E["GameEngine.update / select / issueMove<br/>中文注释：推进收入 tick、点选命中和单单位移动"]
+  E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、HUD 和移动命令模式"]
   C --> H["SwiftUI RootGameView / GameHUDView<br/>中文注释：显示资源、收入、人口和选择反馈"]
-  C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、双方初始建筑和单位"]
-  T["SpatialTap / Drag / Magnify<br/>中文注释：iOS 触摸选择、拖拽平移和捏合缩放"] --> C
+  C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、双方初始建筑、单位和移动目标"]
+  T["SpatialTap / Drag / Magnify<br/>中文注释：iOS 触摸选择、移动落点、拖拽平移和捏合缩放"] --> C
+  C --> M["UnitOrder.move<br/>中文注释：选中己方单位后写入移动目标"]
+  M --> E
   C --> E
   B --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html"]
   H --> O

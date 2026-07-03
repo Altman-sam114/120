@@ -14,8 +14,8 @@
 
 当前 iOS 版本是迁移地基，不是完整玩法 parity。它新增：
 
-- `swift/RustwarCore/`：无第三方依赖的 Swift core package，包含地图常量、三张地图初始布局、单位/建筑/资源模型、地形网格、初始状态、收入/人口计算和命中选择辅助。
-- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位和 HUD；支持 tap 选择、拖拽平移、捏合缩放，并通过简单 economy tick 推进金属收入。
+- `swift/RustwarCore/`：无第三方依赖的 Swift core package，包含地图常量、三张地图初始布局、单位/建筑/资源模型、地形网格、初始状态、收入/人口计算、命中选择和单单位移动命令。
+- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位和 HUD；支持 tap 选择、拖拽平移、捏合缩放，选中己方单位后可用 Move 下达单单位移动命令，并通过简单 economy tick 推进金属收入。
 
 本机验证命令：
 
@@ -84,6 +84,14 @@ xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -dest
 - 顶部 AI：切换红方 AI 难度。
 - 顶部 ST：打开/关闭战场统计。
 - 沙盒模式：左侧面板切换选择/放置/删除工具、绿方/红方和对象类型；可左键放置、框选双方对象、右键快速删除，命令面板支持删除选中、吸取选中对象为画笔；可给双方加资源、清理弹药残骸、切换全图视野、冻结/运行战斗，并通过“导出场景 / 导入场景”保存或复用自定义战场 JSON。
+
+### 原生 iOS 迁移地基
+
+- Tap：选择单位或建筑；Move 模式下作为移动落点。
+- 拖拽：平移战场视角。
+- 捏合：缩放战场视角。
+- Move：选中己方单位时显示；点按后进入移动落点模式，再 tap 战场下达单单位移动命令。
+- Reset：重置战场相机。
 
 ## 下一步复刻方向
 

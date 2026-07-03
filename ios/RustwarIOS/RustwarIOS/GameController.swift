@@ -8,6 +8,8 @@ final class GameController {
     var engine: GameEngine
     var camera: CameraState
     var renderRevision = 0
+    var isAwaitingMoveTarget = false
+    var commandStatus: String?
 
     init(mapID: MapID = .coast) {
         let preset = MapPreset.preset(for: mapID)
@@ -28,15 +30,41 @@ final class GameController {
         engine.state.selectionSummary()
     }
 
+    var canIssueMove: Bool {
+        selectedPlayerUnit != nil
+    }
+
+    var moveCommandButtonTitle: String {
+        isAwaitingMoveTarget ? "Cancel" : "Move"
+    }
+
     func advance(deltaTime: TimeInterval) {
         let clamped = min(0.25, max(0, deltaTime))
         engine.update(deltaTime: clamped)
         renderRevision += 1
     }
 
-    func select(screenPoint: CGPoint, viewportSize: CGSize) {
+    func handleBattlefieldTap(screenPoint: CGPoint, viewportSize: CGSize) {
         let point = camera.worldPoint(for: screenPoint, viewportSize: viewportSize)
-        engine.select(at: point, includeEnemies: true)
+        if isAwaitingMoveTarget {
+            let result = engine.issueMove(to: point)
+            isAwaitingMoveTarget = false
+            commandStatus = statusText(for: result)
+        } else {
+            engine.select(at: point, includeEnemies: true)
+            commandStatus = nil
+        }
+        renderRevision += 1
+    }
+
+    func toggleMoveCommand() {
+        if isAwaitingMoveTarget {
+            isAwaitingMoveTarget = false
+            commandStatus = nil
+        } else if canIssueMove {
+            isAwaitingMoveTarget = true
+            commandStatus = "Move target"
+        }
         renderRevision += 1
     }
 
@@ -53,5 +81,23 @@ final class GameController {
     func resetCamera() {
         camera.reset(to: engine.state.map.camera)
         renderRevision += 1
+    }
+
+    private var selectedPlayerUnit: UnitSnapshot? {
+        guard let selectedEntityID = engine.state.selectedEntityID else {
+            return nil
+        }
+        return engine.state.units.first { $0.id == selectedEntityID && $0.team == .player }
+    }
+
+    private func statusText(for result: UnitCommandResult) -> String? {
+        switch result {
+        case .issued:
+            return "Move order issued"
+        case .noSelection:
+            return "No unit selected"
+        case .selectedEntityCannotMove:
+            return "Player unit required"
+        }
     }
 }

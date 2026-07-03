@@ -33,7 +33,7 @@ struct BattlefieldView: View {
     private func tapGesture(in viewportSize: CGSize) -> some Gesture {
         SpatialTapGesture()
             .onEnded { value in
-                controller.select(screenPoint: value.location, viewportSize: viewportSize)
+                controller.handleBattlefieldTap(screenPoint: value.location, viewportSize: viewportSize)
                 scene.renderNow()
             }
     }
