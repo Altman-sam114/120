@@ -57,7 +57,8 @@ import Testing
 @Test func moveCommandMovesSelectedPlayerUnitAndClearsOnArrival() throws {
     var engine = GameEngine(mapID: .coast)
 
-    let target = try #require(engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false))
+    let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let target = try #require(selectedTarget)
     let result = engine.issueMove(to: WorldPoint(1_130, 2_020))
 
     #expect(result == .issued)
