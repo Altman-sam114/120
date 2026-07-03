@@ -15,6 +15,20 @@
   -> localStorage / 下载 JSON / UI 输出
 ```
 
+当前协作链路是：Agent A 写版本化提示词，Agent B 在 `main` 上实现、轻量检查、commit 并 push 到 `origin/main`，GitHub Actions 生成未加密 CI 结果包，Agent C 下载结果包核对 manifest / JUnit / 日志 / 失败摘要后验收；失败时退回 Agent B 在 `main` 上追加修复 commit。
+
+```text
+人工目标
+  -> Agent A 分析并写 md/prompt
+  -> Agent B 同步 origin/main，在 main 实现和本地轻量检查
+  -> git commit + git push origin main
+  -> GitHub Actions: ci-results
+  -> 未加密 artifact: manifest / junit.xml / build.log / failure summary
+  -> Agent C 下载到 /private/tmp/rustwar-c-review-<run_id> 并复判
+      -> 失败：退回 Agent B 追加修复 commit
+      -> 通过：确认 origin/main 最新 run 与 commit 匹配
+```
+
 ## 1. 核心模块
 
 ### 1.1 页面入口：`index.html`
@@ -266,6 +280,32 @@
 
 - 改动存档或沙盒格式时不做兼容补齐。
 
+### 1.11 协作与 CI 结果包
+
+职责：
+
+- `AGENTS.md` 定义 Agent A/B/C 角色、main 直推、云端结果包和验收硬规则。
+- `md/prompt/README.md` 定义提示词版本目录、角色召唤和 Agent A 写提示词时必须包含的 CI / main push / artifact 要求。
+- `.github/workflows/ci-results.yml` 在 `main` push 或手动触发时运行轻量重验证并上传未加密结果包。
+- Agent C 通过 GitHub CLI 下载 artifact，并核对 `ci-artifact-manifest.json`、`junit.xml`、`build.log` 和 `ci-failure-summary.md`。
+
+输入：
+
+- Agent B 的 `main` commit 和 `git push origin main`。
+- GitHub Actions 运行环境。
+- Agent C 的 `gh auth login` 和 artifact 下载命令。
+
+输出：
+
+- `rustwar-ci-${version}-${branch_slug}-${short_sha}-run${run_id}-attempt${run_attempt}` artifact。
+- Agent C 的通过结论或退回 Agent B 的修复清单。
+
+禁止：
+
+- 把旧 artifact、旧日志或 checkout 自带报告冒充本轮结果。
+- 在没有 `origin`、无权限或 Actions 未运行时伪造云端验收。
+- 引入 AITRANS 的项目特例，例如漫画探针、GGUF、模型 Release、`smalldata_test` 或候选分支流。
+
 ## 2. 核心流程
 
 ### 2.1 启动流程
@@ -320,21 +360,36 @@
 4. 导出生成 `rustwar-sandbox-scenario` JSON。
 5. 导入校验格式和版本，再重建沙盒状态。
 
+### 2.7 云端协作流程
+
+1. 人工用普通请求或 `agenta` / `agentb` / `agentc` 前缀召唤对应角色。
+2. Agent A 读取必读文档和相关源码，写入版本化提示词，并明确本轮本地轻量检查、`main` push、CI artifact 和 Agent C 复判要求。
+3. Agent B 读取提示词和必读文档，执行 `git fetch origin`、`git switch main`、`git pull --ff-only origin main`、`git status --short --branch`；若没有 `origin` 或权限不足，停止远端步骤并说明阻塞。
+4. Agent B 小步实现，运行本地轻量检查，提交本轮相关文件。
+5. Agent B `git push origin main` 触发 `Rustwar CI Results` workflow。
+6. GitHub Actions 运行 `git diff --check` 和 `node --check app.js`，生成 manifest、JUnit、主日志、失败摘要和仓库状态文件。
+7. Agent C 定位 `origin/main` 最新 commit 对应 run，用 `gh auth login` 后下载 artifact 到 `/private/tmp/rustwar-c-review-<run_id>/`。
+8. Agent C 核对 manifest 的 `branch`、`commitSha`、run id、run attempt 与 `origin/main` 最新 commit 和下载结果一致。
+9. 若 CI 或验收失败，Agent C 输出退回清单，Agent B 在 `main` 上追加修复 commit 并重新 push。
+10. 若通过，Agent C 输出通过结论、版本号、commit SHA、run id、artifact 名称和验收摘要。
+
 ## 3. 架构边界
 
 - 前端：`index.html`、`styles.css`、`app.js`。
 - 后端：无。
 - 数据层：内存中的 `state`，浏览器 `localStorage`，沙盒 JSON 文件。
 - 模型层：`unitTypes`、`buildingTypes`、`mapPresets`、实体对象和订单对象。
-- 测试层：当前是命令静态检查 + 浏览器手动验证，未来可增加自动化浏览器测试。
+- 测试层：当前是本地轻量检查 + GitHub Actions 结果包；浏览器 Smoke / Regression 仍需人工明确要求或未来新增自动化浏览器测试。
 
 ## 4. 测试映射
 
-- 改 `app.js` 语法或逻辑：至少 `node --check app.js` 和 `git diff --check`。
-- 改 HTML id 或 UI 引用：Smoke 浏览器验证。
-- 改输入/命令：验证主地图、迷你地图、Shift 追加、Esc 取消。
-- 改战斗/AI/存档/沙盒：Stage Regression。
-- 改主循环、状态结构或大范围重构：Full。
+- 文档-only：本地至少 `git diff --check`，再通过 `main` push 触发 CI artifact。
+- 改 `.github/workflows/ci-results.yml`：本地 YAML 解析检查 + `git diff --check`，再通过云端 workflow 自检 artifact。
+- 改 `app.js` 语法或逻辑：本地至少 `node --check app.js` 和 `git diff --check`，CI 重跑同类检查。
+- 改 HTML id 或 UI 引用：云端轻量检查之外，若人工要求则做 Smoke 浏览器验证。
+- 改输入/命令：人工要求本机回归时验证主地图、迷你地图、Shift 追加、Esc 取消。
+- 改战斗/AI/存档/沙盒：人工要求本机回归时执行 Stage Regression。
+- 改主循环、状态结构或大范围重构：人工要求或发布前执行 Full。
 
 ## 5. 已确认的铁律
 
@@ -352,7 +407,7 @@
 - 视野阻挡和地形战术。
 - 更多地图、战役脚本和地图导入导出。
 - 单位/建筑配置拆分为数据文件。
-- 自动化浏览器 Smoke / Regression 测试。
+- 自动化浏览器 Smoke / Regression 测试，并将截图或报告纳入 CI 结果包。
 - 正式像素素材、爆炸音效和 UI 音效。
 
 ## 7. 不允许破坏的行为

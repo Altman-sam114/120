@@ -1,0 +1,207 @@
+name: Rustwar CI Results
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci-results:
+    name: Build CI result package
+    runs-on: ubuntu-latest
+    env:
+      CI_FLOW_VERSION: v0.4
+      PROJECT_NAME: Rustwar
+      WORKFLOW_DISPLAY_NAME: Rustwar CI Results
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ci-results
+          short_sha="${GITHUB_SHA::7}"
+          branch="${GITHUB_REF_NAME:-main}"
+          branch_slug="$(printf '%s' "$branch" | tr '[:upper:]' '[:lower:]' | tr '/' '-' | tr -cd 'a-z0-9._-')"
+          if [[ -z "$branch_slug" ]]; then
+            branch_slug="main"
+          fi
+          artifact_name="rustwar-ci-${CI_FLOW_VERSION}-${branch_slug}-${short_sha}-run${GITHUB_RUN_ID}-attempt${GITHUB_RUN_ATTEMPT}"
+          {
+            echo "SHORT_SHA=$short_sha"
+            echo "BRANCH_SLUG=$branch_slug"
+            echo "ARTIFACT_NAME=$artifact_name"
+          } >> "$GITHUB_ENV"
+
+      - name: Run lightweight checks and write result package
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set +e
+          mkdir -p ci-results
+          build_log="ci-results/build.log"
+          {
+            echo "Rustwar CI Results"
+            echo "branch=${GITHUB_REF_NAME:-main}"
+            echo "commit=${GITHUB_SHA}"
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo
+          } > "$build_log"
+
+          diff_base=""
+          zero_sha="0000000000000000000000000000000000000000"
+          if [[ -n "${BEFORE_SHA:-}" && "$BEFORE_SHA" != "$zero_sha" ]]; then
+            diff_base="$BEFORE_SHA"
+          elif git rev-parse "${GITHUB_SHA}^" >/dev/null 2>&1; then
+            diff_base="$(git rev-parse "${GITHUB_SHA}^")"
+          fi
+
+          echo "== git diff --check ==" >> "$build_log"
+          if [[ -n "$diff_base" ]]; then
+            git diff --check "$diff_base" "$GITHUB_SHA" >> "$build_log" 2>&1
+          else
+            git diff --check >> "$build_log" 2>&1
+          fi
+          diff_status=$?
+          echo "git diff --check exit=$diff_status" >> "$build_log"
+          echo >> "$build_log"
+
+          echo "== node --check app.js ==" >> "$build_log"
+          node --check app.js >> "$build_log" 2>&1
+          node_status=$?
+          echo "node --check app.js exit=$node_status" >> "$build_log"
+          echo >> "$build_log"
+
+          {
+            echo "## CI Failure Summary"
+            echo
+            if [[ "$diff_status" -eq 0 && "$node_status" -eq 0 ]]; then
+              echo "- Result: success"
+            else
+              echo "- Result: failure"
+            fi
+            echo "- git diff --check: $([[ "$diff_status" -eq 0 ]] && echo success || echo failure)"
+            echo "- node --check app.js: $([[ "$node_status" -eq 0 ]] && echo success || echo failure)"
+            echo "- Browser smoke/regression: skipped; Rustwar currently has no headless browser CI."
+            echo "- Build step: treated as app.js syntax check because the project has no build chain."
+          } > ci-results/ci-failure-summary.md
+
+          {
+            echo "## git status --short --branch"
+            git status --short --branch
+            echo
+            echo "## git log --oneline -5"
+            git log --oneline -5
+          } > ci-results/repo-state.txt
+
+          if [[ "$diff_status" -eq 0 && "$node_status" -eq 0 ]]; then
+            overall="success"
+          else
+            overall="failure"
+          fi
+          echo "$overall" > ci-results/overall-status.txt
+
+          CHECK_DIFF_STATUS="$diff_status" \
+          CHECK_NODE_STATUS="$node_status" \
+          OVERALL_STATUS="$overall" \
+          node <<'NODE'
+          const fs = require("fs");
+
+          const escapeXml = (value) => String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&apos;");
+
+          const checks = [
+            {
+              name: "git diff --check",
+              ok: process.env.CHECK_DIFF_STATUS === "0",
+              message: "Whitespace and conflict marker check for this commit range."
+            },
+            {
+              name: "node --check app.js",
+              ok: process.env.CHECK_NODE_STATUS === "0",
+              message: "JavaScript syntax check for the single-file game runtime."
+            },
+            {
+              name: "browser smoke regression",
+              skipped: true,
+              message: "Skipped: Rustwar currently has no headless browser CI."
+            }
+          ];
+
+          const failures = checks.filter((check) => check.ok === false).length;
+          const skipped = checks.filter((check) => check.skipped).length;
+          const cases = checks.map((check) => {
+            if (check.skipped) {
+              return `    <testcase classname="rustwar.ci" name="${escapeXml(check.name)}"><skipped message="${escapeXml(check.message)}"/></testcase>`;
+            }
+            if (!check.ok) {
+              return `    <testcase classname="rustwar.ci" name="${escapeXml(check.name)}"><failure message="${escapeXml(check.message)}">See ci-results/build.log and ci-results/ci-failure-summary.md.</failure></testcase>`;
+            }
+            return `    <testcase classname="rustwar.ci" name="${escapeXml(check.name)}"/>`;
+          }).join("\n");
+
+          const junit = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            `<testsuites tests="${checks.length}" failures="${failures}" skipped="${skipped}">`,
+            `  <testsuite name="Rustwar CI Results" tests="${checks.length}" failures="${failures}" skipped="${skipped}">`,
+            cases,
+            "  </testsuite>",
+            "</testsuites>",
+            ""
+          ].join("\n");
+          fs.writeFileSync("ci-results/junit.xml", junit);
+
+          const manifest = {
+            version: process.env.CI_FLOW_VERSION,
+            branch: process.env.GITHUB_REF_NAME || "main",
+            commitSha: process.env.GITHUB_SHA,
+            shortSha: process.env.SHORT_SHA,
+            runId: process.env.GITHUB_RUN_ID,
+            runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+            workflowName: process.env.WORKFLOW_DISPLAY_NAME,
+            createdAt: new Date().toISOString(),
+            projectName: process.env.PROJECT_NAME,
+            scheme: null,
+            destination: null,
+            resultBundlePath: null,
+            junitPath: "ci-results/junit.xml",
+            buildLogPath: "ci-results/build.log",
+            failureSummaryPath: "ci-results/ci-failure-summary.md",
+            staticChecksOutcome: process.env.CHECK_DIFF_STATUS === "0" ? "success" : "failure",
+            buildOutcome: process.env.CHECK_NODE_STATUS === "0" ? "success" : "failure",
+            testOutcome: "skipped",
+            projectSpecificReports: [
+              "ci-results/repo-state.txt"
+            ]
+          };
+          fs.writeFileSync("ci-results/ci-artifact-manifest.json", `${JSON.stringify(manifest, null, 2)}\n`);
+          NODE
+
+      - name: Upload CI result package
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ci-results
+          if-no-files-found: error
+
+      - name: Fail when lightweight checks failed
+        if: always()
+        shell: bash
+        run: |
+          test "$(cat ci-results/overall-status.txt)" = "success"

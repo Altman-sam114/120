@@ -47,19 +47,46 @@ flowchart TD
 
 ## Agent 迭代流程图
 
-读图说明：这张图描述后续开发管理流程。人工先给目标，Agent A 只写实现提示词，Agent B 负责代码和测试，Agent C 负责验收；不通过就退回 Agent B，通过后更新核心文档并按版本号自动提交，最后回到人工复核。
+读图说明：这张图描述后续开发管理流程。人工先给目标，Agent A 写实现提示词，Agent B 在 `main` 上实现并直接 push 到 `origin/main`，GitHub Actions 生成未加密结果包，Agent C 下载复判；不通过就退回 Agent B 在 `main` 追加修复 commit，通过后回到人工复核。
 
 ```mermaid
 flowchart TD
   H["人工提出目标<br/>中文注释：说明功能、限制、验收和测试要求"] --> A1["Agent A: 分析目标<br/>中文注释：读取记忆文档和源码，明确范围、风险、方案"]
-  A1 --> P["md/prompt/vX（阶段）/vX.Y（任务）.md<br/>中文注释：写给 Agent B 的详细实现提示词"]
-  P --> B1["Agent B: 实现与测试<br/>中文注释：小步改代码，按测试规范验证，更新相关文档"]
-  B1 --> C1["Agent C: 验收<br/>中文注释：查 diff、核测试、判断是否满足目标"]
-  C1 --> D1{"验收通过?<br/>中文注释：通过才能提交，不通过必须退回修复"}
-  D1 -- "不通过" --> B2["退回 Agent B<br/>中文注释：指出问题、回退修复点和重新验收条件"]
-  B2 --> B1
-  D1 -- "通过" --> F["md/flow + update_log + md/test<br/>中文注释：记录真实架构、重要历史和测试基线变化"]
-  F --> G["git commit vX.Y<br/>中文注释：按版本号自动提交，提交说明简要概括本版本工作"]
-  G --> H2["人工复核<br/>中文注释：确认结果、查看提交摘要或提出下一轮目标"]
+  A1 --> P["md/prompt/vX（阶段）/vX.Y（任务）.md<br/>中文注释：提示词必须包含 main push、CI artifact 和 Agent C 复判要求"]
+  P --> B0["Agent B: 同步 origin/main<br/>中文注释：git fetch、switch main、pull --ff-only、检查工作区"]
+  B0 --> B1["Agent B: 实现 + 本地轻量检查<br/>中文注释：小步改代码，默认只跑 git diff --check / node --check 等轻量检查"]
+  B1 --> B2["git commit + git push origin main<br/>中文注释：只提交本轮相关文件，直接推送 main 触发云端验证"]
+  B2 --> GH["GitHub Actions: Rustwar CI Results<br/>中文注释：main push 或 workflow_dispatch 运行"]
+  GH --> AR["未加密 CI 结果包<br/>中文注释：manifest、junit.xml、build.log、failure summary、repo-state"]
+  AR --> C1["Agent C: 下载结果包<br/>中文注释：gh auth login 后下载到 /private/tmp/rustwar-c-review-run_id"]
+  C1 --> C2["Agent C: 核对 manifest / JUnit / 日志<br/>中文注释：确认 branch、commitSha、run id、run attempt 对应 origin/main 最新 commit"]
+  C2 --> D1{"验收通过?<br/>中文注释：通过必须基于最新 main run，不通过退回追加修复"}
+  D1 -- "不通过" --> R1["退回 Agent B<br/>中文注释：列出问题、失败日志路径和重新验收条件"]
+  R1 --> R2["main 追加修复 commit<br/>中文注释：不回滚式处理，修复后再次 push origin main"]
+  R2 --> GH
+  D1 -- "通过" --> F["必要文档已同步<br/>中文注释：README、flow、test、prompt README、update_log 与真实实现一致"]
+  F --> H2["人工复核<br/>中文注释：确认结果、查看提交摘要或提出下一轮目标"]
   H2 --> H
+```
+
+## CI 结果包流程图
+
+读图说明：这张图只描述云端 workflow 如何生成 Agent C 可复判的 artifact。当前项目没有构建链，云端重验证先覆盖差异空白检查和 `app.js` 语法检查，未来可追加浏览器自动化报告。
+
+```mermaid
+flowchart TD
+  P["push 到 origin/main<br/>中文注释：Agent B 或必要时 Agent C 推送最新 main"] --> W["Rustwar CI Results workflow<br/>中文注释：GitHub Actions 在 main push 或手动触发时运行"]
+  M["workflow_dispatch<br/>中文注释：人工或 Agent 可手动重跑"] --> W
+  W --> D["git diff --check<br/>中文注释：检查本次提交差异的空白和冲突标记"]
+  W --> N["node --check app.js<br/>中文注释：检查核心脚本语法"]
+  D --> L["ci-results/build.log<br/>中文注释：记录实际命令输出"]
+  N --> L
+  L --> J["ci-results/junit.xml<br/>中文注释：机器可读通过、失败和跳过摘要"]
+  L --> F["ci-results/ci-failure-summary.md<br/>中文注释：人工可读失败或跳过说明"]
+  L --> S["ci-results/repo-state.txt<br/>中文注释：记录分支、状态和最近提交"]
+  J --> A["ci-artifact-manifest.json<br/>中文注释：记录版本、branch、commitSha、run id、run attempt 和文件路径"]
+  F --> A
+  S --> A
+  A --> U["upload-artifact<br/>中文注释：上传 rustwar-ci-version-branch-sha-run-attempt 未加密结果包"]
+  U --> C["Agent C 下载复判<br/>中文注释：只验收 origin/main 最新 commit 对应 artifact"]
 ```

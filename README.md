@@ -78,3 +78,7 @@
 - `md/test/test.md`：测试分层、命令、触发条件和当前验证基线。
 - `md/flow/flow.md` 与 `md/flow/flowchart.md`：当前核心逻辑、数据流、执行流和 Mermaid 流程图。
 - `md/prompt/`：每轮 Agent A 写给 Agent B 的详细实现提示词目录。
+
+## 协作与云端验证
+
+后续 Agent A/B/C 迭代默认使用 `main` 直推和 GitHub Actions 重验证：Agent B 本地只跑轻量检查后提交并 push 到 `origin/main`，Actions 上传未加密 CI 结果包，Agent C 下载并核对 manifest、JUnit、日志和失败摘要后再给出验收结论。详细规则见 `AGENTS.md`、`md/test/test.md` 和 `md/flow/flow.md`。
