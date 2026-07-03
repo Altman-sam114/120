@@ -15,7 +15,9 @@
   -> localStorage / 下载 JSON / UI 输出
 ```
 
-当前协作链路是：Agent A 写版本化提示词，Agent B 在 `main` 上实现、轻量检查、commit 并 push 到 `origin/main`，GitHub Actions 生成未加密 CI 结果包，Agent C 下载结果包核对 manifest / JUnit / 日志 / 失败摘要后验收；失败时退回 Agent B 在 `main` 上追加修复 commit。
+当前单轮协作链路是：Agent A 写版本化提示词，Agent B 在 `main` 上实现、轻量检查、commit 并 push 到 `origin/main`，GitHub Actions 生成未加密 CI 结果包，Agent C 下载结果包核对 manifest / JUnit / 日志 / 失败摘要后验收；失败时退回 Agent B 在 `main` 上追加修复 commit。
+
+v0.5 起，文档体系支持未来 Agent X 主控循环。Agent X 不直接替代 A/B/C，而是在人工用 `agentx:` / `x:` / `X:` 给出总目标后，把总目标拆成多个小轮次，每轮仍必须走 Agent A -> Agent B -> Agent C，并在 Agent C artifact 验收后判断继续、退回、暂停或完成。本轮只建立文档基线，不自动启动真实 Agent X 循环。
 
 v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前只覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放和经济 tick。
 
@@ -38,6 +40,20 @@ RustwarCore MapPreset / GameState / GameEngine
   -> Agent C 下载到 /private/tmp/rustwar-c-review-<run_id> 并复判
       -> 失败：退回 Agent B 追加修复 commit
       -> 通过：确认 origin/main 最新 run 与 commit 匹配
+```
+
+```text
+人工总目标 X
+  -> Agent X 拆分轮次目标并选择下一轮
+  -> Agent A 为当轮写版本化提示词
+  -> Agent B 实现、轻量检查、commit、push origin/main
+  -> GitHub Actions 生成最新 CI artifact
+  -> Agent C 下载并核对 latest origin/main artifact
+  -> Agent X 判断：
+      -> 继续下一轮
+      -> 退回 Agent B 修复
+      -> 暂停等待人工确认
+      -> 总目标完成
 ```
 
 ## 1. 核心模块
@@ -295,13 +311,14 @@ RustwarCore MapPreset / GameState / GameEngine
 
 职责：
 
-- `AGENTS.md` 定义 Agent A/B/C 角色、main 直推、云端结果包和验收硬规则。
-- `md/prompt/README.md` 定义提示词版本目录、角色召唤和 Agent A 写提示词时必须包含的 CI / main push / artifact 要求。
+- `AGENTS.md` 定义 Agent A/B/C/X 角色、main 直推、云端结果包、Agent X 循环边界和验收硬规则。
+- `md/prompt/README.md` 定义提示词版本目录、角色召唤、Agent X 轮次提示词管理，以及 Agent A 写提示词时必须包含的 CI / main push / artifact 要求。
 - `.github/workflows/ci-results.yml` 在 `main` push 或手动触发时运行轻量重验证并上传未加密结果包。
 - Agent C 通过 GitHub CLI 下载 artifact，并核对 `ci-artifact-manifest.json`、`junit.xml`、`build.log` 和 `ci-failure-summary.md`。
 
 输入：
 
+- Agent X 的人工总目标、轮次目标和 Agent C 反馈。
 - Agent B 的 `main` commit 和 `git push origin main`。
 - GitHub Actions 运行环境。
 - Agent C 的 `gh auth login` 和 artifact 下载命令。
@@ -310,11 +327,13 @@ RustwarCore MapPreset / GameState / GameEngine
 
 - `rustwar-ci-${version}-${branch_slug}-${short_sha}-run${run_id}-attempt${run_attempt}` artifact。
 - Agent C 的通过结论或退回 Agent B 的修复清单。
+- Agent X 的继续、退回、暂停或完成判断。
 
 禁止：
 
 - 把旧 artifact、旧日志或 checkout 自带报告冒充本轮结果。
 - 在没有 `origin`、无权限或 Actions 未运行时伪造云端验收。
+- Agent X 跳过 Agent C artifact 复判或用本地输出代替云端结果。
 - 引入 AITRANS 的项目特例，例如漫画探针、GGUF、模型 Release、`smalldata_test` 或候选分支流。
 
 ### 1.12 原生迁移地基：`swift/RustwarCore`
@@ -419,18 +438,21 @@ RustwarCore MapPreset / GameState / GameEngine
 4. 导出生成 `rustwar-sandbox-scenario` JSON。
 5. 导入校验格式和版本，再重建沙盒状态。
 
-### 2.7 云端协作流程
+### 2.7 云端协作与 Agent X 主控流程
 
-1. 人工用普通请求或 `agenta` / `agentb` / `agentc` 前缀召唤对应角色。
-2. Agent A 读取必读文档和相关源码，写入版本化提示词，并明确本轮本地轻量检查、`main` push、CI artifact 和 Agent C 复判要求。
-3. Agent B 读取提示词和必读文档，执行 `git fetch origin`、`git switch main`、`git pull --ff-only origin main`、`git status --short --branch`；若没有 `origin` 或权限不足，停止远端步骤并说明阻塞。
-4. Agent B 小步实现，运行本地轻量检查，提交本轮相关文件。
-5. Agent B `git push origin main` 触发 `Rustwar CI Results` workflow。
-6. GitHub Actions 运行 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore` 和 iOS `xcodebuild` 检查，生成 manifest、JUnit、主日志、失败摘要和仓库状态文件。
-7. Agent C 定位 `origin/main` 最新 commit 对应 run，用 `gh auth login` 后下载 artifact 到 `/private/tmp/rustwar-c-review-<run_id>/`。
-8. Agent C 核对 manifest 的 `branch`、`commitSha`、run id、run attempt 与 `origin/main` 最新 commit 和下载结果一致。
-9. 若 CI 或验收失败，Agent C 输出退回清单，Agent B 在 `main` 上追加修复 commit 并重新 push。
-10. 若通过，Agent C 输出通过结论、版本号、commit SHA、run id、artifact 名称和验收摘要。
+1. 人工用普通请求或 `agenta` / `agentb` / `agentc` / `agentx` 前缀召唤对应角色。
+2. 普通 A/B/C 单轮仍按既有流程执行；`agentx` / `x:` / `X:` 只表示未来由 Agent X 接收总目标并拆成多轮。
+3. Agent X 先拆分总目标 X，选择当前最小可验收轮次，并明确本轮目标、非目标、退出条件和需要人工确认的边界。
+4. Agent A 读取必读文档和相关源码，写入版本化提示词，并明确本轮本地轻量检查、`main` push、CI artifact 和 Agent C 复判要求。
+5. Agent B 读取提示词和必读文档，执行 `git fetch origin`、`git switch main`、`git pull --ff-only origin main`、`git status --short --branch`；若没有 `origin` 或权限不足，停止远端步骤并说明阻塞。
+6. Agent B 小步实现，运行本地轻量检查，提交本轮相关文件。
+7. Agent B `git push origin main` 触发 `Rustwar CI Results` workflow。
+8. GitHub Actions 运行 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore` 和 iOS `xcodebuild` 检查，生成 manifest、JUnit、主日志、失败摘要和仓库状态文件。
+9. Agent C 定位 `origin/main` 最新 commit 对应 run，用 `gh auth login` 后下载 artifact 到 `/private/tmp/rustwar-c-review-<run_id>/`，并检查下载目录大小，避免拉取大体积无关产物。
+10. Agent C 核对 manifest 的 `branch`、`commitSha`、run id、run attempt 与 `origin/main` 最新 commit 和下载结果一致。
+11. 若 CI 或验收失败，Agent C 输出退回清单；Agent X 判断是否退回 Agent B 追加修复、暂停等待人工确认，或因重复阻塞停止。
+12. 若通过，Agent C 输出通过结论、版本号、commit SHA、run id、artifact 名称和验收摘要。
+13. Agent X 基于 Agent C 结论判断继续下一轮、退回 Agent B、暂停或宣布总目标完成；Agent X 不得跳过 Agent C artifact 验收，也不得把旧 run、旧 artifact 或本地输出当作最新云端结果。
 
 ## 3. 架构边界
 

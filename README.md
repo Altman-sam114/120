@@ -95,7 +95,7 @@ xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -dest
 
 ## 项目协作与文档
 
-- `AGENTS.md`：后续 Codex Agent 的项目入口规则和 Agent A/B/C 迭代工作流。
+- `AGENTS.md`：后续 Codex Agent 的项目入口规则和 Agent A/B/C/X 迭代工作流。
 - `update_log.md`：版本更新记录、关键决策、完成事项和遗留问题。
 - `md/test/test.md`：测试分层、命令、触发条件和当前验证基线。
 - `md/flow/flow.md` 与 `md/flow/flowchart.md`：当前核心逻辑、数据流、执行流和 Mermaid 流程图。
@@ -105,4 +105,4 @@ xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -dest
 
 ## 协作与云端验证
 
-后续 Agent A/B/C 迭代默认使用 `main` 直推和 GitHub Actions 重验证：Agent B 本地只跑轻量检查后提交并 push 到 `origin/main`，Actions 上传未加密 CI 结果包，Agent C 下载并核对 manifest、JUnit、日志和失败摘要后再给出验收结论。v1.0 起 CI 结果包除 Web 轻量检查外，也记录 `swift test --package-path swift/RustwarCore` 和 `xcodebuild` iOS 构建结果。详细规则见 `AGENTS.md`、`md/test/test.md` 和 `md/flow/flow.md`。
+后续 Agent A/B/C 迭代默认使用 `main` 直推和 GitHub Actions 重验证：Agent B 本地只跑轻量检查后提交并 push 到 `origin/main`，Actions 上传未加密 CI 结果包，Agent C 下载并核对 manifest、JUnit、日志和失败摘要后再给出验收结论。`agentx:` 用于未来启动主控循环：Agent X 接收总目标并调度 A -> B -> C 多轮迭代，但不直接替代 A/B/C，也不得跳过 Agent C 云端 artifact 验收。v1.0 起 CI 结果包除 Web 轻量检查外，也记录 `swift test --package-path swift/RustwarCore` 和 `xcodebuild` iOS 构建结果。详细规则见 `AGENTS.md`、`md/test/test.md` 和 `md/flow/flow.md`。

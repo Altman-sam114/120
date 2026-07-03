@@ -1,6 +1,6 @@
 # 测试规范
 
-本文指导 Agent B 和 Agent C 为 Rustwar RTS Prototype 选择本地轻量检查、云端重验证和结果包复判范围。
+本文指导 Agent B、Agent C 和未来 Agent X 为 Rustwar RTS Prototype 选择本地轻量检查、云端重验证和结果包复判范围。
 
 ## 固定前缀 / 环境要求
 
@@ -11,6 +11,7 @@
 - Web 默认无需启动服务；直接打开 `index.html` 即可运行。iOS App 通过 Xcode 或 `xcodebuild` 构建运行。
 - 如果需要本地 HTTP 访问，可临时使用静态服务器，但不要把服务依赖写入项目运行前提。
 - 默认云端重验证：Agent B 本地只跑轻量检查，commit 后 push 到 `origin/main`，由 GitHub Actions 上传未加密 CI 结果包。
+- Agent X 主控循环不改变验证等级：每一轮仍以 Agent B 本地轻量检查 + GitHub Actions artifact + Agent C 下载复判为准。
 
 ## 本地轻量检查
 
@@ -181,6 +182,7 @@ Agent C 默认流程：
 gh auth login
 gh run list --branch main --workflow "Rustwar CI Results"
 gh run download <run_id> --dir /private/tmp/rustwar-c-review-<run_id> --name <artifact_name>
+du -sh /private/tmp/rustwar-c-review-<run_id>
 ```
 
 Agent C 必须核对：
@@ -197,6 +199,38 @@ CI 失败时：
 - Agent C 不得确认通过。
 - Agent C 输出退回清单和重新验收条件。
 - Agent B 在 `main` 上追加修复 commit 并再次 push。
+
+## Agent X 循环验证规则
+
+Agent X 只负责调度和判断，不降低每轮验证要求。
+
+- 每轮必须先有 Agent A 版本化提示词，再由 Agent B 实现、轻量检查、提交并 push 到 `origin/main`。
+- 每轮必须等待 GitHub Actions 为最新 `origin/main` commit 生成未加密 CI 结果包。
+- 每轮必须由 Agent C 下载并核对最新 run 的 artifact；Agent X 不得跳过 Agent C artifact 验收。
+- Agent X 只能在 Agent C 明确通过后继续下一轮或宣布总目标完成。
+- 如果 Agent C 验收失败，Agent X 必须退回 Agent B 追加修复 commit、暂停等待人工确认，或按停止条件结束；不得继续下一轮伪装成功。
+- 如果 CI 连续失败且原因相同、连续 2 轮没有有效 diff、连续 3 轮遇到同一阻塞，Agent X 必须停止或暂停并说明原因。
+- Agent X 汇总轮次时必须记录当前轮提示词路径、commit SHA、run id、run attempt、artifact 名称、Agent C 结论和剩余目标。
+
+## 测试数据与下载容量限制
+
+本项目默认采用小数据量验证策略，避免下载过大 artifact、模型、数据集、缓存或结果包，把本机、CI runner 或临时目录容量撑爆。
+
+规则：
+
+- 测试数据必须尽量小，只覆盖必要边界。
+- CI artifact 只上传必要文件：manifest、JUnit 或测试摘要、关键日志、失败摘要和必要结果包。
+- 不上传大体积 DerivedData、完整 build cache、无关截图、视频、模型文件、历史 artifact 或重复压缩包。
+- Agent C 下载 artifact 前优先确认只下载最新 run 对应的必要结果包。
+- 下载缓存默认放在 `/private/tmp/rustwar-c-review-<run_id>/`。
+- 下载后应检查目录大小：
+
+```sh
+du -sh /private/tmp/rustwar-c-review-<run_id>
+```
+
+- 禁止使用非 `Altman-sam114` 的 GitHub 账号伪装完成 push、CI 或 artifact 验收。
+- 禁止默认下载大体积测试数据、模型、历史 artifact 或无关产物，导致本机或 CI 容量被撑爆。
 
 ## 手动浏览器验证
 
@@ -237,6 +271,7 @@ CI 失败时：
 - 默认本地轻量检查 + 云端重验证，不默认本机完整回归。
 - 文档-only 修改可只跑本地轻量检查，但仍应通过 main push 触发云端结果包。
 - Swift/iOS 修改可因本机缺少完整 Xcode 或工具链不匹配而无法本机全量构建，但必须记录命令、错误和云端 artifact 复验要求。
+- Agent X 主控循环不得跳过 Agent C 下载和核对 artifact。
 - 不得伪造测试结果、Actions run、artifact、manifest 或浏览器运行结果。
 - 不得把“未发现问题”写成“完整通过”。
 - 最终回复必须列出具体命令、结果、云端 run / artifact 状态和未跑测试原因。

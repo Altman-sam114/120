@@ -19,6 +19,7 @@
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
+- v0.5 起文档体系支持未来 Agent X 主控循环：人工可用 `agentx:` 提供总目标，Agent X 拆轮并调度 Agent A -> Agent B -> Agent C，但每轮仍必须经过最新 `origin/main` artifact 的 Agent C 复判。
 
 ## 历史记录
 
@@ -139,6 +140,37 @@
 
 - 配置 `origin` 远端并具备 GitHub Actions 权限后，需要按 v0.4 流程执行一次真实 `git push origin main`、等待 `Rustwar CI Results`、下载 artifact，并核对 manifest 的 `branch`、`commitSha`、run id 和 run attempt。
 - 当前 CI 尚未覆盖浏览器 Smoke / Stage Regression / Full；未来可增加 headless browser 自动化并把截图或报告纳入结果包。
+
+### v0.5 / 引入 Agent X 循环迭代文档基线
+
+日期：2026-07-04
+
+核心变更：
+
+- 新增 Agent X 召唤、职责、循环判断和停止条件。
+- 将现有 Agent A/B/C 云端验证流程扩展为可被 Agent X 多轮调度。
+- 更新 flow、flowchart、test、prompt README 和 README 中的协作说明。
+- 明确本轮只做文档准备，不启动真实自动循环。
+
+关键文件：
+
+- `AGENTS.md`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/README.md`
+- `md/prompt/v0（协作自动化）/v0.5（引入AgentX循环迭代）.md`
+- `update_log.md`
+
+验证结果：
+
+- `git diff --check` 通过。
+
+遗留事项：
+
+- 后续人工可用 `agentx:` 提供总目标 X，启动 Agent X 主控循环。
+- Agent X 真正执行循环时，仍必须经过 Agent A 提示词、Agent B 实现 push、Agent C 云端 artifact 验收。
 
 ### v1.0 / iOS Swift migration foundation
 

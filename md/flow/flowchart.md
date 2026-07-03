@@ -64,12 +64,16 @@ flowchart TD
 
 ## Agent 迭代流程图
 
-读图说明：这张图描述后续开发管理流程。人工先给目标，Agent A 写实现提示词，Agent B 在 `main` 上实现并直接 push 到 `origin/main`，GitHub Actions 生成未加密结果包，Agent C 下载复判；不通过就退回 Agent B 在 `main` 追加修复 commit，通过后回到人工复核。
+读图说明：这张图描述后续开发管理流程。普通单轮仍可由人工直接召唤 Agent A/B/C；未来人工也可以用 `agentx:` 给 Agent X 一个总目标，由 Agent X 拆分轮次并循环调度 Agent A -> Agent B -> Agent C。无论是否由 Agent X 主控，每轮通过都必须基于 `origin/main` 最新 GitHub Actions artifact。
 
 ```mermaid
 flowchart TD
-  H["人工提出目标<br/>中文注释：说明功能、限制、验收和测试要求"] --> A1["Agent A: 分析目标<br/>中文注释：读取记忆文档和源码，明确范围、风险、方案"]
-  A1 --> P["md/prompt/vX（阶段）/vX.Y（任务）.md<br/>中文注释：提示词必须包含 main push、CI artifact 和 Agent C 复判要求"]
+  H["人工提出目标<br/>中文注释：说明功能、限制、验收和测试要求"] --> XQ{"是否召唤 Agent X?<br/>中文注释：agentx / x: / X: 表示主控多轮目标"}
+  XQ -- "否：单轮 A/B/C" --> A1["Agent A: 分析目标<br/>中文注释：读取记忆文档和源码，明确范围、风险、方案"]
+  XQ -- "是：总目标 X" --> X1["Agent X: 拆分轮次目标<br/>中文注释：把总目标拆成可验收小轮次"]
+  X1 --> X2["Agent X: 选择当前轮次<br/>中文注释：明确本轮目标、非目标、边界和停止条件"]
+  X2 --> A1
+  A1 --> P["md/prompt/vX（阶段）/vX.Y（任务）.md<br/>中文注释：提示词必须包含目标、非目标、验证、main push、CI artifact 和 Agent C 复判要求"]
   P --> B0["Agent B: 同步 origin/main<br/>中文注释：git fetch、switch main、pull --ff-only、检查工作区"]
   B0 --> B1["Agent B: 实现 + 本地轻量检查<br/>中文注释：小步改代码，默认只跑 git diff --check / node --check 等轻量检查"]
   B1 --> B2["git commit + git push origin main<br/>中文注释：只提交本轮相关文件，直接推送 main 触发云端验证"]
@@ -78,17 +82,24 @@ flowchart TD
   AR --> C1["Agent C: 下载结果包<br/>中文注释：gh auth login 后下载到 /private/tmp/rustwar-c-review-run_id"]
   C1 --> C2["Agent C: 核对 manifest / JUnit / 日志<br/>中文注释：确认 branch、commitSha、run id、run attempt 对应 origin/main 最新 commit"]
   C2 --> D1{"验收通过?<br/>中文注释：通过必须基于最新 main run，不通过退回追加修复"}
-  D1 -- "不通过" --> R1["退回 Agent B<br/>中文注释：列出问题、失败日志路径和重新验收条件"]
-  R1 --> R2["main 追加修复 commit<br/>中文注释：不回滚式处理，修复后再次 push origin main"]
+  D1 -- "不通过" --> R1["Agent C: 退回清单<br/>中文注释：列出问题、失败日志路径和重新验收条件"]
+  R1 --> XD{"Agent X 判断<br/>中文注释：退回、暂停或停止，不得伪装通过"}
+  XD -- "退回 Agent B 修复" --> R2["main 追加修复 commit<br/>中文注释：不回滚式处理，修复后再次 push origin main"]
   R2 --> GH
+  XD -- "暂停等待人工" --> PA["暂停<br/>中文注释：需要权限、账号、密钥、付费服务、人工决策或冲突归属确认"]
+  XD -- "重复阻塞停止" --> ST["停止<br/>中文注释：同一阻塞 3 轮、无有效 diff 2 轮或同因 CI 连续失败"]
   D1 -- "通过" --> F["必要文档已同步<br/>中文注释：README、flow、test、prompt README、update_log 与真实实现一致"]
-  F --> H2["人工复核<br/>中文注释：确认结果、查看提交摘要或提出下一轮目标"]
+  F --> XJ{"Agent X 判断总目标<br/>中文注释：继续、暂停或完成"}
+  XJ -- "继续下一轮" --> X2
+  XJ -- "暂停等待人工" --> PA
+  XJ -- "总目标完成" --> DONE["完成<br/>中文注释：最新 artifact 验收通过且总目标全部满足"]
+  F --> H2["人工复核<br/>中文注释：单轮任务确认结果、查看提交摘要或提出下一轮目标"]
   H2 --> H
 ```
 
 ## CI 结果包流程图
 
-读图说明：这张图只描述云端 workflow 如何生成 Agent C 可复判的 artifact。当前项目没有构建链，云端重验证先覆盖差异空白检查和 `app.js` 语法检查，未来可追加浏览器自动化报告。
+读图说明：这张图只描述云端 workflow 如何生成 Agent C 可复判的 artifact。Web 原型仍无构建链；v1.0 起云端重验证除差异空白和 `app.js` 语法检查外，也记录 Swift package 与 iOS build 检查结果。未来可追加浏览器自动化报告。
 
 ```mermaid
 flowchart TD

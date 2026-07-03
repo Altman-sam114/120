@@ -7,10 +7,12 @@
 - 用户消息以 `agenta`、`a:` 或 `A:` 开头，表示召唤 Agent A。
 - 用户消息以 `agentb`、`b:` 或 `B:` 开头，表示召唤 Agent B。
 - 用户消息以 `agentc`、`c:` 或 `C:` 开头，表示召唤 Agent C。
-- 没有这些前缀时，按普通 Codex 任务处理；若任务需要 A/B/C 边界，先说明本轮按普通任务执行，或提醒人工指定角色。
+- 用户消息以 `agentx`、`x:` 或 `X:` 开头，表示召唤 Agent X。
+- 没有这些前缀时，按普通 Codex 任务处理；若任务需要 A/B/C/X 边界，先说明本轮按普通任务执行，或提醒人工指定角色。
 - Agent A 最终回复第一行必须写：`我是 Agent A。`
 - Agent B 最终回复第一行必须写：`我是 Agent B。`
 - Agent C 最终回复第一行必须写：`我是 Agent C。`
+- Agent X 最终回复第一行必须写：`我是 Agent X。`
 
 ## 1. 必读文件
 
@@ -47,6 +49,9 @@
 - Agent C 发现问题时不得回滚式处理，默认退回 Agent B 在 `main` 上追加修复 commit，再 push 触发新 run。
 - 任何 Agent 在 `git push origin main` 或改变远端 `main` 前，都必须确认当前分支是 `main`、目标远端是 `origin/main`、提交范围只包含本轮相关文件。
 - `.github/workflows/ci-results.yml` 是 Agent C 验收用的未加密 CI 结果包 workflow，不复用任何带密码或私密分发产物。
+- GitHub push、CI run 定位和 artifact 验收只能使用 `Altman-sam114` 账号上下文；禁止使用其他 GitHub 账号伪装完成 push、CI 或 artifact 验收。
+- CI artifact 只上传必要文件：manifest、JUnit 或测试摘要、关键日志、失败摘要和必要结果包；禁止上传 DerivedData、完整 build cache、无关截图、视频、模型、历史 artifact 或重复压缩包。
+- Agent C 下载 artifact 前优先确认只下载 `origin/main` 最新 run 对应的必要结果包；下载缓存默认放在 `/private/tmp/rustwar-c-review-<run_id>/`，下载后应检查目录大小，例如 `du -sh /private/tmp/rustwar-c-review-<run_id>/`。
 
 ## 4. 核心架构边界
 
@@ -64,6 +69,39 @@
 ### 人工
 
 人工提出目标，并可补充算法框架、禁止项、验收标准、性能要求、UI/交互要求和测试要求。
+
+### Agent X：主控调度与循环判断
+
+Agent X 是未来主控调度角色，不直接替代 Agent A、Agent B 或 Agent C。本轮文档只为未来 `agentx:` 循环做准备；没有人工明确召唤时，不自动启动 Agent X 循环。
+
+Agent X 必须：
+
+1. 接收人工总目标 X，先拆分为可验收的小轮次目标。
+2. 每一轮按 Agent A -> Agent B -> Agent C 顺序推进。
+3. 要求 Agent A 为当轮生成版本化提示词，并写清目标、非目标、验证、`main` push、CI artifact 和 Agent C 验收要求。
+4. 要求 Agent B 按提示词实现、轻量检查、提交并 push 到 `origin/main`。
+5. 要求 Agent C 只验收 `origin/main` 最新 commit 对应的 GitHub Actions artifact，并核对 manifest、JUnit、日志和失败摘要。
+6. 根据 Agent C 结论判断下一步：继续下一轮、退回 Agent B 修复、暂停等待人工确认，或宣布总目标完成。
+7. 维护轮次状态，记录当前轮目标、对应提示词、commit、run id、run attempt、artifact 名称、Agent C 结论和剩余目标。
+8. 最终回复除第一行身份标识外，必须写清总目标状态、最近一轮结论、继续/退回/暂停/完成的判断依据、关键 commit / run / artifact、已知风险和下一步。
+
+Agent X 停止条件：
+
+- 总目标已完成，且最新一轮已经通过 Agent C artifact 验收。
+- 连续 3 轮遇到同一阻塞。
+- 连续 2 轮没有产生有效 diff。
+- CI 连续失败且原因相同。
+- 需要账号、权限、密钥、付费服务或人工决策。
+- 当前工作区存在无法判断归属的冲突。
+- 用户要求停止或改变方向。
+
+Agent X 禁止：
+
+- 无条件无限循环。
+- 跳过 Agent C 云端 artifact 验收。
+- 把旧 run、旧 artifact 或本地输出冒充最新云端结果。
+- 在总目标未完成或最新云端验收未通过时宣布完成。
+- 为了循环推进扩大无关改动范围。
 
 ### Agent A：目标分析与提示词
 
