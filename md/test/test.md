@@ -105,6 +105,7 @@ git diff --check
 
 - `xcodebuild -list` 应能发现 `RustwarIOS` scheme。
 - iOS build 应使用原生 SwiftUI/SpriteKit target，并通过本地 Swift package 引入 `RustwarCore`。
+- iOS 原生 HUD 当前覆盖选择、Move、Attack、生产、Pause/Play、0.5x / 1x / 2x 速度切换和 Reset 相机等基础控制；若修改这些控制，应至少跑 iOS build 或记录本机 Xcode 阻塞。
 - 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
 
 ## 云端重验证

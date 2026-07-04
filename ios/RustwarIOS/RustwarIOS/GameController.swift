@@ -5,11 +5,25 @@ import RustwarCore
 @MainActor
 @Observable
 final class GameController {
+    static let simulationSpeedOptions = [0.5, 1.0, 2.0]
+
     var engine: GameEngine
     var camera: CameraState
     var renderRevision = 0
     var isAwaitingMoveTarget = false
     var isAwaitingAttackTarget = false
+    var isPaused = false
+    var simulationSpeed = 1.0 {
+        didSet {
+            guard Self.simulationSpeedOptions.contains(simulationSpeed) else {
+                simulationSpeed = oldValue
+                return
+            }
+            if simulationSpeed != oldValue {
+                renderRevision += 1
+            }
+        }
+    }
     var commandStatus: String?
 
     init(mapID: MapID = .coast) {
@@ -25,6 +39,14 @@ final class GameController {
     var enemyEntityCount: Int {
         engine.state.units.count(where: { $0.team == .enemy })
             + engine.state.buildings.count(where: { $0.team == .enemy })
+    }
+
+    var pauseButtonTitle: String {
+        isPaused ? "Play" : "Pause"
+    }
+
+    var pauseButtonSystemImage: String {
+        isPaused ? "play.fill" : "pause.fill"
     }
 
     var selectedSummary: String {
@@ -65,8 +87,26 @@ final class GameController {
 
     func advance(deltaTime: TimeInterval) {
         let clamped = min(0.25, max(0, deltaTime))
-        engine.update(deltaTime: clamped)
+        guard !isPaused else {
+            return
+        }
+        engine.update(deltaTime: clamped * simulationSpeed)
         renderRevision += 1
+    }
+
+    func togglePause() {
+        isPaused.toggle()
+        if !isAwaitingMoveTarget && !isAwaitingAttackTarget {
+            commandStatus = isPaused ? "Paused" : "Running"
+        }
+        renderRevision += 1
+    }
+
+    static func simulationSpeedLabel(for speed: Double) -> String {
+        if speed == 1 {
+            return "1x"
+        }
+        return "\(speed.formatted(.number.precision(.fractionLength(1))))x"
     }
 
     func handleBattlefieldTap(screenPoint: CGPoint, viewportSize: CGSize) {

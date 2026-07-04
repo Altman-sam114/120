@@ -2,7 +2,7 @@ import SwiftUI
 import RustwarCore
 
 struct GameHUDView: View {
-    let controller: GameController
+    @Bindable var controller: GameController
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -37,10 +37,28 @@ struct GameHUDView: View {
             }
 
             HStack(spacing: 8) {
-                Button("Reset", systemImage: "scope", action: controller.resetCamera)
+                Button(controller.pauseButtonTitle, systemImage: controller.pauseButtonSystemImage, action: controller.togglePause)
                     .buttonStyle(.borderedProminent)
                     .controlSize(.regular)
                     .frame(minHeight: 44)
+                Button("Reset", systemImage: "scope", action: controller.resetCamera)
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(minHeight: 44)
+            }
+
+            Picker("Speed", selection: $controller.simulationSpeed) {
+                ForEach(GameController.simulationSpeedOptions, id: \.self) { speed in
+                    Text(GameController.simulationSpeedLabel(for: speed))
+                        .tag(speed)
+                }
+            }
+            .pickerStyle(.segmented)
+            .controlSize(.regular)
+            .frame(maxWidth: 220, minHeight: 44)
+            .accessibilityLabel("Simulation speed")
+
+            HStack(spacing: 8) {
                 if controller.canIssueMove || controller.isAwaitingMoveTarget {
                     Button(
                         controller.moveCommandButtonTitle,
