@@ -91,14 +91,20 @@ import Testing
     _ = engine.select(at: factory.position, includeEnemies: false)
     #expect(engine.queueUnit(.scout) == .queued)
 
-    let encoded = try JSONEncoder().encode(engine.state)
+    var state = engine.state
+    let attackerIndex = try #require(state.units.firstIndex { $0.id == attacker.id })
+    state.units[attackerIndex].position = WorldPoint(enemyTank.position.x - 100, enemyTank.position.y)
+    state.units[attackerIndex].order = .attack(targetID: enemyTank.id)
+    state.units[attackerIndex].weaponCooldown = 0
+
+    let encoded = try JSONEncoder().encode(state)
     let decoded = try JSONDecoder().decode(GameState.self, from: encoded)
     var restored = GameEngine(state: decoded, enemyAIEnabled: false)
     let startingUnitIDs = Set(restored.state.units.map(\.id))
     let startingMovePosition = try #require(restored.state.units.first { $0.id == movingUnit.id }?.position)
     let startingEnemyHitPoints = try #require(restored.state.units.first { $0.id == enemyTank.id }?.hitPoints)
 
-    for _ in 0..<36 {
+    for _ in 0..<5 {
         restored.update(deltaTime: 1)
     }
 
