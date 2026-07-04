@@ -142,10 +142,20 @@ struct GameHUDView: View {
             }
 
             if let productionSummary = controller.productionSummary {
-                Text("Queue: \(productionSummary)")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                HStack(spacing: 8) {
+                    Text("Queue: \(productionSummary)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+
+                    if controller.canCancelProduction {
+                        Button("Cancel Production", systemImage: "minus.circle", action: controller.cancelProduction)
+                            .buttonStyle(.bordered)
+                            .controlSize(.regular)
+                            .frame(minHeight: 44)
+                            .accessibilityLabel("Cancel production")
+                    }
+                }
             }
         }
         .padding(12)

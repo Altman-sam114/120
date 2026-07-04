@@ -109,6 +109,27 @@ public struct GameEngine: Sendable {
         return .issued
     }
 
+    @discardableResult
+    public mutating func cancelLastProduction() -> ProductionCancelResult {
+        guard let selectedEntityID = state.selectedEntityID else {
+            return .noSelection
+        }
+        guard let buildingIndex = state.buildings.firstIndex(where: { $0.id == selectedEntityID }),
+              state.buildings[buildingIndex].team == .player,
+              !GameDefinitions.building(state.buildings[buildingIndex].type).produces.isEmpty else {
+            return .selectedBuildingCannotCancelProduction
+        }
+        guard let cancelledItem = state.buildings[buildingIndex].productionQueue.popLast() else {
+            return .emptyQueue
+        }
+
+        let team = state.buildings[buildingIndex].team
+        let unitDefinition = GameDefinitions.unit(cancelledItem.unitType)
+        let refundedMetal = unitDefinition.metalCost * (1 - cancelledItem.progressFraction)
+        state.metal[team, default: 0] += refundedMetal
+        return .cancelled(refundedMetal: refundedMetal)
+    }
+
     private mutating func updateEnemyAI() {
         updateEnemyProduction()
         updateEnemyAttackOrders()

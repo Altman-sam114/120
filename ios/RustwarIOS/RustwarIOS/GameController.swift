@@ -80,6 +80,10 @@ final class GameController {
         return "\(definition.name) \(percent)%"
     }
 
+    var canCancelProduction: Bool {
+        selectedPlayerProducer?.productionQueue.isEmpty == false
+    }
+
     var canIssueMove: Bool {
         selectedPlayerUnit != nil
     }
@@ -217,6 +221,12 @@ final class GameController {
         renderRevision += 1
     }
 
+    func cancelProduction() {
+        let result = engine.cancelLastProduction()
+        commandStatus = statusText(for: result)
+        renderRevision += 1
+    }
+
     func pan(by screenTranslation: CGSize) {
         camera.pan(by: screenTranslation)
         renderRevision += 1
@@ -342,6 +352,20 @@ final class GameController {
             return "Need more metal"
         case .insufficientSupply:
             return "Need more pop"
+        }
+    }
+
+    private func statusText(for result: ProductionCancelResult) -> String? {
+        switch result {
+        case let .cancelled(refundedMetal):
+            let refund = refundedMetal.formatted(.number.precision(.fractionLength(0...1)))
+            return "Production cancelled (+\(refund) metal)"
+        case .noSelection:
+            return "No factory selected"
+        case .selectedBuildingCannotCancelProduction:
+            return "Factory required"
+        case .emptyQueue:
+            return "No production queued"
         }
     }
 }

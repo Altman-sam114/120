@@ -343,6 +343,98 @@ import Testing
     #expect(unaffordable == .insufficientMetal)
 }
 
+@Test func cancelProductionRejectsMissingOrInvalidSelection() {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    #expect(engine.cancelLastProduction() == .noSelection)
+
+    _ = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    #expect(engine.cancelLastProduction() == .selectedBuildingCannotCancelProduction)
+
+    _ = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    #expect(engine.cancelLastProduction() == .selectedBuildingCannotCancelProduction)
+
+    _ = engine.select(at: WorldPoint(3_300, 735), includeEnemies: true)
+    #expect(engine.cancelLastProduction() == .selectedBuildingCannotCancelProduction)
+}
+
+@Test func cancelProductionRejectsEmptyQueueWithoutChangingMetal() {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    _ = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let metalBeforeCancel = engine.state.metal[.player, default: 0]
+    #expect(engine.cancelLastProduction() == .emptyQueue)
+    #expect(engine.state.metal[.player, default: 0] == metalBeforeCancel)
+}
+
+@Test func cancelProductionRefundsUnfinishedMetalAndPreventsSpawn() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let target = try #require(factoryTarget)
+    #expect(engine.queueUnit(.scout) == .queued)
+
+    engine.update(deltaTime: 1)
+
+    let metalBeforeCancel = engine.state.metal[.player, default: 0]
+    let unitCountBeforeCancel = engine.state.units.count
+    let result = engine.cancelLastProduction()
+
+    #expect(result == .cancelled(refundedMetal: GameDefinitions.unit(.scout).metalCost * 0.75))
+    #expect(engine.state.selectedEntityID == target.id)
+    #expect(engine.state.metal[.player, default: 0] == metalBeforeCancel + result.refundedMetal)
+
+    let factoryAfterCancel = try #require(engine.state.buildings.first { $0.id == target.id })
+    #expect(factoryAfterCancel.productionQueue.isEmpty)
+
+    for _ in 0..<5 {
+        engine.update(deltaTime: 1)
+    }
+
+    #expect(engine.state.units.count == unitCountBeforeCancel)
+}
+
+@Test func cancelProductionRemovesLastItemAndPreservesFrontProgress() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let target = try #require(factoryTarget)
+    #expect(engine.queueUnit(.scout) == .queued)
+    #expect(engine.queueUnit(.tank) == .queued)
+
+    engine.update(deltaTime: 1)
+
+    let factoryBeforeCancel = try #require(engine.state.buildings.first { $0.id == target.id })
+    let frontProgress = try #require(factoryBeforeCancel.productionQueue.first?.progress)
+    let metalBeforeCancel = engine.state.metal[.player, default: 0]
+    let result = engine.cancelLastProduction()
+
+    #expect(result == .cancelled(refundedMetal: GameDefinitions.unit(.tank).metalCost))
+    #expect(engine.state.metal[.player, default: 0] == metalBeforeCancel + GameDefinitions.unit(.tank).metalCost)
+
+    let factoryAfterCancel = try #require(engine.state.buildings.first { $0.id == target.id })
+    #expect(factoryAfterCancel.productionQueue.count == 1)
+    #expect(factoryAfterCancel.productionQueue.first?.unitType == .scout)
+    #expect(factoryAfterCancel.productionQueue.first?.progress == frontProgress)
+}
+
+@Test func cancelProductionReleasesQueuedSupplyForLaterQueue() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    for _ in 0..<100 {
+        engine.update(deltaTime: 1)
+    }
+
+    _ = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    for _ in 0..<10 {
+        #expect(engine.queueUnit(.tank) == .queued)
+    }
+
+    #expect(engine.queueUnit(.tank) == .insufficientSupply)
+    #expect(engine.cancelLastProduction() == .cancelled(refundedMetal: GameDefinitions.unit(.tank).metalCost))
+    #expect(engine.queueUnit(.tank) == .queued)
+}
+
 @Test func rallyCommandRejectsMissingOrInvalidSelection() {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 

@@ -52,8 +52,8 @@ flowchart TD
 ```mermaid
 flowchart TD
   P["RustwarCore MapPreset<br/>中文注释：三张地图的基础坐标、资源和初始单位建筑"] --> S["GameState<br/>中文注释：Swift 原生状态快照，包含资源、单位、建筑、金属和选择"]
-  S --> E["GameEngine.update / select / issueMove / issueStop / issueAttack / queueUnit / setRally<br/>中文注释：推进收入 tick、点选、单单位移动、停止、基础攻击、工厂生产、集结点和红方 AI"]
-  E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、移动命令、生产和集结点入口"]
+  S --> E["GameEngine.update / select / issueMove / issueStop / issueAttack / queueUnit / cancelLastProduction / setRally<br/>中文注释：推进收入 tick、点选、单单位移动、停止、基础攻击、工厂生产、生产取消、集结点和红方 AI"]
+  E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、移动命令、生产、生产取消和集结点入口"]
   C --> H["SwiftUI RootGameView / GameHUDView<br/>中文注释：显示资源、收入、人口和选择反馈"]
   C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、双方单位建筑和相机中心"]
   C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、双方初始建筑、单位和移动目标"]
@@ -67,6 +67,8 @@ flowchart TD
   A --> E
   C --> Q["ProductionQueueItem<br/>中文注释：选中己方陆军工厂后排队生产 Scout / Light Tank"]
   Q --> E
+  C --> CQ["ProductionCancelResult<br/>中文注释：选中己方生产建筑后取消队尾生产并按未完成进度退款"]
+  CQ --> E
   C --> RP["BuildingSnapshot.rally<br/>中文注释：选中己方生产建筑后设置后续出兵集结点"]
   RP --> E
   C --> PS["Pause / Speed Gate<br/>中文注释：暂停时不调用 update，运行时按 0.5x / 1x / 2x 缩放 deltaTime"]
