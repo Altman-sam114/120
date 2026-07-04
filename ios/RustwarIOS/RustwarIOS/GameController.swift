@@ -26,6 +26,7 @@ final class GameController {
     var isAwaitingAttackTarget = false
     var isAwaitingAttackMoveTarget = false
     var isAwaitingPatrolTarget = false
+    var isAwaitingGuardTarget = false
     var isAwaitingRallyTarget = false
     var isPaused = false
     var simulationSpeed = 1.0 {
@@ -109,6 +110,10 @@ final class GameController {
         selectedPlayerUnit != nil
     }
 
+    var canIssueGuard: Bool {
+        selectedPlayerUnit != nil
+    }
+
     var canIssueStop: Bool {
         selectedPlayerUnit != nil
     }
@@ -133,6 +138,10 @@ final class GameController {
         isAwaitingPatrolTarget ? "Cancel" : "Patrol"
     }
 
+    var guardCommandButtonTitle: String {
+        isAwaitingGuardTarget ? "Cancel" : "Guard"
+    }
+
     var rallyCommandButtonTitle: String {
         isAwaitingRallyTarget ? "Cancel" : "Rally"
     }
@@ -142,6 +151,7 @@ final class GameController {
             isAwaitingAttackTarget ||
             isAwaitingAttackMoveTarget ||
             isAwaitingPatrolTarget ||
+            isAwaitingGuardTarget ||
             isAwaitingRallyTarget
     }
 
@@ -187,6 +197,16 @@ final class GameController {
             let result = engine.issuePatrol(to: point)
             isAwaitingPatrolTarget = false
             commandStatus = statusText(forPatrol: result)
+        } else if isAwaitingGuardTarget {
+            let target = engine.state.selectionTarget(at: point, includeEnemies: true)
+            let result: UnitCommandResult
+            if let target {
+                result = engine.issueGuard(targetID: target.id)
+            } else {
+                result = .invalidGuardTarget
+            }
+            isAwaitingGuardTarget = false
+            commandStatus = statusText(forGuard: result)
         } else if isAwaitingAttackTarget {
             let target = engine.state.selectionTarget(at: point, includeEnemies: true)
             let result: UnitCommandResult
@@ -252,6 +272,18 @@ final class GameController {
             clearPendingTargetCommands()
             isAwaitingPatrolTarget = true
             commandStatus = "Patrol target"
+        }
+        renderRevision += 1
+    }
+
+    func toggleGuardCommand() {
+        if isAwaitingGuardTarget {
+            isAwaitingGuardTarget = false
+            commandStatus = nil
+        } else if canIssueGuard {
+            clearPendingTargetCommands()
+            isAwaitingGuardTarget = true
+            commandStatus = "Guard target"
         }
         renderRevision += 1
     }
@@ -382,6 +414,7 @@ final class GameController {
         isAwaitingAttackTarget = false
         isAwaitingAttackMoveTarget = false
         isAwaitingPatrolTarget = false
+        isAwaitingGuardTarget = false
         isAwaitingRallyTarget = false
     }
 
@@ -416,6 +449,8 @@ final class GameController {
             return "Player unit required"
         case .invalidAttackTarget:
             return "Enemy target required"
+        case .invalidGuardTarget:
+            return "Friendly target required"
         }
     }
 
@@ -429,6 +464,8 @@ final class GameController {
             return "Player attacker required"
         case .invalidAttackTarget:
             return "Enemy target required"
+        case .invalidGuardTarget:
+            return "Friendly target required"
         }
     }
 
@@ -442,6 +479,8 @@ final class GameController {
             return "Player unit required"
         case .invalidAttackTarget:
             return "No target required"
+        case .invalidGuardTarget:
+            return "Friendly target required"
         }
     }
 
@@ -455,6 +494,23 @@ final class GameController {
             return "Player unit required"
         case .invalidAttackTarget:
             return "No target required"
+        case .invalidGuardTarget:
+            return "Friendly target required"
+        }
+    }
+
+    private func statusText(forGuard result: UnitCommandResult) -> String? {
+        switch result {
+        case .issued:
+            return "Guard order issued"
+        case .noSelection:
+            return "No unit selected"
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop:
+            return "Player unit required"
+        case .invalidAttackTarget:
+            return "Friendly target required"
+        case .invalidGuardTarget:
+            return "Friendly target required"
         }
     }
 
@@ -468,6 +524,8 @@ final class GameController {
             return "Player unit required"
         case .invalidAttackTarget:
             return "No active target"
+        case .invalidGuardTarget:
+            return "Friendly target required"
         }
     }
 

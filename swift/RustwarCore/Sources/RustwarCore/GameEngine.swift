@@ -105,6 +105,28 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func issueGuard(targetID: String) -> UnitCommandResult {
+        guard let selectedEntityID = state.selectedEntityID else {
+            return .noSelection
+        }
+        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
+              state.units[unitIndex].team == .player else {
+            return .selectedEntityCannotMove
+        }
+        guard let target = combatTarget(id: targetID),
+              target.team == state.units[unitIndex].team,
+              target.id != state.units[unitIndex].id else {
+            return .invalidGuardTarget
+        }
+
+        state.units[unitIndex].order = .guardTarget(
+            targetID: target.id,
+            offset: guardOffset(for: state.units[unitIndex], around: target)
+        )
+        return .issued
+    }
+
+    @discardableResult
     public mutating func issueStop() -> UnitCommandResult {
         guard let selectedEntityID = state.selectedEntityID else {
             return .noSelection
@@ -270,6 +292,53 @@ public struct GameEngine: Sendable {
         return bestTarget
     }
 
+    private func nearestGuardCombatTarget(
+        for unit: UnitSnapshot,
+        guardedTarget: CombatTarget,
+        maximumDistance: Double
+    ) -> CombatTarget? {
+        var bestTarget: CombatTarget?
+        var bestScore = Double.infinity
+
+        func consider(_ target: CombatTarget) {
+            guard target.team != unit.team else {
+                return
+            }
+            let unitDistance = unit.position.distanceSquared(to: target.position)
+            let guardedDistance = guardedTarget.position.distanceSquared(to: target.position)
+            let unitAcquisitionDistance = maximumDistance + target.radius
+            let guardedAcquisitionDistance = maximumDistance + guardedTarget.radius + target.radius
+            guard unitDistance <= unitAcquisitionDistance * unitAcquisitionDistance
+                    || guardedDistance <= guardedAcquisitionDistance * guardedAcquisitionDistance else {
+                return
+            }
+
+            let score = min(unitDistance, guardedDistance * 0.8)
+            if score < bestScore {
+                bestTarget = target
+                bestScore = score
+            }
+        }
+
+        for targetUnit in state.units {
+            guard targetUnit.hitPoints > 0 else {
+                continue
+            }
+            let definition = GameDefinitions.unit(targetUnit.type)
+            consider(CombatTarget(id: targetUnit.id, team: targetUnit.team, position: targetUnit.position, radius: definition.radius))
+        }
+
+        for building in state.buildings {
+            guard building.hitPoints > 0 else {
+                continue
+            }
+            let definition = GameDefinitions.building(building.type)
+            consider(CombatTarget(id: building.id, team: building.team, position: building.position, radius: definition.size / 2))
+        }
+
+        return bestTarget
+    }
+
     private mutating func updateUnitOrders(deltaTime: Double) {
         for unitIndex in state.units.indices {
             guard state.units[unitIndex].hitPoints > 0 else {
@@ -294,6 +363,8 @@ public struct GameEngine: Sendable {
                     returning: returning,
                     deltaTime: deltaTime
                 )
+            case let .guardTarget(targetID, offset):
+                updateGuardOrder(unitIndex: unitIndex, targetID: targetID, offset: offset, deltaTime: deltaTime)
             }
         }
         removeDestroyedEntities()
@@ -305,9 +376,24 @@ public struct GameEngine: Sendable {
     }
 
     private mutating func updateAttackOrder(unitIndex: Int, targetID: String, deltaTime: Double) {
+        updateAttackTarget(unitIndex: unitIndex, targetID: targetID, deltaTime: deltaTime, clearsOrderWhenInvalid: true)
+    }
+
+    private mutating func updateTemporaryAttackTarget(unitIndex: Int, targetID: String, deltaTime: Double) {
+        updateAttackTarget(unitIndex: unitIndex, targetID: targetID, deltaTime: deltaTime, clearsOrderWhenInvalid: false)
+    }
+
+    private mutating func updateAttackTarget(
+        unitIndex: Int,
+        targetID: String,
+        deltaTime: Double,
+        clearsOrderWhenInvalid: Bool
+    ) {
         guard let target = combatTarget(id: targetID),
               target.team != state.units[unitIndex].team else {
-            state.units[unitIndex].order = nil
+            if clearsOrderWhenInvalid {
+                state.units[unitIndex].order = nil
+            }
             return
         }
 
@@ -338,7 +424,7 @@ public struct GameEngine: Sendable {
         let unit = state.units[unitIndex]
         let definition = GameDefinitions.unit(unit.type)
         if let target = nearestCombatTarget(for: unit, maximumDistance: definition.vision) {
-            updateAttackOrder(unitIndex: unitIndex, targetID: target.id, deltaTime: deltaTime)
+            updateTemporaryAttackTarget(unitIndex: unitIndex, targetID: target.id, deltaTime: deltaTime)
         } else {
             updateMoveOrder(unitIndex: unitIndex, destination: destination, deltaTime: deltaTime)
         }
@@ -354,7 +440,7 @@ public struct GameEngine: Sendable {
         let unit = state.units[unitIndex]
         let definition = GameDefinitions.unit(unit.type)
         if let target = nearestCombatTarget(for: unit, maximumDistance: definition.vision) {
-            updateAttackOrder(unitIndex: unitIndex, targetID: target.id, deltaTime: deltaTime)
+            updateTemporaryAttackTarget(unitIndex: unitIndex, targetID: target.id, deltaTime: deltaTime)
             return
         }
 
@@ -370,6 +456,38 @@ public struct GameEngine: Sendable {
         if arrived {
             state.units[unitIndex].order = .patrol(origin: origin, destination: destination, returning: !returning)
         }
+    }
+
+    private mutating func updateGuardOrder(unitIndex: Int, targetID: String, offset: WorldPoint, deltaTime: Double) {
+        guard let guardedTarget = combatTarget(id: targetID),
+              guardedTarget.team == state.units[unitIndex].team else {
+            state.units[unitIndex].order = nil
+            return
+        }
+
+        let unit = state.units[unitIndex]
+        let definition = GameDefinitions.unit(unit.type)
+        if let target = nearestGuardCombatTarget(for: unit, guardedTarget: guardedTarget, maximumDistance: definition.vision) {
+            updateTemporaryAttackTarget(unitIndex: unitIndex, targetID: target.id, deltaTime: deltaTime)
+            return
+        }
+
+        let guardPosition = WorldPoint(
+            guardedTarget.position.x + offset.x,
+            guardedTarget.position.y + offset.y
+        ).clampedToMap()
+        guard unit.position.distanceSquared(to: guardPosition) > 34 * 34 else {
+            return
+        }
+
+        moveUnit(
+            at: unitIndex,
+            toward: guardPosition,
+            speed: definition.speed,
+            stoppingDistance: 0,
+            deltaTime: deltaTime,
+            clearsOrderOnArrival: false
+        )
     }
 
     @discardableResult
@@ -461,6 +579,9 @@ public struct GameEngine: Sendable {
         }
         for unitIndex in state.units.indices {
             if case let .attack(targetID)? = state.units[unitIndex].order, destroyedIDs.contains(targetID) {
+                state.units[unitIndex].order = nil
+            }
+            if case let .guardTarget(targetID, _)? = state.units[unitIndex].order, destroyedIDs.contains(targetID) {
                 state.units[unitIndex].order = nil
             }
         }
@@ -555,6 +676,15 @@ public struct GameEngine: Sendable {
     private mutating func nextID(prefix: String) -> String {
         defer { state.nextEntityNumber += 1 }
         return "\(prefix)-\(state.nextEntityNumber)"
+    }
+
+    private func guardOffset(for unit: UnitSnapshot, around target: CombatTarget) -> WorldPoint {
+        let unitDefinition = GameDefinitions.unit(unit.type)
+        let dx = unit.position.x - target.position.x
+        let dy = unit.position.y - target.position.y
+        let distance = max(1, (dx * dx + dy * dy).squareRoot())
+        let desiredDistance = unitDefinition.radius + target.radius + 58
+        return WorldPoint(dx / distance * desiredDistance, dy / distance * desiredDistance)
     }
 }
 

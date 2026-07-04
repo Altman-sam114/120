@@ -124,6 +124,16 @@ struct GameHUDView: View {
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
                 }
+                if controller.canIssueGuard || controller.isAwaitingGuardTarget {
+                    Button(
+                        controller.guardCommandButtonTitle,
+                        systemImage: controller.isAwaitingGuardTarget ? "xmark.circle" : "shield",
+                        action: controller.toggleGuardCommand
+                    )
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                }
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                     Button(
                         controller.attackCommandButtonTitle,
@@ -138,7 +148,8 @@ struct GameHUDView: View {
                     controller.isAwaitingMoveTarget ||
                     controller.isAwaitingAttackTarget ||
                     controller.isAwaitingAttackMoveTarget ||
-                    controller.isAwaitingPatrolTarget {
+                    controller.isAwaitingPatrolTarget ||
+                    controller.isAwaitingGuardTarget {
                     Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
                         .buttonStyle(.bordered)
                         .controlSize(.regular)

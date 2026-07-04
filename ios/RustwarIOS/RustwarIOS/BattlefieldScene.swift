@@ -144,6 +144,10 @@ final class BattlefieldScene: SKScene {
             drawAttackMoveOrder(from: unit.position, to: destination, isSelected: unit.id == selectedID)
         case let .patrol(origin, destination, returning)?:
             drawPatrolOrder(origin: origin, destination: destination, returning: returning, isSelected: unit.id == selectedID)
+        case let .guardTarget(targetID, _)?:
+            if let targetPosition = targetPosition(for: targetID, in: state) {
+                drawGuardOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
+            }
         case nil:
             break
         }
@@ -245,6 +249,33 @@ final class BattlefieldScene: SKScene {
         label.fontColor = .white
         label.verticalAlignmentMode = .center
         activeMarker.addChild(label)
+    }
+
+    private func drawGuardOrder(from start: WorldPoint, to destination: WorldPoint, isSelected: Bool) {
+        let color = isSelected ? SKColor.systemYellow : SKColor.systemGreen.withAlphaComponent(0.62)
+        let path = CGMutablePath()
+        path.move(to: spritePoint(for: start))
+        path.addLine(to: spritePoint(for: destination))
+
+        let line = SKShapeNode(path: path)
+        line.strokeColor = color.withAlphaComponent(isSelected ? 0.78 : 0.42)
+        line.lineWidth = isSelected ? 3 : 1.5
+        line.lineCap = .round
+        entityNode.addChild(line)
+
+        let marker = SKShapeNode(rectOf: CGSize(width: isSelected ? 22 : 18, height: isSelected ? 22 : 18), cornerRadius: 4)
+        marker.position = spritePoint(for: destination)
+        marker.fillColor = SKColor.systemGreen.withAlphaComponent(isSelected ? 0.24 : 0.16)
+        marker.strokeColor = color
+        marker.lineWidth = isSelected ? 3 : 1.5
+        entityNode.addChild(marker)
+
+        let label = SKLabelNode(text: "G")
+        label.fontName = "AvenirNext-Bold"
+        label.fontSize = isSelected ? 12 : 10
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        marker.addChild(label)
     }
 
     private func drawAttackOrder(from start: WorldPoint, to destination: WorldPoint, isSelected: Bool) {

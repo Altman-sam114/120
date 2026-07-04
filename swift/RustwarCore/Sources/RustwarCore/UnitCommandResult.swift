@@ -5,4 +5,5 @@ public enum UnitCommandResult: String, Codable, Equatable, Sendable {
     case selectedEntityCannotAttack
     case selectedEntityCannotStop
     case invalidAttackTarget
+    case invalidGuardTarget
 }

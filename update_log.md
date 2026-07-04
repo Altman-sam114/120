@@ -14,8 +14,8 @@
 - 项目形态：完整可玩的 Web Canvas RTS 原型 + v1.0 起新增的原生 Swift/iOS 迁移地基。
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
-- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、单单位移动命令、Attack-Move 命令、Patrol 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂集结点设置、基础攻击、伤害和死亡清理、红方生产/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、攻击目标线、HP 条、可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中和 Save/Load 单槽本地存档。
+- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂集结点设置、基础攻击、伤害和死亡清理、红方生产/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、攻击目标线、HP 条、可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中和 Save/Load 单槽本地存档。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -645,3 +645,40 @@
 遗留事项：
 
 - v1.13 Patrol 只作用于当前选中己方单单位；尚无多选巡逻、队列/Shift 命令、战术小地图下达巡逻、护航、寻路/阵型、雾或沙盒迁移。
+
+### v1.14 / iOS native guard command foundation
+
+日期：2026-07-05
+
+核心变更：
+
+- `UnitOrder` 新增 `guardTarget(targetID:offset:)`，保存被护航友方实体 ID 和稳定相对偏移，不使用 Swift 关键字 `guard` 作为 case 名称。
+- `GameEngine.issueGuard(targetID:)` 只允许当前选中的己方单位护航存活友方单位或建筑，拒绝无选择、非己方单位选择、敌方目标和自我护航。
+- `GameEngine.update` 推进 Guard 时会在护航单位自身视野或被护航目标周边范围内获取敌方单位/建筑，复用现有攻击靠近、冷却、伤害和死亡清理逻辑，但不把 Guard 订单替换为持久 Attack；无目标时返回被护航目标附近偏移点并保持订单。
+- Swift tests 增加 Guard 拒绝非法目标、友方单位/建筑目标、移动并保持订单、护航单位附近索敌并伤害、被护航目标附近索敌、目标摧毁清除、Stop 清除和 JSON 往返覆盖。
+- iOS HUD 新增 Guard 按钮，并把 Move / Attack Move / Patrol / Guard / Attack / Rally 等待态设为互斥；主战场 tap 友方实体下达 Guard，空地/敌人/自身会提示需要友方目标。
+- SpriteKit 为 Guard 订单显示独立护航线和 `G` 标记。
+- 更新 README、flow、flowchart、test 和本日志，明确 v1.14 是原生 iOS 单单位护航地基，不是完整 Web 命令 parity。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/UnitOrder.swift`
+- `swift/RustwarCore/Sources/RustwarCore/UnitCommandResult.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.14-ios-guard-command-foundation.md`
+
+验证结果：
+
+- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+
+遗留事项：
+
+- v1.14 Guard 只作用于当前选中己方单单位；尚无多选护航、队列/Shift 命令、战术小地图下达护航、工程单位护航修理、寻路/阵型、雾或沙盒迁移。

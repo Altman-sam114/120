@@ -52,7 +52,7 @@ flowchart TD
 ```mermaid
 flowchart TD
   P["RustwarCore MapPreset<br/>中文注释：三张地图的基础坐标、资源和初始单位建筑"] --> S["GameState<br/>中文注释：Swift 原生状态快照，包含资源、单位、建筑、金属和选择"]
-  S --> E["GameEngine.update / select / issueMove / issueAttackMove / issuePatrol / issueStop / issueAttack / queueUnit / cancelLastProduction / setRally / init(state)<br/>中文注释：推进收入 tick、点选、单单位移动、攻击移动、巡逻、停止、基础攻击、工厂生产、生产取消、集结点、红方 AI 和存档状态恢复"]
+  S --> E["GameEngine.update / select / issueMove / issueAttackMove / issuePatrol / issueGuard / issueStop / issueAttack / queueUnit / cancelLastProduction / setRally / init(state)<br/>中文注释：推进收入 tick、点选、单单位移动、攻击移动、巡逻、护航、停止、基础攻击、工厂生产、生产取消、集结点、红方 AI 和存档状态恢复"]
   E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、移动命令、攻击移动、生产、生产取消、集结点和 Save/Load 入口"]
   C --> H["SwiftUI RootGameView / GameHUDView<br/>中文注释：显示资源、收入、人口和选择反馈"]
   C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、双方单位建筑和相机中心"]
@@ -65,7 +65,9 @@ flowchart TD
   AM --> E
   C --> PT["UnitOrder.patrol<br/>中文注释：选中己方单位后写入巡逻两端点，core 在视野内临时索敌并在端点间往返"]
   PT --> E
-  C --> STP["issueStop<br/>中文注释：选中己方单位后清除当前移动、攻击移动、巡逻或攻击订单"]
+  C --> GD["UnitOrder.guardTarget<br/>中文注释：选中己方单位后点选友方单位或建筑，core 在自身视野或被护航目标附近临时索敌并返回稳定偏移点"]
+  GD --> E
+  C --> STP["issueStop<br/>中文注释：选中己方单位后清除当前移动、攻击移动、巡逻、护航或攻击订单"]
   STP --> E
   C --> A["UnitOrder.attack<br/>中文注释：选中己方单位后点选敌方目标，core 推进靠近、伤害和死亡清理"]
   A --> E
@@ -84,7 +86,7 @@ flowchart TD
   E --> AI["Enemy AI<br/>中文注释：红方工厂排队造兵，空闲战斗单位获得攻击玩家目标的订单"]
   AI --> E
   C --> E
-  B --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html，显示血条、移动线、攻击移动线、巡逻线、攻击目标线和红方行动"]
+  B --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html，显示血条、移动线、攻击移动线、巡逻线、护航线、攻击目标线和红方行动"]
   H --> O
   TM --> O
 ```

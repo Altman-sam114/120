@@ -148,6 +148,26 @@ import Testing
     #expect(enabledAIEngine.enemyAIEnabled == true)
 }
 
+@Test func guardOrderJSONRoundTripPreservesTargetAndOffset() throws {
+    var state = GameState(mapID: .coast)
+    let guarder = try #require(state.units.first { $0.team == .player })
+    let target = try #require(state.buildings.first { $0.team == .player })
+    let guarderIndex = try #require(state.units.firstIndex { $0.id == guarder.id })
+    let offset = WorldPoint(96, -24)
+    state.units[guarderIndex].order = .guardTarget(targetID: target.id, offset: offset)
+
+    let encoded = try JSONEncoder().encode(state)
+    let decoded = try JSONDecoder().decode(GameState.self, from: encoded)
+    let decodedGuarder = try #require(decoded.units.first { $0.id == guarder.id })
+
+    if case let .guardTarget(targetID, activeOffset)? = decodedGuarder.order {
+        #expect(targetID == target.id)
+        #expect(activeOffset == offset)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
 @Test func selectionFindsInitialPlayerCommand() {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
@@ -430,6 +450,144 @@ import Testing
     }
 }
 
+@Test func guardCommandRejectsMissingInvalidHostileAndSelfTargets() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    #expect(engine.issueGuard(targetID: "missing") == .noSelection)
+
+    _ = engine.select(at: WorldPoint(3_180, 720), includeEnemies: true)
+    #expect(engine.issueGuard(targetID: "missing") == .selectedEntityCannotMove)
+
+    _ = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    let friendlyBuildingSelection = engine.issueGuard(targetID: "missing")
+    #expect(friendlyBuildingSelection == .selectedEntityCannotMove)
+
+    let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let selectedUnit = try #require(selectedTarget)
+    let enemyTank = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
+    let friendlyUnit = try #require(engine.state.units.first { $0.team == .player && $0.id != selectedUnit.id })
+    let friendlyBuilding = try #require(engine.state.buildings.first { $0.team == .player })
+
+    #expect(engine.issueGuard(targetID: selectedUnit.id) == .invalidGuardTarget)
+    #expect(engine.issueGuard(targetID: enemyTank.id) == .invalidGuardTarget)
+    #expect(engine.issueGuard(targetID: friendlyUnit.id) == .issued)
+    #expect(engine.issueGuard(targetID: friendlyBuilding.id) == .issued)
+    #expect(engine.state.selectedEntityID == selectedUnit.id)
+}
+
+@Test func guardCommandMovesTowardFriendlyTargetOffsetAndStaysActive() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let selectedUnit = try #require(selectedTarget)
+    let friendlyBuilding = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .command })
+
+    #expect(engine.issueGuard(targetID: friendlyBuilding.id) == .issued)
+
+    let guarderBefore = try #require(engine.state.units.first { $0.id == selectedUnit.id })
+    let guardPositionBefore = guardPosition(for: guarderBefore.order, targetID: friendlyBuilding.id, in: engine.state)
+    let startingGuardPosition = try #require(guardPositionBefore)
+    let startingDistance = guarderBefore.position.distanceSquared(to: startingGuardPosition)
+
+    engine.update(deltaTime: 1)
+
+    let guarderAfter = try #require(engine.state.units.first { $0.id == selectedUnit.id })
+    let guardPositionAfter = try #require(guardPosition(for: guarderAfter.order, targetID: friendlyBuilding.id, in: engine.state))
+    #expect(guarderAfter.position.distanceSquared(to: guardPositionAfter) < startingDistance)
+    if case let .guardTarget(targetID, _)? = guarderAfter.order {
+        #expect(targetID == friendlyBuilding.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func guardAcquiresNearbyEnemyAndPreservesTarget() throws {
+    let engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let guarder = try #require(engine.state.units.first { $0.team == .player && $0.type != .builder })
+    let enemy = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
+    let guardedBuilding = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .command })
+
+    var state = engine.state
+    let guarderIndex = try #require(state.units.firstIndex { $0.id == guarder.id })
+    let enemyIndex = try #require(state.units.firstIndex { $0.id == enemy.id })
+    let guardedIndex = try #require(state.buildings.firstIndex { $0.id == guardedBuilding.id })
+    state.units[guarderIndex].position = WorldPoint(1_000, 1_000)
+    state.units[guarderIndex].weaponCooldown = 0
+    state.units[enemyIndex].position = WorldPoint(1_100, 1_000)
+    state.buildings[guardedIndex].position = WorldPoint(900, 1_000)
+    state.selectedEntityID = guarder.id
+
+    var testEngine = GameEngine(state: state, enemyAIEnabled: false)
+    let startingHitPoints = try #require(testEngine.state.units.first { $0.id == enemy.id }?.hitPoints)
+
+    #expect(testEngine.issueGuard(targetID: guardedBuilding.id) == .issued)
+    testEngine.update(deltaTime: 1)
+
+    let damagedEnemy = try #require(testEngine.state.units.first { $0.id == enemy.id })
+    let guarderAfterUpdate = try #require(testEngine.state.units.first { $0.id == guarder.id })
+    #expect(damagedEnemy.hitPoints < startingHitPoints)
+    if case let .guardTarget(targetID, _)? = guarderAfterUpdate.order {
+        #expect(targetID == guardedBuilding.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func guardAcquiresEnemyNearGuardedTargetOutsideGuarderVision() throws {
+    let engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let guarder = try #require(engine.state.units.first { $0.team == .player && $0.type == .tank })
+    let enemy = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
+    let guardedBuilding = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .command })
+
+    var state = engine.state
+    let guarderIndex = try #require(state.units.firstIndex { $0.id == guarder.id })
+    let enemyIndex = try #require(state.units.firstIndex { $0.id == enemy.id })
+    let guardedIndex = try #require(state.buildings.firstIndex { $0.id == guardedBuilding.id })
+    state.units[guarderIndex].position = WorldPoint(1_000, 1_000)
+    state.units[guarderIndex].weaponCooldown = 0
+    state.units[enemyIndex].position = WorldPoint(1_260, 1_400)
+    state.buildings[guardedIndex].position = WorldPoint(1_000, 1_400)
+    state.selectedEntityID = guarder.id
+
+    var testEngine = GameEngine(state: state, enemyAIEnabled: false)
+    let startingPosition = try #require(testEngine.state.units.first { $0.id == guarder.id }?.position)
+    let enemyPosition = try #require(testEngine.state.units.first { $0.id == enemy.id }?.position)
+    let guardVision = GameDefinitions.unit(guarder.type).vision
+    #expect(startingPosition.distanceSquared(to: enemyPosition) > guardVision * guardVision)
+
+    #expect(testEngine.issueGuard(targetID: guardedBuilding.id) == .issued)
+    testEngine.update(deltaTime: 1)
+
+    let guarderAfterUpdate = try #require(testEngine.state.units.first { $0.id == guarder.id })
+    #expect(guarderAfterUpdate.position.x > startingPosition.x)
+    if case let .guardTarget(targetID, _)? = guarderAfterUpdate.order {
+        #expect(targetID == guardedBuilding.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func guardClearsWhenFriendlyTargetIsDestroyed() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let selectedUnit = try #require(selectedTarget)
+    let friendlyBuilding = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .command })
+
+    #expect(engine.issueGuard(targetID: friendlyBuilding.id) == .issued)
+
+    var state = engine.state
+    let buildingIndex = try #require(state.buildings.firstIndex { $0.id == friendlyBuilding.id })
+    state.buildings[buildingIndex].hitPoints = 0
+
+    var testEngine = GameEngine(state: state, enemyAIEnabled: false)
+    testEngine.update(deltaTime: 1)
+
+    let guarderAfterUpdate = try #require(testEngine.state.units.first { $0.id == selectedUnit.id })
+    #expect(guarderAfterUpdate.order == nil)
+    #expect(!testEngine.state.buildings.contains { $0.id == friendlyBuilding.id })
+}
+
 @Test func stopCommandRejectsMissingOrInvalidSelection() {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
@@ -497,6 +655,19 @@ import Testing
     let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
     let selectedUnit = try #require(selectedTarget)
     #expect(engine.issuePatrol(to: WorldPoint(1_240, 2_020)) == .issued)
+    #expect(engine.issueStop() == .issued)
+
+    let stoppedUnit = try #require(engine.state.units.first { $0.id == selectedUnit.id })
+    #expect(stoppedUnit.order == nil)
+}
+
+@Test func stopCommandClearsGuardOrder() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let selectedUnit = try #require(selectedTarget)
+    let friendlyBuilding = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .command })
+    #expect(engine.issueGuard(targetID: friendlyBuilding.id) == .issued)
     #expect(engine.issueStop() == .issued)
 
     let stoppedUnit = try #require(engine.state.units.first { $0.id == selectedUnit.id })
@@ -847,4 +1018,17 @@ private func totalHitPoints(in state: GameState, for team: Team) -> Double {
         building.team == team ? partial + building.hitPoints : partial
     }
     return unitHitPoints + buildingHitPoints
+}
+
+private func guardPosition(for order: UnitOrder?, targetID: String, in state: GameState) -> WorldPoint? {
+    guard case let .guardTarget(activeTargetID, offset)? = order, activeTargetID == targetID else {
+        return nil
+    }
+    if let unit = state.units.first(where: { $0.id == targetID }) {
+        return WorldPoint(unit.position.x + offset.x, unit.position.y + offset.y)
+    }
+    if let building = state.buildings.first(where: { $0.id == targetID }) {
+        return WorldPoint(building.position.x + offset.x, building.position.y + offset.y)
+    }
+    return nil
 }
