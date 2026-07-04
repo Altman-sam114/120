@@ -11,6 +11,7 @@ final class BattlefieldScene: SKScene {
     private let entityNode = SKNode()
     private var lastUpdateTime: TimeInterval?
     private var renderedMapID: MapID?
+    private var renderedMapRevision = -1
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -40,10 +41,11 @@ final class BattlefieldScene: SKScene {
         }
 
         let state = controller.engine.state
-        if renderedMapID != state.map.id {
+        if renderedMapID != state.map.id || renderedMapRevision != controller.mapRenderRevision {
             drawTerrain(state.terrain)
             drawResources(state.resources)
             renderedMapID = state.map.id
+            renderedMapRevision = controller.mapRenderRevision
         }
         syncCamera(controller.camera)
         drawEntities(state)

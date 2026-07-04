@@ -15,7 +15,7 @@
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
 - Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、单单位移动命令、陆军工厂生产队列 MVP、基础攻击、伤害和死亡清理、红方生产/进攻 AI MVP。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、单单位移动命令 MVP、工厂生产按钮、Attack 命令、攻击目标线、HP 条、可见红方主动进攻、Pause/Play 和 0.5x / 1x / 2x 速度切换。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、工厂生产按钮、Attack 命令、攻击目标线、HP 条、可见红方主动进攻、Pause/Play 和 0.5x / 1x / 2x 速度切换。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -375,3 +375,34 @@
 遗留事项：
 
 - v1.5 仍不包含地图切换、小地图、停止命令、工厂 rally 设置、生产取消/退款、存档、迷雾或沙盒迁移。
+
+### v1.6 / iOS native map switch and restart
+
+日期：2026-07-04
+
+核心变更：
+
+- `GameController` 新增当前地图状态，使用既有 `MapID.allCases` 和 `MapPreset.preset(for:)` 切换 Coast / Islands / Lava。
+- 新增当前地图重开逻辑：重建 `GameEngine(mapID:)`、重置 `CameraState`、清空待选 Move/Attack 模式，并保留 Pause/Play 和速度设置。
+- `BattlefieldScene` 增加地图渲染 revision 判断，同一地图重开时也会刷新地形和资源层。
+- iOS HUD 新增 Map picker 和 Restart 按钮，保留 Pause、Reset、Speed、Move、Attack 和生产入口。
+- 更新 README、flow、flowchart、test 和本日志，明确 v1.6 是原生 iOS 地图入口增量，不是完整模式 parity。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.6-ios-map-switch-restart.md`
+
+验证结果：
+
+- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+
+遗留事项：
+
+- v1.6 仍不包含战役/生存/挑战/沙盒模式切换、小地图、停止命令、工厂 rally 设置、生产取消/退款、存档或迷雾迁移。

@@ -47,6 +47,24 @@ struct GameHUDView: View {
                     .frame(minHeight: 44)
             }
 
+            HStack(spacing: 8) {
+                Picker("Map", selection: $controller.currentMapID) {
+                    ForEach(MapID.allCases) { mapID in
+                        Text(MapPreset.preset(for: mapID).label)
+                            .tag(mapID)
+                    }
+                }
+                .pickerStyle(.menu)
+                .controlSize(.regular)
+                .frame(minHeight: 44)
+                .accessibilityLabel("Map")
+
+                Button("Restart", systemImage: "arrow.clockwise", action: controller.restartBattle)
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(minHeight: 44)
+            }
+
             Picker("Speed", selection: $controller.simulationSpeed) {
                 ForEach(GameController.simulationSpeedOptions, id: \.self) { speed in
                     Text(GameController.simulationSpeedLabel(for: speed))

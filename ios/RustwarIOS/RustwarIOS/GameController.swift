@@ -10,6 +10,15 @@ final class GameController {
     var engine: GameEngine
     var camera: CameraState
     var renderRevision = 0
+    var mapRenderRevision = 0
+    var currentMapID: MapID {
+        didSet {
+            guard currentMapID != oldValue else {
+                return
+            }
+            resetBattle(on: currentMapID, status: "Loaded \(mapLabel(for: currentMapID))")
+        }
+    }
     var isAwaitingMoveTarget = false
     var isAwaitingAttackTarget = false
     var isPaused = false
@@ -28,6 +37,7 @@ final class GameController {
 
     init(mapID: MapID = .coast) {
         let preset = MapPreset.preset(for: mapID)
+        self.currentMapID = mapID
         self.engine = GameEngine(mapID: mapID)
         self.camera = CameraState(center: preset.camera.center, zoom: preset.camera.zoom)
     }
@@ -100,6 +110,10 @@ final class GameController {
             commandStatus = isPaused ? "Paused" : "Running"
         }
         renderRevision += 1
+    }
+
+    func restartBattle() {
+        resetBattle(on: currentMapID, status: "Restarted \(mapLabel(for: currentMapID))")
     }
 
     static func simulationSpeedLabel(for speed: Double) -> String {
@@ -175,6 +189,21 @@ final class GameController {
     func resetCamera() {
         camera.reset(to: engine.state.map.camera)
         renderRevision += 1
+    }
+
+    private func resetBattle(on mapID: MapID, status: String) {
+        let preset = MapPreset.preset(for: mapID)
+        engine = GameEngine(mapID: mapID)
+        camera.reset(to: preset.camera)
+        isAwaitingMoveTarget = false
+        isAwaitingAttackTarget = false
+        commandStatus = status
+        mapRenderRevision += 1
+        renderRevision += 1
+    }
+
+    private func mapLabel(for mapID: MapID) -> String {
+        MapPreset.preset(for: mapID).label
     }
 
     private var selectedPlayerUnit: UnitSnapshot? {

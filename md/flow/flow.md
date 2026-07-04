@@ -19,7 +19,7 @@
 
 v0.5 起，文档体系支持未来 Agent X 主控循环。Agent X 不直接替代 A/B/C，而是在人工用 `agentx:` / `x:` / `X:` 给出总目标后，把总目标拆成多个小轮次，每轮仍必须走 Agent A -> Agent B -> Agent C，并在 Agent C artifact 验收后判断继续、退回、暂停或完成。本轮只建立文档基线，不自动启动真实 Agent X 循环。
 
-v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP，以及 v1.5 新增的原生暂停和模拟速度控制。
+v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制，以及 v1.6 新增的原生三地图切换和当前地图重开。
 
 ```text
 RustwarCore MapPreset / GameState / GameEngine
@@ -368,12 +368,13 @@ RustwarCore MapPreset / GameState / GameEngine
 - 使用 SwiftUI 提供 App 壳和 HUD。
 - 使用 SpriteKit 通过 `SpriteView` 渲染首屏战场。
 - 用 `GameController` 持有 `GameEngine` 和 `CameraState`。
-- 支持 tap 选择、Move 模式落点、拖拽平移、捏合缩放、暂停/恢复、0.5x / 1x / 2x 速度切换和基础 economy tick。
+- 支持 Coast / Islands / Lava 地图切换、当前地图重开、tap 选择、Move 模式落点、拖拽平移、捏合缩放、暂停/恢复、0.5x / 1x / 2x 速度切换和基础 economy tick。
 - v1.1 起，HUD Move 命令只作用于当前选中的己方单位；`RustwarCore` 推进位置，SpriteKit 只渲染状态。
 - v1.2 起，选中己方陆军工厂时 HUD 显示 Scout / Light Tank 生产按钮和队列进度；生产完成后由 `RustwarCore` 生成单位。
 - v1.3 起，选中己方单位时 HUD 显示 Attack 命令；Attack 模式下一次 tap 由 `GameController` 命中敌方目标并调用 `GameEngine.issueAttack`，`RustwarCore` 推进靠近、开火、扣血和死亡清理，SpriteKit 只显示 HP 条和攻击目标线。
 - v1.4 起，`GameEngine.update` 内部推进红方最小 AI：红方陆军工厂在资源/人口允许且队列为空时排队 Scout / Light Tank，红方空闲战斗单位会获得攻击玩家目标的订单；iOS 侧继续只渲染状态。
 - v1.5 起，`GameController.advance(deltaTime:)` 在调用 `GameEngine.update` 前执行暂停和速度倍率门控；暂停时模拟不推进，但 SpriteKit 仍可渲染当前状态，相机和 HUD 控件仍可响应。
+- v1.6 起，`GameController.currentMapID` 由 HUD Map picker 绑定，切换地图或 Restart 会重建 `GameEngine(mapID:)`、重置 `CameraState`、清除待选 Move/Attack 模式，并推进 `mapRenderRevision` 让 `BattlefieldScene` 在同图重开时也刷新地形和资源层。
 
 输入：
 
