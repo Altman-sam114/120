@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import RustwarCore
 
@@ -32,6 +33,89 @@ import Testing
 
     #expect(engine.state.elapsed == 1)
     #expect(engine.state.metal[.player] == 1_063)
+}
+
+@Test func gameStateJSONRoundTripPreservesActiveNativeState() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let movingUnit = try #require(engine.state.units.first { $0.team == .player })
+    let attacker = try #require(engine.state.units.first { $0.team == .player && $0.id != movingUnit.id })
+    let enemyTank = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
+    let factory = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .landFactory })
+
+    _ = engine.select(at: movingUnit.position, includeEnemies: false)
+    #expect(engine.issueMove(to: WorldPoint(movingUnit.position.x + 240, movingUnit.position.y)) == .issued)
+
+    _ = engine.select(at: attacker.position, includeEnemies: false)
+    #expect(engine.issueAttack(targetID: enemyTank.id) == .issued)
+
+    _ = engine.select(at: factory.position, includeEnemies: false)
+    #expect(engine.setRally(to: WorldPoint(1_260, 2_180)) == .issued)
+    #expect(engine.queueUnit(.scout) == .queued)
+
+    engine.update(deltaTime: 1)
+
+    let encoded = try JSONEncoder().encode(engine.state)
+    let decoded = try JSONDecoder().decode(GameState.self, from: encoded)
+
+    #expect(decoded == engine.state)
+    #expect(decoded.selectedEntityID == factory.id)
+    #expect(decoded.elapsed == 1)
+    #expect(decoded.buildings.first { $0.id == factory.id }?.productionQueue.first?.progress == 1)
+    #expect(decoded.units.contains {
+        if case .some(.move(destination: _)) = $0.order {
+            return $0.id == movingUnit.id
+        }
+        return false
+    })
+    #expect(decoded.units.contains {
+        if case .some(.attack(targetID: _)) = $0.order {
+            return $0.id == attacker.id
+        }
+        return false
+    })
+}
+
+@Test func restoredEngineContinuesProductionMovementAndCombat() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let movingUnit = try #require(engine.state.units.first { $0.team == .player })
+    let attacker = try #require(engine.state.units.first { $0.team == .player && $0.id != movingUnit.id })
+    let enemyTank = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
+    let factory = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .landFactory })
+
+    _ = engine.select(at: movingUnit.position, includeEnemies: false)
+    #expect(engine.issueMove(to: WorldPoint(movingUnit.position.x + 320, movingUnit.position.y)) == .issued)
+
+    _ = engine.select(at: attacker.position, includeEnemies: false)
+    #expect(engine.issueAttack(targetID: enemyTank.id) == .issued)
+
+    _ = engine.select(at: factory.position, includeEnemies: false)
+    #expect(engine.queueUnit(.scout) == .queued)
+
+    let encoded = try JSONEncoder().encode(engine.state)
+    let decoded = try JSONDecoder().decode(GameState.self, from: encoded)
+    var restored = GameEngine(state: decoded, enemyAIEnabled: false)
+    let startingUnitIDs = Set(restored.state.units.map(\.id))
+    let startingMovePosition = try #require(restored.state.units.first { $0.id == movingUnit.id }?.position)
+    let startingEnemyHitPoints = try #require(restored.state.units.first { $0.id == enemyTank.id }?.hitPoints)
+
+    for _ in 0..<36 {
+        restored.update(deltaTime: 1)
+    }
+
+    let movedUnit = try #require(restored.state.units.first { $0.id == movingUnit.id })
+    let enemyAfterCombat = restored.state.units.first { $0.id == enemyTank.id }
+    #expect(movedUnit.position != startingMovePosition)
+    #expect(restored.state.units.contains { $0.team == .player && $0.type == .scout && !startingUnitIDs.contains($0.id) })
+    #expect(enemyAfterCombat == nil || (enemyAfterCombat?.hitPoints ?? startingEnemyHitPoints) < startingEnemyHitPoints)
+}
+
+@Test func restoredEnginePreservesEnemyAIFlagWhenRequested() {
+    let state = GameState(mapID: .islands)
+    let disabledAIEngine = GameEngine(state: state, enemyAIEnabled: false)
+    let enabledAIEngine = GameEngine(state: state, enemyAIEnabled: true)
+
+    #expect(disabledAIEngine.enemyAIEnabled == false)
+    #expect(enabledAIEngine.enemyAIEnabled == true)
 }
 
 @Test func selectionFindsInitialPlayerCommand() {

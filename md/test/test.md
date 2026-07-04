@@ -84,7 +84,7 @@ git diff --check
 
 当前基线：
 
-- `RustwarCore` tests 应通过，并覆盖地图/状态初始化、收入/人口计算、基础 tick、选择命中、己方单单位移动命令、Stop 命令、陆军工厂生产队列、生产取消/退款、工厂集结点设置、基础攻击命令、伤害推进、死亡目标清理和红方生产/进攻 AI。
+- `RustwarCore` tests 应通过，并覆盖地图/状态初始化、收入/人口计算、基础 tick、选择命中、己方单单位移动命令、Stop 命令、陆军工厂生产队列、生产取消/退款、工厂集结点设置、基础攻击命令、伤害推进、死亡目标清理、红方生产/进攻 AI、`GameState` JSON 往返和恢复后继续模拟。
 - 若本机 SwiftPM、PackageDescription、Swift/SDK 版本或权限导致 `swift test` 无法进入源码编译，必须记录原始错误；可额外执行 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 区分源码错误和工具链错误。
 
 ### 5. iOS App 检查
@@ -105,7 +105,7 @@ git diff --check
 
 - `xcodebuild -list` 应能发现 `RustwarIOS` scheme。
 - iOS build 应使用原生 SwiftUI/SpriteKit target，并通过本地 Swift package 引入 `RustwarCore`。
-- iOS 原生 HUD 当前覆盖三地图切换、当前地图重开、选择、Move、Stop、Attack、生产、Cancel Production 生产取消/退款、Rally 集结点、Pause/Play、0.5x / 1x / 2x 速度切换、Reset 相机和战术小地图点按居中等基础控制；若修改这些控制，应至少跑 iOS build 或记录本机 Xcode 阻塞。
+- iOS 原生 HUD 当前覆盖三地图切换、当前地图重开、选择、Move、Stop、Attack、生产、Cancel Production 生产取消/退款、Rally 集结点、Save/Load 单槽本地存档、Pause/Play、0.5x / 1x / 2x 速度切换、Reset 相机和战术小地图点按居中等基础控制；若修改这些控制，应至少跑 iOS build 或记录本机 Xcode 阻塞。
 - 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
 
 ## 云端重验证

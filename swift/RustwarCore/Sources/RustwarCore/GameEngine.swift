@@ -7,6 +7,11 @@ public struct GameEngine: Sendable {
         self.enemyAIEnabled = enemyAIEnabled
     }
 
+    public init(state: GameState, enemyAIEnabled: Bool = true) {
+        self.state = state
+        self.enemyAIEnabled = enemyAIEnabled
+    }
+
     public mutating func update(deltaTime: Double) {
         guard deltaTime > 0 else {
             return

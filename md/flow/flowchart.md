@@ -52,8 +52,8 @@ flowchart TD
 ```mermaid
 flowchart TD
   P["RustwarCore MapPreset<br/>中文注释：三张地图的基础坐标、资源和初始单位建筑"] --> S["GameState<br/>中文注释：Swift 原生状态快照，包含资源、单位、建筑、金属和选择"]
-  S --> E["GameEngine.update / select / issueMove / issueStop / issueAttack / queueUnit / cancelLastProduction / setRally<br/>中文注释：推进收入 tick、点选、单单位移动、停止、基础攻击、工厂生产、生产取消、集结点和红方 AI"]
-  E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、移动命令、生产、生产取消和集结点入口"]
+  S --> E["GameEngine.update / select / issueMove / issueStop / issueAttack / queueUnit / cancelLastProduction / setRally / init(state)<br/>中文注释：推进收入 tick、点选、单单位移动、停止、基础攻击、工厂生产、生产取消、集结点、红方 AI 和存档状态恢复"]
+  E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、移动命令、生产、生产取消、集结点和 Save/Load 入口"]
   C --> H["SwiftUI RootGameView / GameHUDView<br/>中文注释：显示资源、收入、人口和选择反馈"]
   C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、双方单位建筑和相机中心"]
   C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、双方初始建筑、单位和移动目标"]
@@ -75,6 +75,8 @@ flowchart TD
   PS --> E
   C --> MP["Map Switch / Restart<br/>中文注释：重建 GameEngine、重置相机、清空待选命令并刷新地图渲染层"]
   MP --> E
+  C --> SL["UserDefaults Save / Load<br/>中文注释：JSON 保存 GameState、CameraState、地图、暂停、速度和 AI 开关，读取后刷新原生状态"]
+  SL --> E
   E --> AI["Enemy AI<br/>中文注释：红方工厂排队造兵，空闲战斗单位获得攻击玩家目标的订单"]
   AI --> E
   C --> E

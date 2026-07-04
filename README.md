@@ -14,8 +14,8 @@
 
 当前 iOS 版本是迁移地基，不是完整玩法 parity。它新增：
 
-- `swift/RustwarCore/`：无第三方依赖的 Swift core package，包含地图常量、三张地图初始布局、单位/建筑/资源模型、地形网格、初始状态、收入/人口计算、命中选择、单单位移动命令、Stop 命令、基础攻击命令、伤害/死亡清理、工厂生产队列 MVP、生产取消/退款、工厂集结点设置和红方生产/进攻 AI MVP。
-- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位和 HUD；支持 Coast / Islands / Lava 地图切换、重开当前地图、tap 选择、拖拽平移、捏合缩放、右下战术小地图点按居中、Pause/Play 和 0.5x / 1x / 2x 速度切换，选中己方单位后可用 Move 下达单单位移动命令、用 Attack 点选敌方单位或建筑并显示血条/攻击目标、用 Stop 清除当前移动或攻击命令，选中己方陆军工厂后可生产 Scout / Light Tank、取消队尾生产并按未完成进度退款，并用 Rally 改变后续出兵集结点；红方会从现有陆军工厂排队造兵并主动攻击玩家目标，并通过简单 economy tick 推进金属收入、生产进度和基础战斗。
+- `swift/RustwarCore/`：无第三方依赖的 Swift core package，包含地图常量、三张地图初始布局、单位/建筑/资源模型、地形网格、初始状态、收入/人口计算、命中选择、单单位移动命令、Stop 命令、基础攻击命令、伤害/死亡清理、工厂生产队列 MVP、生产取消/退款、工厂集结点设置、红方生产/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
+- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位和 HUD；支持 Coast / Islands / Lava 地图切换、重开当前地图、tap 选择、拖拽平移、捏合缩放、右下战术小地图点按居中、Pause/Play 和 0.5x / 1x / 2x 速度切换，选中己方单位后可用 Move 下达单单位移动命令、用 Attack 点选敌方单位或建筑并显示血条/攻击目标、用 Stop 清除当前移动或攻击命令，选中己方陆军工厂后可生产 Scout / Light Tank、取消队尾生产并按未完成进度退款，并用 Rally 改变后续出兵集结点；Save / Load 可用本机单槽存档保存和恢复当前原生对局、相机、地图、暂停和速度；红方会从现有陆军工厂排队造兵并主动攻击玩家目标，并通过简单 economy tick 推进金属收入、生产进度和基础战斗。
 
 本机验证命令：
 
@@ -101,6 +101,7 @@ xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -dest
 - Restart：重开当前原生地图，保留当前 Pause/Play 和速度设置。
 - Pause / Play：暂停或恢复原生模拟；暂停时经济、生产、AI 和战斗不推进，但仍可查看战场和调整相机。
 - Speed：在 0.5x / 1x / 2x 间切换原生模拟速度。
+- Save / Load：保存或读取一个本机单槽原生 iOS 存档；读取后恢复当前地图、战场状态、相机、暂停状态和速度，并继续原生模拟。
 - Tactical map：右下小地图显示资源点、双方单位/建筑和当前相机中心；点按小地图会把主战场相机居中到对应位置。
 - Reset：重置战场相机。
 

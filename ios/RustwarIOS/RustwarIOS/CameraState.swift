@@ -1,7 +1,7 @@
 import CoreGraphics
 import RustwarCore
 
-struct CameraState {
+struct CameraState: Codable, Equatable {
     var center: WorldPoint
     var zoom: Double
 

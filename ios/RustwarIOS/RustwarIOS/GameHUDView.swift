@@ -65,6 +65,21 @@ struct GameHUDView: View {
                     .frame(minHeight: 44)
             }
 
+            HStack(spacing: 8) {
+                Button("Save", systemImage: "square.and.arrow.down", action: controller.saveGame)
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(minHeight: 44)
+                    .accessibilityLabel("Save game")
+
+                Button("Load", systemImage: "square.and.arrow.up", action: controller.loadGame)
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(minHeight: 44)
+                    .disabled(!controller.canLoadGame)
+                    .accessibilityLabel("Load game")
+            }
+
             Picker("Speed", selection: $controller.simulationSpeed) {
                 ForEach(GameController.simulationSpeedOptions, id: \.self) { speed in
                     Text(GameController.simulationSpeedLabel(for: speed))

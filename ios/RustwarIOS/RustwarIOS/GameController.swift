@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 import SwiftUI
 import RustwarCore
@@ -6,6 +7,8 @@ import RustwarCore
 @Observable
 final class GameController {
     static let simulationSpeedOptions = [0.5, 1.0, 2.0]
+    private static let saveKey = "rustwar.ios.save.v1"
+    private static let currentSaveVersion = 1
 
     var engine: GameEngine
     var camera: CameraState
@@ -82,6 +85,10 @@ final class GameController {
 
     var canCancelProduction: Bool {
         selectedPlayerProducer?.productionQueue.isEmpty == false
+    }
+
+    var canLoadGame: Bool {
+        UserDefaults.standard.data(forKey: Self.saveKey) != nil
     }
 
     var canIssueMove: Bool {
@@ -227,6 +234,57 @@ final class GameController {
         renderRevision += 1
     }
 
+    func saveGame() {
+        let payload = SavePayload(
+            version: Self.currentSaveVersion,
+            state: engine.state,
+            camera: camera,
+            currentMapID: currentMapID,
+            isPaused: isPaused,
+            simulationSpeed: simulationSpeed,
+            enemyAIEnabled: engine.enemyAIEnabled
+        )
+        do {
+            let data = try JSONEncoder().encode(payload)
+            UserDefaults.standard.set(data, forKey: Self.saveKey)
+            commandStatus = "Game saved"
+        } catch {
+            commandStatus = "Save failed"
+        }
+        renderRevision += 1
+    }
+
+    func loadGame() {
+        guard let data = UserDefaults.standard.data(forKey: Self.saveKey) else {
+            commandStatus = "No saved game"
+            renderRevision += 1
+            return
+        }
+
+        do {
+            let payload = try JSONDecoder().decode(SavePayload.self, from: data)
+            guard payload.version == Self.currentSaveVersion else {
+                commandStatus = "Save version unsupported"
+                renderRevision += 1
+                return
+            }
+
+            currentMapID = payload.currentMapID
+            engine = GameEngine(state: payload.state, enemyAIEnabled: payload.enemyAIEnabled)
+            camera = payload.camera
+            isPaused = payload.isPaused
+            simulationSpeed = Self.validatedSimulationSpeed(payload.simulationSpeed, fallback: simulationSpeed)
+            isAwaitingMoveTarget = false
+            isAwaitingAttackTarget = false
+            isAwaitingRallyTarget = false
+            commandStatus = "Game loaded"
+            mapRenderRevision += 1
+        } catch {
+            commandStatus = "Load failed"
+        }
+        renderRevision += 1
+    }
+
     func pan(by screenTranslation: CGSize) {
         camera.pan(by: screenTranslation)
         renderRevision += 1
@@ -264,6 +322,10 @@ final class GameController {
 
     private func mapLabel(for mapID: MapID) -> String {
         MapPreset.preset(for: mapID).label
+    }
+
+    private static func validatedSimulationSpeed(_ speed: Double, fallback: Double) -> Double {
+        simulationSpeedOptions.contains(speed) ? speed : fallback
     }
 
     private var selectedPlayerUnit: UnitSnapshot? {
@@ -368,4 +430,14 @@ final class GameController {
             return "No production queued"
         }
     }
+}
+
+private struct SavePayload: Codable {
+    var version: Int
+    var state: GameState
+    var camera: CameraState
+    var currentMapID: MapID
+    var isPaused: Bool
+    var simulationSpeed: Double
+    var enemyAIEnabled: Bool
 }
