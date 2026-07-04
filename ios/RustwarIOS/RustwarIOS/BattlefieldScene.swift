@@ -102,7 +102,7 @@ final class BattlefieldScene: SKScene {
             drawBuilding(building, selectedID: state.selectedEntityID)
         }
         for unit in state.units {
-            drawUnit(unit, selectedID: state.selectedEntityID)
+            drawUnit(unit, selectedID: state.selectedEntityID, state: state)
         }
     }
 
@@ -121,13 +121,16 @@ final class BattlefieldScene: SKScene {
         label.fontColor = .white
         label.verticalAlignmentMode = .center
         node.addChild(label)
+        drawHealthBar(current: building.hitPoints, max: building.maxHitPoints, width: definition.size, yOffset: definition.size / 2 + 8, on: node)
         entityNode.addChild(node)
     }
 
-    private func drawUnit(_ unit: UnitSnapshot, selectedID: String?) {
+    private func drawUnit(_ unit: UnitSnapshot, selectedID: String?, state: GameState) {
         let definition = GameDefinitions.unit(unit.type)
         if case let .move(destination)? = unit.order {
             drawMoveOrder(from: unit.position, to: destination, isSelected: unit.id == selectedID)
+        } else if case let .attack(targetID)? = unit.order, let targetPosition = targetPosition(for: targetID, in: state) {
+            drawAttackOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
         }
 
         let node = SKShapeNode(circleOfRadius: definition.radius)
@@ -142,6 +145,7 @@ final class BattlefieldScene: SKScene {
         label.fontColor = .black
         label.verticalAlignmentMode = .center
         node.addChild(label)
+        drawHealthBar(current: unit.hitPoints, max: unit.maxHitPoints, width: definition.radius * 2.4, yOffset: definition.radius + 7, on: node)
         entityNode.addChild(node)
     }
 
@@ -165,6 +169,55 @@ final class BattlefieldScene: SKScene {
         entityNode.addChild(marker)
     }
 
+    private func drawAttackOrder(from start: WorldPoint, to destination: WorldPoint, isSelected: Bool) {
+        let color = isSelected ? SKColor.systemOrange : SKColor.systemRed.withAlphaComponent(0.55)
+        let path = CGMutablePath()
+        path.move(to: spritePoint(for: start))
+        path.addLine(to: spritePoint(for: destination))
+
+        let line = SKShapeNode(path: path)
+        line.strokeColor = color.withAlphaComponent(isSelected ? 0.78 : 0.4)
+        line.lineWidth = isSelected ? 3 : 1.5
+        line.lineCap = .round
+        entityNode.addChild(line)
+
+        let marker = SKShapeNode(circleOfRadius: isSelected ? 12 : 9)
+        marker.position = spritePoint(for: destination)
+        marker.fillColor = .clear
+        marker.strokeColor = color
+        marker.lineWidth = isSelected ? 3 : 1.5
+        entityNode.addChild(marker)
+    }
+
+    private func drawHealthBar(current: Double, max: Double, width: Double, yOffset: Double, on node: SKNode) {
+        guard max > 0 else {
+            return
+        }
+        let height = 5.0
+        let fraction = Swift.min(1, Swift.max(0, current / max))
+        let background = SKShapeNode(rect: CGRect(x: -width / 2, y: yOffset, width: width, height: height), cornerRadius: 2)
+        background.fillColor = .black.withAlphaComponent(0.65)
+        background.strokeColor = .black.withAlphaComponent(0.65)
+        background.lineWidth = 0
+        node.addChild(background)
+
+        let fill = SKShapeNode(rect: CGRect(x: -width / 2, y: yOffset, width: width * fraction, height: height), cornerRadius: 2)
+        fill.fillColor = healthColor(fraction)
+        fill.strokeColor = fill.fillColor
+        fill.lineWidth = 0
+        node.addChild(fill)
+    }
+
+    private func targetPosition(for targetID: String, in state: GameState) -> WorldPoint? {
+        if let unit = state.units.first(where: { $0.id == targetID }) {
+            return unit.position
+        }
+        if let building = state.buildings.first(where: { $0.id == targetID }) {
+            return building.position
+        }
+        return nil
+    }
+
     private func spritePoint(for point: WorldPoint) -> CGPoint {
         CGPoint(x: point.x, y: -point.y)
     }
@@ -175,6 +228,16 @@ final class BattlefieldScene: SKScene {
             SKColor(red: 0.38, green: 0.84, blue: 0.42, alpha: 1)
         case .enemy:
             SKColor(red: 0.89, green: 0.35, blue: 0.35, alpha: 1)
+        }
+    }
+
+    private func healthColor(_ fraction: Double) -> SKColor {
+        if fraction > 0.55 {
+            SKColor.systemGreen
+        } else if fraction > 0.25 {
+            SKColor.systemYellow
+        } else {
+            SKColor.systemRed
         }
     }
 

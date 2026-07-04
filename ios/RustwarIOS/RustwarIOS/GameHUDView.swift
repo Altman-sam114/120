@@ -51,6 +51,16 @@ struct GameHUDView: View {
                     .controlSize(.regular)
                     .frame(minHeight: 44)
                 }
+                if controller.canIssueAttack || controller.isAwaitingAttackTarget {
+                    Button(
+                        controller.attackCommandButtonTitle,
+                        systemImage: controller.isAwaitingAttackTarget ? "xmark.circle" : "scope",
+                        action: controller.toggleAttackCommand
+                    )
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(minHeight: 44)
+                }
             }
 
             Text("Selected: \(controller.selectedSummary)")
@@ -61,7 +71,7 @@ struct GameHUDView: View {
             if let commandStatus = controller.commandStatus {
                 Text(commandStatus)
                     .font(.footnote)
-                    .foregroundStyle(controller.isAwaitingMoveTarget ? .yellow : .secondary)
+                    .foregroundStyle(controller.isAwaitingMoveTarget || controller.isAwaitingAttackTarget ? .yellow : .secondary)
                     .lineLimit(1)
             }
 

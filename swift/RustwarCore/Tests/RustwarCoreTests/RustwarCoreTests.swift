@@ -79,6 +79,73 @@ import Testing
     #expect(arrivedUnit.order == nil)
 }
 
+@Test func attackCommandRejectsMissingInvalidAndFriendlyTargets() throws {
+    var engine = GameEngine(mapID: .coast)
+
+    #expect(engine.issueAttack(targetID: "missing") == .noSelection)
+
+    _ = engine.select(at: WorldPoint(3_180, 720), includeEnemies: true)
+    let enemySelected = engine.issueAttack(targetID: "missing")
+    #expect(enemySelected == .selectedEntityCannotAttack)
+
+    let playerTarget = engine.select(at: WorldPoint(1_010, 2_190), includeEnemies: false)
+    let attacker = try #require(playerTarget)
+    let friendlyBuilding = try #require(engine.state.buildings.first { $0.team == .player })
+    let friendlyResult = engine.issueAttack(targetID: friendlyBuilding.id)
+    #expect(friendlyResult == .invalidAttackTarget)
+
+    let missingTarget = engine.issueAttack(targetID: "missing")
+    #expect(missingTarget == .invalidAttackTarget)
+    #expect(engine.state.units.first { $0.id == attacker.id }?.order == nil)
+}
+
+@Test func attackCommandMovesIntoRangeAndDamagesEnemy() throws {
+    var engine = GameEngine(mapID: .coast)
+
+    let attackerTarget = engine.select(at: WorldPoint(1_010, 2_190), includeEnemies: false)
+    let attacker = try #require(attackerTarget)
+    let enemyTank = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
+    let startingAttacker = try #require(engine.state.units.first { $0.id == attacker.id })
+    let startingDistance = startingAttacker.position.distanceSquared(to: enemyTank.position)
+    let startingHitPoints = enemyTank.hitPoints
+
+    #expect(engine.issueAttack(targetID: enemyTank.id) == .issued)
+
+    for _ in 0..<10 {
+        engine.update(deltaTime: 1)
+    }
+
+    let closingAttacker = try #require(engine.state.units.first { $0.id == attacker.id })
+    #expect(closingAttacker.position.distanceSquared(to: enemyTank.position) < startingDistance)
+    #expect(engine.state.units.first { $0.id == enemyTank.id }?.hitPoints == startingHitPoints)
+
+    for _ in 0..<16 {
+        engine.update(deltaTime: 1)
+    }
+
+    let damagedTank = try #require(engine.state.units.first { $0.id == enemyTank.id })
+    #expect(damagedTank.hitPoints < startingHitPoints)
+    #expect(damagedTank.hitPoints > 0)
+}
+
+@Test func attackCommandRemovesDestroyedTargetAndClearsOrder() throws {
+    var engine = GameEngine(mapID: .coast)
+
+    let attackerTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let attacker = try #require(attackerTarget)
+    let enemyScout = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .scout })
+
+    #expect(engine.issueAttack(targetID: enemyScout.id) == .issued)
+
+    for _ in 0..<36 {
+        engine.update(deltaTime: 1)
+    }
+
+    let targetDestroyed = !engine.state.units.contains(where: { $0.id == enemyScout.id })
+    #expect(targetDestroyed)
+    #expect(engine.state.units.first { $0.id == attacker.id }?.order == nil)
+}
+
 @Test func queueUnitDeductsMetalAndSpawnsAtFactoryRally() throws {
     var engine = GameEngine(mapID: .coast)
 

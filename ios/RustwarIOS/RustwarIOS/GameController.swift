@@ -9,6 +9,7 @@ final class GameController {
     var camera: CameraState
     var renderRevision = 0
     var isAwaitingMoveTarget = false
+    var isAwaitingAttackTarget = false
     var commandStatus: String?
 
     init(mapID: MapID = .coast) {
@@ -50,8 +51,16 @@ final class GameController {
         selectedPlayerUnit != nil
     }
 
+    var canIssueAttack: Bool {
+        selectedPlayerUnit != nil
+    }
+
     var moveCommandButtonTitle: String {
         isAwaitingMoveTarget ? "Cancel" : "Move"
+    }
+
+    var attackCommandButtonTitle: String {
+        isAwaitingAttackTarget ? "Cancel" : "Attack"
     }
 
     func advance(deltaTime: TimeInterval) {
@@ -66,6 +75,16 @@ final class GameController {
             let result = engine.issueMove(to: point)
             isAwaitingMoveTarget = false
             commandStatus = statusText(for: result)
+        } else if isAwaitingAttackTarget {
+            let target = engine.state.selectionTarget(at: point, includeEnemies: true)
+            let result: UnitCommandResult
+            if let target {
+                result = engine.issueAttack(targetID: target.id)
+            } else {
+                result = .invalidAttackTarget
+            }
+            isAwaitingAttackTarget = false
+            commandStatus = statusText(forAttack: result)
         } else {
             engine.select(at: point, includeEnemies: true)
             commandStatus = nil
@@ -79,7 +98,20 @@ final class GameController {
             commandStatus = nil
         } else if canIssueMove {
             isAwaitingMoveTarget = true
+            isAwaitingAttackTarget = false
             commandStatus = "Move target"
+        }
+        renderRevision += 1
+    }
+
+    func toggleAttackCommand() {
+        if isAwaitingAttackTarget {
+            isAwaitingAttackTarget = false
+            commandStatus = nil
+        } else if canIssueAttack {
+            isAwaitingAttackTarget = true
+            isAwaitingMoveTarget = false
+            commandStatus = "Attack target"
         }
         renderRevision += 1
     }
@@ -130,6 +162,23 @@ final class GameController {
             return "No unit selected"
         case .selectedEntityCannotMove:
             return "Player unit required"
+        case .selectedEntityCannotAttack:
+            return "Player attacker required"
+        case .invalidAttackTarget:
+            return "Enemy target required"
+        }
+    }
+
+    private func statusText(forAttack result: UnitCommandResult) -> String? {
+        switch result {
+        case .issued:
+            return "Attack order issued"
+        case .noSelection:
+            return "No unit selected"
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack:
+            return "Player attacker required"
+        case .invalidAttackTarget:
+            return "Enemy target required"
         }
     }
 

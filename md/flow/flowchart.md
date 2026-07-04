@@ -52,17 +52,19 @@ flowchart TD
 ```mermaid
 flowchart TD
   P["RustwarCore MapPreset<br/>中文注释：三张地图的基础坐标、资源和初始单位建筑"] --> S["GameState<br/>中文注释：Swift 原生状态快照，包含资源、单位、建筑、金属和选择"]
-  S --> E["GameEngine.update / select / issueMove / queueUnit<br/>中文注释：推进收入 tick、点选、单单位移动和工厂生产"]
+  S --> E["GameEngine.update / select / issueMove / issueAttack / queueUnit<br/>中文注释：推进收入 tick、点选、单单位移动、基础攻击和工厂生产"]
   E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、HUD、移动命令和生产入口"]
   C --> H["SwiftUI RootGameView / GameHUDView<br/>中文注释：显示资源、收入、人口和选择反馈"]
   C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、双方初始建筑、单位和移动目标"]
   T["SpatialTap / Drag / Magnify<br/>中文注释：iOS 触摸选择、移动落点、拖拽平移和捏合缩放"] --> C
   C --> M["UnitOrder.move<br/>中文注释：选中己方单位后写入移动目标"]
   M --> E
+  C --> A["UnitOrder.attack<br/>中文注释：选中己方单位后点选敌方目标，core 推进靠近、伤害和死亡清理"]
+  A --> E
   C --> Q["ProductionQueueItem<br/>中文注释：选中己方陆军工厂后排队生产 Scout / Light Tank"]
   Q --> E
   C --> E
-  B --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html"]
+  B --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html，显示血条、移动线和攻击目标线"]
   H --> O
 ```
 

@@ -45,6 +45,24 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func issueAttack(targetID: String) -> UnitCommandResult {
+        guard let selectedEntityID = state.selectedEntityID else {
+            return .noSelection
+        }
+        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
+              state.units[unitIndex].team == .player else {
+            return .selectedEntityCannotAttack
+        }
+        guard let target = combatTarget(id: targetID),
+              target.team != state.units[unitIndex].team else {
+            return .invalidAttackTarget
+        }
+
+        state.units[unitIndex].order = .attack(targetID: target.id)
+        return .issued
+    }
+
+    @discardableResult
     public mutating func queueUnit(_ unitType: UnitType) -> ProductionCommandResult {
         guard let selectedEntityID = state.selectedEntityID else {
             return .noSelection
@@ -86,31 +104,140 @@ public struct GameEngine: Sendable {
 
     private mutating func updateUnitOrders(deltaTime: Double) {
         for unitIndex in state.units.indices {
-            guard case let .move(destination)? = state.units[unitIndex].order else {
+            guard state.units[unitIndex].hitPoints > 0 else {
+                continue
+            }
+            guard let order = state.units[unitIndex].order else {
                 continue
             }
 
-            let definition = GameDefinitions.unit(state.units[unitIndex].type)
-            let position = state.units[unitIndex].position
-            let dx = destination.x - position.x
-            let dy = destination.y - position.y
-            let distanceSquared = dx * dx + dy * dy
-            guard distanceSquared > 0 else {
-                state.units[unitIndex].order = nil
-                continue
+            switch order {
+            case let .move(destination):
+                updateMoveOrder(unitIndex: unitIndex, destination: destination, deltaTime: deltaTime)
+            case let .attack(targetID):
+                updateAttackOrder(unitIndex: unitIndex, targetID: targetID, deltaTime: deltaTime)
             }
+        }
+        removeDestroyedEntities()
+    }
 
-            let distance = distanceSquared.squareRoot()
-            let travel = definition.speed * deltaTime
-            if travel >= distance {
+    private mutating func updateMoveOrder(unitIndex: Int, destination: WorldPoint, deltaTime: Double) {
+        let definition = GameDefinitions.unit(state.units[unitIndex].type)
+        moveUnit(at: unitIndex, toward: destination, speed: definition.speed, stoppingDistance: 0, deltaTime: deltaTime)
+    }
+
+    private mutating func updateAttackOrder(unitIndex: Int, targetID: String, deltaTime: Double) {
+        guard let target = combatTarget(id: targetID),
+              target.team != state.units[unitIndex].team else {
+            state.units[unitIndex].order = nil
+            return
+        }
+
+        let definition = GameDefinitions.unit(state.units[unitIndex].type)
+        let distance = state.units[unitIndex].position.distance(to: target.position)
+        let effectiveRange = definition.attackRange + target.radius
+        if distance > effectiveRange {
+            moveUnit(
+                at: unitIndex,
+                toward: target.position,
+                speed: definition.speed,
+                stoppingDistance: max(0, effectiveRange * 0.9),
+                deltaTime: deltaTime
+            )
+            return
+        }
+
+        state.units[unitIndex].weaponCooldown = max(0, state.units[unitIndex].weaponCooldown - deltaTime)
+        guard state.units[unitIndex].weaponCooldown <= 0 else {
+            return
+        }
+
+        applyDamage(definition.damage, to: target.id)
+        state.units[unitIndex].weaponCooldown = definition.reloadTime
+    }
+
+    private mutating func moveUnit(
+        at unitIndex: Int,
+        toward destination: WorldPoint,
+        speed: Double,
+        stoppingDistance: Double,
+        deltaTime: Double
+    ) {
+        let position = state.units[unitIndex].position
+        let dx = destination.x - position.x
+        let dy = destination.y - position.y
+        let distanceSquared = dx * dx + dy * dy
+        guard distanceSquared > 0 else {
+            state.units[unitIndex].order = nil
+            return
+        }
+
+        let distance = distanceSquared.squareRoot()
+        let travel = speed * deltaTime
+        let remainingDistance = max(0, distance - stoppingDistance)
+        if travel >= remainingDistance {
+            if stoppingDistance <= 0 {
                 state.units[unitIndex].position = destination
                 state.units[unitIndex].order = nil
-            } else {
-                let ratio = travel / distance
+            } else if distance > 0 {
+                let ratio = remainingDistance / distance
                 state.units[unitIndex].position = WorldPoint(
                     position.x + dx * ratio,
                     position.y + dy * ratio
                 )
+            }
+        } else {
+            let ratio = travel / distance
+            state.units[unitIndex].position = WorldPoint(
+                position.x + dx * ratio,
+                position.y + dy * ratio
+            )
+        }
+    }
+
+    private mutating func applyDamage(_ damage: Double, to targetID: String) {
+        if let unitIndex = state.units.firstIndex(where: { $0.id == targetID }) {
+            state.units[unitIndex].hitPoints -= damage
+        } else if let buildingIndex = state.buildings.firstIndex(where: { $0.id == targetID }) {
+            state.buildings[buildingIndex].hitPoints -= damage
+        }
+    }
+
+    private func combatTarget(id targetID: String) -> CombatTarget? {
+        if let unit = state.units.first(where: { $0.id == targetID && $0.hitPoints > 0 }) {
+            let definition = GameDefinitions.unit(unit.type)
+            return CombatTarget(id: unit.id, team: unit.team, position: unit.position, radius: definition.radius)
+        }
+        if let building = state.buildings.first(where: { $0.id == targetID && $0.hitPoints > 0 }) {
+            let definition = GameDefinitions.building(building.type)
+            return CombatTarget(id: building.id, team: building.team, position: building.position, radius: definition.size / 2)
+        }
+        return nil
+    }
+
+    private mutating func removeDestroyedEntities() {
+        let destroyedUnitIDs = Set(state.units.filter { $0.hitPoints <= 0 }.map(\.id))
+        let destroyedBuildings = state.buildings.filter { $0.hitPoints <= 0 }
+        let destroyedBuildingIDs = Set(destroyedBuildings.map(\.id))
+        guard !destroyedUnitIDs.isEmpty || !destroyedBuildingIDs.isEmpty else {
+            return
+        }
+
+        let destroyedExtractorNodeIDs = Set(destroyedBuildings.compactMap(\.nodeID))
+        for resourceIndex in state.resources.indices where destroyedExtractorNodeIDs.contains(state.resources[resourceIndex].id) {
+            state.resources[resourceIndex].claimedBy = nil
+        }
+
+        state.units.removeAll { destroyedUnitIDs.contains($0.id) }
+        state.buildings.removeAll { destroyedBuildingIDs.contains($0.id) }
+
+        let destroyedIDs = destroyedUnitIDs.union(destroyedBuildingIDs)
+        if let selectedEntityID = state.selectedEntityID, destroyedIDs.contains(selectedEntityID) {
+            state.selectedEntityID = nil
+        }
+        for unitIndex in state.units.indices {
+            if case let .attack(targetID)? = state.units[unitIndex].order, destroyedIDs.contains(targetID) {
+                state.units[unitIndex].order = nil
             }
         }
     }
@@ -165,10 +292,21 @@ public struct GameEngine: Sendable {
 }
 
 private extension WorldPoint {
+    func distance(to other: WorldPoint) -> Double {
+        distanceSquared(to: other).squareRoot()
+    }
+
     func clampedToMap() -> WorldPoint {
         WorldPoint(
             min(GameConstants.mapWidth, max(0, x)),
             min(GameConstants.mapHeight, max(0, y))
         )
     }
+}
+
+private struct CombatTarget {
+    let id: String
+    let team: Team
+    let position: WorldPoint
+    let radius: Double
 }

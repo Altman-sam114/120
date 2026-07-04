@@ -19,7 +19,7 @@
 
 v0.5 起，文档体系支持未来 Agent X 主控循环。Agent X 不直接替代 A/B/C，而是在人工用 `agentx:` / `x:` / `X:` 给出总目标后，把总目标拆成多个小轮次，每轮仍必须走 Agent A -> Agent B -> Agent C，并在 Agent C artifact 验收后判断继续、退回、暂停或完成。本轮只建立文档基线，不自动启动真实 Agent X 循环。
 
-v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令，以及 v1.2 新增的陆军工厂生产队列 MVP。
+v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP，以及 v1.3 新增的基础攻击、伤害、死亡清理和血条显示。
 
 ```text
 RustwarCore MapPreset / GameState / GameEngine
@@ -27,7 +27,7 @@ RustwarCore MapPreset / GameState / GameEngine
   -> SwiftUI RootGameView / GameHUDView
   -> SpriteKit BattlefieldScene 渲染地形、资源、单位和建筑
   -> SpatialTapGesture / DragGesture / MagnifyGesture
-  -> CameraState / GameEngine.select / GameEngine.issueMove / GameEngine.queueUnit / GameEngine.update
+  -> CameraState / GameEngine.select / GameEngine.issueMove / GameEngine.issueAttack / GameEngine.queueUnit / GameEngine.update
 ```
 
 ```text
@@ -343,7 +343,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 保存 iOS 迁移使用的共享 Swift 数据模型和小步确定性逻辑。
 - 定义 `MapPreset`、`TerrainGrid`、`ResourceNode`、`UnitSnapshot`、`UnitOrder`、`BuildingSnapshot`、`ProductionQueueItem`、`GameState`、`GameEngine`。
 - 初始化三张 Web 地图对应的基础首屏布局。
-- 计算收入、人口、简单 tick、实体命中选择、己方单单位移动和陆军工厂生产队列。
+- 计算收入、人口、简单 tick、实体命中选择、己方单单位移动、己方单单位攻击、基础伤害/死亡清理和陆军工厂生产队列。
 
 输入：
 
@@ -370,6 +370,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 支持 tap 选择、Move 模式落点、拖拽平移、捏合缩放和基础 economy tick。
 - v1.1 起，HUD Move 命令只作用于当前选中的己方单位；`RustwarCore` 推进位置，SpriteKit 只渲染状态。
 - v1.2 起，选中己方陆军工厂时 HUD 显示 Scout / Light Tank 生产按钮和队列进度；生产完成后由 `RustwarCore` 生成单位。
+- v1.3 起，选中己方单位时 HUD 显示 Attack 命令；Attack 模式下一次 tap 由 `GameController` 命中敌方目标并调用 `GameEngine.issueAttack`，`RustwarCore` 推进靠近、开火、扣血和死亡清理，SpriteKit 只显示 HP 条和攻击目标线。
 
 输入：
 
@@ -464,7 +465,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 后端：无。
 - Web 数据层：内存中的 `state`，浏览器 `localStorage`，沙盒 JSON 文件。
 - Web 模型层：`unitTypes`、`buildingTypes`、`mapPresets`、实体对象和订单对象。
-- 原生模型层：`MapPreset`、`GameState`、`GameEngine` 和 Swift value snapshots。
+- 原生模型层：`MapPreset`、`GameState`、`GameEngine`、单位/建筑定义、订单和 Swift value snapshots。
 - 测试层：当前是本地轻量检查 + GitHub Actions 结果包；浏览器 Smoke / Regression 与 iOS UI 自动化仍需人工明确要求或未来新增自动化测试。
 
 ## 4. 测试映射
@@ -472,7 +473,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 文档-only：本地至少 `git diff --check`，再通过 `main` push 触发 CI artifact。
 - 改 `.github/workflows/ci-results.yml`：本地 YAML 解析检查 + `git diff --check`，再通过云端 workflow 自检 artifact。
 - 改 `app.js` 语法或逻辑：本地至少 `node --check app.js` 和 `git diff --check`，CI 重跑同类检查。
-- 改 `swift/RustwarCore/`：本地尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 阻塞，至少尝试 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 并记录工具链错误。
+- 改 `swift/RustwarCore/`：本地尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 阻塞，至少尝试 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 并记录工具链错误；当前 Swift tests 覆盖初始化、经济 tick、选择、移动、生产和基础攻击/死亡清理。
 - 改 `ios/RustwarIOS/`：本地尽量跑 `xcodebuild -list` 和 iOS build；若只有 Command Line Tools 或 Swift/SDK 不匹配，记录阻塞并由云端 macOS artifact 复验。
 - 改 HTML id 或 UI 引用：云端轻量检查之外，若人工要求则做 Smoke 浏览器验证。
 - 改输入/命令：人工要求本机回归时验证主地图、迷你地图、Shift 追加、Esc 取消。

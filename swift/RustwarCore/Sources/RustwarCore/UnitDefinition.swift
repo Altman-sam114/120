@@ -9,6 +9,9 @@ public struct UnitDefinition: Codable, Equatable, Sendable {
     public let supply: Int
     public let metalCost: Double
     public let buildTime: Double
+    public let attackRange: Double
+    public let damage: Double
+    public let reloadTime: Double
 
     public init(
         type: UnitType,
@@ -20,7 +23,10 @@ public struct UnitDefinition: Codable, Equatable, Sendable {
         vision: Double,
         supply: Int,
         metalCost: Double,
-        buildTime: Double
+        buildTime: Double,
+        attackRange: Double,
+        damage: Double,
+        reloadTime: Double
     ) {
         self.type = type
         self.name = name
@@ -32,5 +38,8 @@ public struct UnitDefinition: Codable, Equatable, Sendable {
         self.supply = supply
         self.metalCost = metalCost
         self.buildTime = buildTime
+        self.attackRange = attackRange
+        self.damage = damage
+        self.reloadTime = reloadTime
     }
 }

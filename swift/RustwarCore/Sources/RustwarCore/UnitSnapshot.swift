@@ -6,6 +6,7 @@ public struct UnitSnapshot: Codable, Equatable, Identifiable, Sendable {
     public var hitPoints: Double
     public var maxHitPoints: Double
     public var order: UnitOrder?
+    public var weaponCooldown: Double
 
     public init(
         id: String,
@@ -14,7 +15,8 @@ public struct UnitSnapshot: Codable, Equatable, Identifiable, Sendable {
         position: WorldPoint,
         hitPoints: Double,
         maxHitPoints: Double,
-        order: UnitOrder? = nil
+        order: UnitOrder? = nil,
+        weaponCooldown: Double = 0
     ) {
         self.id = id
         self.type = type
@@ -23,5 +25,6 @@ public struct UnitSnapshot: Codable, Equatable, Identifiable, Sendable {
         self.hitPoints = hitPoints
         self.maxHitPoints = maxHitPoints
         self.order = order
+        self.weaponCooldown = weaponCooldown
     }
 }
