@@ -133,10 +133,17 @@ final class BattlefieldScene: SKScene {
 
     private func drawUnit(_ unit: UnitSnapshot, selectedID: String?, state: GameState) {
         let definition = GameDefinitions.unit(unit.type)
-        if case let .move(destination)? = unit.order {
+        switch unit.order {
+        case let .move(destination)?:
             drawMoveOrder(from: unit.position, to: destination, isSelected: unit.id == selectedID)
-        } else if case let .attack(targetID)? = unit.order, let targetPosition = targetPosition(for: targetID, in: state) {
-            drawAttackOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
+        case let .attack(targetID)?:
+            if let targetPosition = targetPosition(for: targetID, in: state) {
+                drawAttackOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
+            }
+        case let .attackMove(destination)?:
+            drawAttackMoveOrder(from: unit.position, to: destination, isSelected: unit.id == selectedID)
+        case nil:
+            break
         }
 
         let node = SKShapeNode(circleOfRadius: definition.radius)
@@ -173,6 +180,33 @@ final class BattlefieldScene: SKScene {
         marker.strokeColor = color
         marker.lineWidth = isSelected ? 3 : 1.5
         entityNode.addChild(marker)
+    }
+
+    private func drawAttackMoveOrder(from start: WorldPoint, to destination: WorldPoint, isSelected: Bool) {
+        let color = isSelected ? SKColor.systemYellow : SKColor.systemOrange.withAlphaComponent(0.55)
+        let path = CGMutablePath()
+        path.move(to: spritePoint(for: start))
+        path.addLine(to: spritePoint(for: destination))
+
+        let line = SKShapeNode(path: path)
+        line.strokeColor = color.withAlphaComponent(isSelected ? 0.82 : 0.42)
+        line.lineWidth = isSelected ? 3 : 1.5
+        line.lineCap = .round
+        entityNode.addChild(line)
+
+        let marker = SKShapeNode(rectOf: CGSize(width: isSelected ? 22 : 18, height: isSelected ? 22 : 18), cornerRadius: 4)
+        marker.position = spritePoint(for: destination)
+        marker.fillColor = SKColor.systemOrange.withAlphaComponent(isSelected ? 0.22 : 0.14)
+        marker.strokeColor = color
+        marker.lineWidth = isSelected ? 3 : 1.5
+        entityNode.addChild(marker)
+
+        let label = SKLabelNode(text: "A")
+        label.fontName = "AvenirNext-Bold"
+        label.fontSize = isSelected ? 12 : 10
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        marker.addChild(label)
     }
 
     private func drawAttackOrder(from start: WorldPoint, to destination: WorldPoint, isSelected: Bool) {

@@ -14,8 +14,8 @@
 - 项目形态：完整可玩的 Web Canvas RTS 原型 + v1.0 起新增的原生 Swift/iOS 迁移地基。
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
-- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、单单位移动命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂集结点设置、基础攻击、伤害和死亡清理、红方生产/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Rally 集结点按钮、Attack 命令、攻击目标线、HP 条、可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中和 Save/Load 单槽本地存档。
+- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、单单位移动命令、Attack-Move 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂集结点设置、基础攻击、伤害和死亡清理、红方生产/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Rally 集结点按钮、Attack 命令、攻击移动线、攻击目标线、HP 条、可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中和 Save/Load 单槽本地存档。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -573,3 +573,39 @@
 遗留事项：
 
 - v1.11 只提供原生 iOS 单槽本地存档；尚无多存档槽、文件导入导出、iCloud 同步、缩略图、Web 存档兼容、沙盒场景存档、迷雾或完整模式 parity。
+
+### v1.12 / iOS native attack-move foundation
+
+日期：2026-07-04
+
+核心变更：
+
+- `UnitOrder` 新增 `attackMove(destination:)`，只保存目的地，不持久化临时目标 ID。
+- `GameEngine.issueAttackMove(to:)` 只允许当前选中的己方单位接收攻击移动命令，并将目的地夹取到地图范围内。
+- `GameEngine.update` 推进 Attack-Move 时先在该单位 `vision` 范围内获取最近敌方单位或建筑，获取到目标时复用现有攻击靠近、冷却、伤害和死亡清理逻辑；未获取目标时继续向目的地移动，到达目的地后清除订单。
+- Swift tests 增加 Attack-Move 拒绝非法选择、无目标移动到点、视野内索敌并造成伤害、击毁临时目标后保留目的地、Stop 清除 Attack-Move，以及 `GameState` JSON 往返覆盖。
+- iOS HUD 新增 Attack Move 按钮，并把 Move / Attack Move / Attack / Rally 等待态设为互斥；Stop、Load、Restart 和切图会清除等待态。
+- SpriteKit 为 Attack-Move 显示独立目的地线和 `A` 标记。
+- 更新 README、flow、flowchart、test 和本日志，明确 v1.12 是原生 iOS 单单位攻击移动地基，不是完整 Web 命令 parity。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/UnitOrder.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.12-ios-attack-move-foundation.md`
+
+验证结果：
+
+- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+
+遗留事项：
+
+- v1.12 Attack-Move 只作用于当前选中己方单单位；尚无多选攻击移动、队列/Shift 命令、巡逻、护航、战术小地图下达攻击移动、寻路/阵型、雾或沙盒迁移。

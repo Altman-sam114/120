@@ -24,6 +24,7 @@ final class GameController {
     }
     var isAwaitingMoveTarget = false
     var isAwaitingAttackTarget = false
+    var isAwaitingAttackMoveTarget = false
     var isAwaitingRallyTarget = false
     var isPaused = false
     var simulationSpeed = 1.0 {
@@ -99,6 +100,10 @@ final class GameController {
         selectedPlayerUnit != nil
     }
 
+    var canIssueAttackMove: Bool {
+        selectedPlayerUnit != nil
+    }
+
     var canIssueStop: Bool {
         selectedPlayerUnit != nil
     }
@@ -115,8 +120,16 @@ final class GameController {
         isAwaitingAttackTarget ? "Cancel" : "Attack"
     }
 
+    var attackMoveCommandButtonTitle: String {
+        isAwaitingAttackMoveTarget ? "Cancel" : "Attack Move"
+    }
+
     var rallyCommandButtonTitle: String {
         isAwaitingRallyTarget ? "Cancel" : "Rally"
+    }
+
+    var isAwaitingTargetCommand: Bool {
+        isAwaitingMoveTarget || isAwaitingAttackTarget || isAwaitingAttackMoveTarget || isAwaitingRallyTarget
     }
 
     func advance(deltaTime: TimeInterval) {
@@ -130,7 +143,7 @@ final class GameController {
 
     func togglePause() {
         isPaused.toggle()
-        if !isAwaitingMoveTarget && !isAwaitingAttackTarget && !isAwaitingRallyTarget {
+        if !isAwaitingTargetCommand {
             commandStatus = isPaused ? "Paused" : "Running"
         }
         renderRevision += 1
@@ -153,6 +166,10 @@ final class GameController {
             let result = engine.issueMove(to: point)
             isAwaitingMoveTarget = false
             commandStatus = statusText(for: result)
+        } else if isAwaitingAttackMoveTarget {
+            let result = engine.issueAttackMove(to: point)
+            isAwaitingAttackMoveTarget = false
+            commandStatus = statusText(forAttackMove: result)
         } else if isAwaitingAttackTarget {
             let target = engine.state.selectionTarget(at: point, includeEnemies: true)
             let result: UnitCommandResult
@@ -179,9 +196,8 @@ final class GameController {
             isAwaitingMoveTarget = false
             commandStatus = nil
         } else if canIssueMove {
+            clearPendingTargetCommands()
             isAwaitingMoveTarget = true
-            isAwaitingAttackTarget = false
-            isAwaitingRallyTarget = false
             commandStatus = "Move target"
         }
         renderRevision += 1
@@ -192,10 +208,21 @@ final class GameController {
             isAwaitingAttackTarget = false
             commandStatus = nil
         } else if canIssueAttack {
+            clearPendingTargetCommands()
             isAwaitingAttackTarget = true
-            isAwaitingMoveTarget = false
-            isAwaitingRallyTarget = false
             commandStatus = "Attack target"
+        }
+        renderRevision += 1
+    }
+
+    func toggleAttackMoveCommand() {
+        if isAwaitingAttackMoveTarget {
+            isAwaitingAttackMoveTarget = false
+            commandStatus = nil
+        } else if canIssueAttackMove {
+            clearPendingTargetCommands()
+            isAwaitingAttackMoveTarget = true
+            commandStatus = "Attack-move target"
         }
         renderRevision += 1
     }
@@ -205,9 +232,8 @@ final class GameController {
             isAwaitingRallyTarget = false
             commandStatus = nil
         } else if canIssueRally {
+            clearPendingTargetCommands()
             isAwaitingRallyTarget = true
-            isAwaitingMoveTarget = false
-            isAwaitingAttackTarget = false
             commandStatus = "Rally target"
         }
         renderRevision += 1
@@ -215,9 +241,7 @@ final class GameController {
 
     func issueStopCommand() {
         let result = engine.issueStop()
-        isAwaitingMoveTarget = false
-        isAwaitingAttackTarget = false
-        isAwaitingRallyTarget = false
+        clearPendingTargetCommands()
         commandStatus = statusText(forStop: result)
         renderRevision += 1
     }
@@ -274,9 +298,7 @@ final class GameController {
             camera = payload.camera
             isPaused = payload.isPaused
             simulationSpeed = Self.validatedSimulationSpeed(payload.simulationSpeed, fallback: simulationSpeed)
-            isAwaitingMoveTarget = false
-            isAwaitingAttackTarget = false
-            isAwaitingRallyTarget = false
+            clearPendingTargetCommands()
             commandStatus = "Game loaded"
             mapRenderRevision += 1
         } catch {
@@ -302,7 +324,7 @@ final class GameController {
 
     func centerCamera(on point: WorldPoint) {
         camera.center(on: point)
-        if !isAwaitingMoveTarget && !isAwaitingAttackTarget && !isAwaitingRallyTarget {
+        if !isAwaitingTargetCommand {
             commandStatus = "Camera centered"
         }
         renderRevision += 1
@@ -312,9 +334,7 @@ final class GameController {
         let preset = MapPreset.preset(for: mapID)
         engine = GameEngine(mapID: mapID)
         camera.reset(to: preset.camera)
-        isAwaitingMoveTarget = false
-        isAwaitingAttackTarget = false
-        isAwaitingRallyTarget = false
+        clearPendingTargetCommands()
         commandStatus = status
         mapRenderRevision += 1
         renderRevision += 1
@@ -326,6 +346,13 @@ final class GameController {
 
     private static func validatedSimulationSpeed(_ speed: Double, fallback: Double) -> Double {
         simulationSpeedOptions.contains(speed) ? speed : fallback
+    }
+
+    private func clearPendingTargetCommands() {
+        isAwaitingMoveTarget = false
+        isAwaitingAttackTarget = false
+        isAwaitingAttackMoveTarget = false
+        isAwaitingRallyTarget = false
     }
 
     private var selectedPlayerUnit: UnitSnapshot? {
@@ -372,6 +399,19 @@ final class GameController {
             return "Player attacker required"
         case .invalidAttackTarget:
             return "Enemy target required"
+        }
+    }
+
+    private func statusText(forAttackMove result: UnitCommandResult) -> String? {
+        switch result {
+        case .issued:
+            return "Attack-move order issued"
+        case .noSelection:
+            return "No unit selected"
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop:
+            return "Player unit required"
+        case .invalidAttackTarget:
+            return "No target required"
         }
     }
 

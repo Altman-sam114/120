@@ -39,6 +39,7 @@ import Testing
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
     let movingUnit = try #require(engine.state.units.first { $0.team == .player })
     let attacker = try #require(engine.state.units.first { $0.team == .player && $0.id != movingUnit.id })
+    let attackMover = try #require(engine.state.units.first { $0.team == .player && $0.id != movingUnit.id && $0.id != attacker.id })
     let enemyTank = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
     let factory = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .landFactory })
 
@@ -47,6 +48,9 @@ import Testing
 
     _ = engine.select(at: attacker.position, includeEnemies: false)
     #expect(engine.issueAttack(targetID: enemyTank.id) == .issued)
+
+    let attackMoveSelection = try #require(engine.select(at: attackMover.position, includeEnemies: false))
+    #expect(engine.issueAttackMove(to: WorldPoint(attackMover.position.x + 360, attackMover.position.y)) == .issued)
 
     _ = engine.select(at: factory.position, includeEnemies: false)
     #expect(engine.setRally(to: WorldPoint(1_260, 2_180)) == .issued)
@@ -70,6 +74,12 @@ import Testing
     #expect(decoded.units.contains {
         if case .some(.attack(targetID: _)) = $0.order {
             return $0.id == attacker.id
+        }
+        return false
+    })
+    #expect(decoded.units.contains {
+        if case .some(.attackMove(destination: _)) = $0.order {
+            return $0.id == attackMoveSelection.id
         }
         return false
     })
@@ -169,6 +179,108 @@ import Testing
     #expect(arrivedUnit.order == nil)
 }
 
+@Test func attackMoveCommandRejectsMissingOrInvalidSelection() {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    #expect(engine.issueAttackMove(to: WorldPoint(1_200, 2_000)) == .noSelection)
+
+    _ = engine.select(at: WorldPoint(3_180, 720), includeEnemies: true)
+    #expect(engine.issueAttackMove(to: WorldPoint(3_000, 700)) == .selectedEntityCannotAttack)
+
+    _ = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    #expect(engine.issueAttackMove(to: WorldPoint(1_200, 2_000)) == .selectedEntityCannotAttack)
+}
+
+@Test func attackMoveMovesTowardDestinationWhenNoEnemyInRangeAndClearsOnArrival() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let target = try #require(selectedTarget)
+    let destination = WorldPoint(1_130, 2_020)
+    let result = engine.issueAttackMove(to: destination)
+
+    #expect(result == .issued)
+    #expect(engine.state.units.first { $0.id == target.id }?.order != nil)
+
+    engine.update(deltaTime: 1)
+
+    let movingUnit = try #require(engine.state.units.first { $0.id == target.id })
+    #expect(movingUnit.position.x > 1_100)
+    #expect(movingUnit.position.x < destination.x)
+    #expect(movingUnit.order != nil)
+
+    engine.update(deltaTime: 1)
+
+    let arrivedUnit = try #require(engine.state.units.first { $0.id == target.id })
+    #expect(abs(arrivedUnit.position.x - destination.x) < 0.001)
+    #expect(abs(arrivedUnit.position.y - destination.y) < 0.001)
+    #expect(arrivedUnit.order == nil)
+}
+
+@Test func attackMoveAcquiresNearbyEnemyAndDamagesBeforeDestination() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let attacker = try #require(engine.state.units.first { $0.team == .player && $0.type != .builder })
+    let enemy = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
+    let destination = WorldPoint(1_800, 1_000)
+
+    var state = engine.state
+    let attackerIndex = try #require(state.units.firstIndex { $0.id == attacker.id })
+    let enemyIndex = try #require(state.units.firstIndex { $0.id == enemy.id })
+    state.units[attackerIndex].position = WorldPoint(1_000, 1_000)
+    state.units[attackerIndex].weaponCooldown = 0
+    state.units[enemyIndex].position = WorldPoint(1_100, 1_000)
+    state.selectedEntityID = attacker.id
+
+    var testEngine = GameEngine(state: state, enemyAIEnabled: false)
+    let startingHitPoints = try #require(testEngine.state.units.first { $0.id == enemy.id }?.hitPoints)
+
+    #expect(testEngine.issueAttackMove(to: destination) == .issued)
+    testEngine.update(deltaTime: 1)
+
+    let damagedEnemy = try #require(testEngine.state.units.first { $0.id == enemy.id })
+    let attackerAfterUpdate = try #require(testEngine.state.units.first { $0.id == attacker.id })
+    let activeDestination: WorldPoint?
+    if case let .attackMove(destination)? = attackerAfterUpdate.order {
+        activeDestination = destination
+    } else {
+        activeDestination = nil
+    }
+
+    #expect(damagedEnemy.hitPoints < startingHitPoints)
+    #expect(activeDestination == destination)
+}
+
+@Test func attackMoveContinuesAfterDestroyingAcquiredTarget() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let attacker = try #require(engine.state.units.first { $0.team == .player && $0.type != .builder })
+    let enemy = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .scout })
+    let destination = WorldPoint(1_800, 1_000)
+
+    var state = engine.state
+    let attackerIndex = try #require(state.units.firstIndex { $0.id == attacker.id })
+    let enemyIndex = try #require(state.units.firstIndex { $0.id == enemy.id })
+    state.units[attackerIndex].position = WorldPoint(1_000, 1_000)
+    state.units[attackerIndex].weaponCooldown = 0
+    state.units[enemyIndex].position = WorldPoint(1_100, 1_000)
+    state.units[enemyIndex].hitPoints = 1
+    state.selectedEntityID = attacker.id
+
+    var testEngine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(testEngine.issueAttackMove(to: destination) == .issued)
+    testEngine.update(deltaTime: 1)
+
+    let attackerAfterUpdate = try #require(testEngine.state.units.first { $0.id == attacker.id })
+    let activeDestination: WorldPoint?
+    if case let .attackMove(destination)? = attackerAfterUpdate.order {
+        activeDestination = destination
+    } else {
+        activeDestination = nil
+    }
+
+    #expect(!testEngine.state.units.contains { $0.id == enemy.id })
+    #expect(activeDestination == destination)
+}
+
 @Test func stopCommandRejectsMissingOrInvalidSelection() {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
@@ -216,6 +328,18 @@ import Testing
     #expect(stoppedAttacker.order == nil)
     #expect(engine.state.selectedEntityID == attacker.id)
     #expect(targetAfterUpdate.hitPoints == targetBeforeUpdate.hitPoints)
+}
+
+@Test func stopCommandClearsAttackMoveOrder() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let selectedUnit = try #require(selectedTarget)
+    #expect(engine.issueAttackMove(to: WorldPoint(1_240, 2_020)) == .issued)
+    #expect(engine.issueStop() == .issued)
+
+    let stoppedUnit = try #require(engine.state.units.first { $0.id == selectedUnit.id })
+    #expect(stoppedUnit.order == nil)
 }
 
 @Test func attackCommandRejectsMissingInvalidAndFriendlyTargets() throws {

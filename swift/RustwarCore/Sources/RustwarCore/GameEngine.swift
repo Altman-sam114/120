@@ -73,6 +73,20 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func issueAttackMove(to destination: WorldPoint) -> UnitCommandResult {
+        guard let selectedEntityID = state.selectedEntityID else {
+            return .noSelection
+        }
+        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
+              state.units[unitIndex].team == .player else {
+            return .selectedEntityCannotAttack
+        }
+
+        state.units[unitIndex].order = .attackMove(destination: destination.clampedToMap())
+        return .issued
+    }
+
+    @discardableResult
     public mutating func issueStop() -> UnitCommandResult {
         guard let selectedEntityID = state.selectedEntityID else {
             return .noSelection
@@ -193,7 +207,7 @@ public struct GameEngine: Sendable {
         unit.type != .builder
     }
 
-    private func nearestCombatTarget(for unit: UnitSnapshot) -> CombatTarget? {
+    private func nearestCombatTarget(for unit: UnitSnapshot, maximumDistance: Double? = nil) -> CombatTarget? {
         var bestTarget: CombatTarget?
         var bestDistance = Double.infinity
 
@@ -204,6 +218,12 @@ public struct GameEngine: Sendable {
             let definition = GameDefinitions.unit(targetUnit.type)
             let target = CombatTarget(id: targetUnit.id, team: targetUnit.team, position: targetUnit.position, radius: definition.radius)
             let distance = unit.position.distanceSquared(to: target.position)
+            if let maximumDistance {
+                let acquisitionDistance = maximumDistance + target.radius
+                guard distance <= acquisitionDistance * acquisitionDistance else {
+                    continue
+                }
+            }
             if distance < bestDistance {
                 bestTarget = target
                 bestDistance = distance
@@ -217,6 +237,12 @@ public struct GameEngine: Sendable {
             let definition = GameDefinitions.building(building.type)
             let target = CombatTarget(id: building.id, team: building.team, position: building.position, radius: definition.size / 2)
             let distance = unit.position.distanceSquared(to: target.position)
+            if let maximumDistance {
+                let acquisitionDistance = maximumDistance + target.radius
+                guard distance <= acquisitionDistance * acquisitionDistance else {
+                    continue
+                }
+            }
             if distance < bestDistance {
                 bestTarget = target
                 bestDistance = distance
@@ -240,6 +266,8 @@ public struct GameEngine: Sendable {
                 updateMoveOrder(unitIndex: unitIndex, destination: destination, deltaTime: deltaTime)
             case let .attack(targetID):
                 updateAttackOrder(unitIndex: unitIndex, targetID: targetID, deltaTime: deltaTime)
+            case let .attackMove(destination):
+                updateAttackMoveOrder(unitIndex: unitIndex, destination: destination, deltaTime: deltaTime)
             }
         }
         removeDestroyedEntities()
@@ -278,6 +306,16 @@ public struct GameEngine: Sendable {
 
         applyDamage(definition.damage, to: target.id)
         state.units[unitIndex].weaponCooldown = definition.reloadTime
+    }
+
+    private mutating func updateAttackMoveOrder(unitIndex: Int, destination: WorldPoint, deltaTime: Double) {
+        let unit = state.units[unitIndex]
+        let definition = GameDefinitions.unit(unit.type)
+        if let target = nearestCombatTarget(for: unit, maximumDistance: definition.vision) {
+            updateAttackOrder(unitIndex: unitIndex, targetID: target.id, deltaTime: deltaTime)
+        } else {
+            updateMoveOrder(unitIndex: unitIndex, destination: destination, deltaTime: deltaTime)
+        }
     }
 
     private mutating func moveUnit(

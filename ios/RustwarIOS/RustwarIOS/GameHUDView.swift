@@ -3,6 +3,7 @@ import RustwarCore
 
 struct GameHUDView: View {
     @Bindable var controller: GameController
+    private let commandColumns = [GridItem(.adaptive(minimum: 112), spacing: 8)]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -91,7 +92,7 @@ struct GameHUDView: View {
             .frame(maxWidth: 220, minHeight: 44)
             .accessibilityLabel("Simulation speed")
 
-            HStack(spacing: 8) {
+            LazyVGrid(columns: commandColumns, alignment: .leading, spacing: 8) {
                 if controller.canIssueMove || controller.isAwaitingMoveTarget {
                     Button(
                         controller.moveCommandButtonTitle,
@@ -100,7 +101,18 @@ struct GameHUDView: View {
                     )
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
-                    .frame(minHeight: 44)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                }
+                if controller.canIssueAttackMove || controller.isAwaitingAttackMoveTarget {
+                    Button(
+                        controller.attackMoveCommandButtonTitle,
+                        systemImage: controller.isAwaitingAttackMoveTarget ? "xmark.circle" : "arrow.up.right.circle",
+                        action: controller.toggleAttackMoveCommand
+                    )
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .accessibilityLabel("Attack move")
                 }
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                     Button(
@@ -110,13 +122,13 @@ struct GameHUDView: View {
                     )
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
-                    .frame(minHeight: 44)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                 }
-                if controller.canIssueStop || controller.isAwaitingMoveTarget || controller.isAwaitingAttackTarget {
+                if controller.canIssueStop || controller.isAwaitingMoveTarget || controller.isAwaitingAttackTarget || controller.isAwaitingAttackMoveTarget {
                     Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
                         .buttonStyle(.bordered)
                         .controlSize(.regular)
-                        .frame(minHeight: 44)
+                        .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 if controller.canIssueRally || controller.isAwaitingRallyTarget {
                     Button(
@@ -126,7 +138,7 @@ struct GameHUDView: View {
                     )
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
-                    .frame(minHeight: 44)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                 }
             }
 
@@ -138,7 +150,7 @@ struct GameHUDView: View {
             if let commandStatus = controller.commandStatus {
                 Text(commandStatus)
                     .font(.footnote)
-                    .foregroundStyle(controller.isAwaitingMoveTarget || controller.isAwaitingAttackTarget || controller.isAwaitingRallyTarget ? .yellow : .secondary)
+                    .foregroundStyle(controller.isAwaitingTargetCommand ? .yellow : .secondary)
                     .lineLimit(1)
             }
 
