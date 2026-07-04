@@ -19,7 +19,7 @@
 
 v0.5 起，文档体系支持未来 Agent X 主控循环。Agent X 不直接替代 A/B/C，而是在人工用 `agentx:` / `x:` / `X:` 给出总目标后，把总目标拆成多个小轮次，每轮仍必须走 Agent A -> Agent B -> Agent C，并在 Agent C artifact 验收后判断继续、退回、暂停或完成。本轮只建立文档基线，不自动启动真实 Agent X 循环。
 
-v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制、v1.6 新增的原生三地图切换和当前地图重开，以及 v1.7 新增的原生战术小地图点按居中。
+v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制、v1.6 新增的原生三地图切换和当前地图重开、v1.7 新增的原生战术小地图点按居中，以及 v1.8 新增的原生 Stop 命令。
 
 ```text
 RustwarCore MapPreset / GameState / GameEngine
@@ -27,7 +27,7 @@ RustwarCore MapPreset / GameState / GameEngine
   -> SwiftUI RootGameView / GameHUDView / TacticalMapView
   -> SpriteKit BattlefieldScene 渲染地形、资源、单位和建筑
   -> SpatialTapGesture / DragGesture / MagnifyGesture / TacticalMap drag-tap
-  -> CameraState / pause-speed gate / GameEngine.select / GameEngine.issueMove / GameEngine.issueAttack / GameEngine.queueUnit / GameEngine.update
+  -> CameraState / pause-speed gate / GameEngine.select / GameEngine.issueMove / GameEngine.issueStop / GameEngine.issueAttack / GameEngine.queueUnit / GameEngine.update
   -> GameEngine enemy AI queues production and attack orders
 ```
 
@@ -344,7 +344,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 保存 iOS 迁移使用的共享 Swift 数据模型和小步确定性逻辑。
 - 定义 `MapPreset`、`TerrainGrid`、`ResourceNode`、`UnitSnapshot`、`UnitOrder`、`BuildingSnapshot`、`ProductionQueueItem`、`GameState`、`GameEngine`。
 - 初始化三张 Web 地图对应的基础首屏布局。
-- 计算收入、人口、简单 tick、实体命中选择、己方单单位移动、己方单单位攻击、基础伤害/死亡清理、陆军工厂生产队列和红方最小生产/进攻 AI。
+- 计算收入、人口、简单 tick、实体命中选择、己方单单位移动、己方 Stop、己方单单位攻击、基础伤害/死亡清理、陆军工厂生产队列和红方最小生产/进攻 AI。
 
 输入：
 
@@ -376,6 +376,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v1.5 起，`GameController.advance(deltaTime:)` 在调用 `GameEngine.update` 前执行暂停和速度倍率门控；暂停时模拟不推进，但 SpriteKit 仍可渲染当前状态，相机和 HUD 控件仍可响应。
 - v1.6 起，`GameController.currentMapID` 由 HUD Map picker 绑定，切换地图或 Restart 会重建 `GameEngine(mapID:)`、重置 `CameraState`、清除待选 Move/Attack 模式，并推进 `mapRenderRevision` 让 `BattlefieldScene` 在同图重开时也刷新地形和资源层。
 - v1.7 起，`RootGameView` 叠加原生 `TacticalMapView`；小地图用 SwiftUI `Canvas` 从 `GameState.resources`、`units`、`buildings` 和 `CameraState.center` 绘制资源、双方实体和相机中心，点按/拖放小地图会调用 `GameController.centerCamera(on:)`，再由 `CameraState.center(on:)` 夹到地图边界。
+- v1.8 起，选中己方单位时 HUD 显示 Stop 命令；点按 Stop 会调用 `GameEngine.issueStop()` 清除当前选中玩家单位的 `UnitSnapshot.order`，并由 `GameController` 取消待选 Move/Attack 目标模式。SpriteKit 无需新增渲染逻辑，订单线会随 `order == nil` 自然消失。
 
 输入：
 
@@ -478,7 +479,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 文档-only：本地至少 `git diff --check`，再通过 `main` push 触发 CI artifact。
 - 改 `.github/workflows/ci-results.yml`：本地 YAML 解析检查 + `git diff --check`，再通过云端 workflow 自检 artifact。
 - 改 `app.js` 语法或逻辑：本地至少 `node --check app.js` 和 `git diff --check`，CI 重跑同类检查。
-- 改 `swift/RustwarCore/`：本地尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 阻塞，至少尝试 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 并记录工具链错误；当前 Swift tests 覆盖初始化、经济 tick、选择、移动、生产、基础攻击/死亡清理和红方生产/进攻 AI。
+- 改 `swift/RustwarCore/`：本地尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 阻塞，至少尝试 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 并记录工具链错误；当前 Swift tests 覆盖初始化、经济 tick、选择、移动、Stop、生产、基础攻击/死亡清理和红方生产/进攻 AI。
 - 改 `ios/RustwarIOS/`：本地尽量跑 `xcodebuild -list` 和 iOS build；若只有 Command Line Tools 或 Swift/SDK 不匹配，记录阻塞并由云端 macOS artifact 复验；涉及战术小地图时还要确认新 Swift 文件已加入 Xcode target。
 - 改 HTML id 或 UI 引用：云端轻量检查之外，若人工要求则做 Smoke 浏览器验证。
 - 改输入/命令：人工要求本机回归时验证主地图、迷你地图、Shift 追加、Esc 取消。

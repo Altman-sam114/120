@@ -68,6 +68,20 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func issueStop() -> UnitCommandResult {
+        guard let selectedEntityID = state.selectedEntityID else {
+            return .noSelection
+        }
+        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
+              state.units[unitIndex].team == .player else {
+            return .selectedEntityCannotStop
+        }
+
+        state.units[unitIndex].order = nil
+        return .issued
+    }
+
+    @discardableResult
     public mutating func queueUnit(_ unitType: UnitType) -> ProductionCommandResult {
         guard let selectedEntityID = state.selectedEntityID else {
             return .noSelection

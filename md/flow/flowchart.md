@@ -52,7 +52,7 @@ flowchart TD
 ```mermaid
 flowchart TD
   P["RustwarCore MapPreset<br/>中文注释：三张地图的基础坐标、资源和初始单位建筑"] --> S["GameState<br/>中文注释：Swift 原生状态快照，包含资源、单位、建筑、金属和选择"]
-  S --> E["GameEngine.update / select / issueMove / issueAttack / queueUnit<br/>中文注释：推进收入 tick、点选、单单位移动、基础攻击、工厂生产和红方 AI"]
+  S --> E["GameEngine.update / select / issueMove / issueStop / issueAttack / queueUnit<br/>中文注释：推进收入 tick、点选、单单位移动、停止、基础攻击、工厂生产和红方 AI"]
   E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、移动命令和生产入口"]
   C --> H["SwiftUI RootGameView / GameHUDView<br/>中文注释：显示资源、收入、人口和选择反馈"]
   C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、双方单位建筑和相机中心"]
@@ -61,6 +61,8 @@ flowchart TD
   TT["TacticalMap DragTap<br/>中文注释：点按小地图换算世界坐标并居中相机"] --> C
   C --> M["UnitOrder.move<br/>中文注释：选中己方单位后写入移动目标"]
   M --> E
+  C --> STP["issueStop<br/>中文注释：选中己方单位后清除当前移动或攻击订单"]
+  STP --> E
   C --> A["UnitOrder.attack<br/>中文注释：选中己方单位后点选敌方目标，core 推进靠近、伤害和死亡清理"]
   A --> E
   C --> Q["ProductionQueueItem<br/>中文注释：选中己方陆军工厂后排队生产 Scout / Light Tank"]

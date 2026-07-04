@@ -87,6 +87,10 @@ final class GameController {
         selectedPlayerUnit != nil
     }
 
+    var canIssueStop: Bool {
+        selectedPlayerUnit != nil
+    }
+
     var moveCommandButtonTitle: String {
         isAwaitingMoveTarget ? "Cancel" : "Move"
     }
@@ -170,6 +174,14 @@ final class GameController {
         renderRevision += 1
     }
 
+    func issueStopCommand() {
+        let result = engine.issueStop()
+        isAwaitingMoveTarget = false
+        isAwaitingAttackTarget = false
+        commandStatus = statusText(forStop: result)
+        renderRevision += 1
+    }
+
     func queueUnit(_ unitType: UnitType) {
         let result = engine.queueUnit(unitType)
         commandStatus = statusText(for: result, unitType: unitType)
@@ -241,6 +253,8 @@ final class GameController {
             return "Player unit required"
         case .selectedEntityCannotAttack:
             return "Player attacker required"
+        case .selectedEntityCannotStop:
+            return "Player unit required"
         case .invalidAttackTarget:
             return "Enemy target required"
         }
@@ -252,10 +266,23 @@ final class GameController {
             return "Attack order issued"
         case .noSelection:
             return "No unit selected"
-        case .selectedEntityCannotMove, .selectedEntityCannotAttack:
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop:
             return "Player attacker required"
         case .invalidAttackTarget:
             return "Enemy target required"
+        }
+    }
+
+    private func statusText(forStop result: UnitCommandResult) -> String? {
+        switch result {
+        case .issued:
+            return "Stop order issued"
+        case .noSelection:
+            return "No unit selected"
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop:
+            return "Player unit required"
+        case .invalidAttackTarget:
+            return "No active target"
         }
     }
 

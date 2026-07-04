@@ -97,6 +97,12 @@ struct GameHUDView: View {
                     .controlSize(.regular)
                     .frame(minHeight: 44)
                 }
+                if controller.canIssueStop || controller.isAwaitingMoveTarget || controller.isAwaitingAttackTarget {
+                    Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
+                        .buttonStyle(.bordered)
+                        .controlSize(.regular)
+                        .frame(minHeight: 44)
+                }
             }
 
             Text("Selected: \(controller.selectedSummary)")

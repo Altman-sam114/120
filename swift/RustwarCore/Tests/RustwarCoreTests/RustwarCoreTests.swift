@@ -79,6 +79,55 @@ import Testing
     #expect(arrivedUnit.order == nil)
 }
 
+@Test func stopCommandRejectsMissingOrInvalidSelection() {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    #expect(engine.issueStop() == .noSelection)
+
+    _ = engine.select(at: WorldPoint(3_180, 720), includeEnemies: true)
+    #expect(engine.issueStop() == .selectedEntityCannotStop)
+
+    _ = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    #expect(engine.issueStop() == .selectedEntityCannotStop)
+}
+
+@Test func stopCommandClearsMoveOrderWithoutChangingSelectionOrOtherUnits() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let selectedUnit = try #require(selectedTarget)
+    let otherUnitID = try #require(engine.state.units.first { $0.team == .player && $0.id != selectedUnit.id }?.id)
+    #expect(engine.issueMove(to: WorldPoint(1_180, 2_020)) == .issued)
+
+    let otherUnitBeforeStop = try #require(engine.state.units.first { $0.id == otherUnitID })
+    #expect(engine.issueStop() == .issued)
+
+    let stoppedUnit = try #require(engine.state.units.first { $0.id == selectedUnit.id })
+    let otherUnitAfterStop = try #require(engine.state.units.first { $0.id == otherUnitID })
+    #expect(stoppedUnit.order == nil)
+    #expect(engine.state.selectedEntityID == selectedUnit.id)
+    #expect(otherUnitAfterStop == otherUnitBeforeStop)
+}
+
+@Test func stopCommandClearsAttackOrderAndPreventsFollowUpDamage() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let attackerTarget = engine.select(at: WorldPoint(1_010, 2_190), includeEnemies: false)
+    let attacker = try #require(attackerTarget)
+    let enemyTank = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
+    #expect(engine.issueAttack(targetID: enemyTank.id) == .issued)
+    #expect(engine.issueStop() == .issued)
+
+    let targetBeforeUpdate = try #require(engine.state.units.first { $0.id == enemyTank.id })
+    engine.update(deltaTime: 1)
+
+    let stoppedAttacker = try #require(engine.state.units.first { $0.id == attacker.id })
+    let targetAfterUpdate = try #require(engine.state.units.first { $0.id == enemyTank.id })
+    #expect(stoppedAttacker.order == nil)
+    #expect(engine.state.selectedEntityID == attacker.id)
+    #expect(targetAfterUpdate.hitPoints == targetBeforeUpdate.hitPoints)
+}
+
 @Test func attackCommandRejectsMissingInvalidAndFriendlyTargets() throws {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
