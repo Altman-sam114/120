@@ -293,8 +293,11 @@ import Testing
 
     let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
     let target = try #require(factoryTarget)
+    let newRally = WorldPoint(1_260, 2_180)
     let startingMetal = engine.state.metal[.player, default: 0]
     let startingUnitCount = engine.state.units.count
+
+    #expect(engine.setRally(to: newRally) == .issued)
     let result = engine.queueUnit(.scout)
 
     #expect(result == .queued)
@@ -315,6 +318,7 @@ import Testing
     #expect(spawnedUnit.type == .scout)
     #expect(spawnedUnit.team == .player)
     #expect(spawnedUnit.position == completedFactory.rally)
+    #expect(spawnedUnit.position == newRally)
 }
 
 @Test func queueUnitRejectsInvalidAndUnaffordableRequests() {
@@ -337,6 +341,35 @@ import Testing
     }
     let unaffordable = engine.queueUnit(.scout)
     #expect(unaffordable == .insufficientMetal)
+}
+
+@Test func rallyCommandRejectsMissingOrInvalidSelection() {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    #expect(engine.setRally(to: WorldPoint(1_200, 2_000)) == .noSelection)
+
+    _ = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    #expect(engine.setRally(to: WorldPoint(1_200, 2_000)) == .selectedBuildingCannotSetRally)
+
+    _ = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    #expect(engine.setRally(to: WorldPoint(1_200, 2_000)) == .selectedBuildingCannotSetRally)
+
+    _ = engine.select(at: WorldPoint(3_300, 735), includeEnemies: true)
+    #expect(engine.setRally(to: WorldPoint(3_000, 900)) == .selectedBuildingCannotSetRally)
+}
+
+@Test func rallyCommandUpdatesSelectedPlayerFactoryAndClampsToMap() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let target = try #require(factoryTarget)
+    let result = engine.setRally(to: WorldPoint(5_000, -120))
+
+    #expect(result == .issued)
+    #expect(engine.state.selectedEntityID == target.id)
+
+    let factory = try #require(engine.state.buildings.first { $0.id == target.id })
+    #expect(factory.rally == WorldPoint(GameConstants.mapWidth, 0))
 }
 
 private func totalHitPoints(in state: GameState, for team: Team) -> Double {

@@ -94,6 +94,21 @@ public struct GameEngine: Sendable {
         return enqueueUnit(unitType, at: buildingIndex)
     }
 
+    @discardableResult
+    public mutating func setRally(to destination: WorldPoint) -> RallyCommandResult {
+        guard let selectedEntityID = state.selectedEntityID else {
+            return .noSelection
+        }
+        guard let buildingIndex = state.buildings.firstIndex(where: { $0.id == selectedEntityID }),
+              state.buildings[buildingIndex].team == .player,
+              !GameDefinitions.building(state.buildings[buildingIndex].type).produces.isEmpty else {
+            return .selectedBuildingCannotSetRally
+        }
+
+        state.buildings[buildingIndex].rally = destination.clampedToMap()
+        return .issued
+    }
+
     private mutating func updateEnemyAI() {
         updateEnemyProduction()
         updateEnemyAttackOrders()

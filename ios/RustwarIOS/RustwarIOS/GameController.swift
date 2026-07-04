@@ -21,6 +21,7 @@ final class GameController {
     }
     var isAwaitingMoveTarget = false
     var isAwaitingAttackTarget = false
+    var isAwaitingRallyTarget = false
     var isPaused = false
     var simulationSpeed = 1.0 {
         didSet {
@@ -91,12 +92,20 @@ final class GameController {
         selectedPlayerUnit != nil
     }
 
+    var canIssueRally: Bool {
+        selectedPlayerProducer != nil
+    }
+
     var moveCommandButtonTitle: String {
         isAwaitingMoveTarget ? "Cancel" : "Move"
     }
 
     var attackCommandButtonTitle: String {
         isAwaitingAttackTarget ? "Cancel" : "Attack"
+    }
+
+    var rallyCommandButtonTitle: String {
+        isAwaitingRallyTarget ? "Cancel" : "Rally"
     }
 
     func advance(deltaTime: TimeInterval) {
@@ -110,7 +119,7 @@ final class GameController {
 
     func togglePause() {
         isPaused.toggle()
-        if !isAwaitingMoveTarget && !isAwaitingAttackTarget {
+        if !isAwaitingMoveTarget && !isAwaitingAttackTarget && !isAwaitingRallyTarget {
             commandStatus = isPaused ? "Paused" : "Running"
         }
         renderRevision += 1
@@ -143,6 +152,10 @@ final class GameController {
             }
             isAwaitingAttackTarget = false
             commandStatus = statusText(forAttack: result)
+        } else if isAwaitingRallyTarget {
+            let result = engine.setRally(to: point)
+            isAwaitingRallyTarget = false
+            commandStatus = statusText(forRally: result)
         } else {
             engine.select(at: point, includeEnemies: true)
             commandStatus = nil
@@ -157,6 +170,7 @@ final class GameController {
         } else if canIssueMove {
             isAwaitingMoveTarget = true
             isAwaitingAttackTarget = false
+            isAwaitingRallyTarget = false
             commandStatus = "Move target"
         }
         renderRevision += 1
@@ -169,7 +183,21 @@ final class GameController {
         } else if canIssueAttack {
             isAwaitingAttackTarget = true
             isAwaitingMoveTarget = false
+            isAwaitingRallyTarget = false
             commandStatus = "Attack target"
+        }
+        renderRevision += 1
+    }
+
+    func toggleRallyCommand() {
+        if isAwaitingRallyTarget {
+            isAwaitingRallyTarget = false
+            commandStatus = nil
+        } else if canIssueRally {
+            isAwaitingRallyTarget = true
+            isAwaitingMoveTarget = false
+            isAwaitingAttackTarget = false
+            commandStatus = "Rally target"
         }
         renderRevision += 1
     }
@@ -178,6 +206,7 @@ final class GameController {
         let result = engine.issueStop()
         isAwaitingMoveTarget = false
         isAwaitingAttackTarget = false
+        isAwaitingRallyTarget = false
         commandStatus = statusText(forStop: result)
         renderRevision += 1
     }
@@ -205,7 +234,7 @@ final class GameController {
 
     func centerCamera(on point: WorldPoint) {
         camera.center(on: point)
-        if !isAwaitingMoveTarget && !isAwaitingAttackTarget {
+        if !isAwaitingMoveTarget && !isAwaitingAttackTarget && !isAwaitingRallyTarget {
             commandStatus = "Camera centered"
         }
         renderRevision += 1
@@ -217,6 +246,7 @@ final class GameController {
         camera.reset(to: preset.camera)
         isAwaitingMoveTarget = false
         isAwaitingAttackTarget = false
+        isAwaitingRallyTarget = false
         commandStatus = status
         mapRenderRevision += 1
         renderRevision += 1
@@ -283,6 +313,17 @@ final class GameController {
             return "Player unit required"
         case .invalidAttackTarget:
             return "No active target"
+        }
+    }
+
+    private func statusText(forRally result: RallyCommandResult) -> String? {
+        switch result {
+        case .issued:
+            return "Rally point set"
+        case .noSelection:
+            return "No factory selected"
+        case .selectedBuildingCannotSetRally:
+            return "Factory required"
         }
     }
 

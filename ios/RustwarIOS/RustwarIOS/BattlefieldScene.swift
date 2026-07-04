@@ -110,6 +110,10 @@ final class BattlefieldScene: SKScene {
 
     private func drawBuilding(_ building: BuildingSnapshot, selectedID: String?) {
         let definition = GameDefinitions.building(building.type)
+        if building.id == selectedID, building.team == .player, !definition.produces.isEmpty {
+            drawRally(from: building.position, to: building.rally)
+        }
+
         let rect = CGRect(x: -definition.size / 2, y: -definition.size / 2, width: definition.size, height: definition.size)
         let node = SKShapeNode(rect: rect, cornerRadius: 6)
         node.position = spritePoint(for: building.position)
@@ -189,6 +193,33 @@ final class BattlefieldScene: SKScene {
         marker.strokeColor = color
         marker.lineWidth = isSelected ? 3 : 1.5
         entityNode.addChild(marker)
+    }
+
+    private func drawRally(from start: WorldPoint, to destination: WorldPoint) {
+        let color = SKColor.systemCyan
+        let path = CGMutablePath()
+        path.move(to: spritePoint(for: start))
+        path.addLine(to: spritePoint(for: destination))
+
+        let line = SKShapeNode(path: path)
+        line.strokeColor = color.withAlphaComponent(0.58)
+        line.lineWidth = 2
+        line.lineCap = .round
+        entityNode.addChild(line)
+
+        let marker = SKShapeNode(rectOf: CGSize(width: 18, height: 18), cornerRadius: 3)
+        marker.position = spritePoint(for: destination)
+        marker.fillColor = color.withAlphaComponent(0.18)
+        marker.strokeColor = color
+        marker.lineWidth = 2.5
+        entityNode.addChild(marker)
+
+        let flag = SKLabelNode(text: "R")
+        flag.fontName = "AvenirNext-Bold"
+        flag.fontSize = 10
+        flag.fontColor = .white
+        flag.verticalAlignmentMode = .center
+        marker.addChild(flag)
     }
 
     private func drawHealthBar(current: Double, max: Double, width: Double, yOffset: Double, on node: SKNode) {

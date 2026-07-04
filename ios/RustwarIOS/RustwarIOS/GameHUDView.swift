@@ -103,6 +103,16 @@ struct GameHUDView: View {
                         .controlSize(.regular)
                         .frame(minHeight: 44)
                 }
+                if controller.canIssueRally || controller.isAwaitingRallyTarget {
+                    Button(
+                        controller.rallyCommandButtonTitle,
+                        systemImage: controller.isAwaitingRallyTarget ? "xmark.circle" : "flag.checkered",
+                        action: controller.toggleRallyCommand
+                    )
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(minHeight: 44)
+                }
             }
 
             Text("Selected: \(controller.selectedSummary)")
@@ -113,7 +123,7 @@ struct GameHUDView: View {
             if let commandStatus = controller.commandStatus {
                 Text(commandStatus)
                     .font(.footnote)
-                    .foregroundStyle(controller.isAwaitingMoveTarget || controller.isAwaitingAttackTarget ? .yellow : .secondary)
+                    .foregroundStyle(controller.isAwaitingMoveTarget || controller.isAwaitingAttackTarget || controller.isAwaitingRallyTarget ? .yellow : .secondary)
                     .lineLimit(1)
             }
 
