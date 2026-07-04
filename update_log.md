@@ -14,8 +14,8 @@
 - 项目形态：完整可玩的 Web Canvas RTS 原型 + v1.0 起新增的原生 Swift/iOS 迁移地基。
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
-- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中和单单位移动命令基础模型。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基和单单位移动命令 MVP。
+- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、单单位移动命令和陆军工厂生产队列 MVP。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、单单位移动命令 MVP 和工厂生产按钮。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -245,3 +245,39 @@
 遗留事项：
 
 - v1.1 仍不是完整 RTS 命令 parity；尚无多选移动、寻路、攻击移动、停止、生产、战斗、AI、雾、存档或沙盒迁移。
+
+### v1.2 / iOS native production queue MVP
+
+日期：2026-07-04
+
+核心变更：
+
+- 在 `RustwarCore` 为单位定义增加金属成本和生产时间，为建筑定义增加可生产单位列表。
+- 新增 `ProductionQueueItem` 和 `ProductionCommandResult`，并在 `BuildingSnapshot` 保存生产队列。
+- `GameEngine.queueUnit(_:)` 支持选中己方陆军工厂后排队生产 Scout / Light Tank，检查金属、人口和可生产性，并在排队时扣除金属。
+- `GameEngine.update(deltaTime:)` 推进生产队列，完成后在工厂 rally 点生成单位。
+- iOS HUD 在选中己方陆军工厂时显示 Scout / Light Tank 生产按钮和队列进度。
+- Swift tests 增加生产排队、扣资源、拒绝非法/缺资源请求和生成单位覆盖。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/ProductionCommandResult.swift`
+- `swift/RustwarCore/Sources/RustwarCore/ProductionQueueItem.swift`
+- `swift/RustwarCore/Sources/RustwarCore/UnitDefinition.swift`
+- `swift/RustwarCore/Sources/RustwarCore/BuildingDefinition.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameDefinitions.swift`
+- `swift/RustwarCore/Sources/RustwarCore/BuildingSnapshot.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameState.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `md/prompt/v1-ios-swift-port/v1.2-ios-production-queue-mvp.md`
+
+验证结果：
+
+- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+
+遗留事项：
+
+- v1.2 仍不包含完整 Web 生产 parity；尚无取消/退款、重复生产、 rally 设置、多工厂面板、AI 使用生产、战斗、雾、存档或沙盒迁移。

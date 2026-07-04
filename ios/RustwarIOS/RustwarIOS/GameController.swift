@@ -30,6 +30,22 @@ final class GameController {
         engine.state.selectionSummary()
     }
 
+    var productionOptions: [UnitType] {
+        guard let building = selectedPlayerProducer else {
+            return []
+        }
+        return GameDefinitions.building(building.type).produces
+    }
+
+    var productionSummary: String? {
+        guard let item = selectedPlayerProducer?.productionQueue.first else {
+            return nil
+        }
+        let definition = GameDefinitions.unit(item.unitType)
+        let percent = Int((item.progressFraction * 100).rounded())
+        return "\(definition.name) \(percent)%"
+    }
+
     var canIssueMove: Bool {
         selectedPlayerUnit != nil
     }
@@ -68,6 +84,12 @@ final class GameController {
         renderRevision += 1
     }
 
+    func queueUnit(_ unitType: UnitType) {
+        let result = engine.queueUnit(unitType)
+        commandStatus = statusText(for: result, unitType: unitType)
+        renderRevision += 1
+    }
+
     func pan(by screenTranslation: CGSize) {
         camera.pan(by: screenTranslation)
         renderRevision += 1
@@ -90,6 +112,16 @@ final class GameController {
         return engine.state.units.first { $0.id == selectedEntityID && $0.team == .player }
     }
 
+    private var selectedPlayerProducer: BuildingSnapshot? {
+        guard let selectedEntityID = engine.state.selectedEntityID else {
+            return nil
+        }
+        guard let building = engine.state.buildings.first(where: { $0.id == selectedEntityID && $0.team == .player }) else {
+            return nil
+        }
+        return GameDefinitions.building(building.type).produces.isEmpty ? nil : building
+    }
+
     private func statusText(for result: UnitCommandResult) -> String? {
         switch result {
         case .issued:
@@ -98,6 +130,24 @@ final class GameController {
             return "No unit selected"
         case .selectedEntityCannotMove:
             return "Player unit required"
+        }
+    }
+
+    private func statusText(for result: ProductionCommandResult, unitType: UnitType) -> String? {
+        let unitName = GameDefinitions.unit(unitType).name
+        switch result {
+        case .queued:
+            return "\(unitName) queued"
+        case .noSelection:
+            return "No factory selected"
+        case .selectedBuildingCannotProduce:
+            return "Factory required"
+        case .unsupportedUnit:
+            return "Unsupported unit"
+        case .insufficientMetal:
+            return "Need more metal"
+        case .insufficientSupply:
+            return "Need more pop"
         }
     }
 }

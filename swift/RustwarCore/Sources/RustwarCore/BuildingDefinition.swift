@@ -7,6 +7,7 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
     public let income: Double
     public let supply: Int
     public let vision: Double
+    public let produces: [UnitType]
 
     public init(
         type: BuildingType,
@@ -16,7 +17,8 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
         size: Double,
         income: Double,
         supply: Int,
-        vision: Double
+        vision: Double,
+        produces: [UnitType] = []
     ) {
         self.type = type
         self.name = name
@@ -26,5 +28,6 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
         self.income = income
         self.supply = supply
         self.vision = vision
+        self.produces = produces
     }
 }

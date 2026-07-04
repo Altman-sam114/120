@@ -78,3 +78,54 @@ import Testing
     #expect(abs(arrivedUnit.position.y - 2_020) < 0.001)
     #expect(arrivedUnit.order == nil)
 }
+
+@Test func queueUnitDeductsMetalAndSpawnsAtFactoryRally() throws {
+    var engine = GameEngine(mapID: .coast)
+
+    let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let target = try #require(factoryTarget)
+    let startingMetal = engine.state.metal[.player, default: 0]
+    let startingUnitCount = engine.state.units.count
+    let result = engine.queueUnit(.scout)
+
+    #expect(result == .queued)
+    #expect(engine.state.metal[.player, default: 0] == startingMetal - GameDefinitions.unit(.scout).metalCost)
+
+    let queuedFactory = try #require(engine.state.buildings.first { $0.id == target.id })
+    #expect(queuedFactory.productionQueue.count == 1)
+    #expect(queuedFactory.productionQueue.first?.unitType == .scout)
+
+    for _ in 0..<4 {
+        engine.update(deltaTime: 1)
+    }
+
+    let completedFactory = try #require(engine.state.buildings.first { $0.id == target.id })
+    let spawnedUnit = try #require(engine.state.units.last)
+    #expect(completedFactory.productionQueue.isEmpty)
+    #expect(engine.state.units.count == startingUnitCount + 1)
+    #expect(spawnedUnit.type == .scout)
+    #expect(spawnedUnit.team == .player)
+    #expect(spawnedUnit.position == completedFactory.rally)
+}
+
+@Test func queueUnitRejectsInvalidAndUnaffordableRequests() {
+    var engine = GameEngine(mapID: .coast)
+
+    let noSelection = engine.queueUnit(.scout)
+    #expect(noSelection == .noSelection)
+
+    _ = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let selectedUnit = engine.queueUnit(.scout)
+    #expect(selectedUnit == .selectedBuildingCannotProduce)
+
+    _ = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let unsupported = engine.queueUnit(.gunboat)
+    #expect(unsupported == .unsupportedUnit)
+
+    for _ in 0..<11 {
+        let queued = engine.queueUnit(.scout)
+        #expect(queued == .queued)
+    }
+    let unaffordable = engine.queueUnit(.scout)
+    #expect(unaffordable == .insufficientMetal)
+}

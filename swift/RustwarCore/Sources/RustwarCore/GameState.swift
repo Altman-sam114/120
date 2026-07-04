@@ -8,6 +8,7 @@ public struct GameState: Codable, Equatable, Sendable {
     public var elapsed: Double
     public var selectedEntityID: String?
     public var mode: GameMode
+    public var nextEntityNumber: Int
 
     public init(mapID: MapID = .coast, mode: GameMode = .skirmish) {
         let map = MapPreset.preset(for: mapID)
@@ -98,5 +99,6 @@ public struct GameState: Codable, Equatable, Sendable {
         self.elapsed = 0
         self.selectedEntityID = nil
         self.mode = mode
+        self.nextEntityNumber = nextEntityNumber
     }
 }

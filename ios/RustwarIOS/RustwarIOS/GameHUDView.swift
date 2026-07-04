@@ -1,4 +1,5 @@
 import SwiftUI
+import RustwarCore
 
 struct GameHUDView: View {
     let controller: GameController
@@ -61,6 +62,27 @@ struct GameHUDView: View {
                 Text(commandStatus)
                     .font(.footnote)
                     .foregroundStyle(controller.isAwaitingMoveTarget ? .yellow : .secondary)
+                    .lineLimit(1)
+            }
+
+            if !controller.productionOptions.isEmpty {
+                HStack(spacing: 8) {
+                    ForEach(controller.productionOptions) { unitType in
+                        let definition = GameDefinitions.unit(unitType)
+                        Button(definition.name, systemImage: "plus") {
+                            controller.queueUnit(unitType)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.regular)
+                        .frame(minHeight: 44)
+                    }
+                }
+            }
+
+            if let productionSummary = controller.productionSummary {
+                Text("Queue: \(productionSummary)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
         }

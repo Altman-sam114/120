@@ -19,7 +19,7 @@
 
 v0.5 起，文档体系支持未来 Agent X 主控循环。Agent X 不直接替代 A/B/C，而是在人工用 `agentx:` / `x:` / `X:` 给出总目标后，把总目标拆成多个小轮次，每轮仍必须走 Agent A -> Agent B -> Agent C，并在 Agent C artifact 验收后判断继续、退回、暂停或完成。本轮只建立文档基线，不自动启动真实 Agent X 循环。
 
-v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick，以及 v1.1 新增的己方单单位移动命令。
+v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令，以及 v1.2 新增的陆军工厂生产队列 MVP。
 
 ```text
 RustwarCore MapPreset / GameState / GameEngine
@@ -27,7 +27,7 @@ RustwarCore MapPreset / GameState / GameEngine
   -> SwiftUI RootGameView / GameHUDView
   -> SpriteKit BattlefieldScene 渲染地形、资源、单位和建筑
   -> SpatialTapGesture / DragGesture / MagnifyGesture
-  -> CameraState / GameEngine.select / GameEngine.issueMove / GameEngine.update
+  -> CameraState / GameEngine.select / GameEngine.issueMove / GameEngine.queueUnit / GameEngine.update
 ```
 
 ```text
@@ -341,9 +341,9 @@ RustwarCore MapPreset / GameState / GameEngine
 职责：
 
 - 保存 iOS 迁移使用的共享 Swift 数据模型和小步确定性逻辑。
-- 定义 `MapPreset`、`TerrainGrid`、`ResourceNode`、`UnitSnapshot`、`UnitOrder`、`BuildingSnapshot`、`GameState`、`GameEngine`。
+- 定义 `MapPreset`、`TerrainGrid`、`ResourceNode`、`UnitSnapshot`、`UnitOrder`、`BuildingSnapshot`、`ProductionQueueItem`、`GameState`、`GameEngine`。
 - 初始化三张 Web 地图对应的基础首屏布局。
-- 计算收入、人口、简单 tick、实体命中选择和己方单单位移动。
+- 计算收入、人口、简单 tick、实体命中选择、己方单单位移动和陆军工厂生产队列。
 
 输入：
 
@@ -369,6 +369,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 用 `GameController` 持有 `GameEngine` 和 `CameraState`。
 - 支持 tap 选择、Move 模式落点、拖拽平移、捏合缩放和基础 economy tick。
 - v1.1 起，HUD Move 命令只作用于当前选中的己方单位；`RustwarCore` 推进位置，SpriteKit 只渲染状态。
+- v1.2 起，选中己方陆军工厂时 HUD 显示 Scout / Light Tank 生产按钮和队列进度；生产完成后由 `RustwarCore` 生成单位。
 
 输入：
 

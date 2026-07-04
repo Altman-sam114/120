@@ -7,6 +7,8 @@ public struct UnitDefinition: Codable, Equatable, Sendable {
     public let speed: Double
     public let vision: Double
     public let supply: Int
+    public let metalCost: Double
+    public let buildTime: Double
 
     public init(
         type: UnitType,
@@ -16,7 +18,9 @@ public struct UnitDefinition: Codable, Equatable, Sendable {
         radius: Double,
         speed: Double,
         vision: Double,
-        supply: Int
+        supply: Int,
+        metalCost: Double,
+        buildTime: Double
     ) {
         self.type = type
         self.name = name
@@ -26,5 +30,7 @@ public struct UnitDefinition: Codable, Equatable, Sendable {
         self.speed = speed
         self.vision = vision
         self.supply = supply
+        self.metalCost = metalCost
+        self.buildTime = buildTime
     }
 }

@@ -15,6 +15,7 @@ public struct GameEngine: Sendable {
         for team in Team.allCases {
             state.metal[team, default: 0] += state.income(for: team) * step
         }
+        updateProduction(deltaTime: step)
         updateUnitOrders(deltaTime: step)
     }
 
@@ -41,6 +42,46 @@ public struct GameEngine: Sendable {
 
         state.units[unitIndex].order = .move(destination: destination.clampedToMap())
         return .issued
+    }
+
+    @discardableResult
+    public mutating func queueUnit(_ unitType: UnitType) -> ProductionCommandResult {
+        guard let selectedEntityID = state.selectedEntityID else {
+            return .noSelection
+        }
+        guard let buildingIndex = state.buildings.firstIndex(where: { $0.id == selectedEntityID }),
+              state.buildings[buildingIndex].team == .player else {
+            return .selectedBuildingCannotProduce
+        }
+
+        let buildingDefinition = GameDefinitions.building(state.buildings[buildingIndex].type)
+        guard !buildingDefinition.produces.isEmpty else {
+            return .selectedBuildingCannotProduce
+        }
+        guard buildingDefinition.produces.contains(unitType) else {
+            return .unsupportedUnit
+        }
+
+        let unitDefinition = GameDefinitions.unit(unitType)
+        guard state.metal[.player, default: 0] >= unitDefinition.metalCost else {
+            return .insufficientMetal
+        }
+
+        let supply = state.supply(for: .player)
+        let queuedSupply = queuedSupply(for: .player)
+        guard supply.used + queuedSupply + unitDefinition.supply <= supply.cap else {
+            return .insufficientSupply
+        }
+
+        state.metal[.player, default: 0] -= unitDefinition.metalCost
+        state.buildings[buildingIndex].productionQueue.append(
+            ProductionQueueItem(
+                id: nextID(prefix: "queue"),
+                unitType: unitType,
+                buildTime: unitDefinition.buildTime
+            )
+        )
+        return .queued
     }
 
     private mutating func updateUnitOrders(deltaTime: Double) {
@@ -72,6 +113,54 @@ public struct GameEngine: Sendable {
                 )
             }
         }
+    }
+
+    private mutating func updateProduction(deltaTime: Double) {
+        for buildingIndex in state.buildings.indices {
+            guard !state.buildings[buildingIndex].productionQueue.isEmpty else {
+                continue
+            }
+
+            state.buildings[buildingIndex].productionQueue[0].progress += deltaTime
+            guard state.buildings[buildingIndex].productionQueue[0].progress >= state.buildings[buildingIndex].productionQueue[0].buildTime else {
+                continue
+            }
+
+            let completedItem = state.buildings[buildingIndex].productionQueue.removeFirst()
+            let building = state.buildings[buildingIndex]
+            spawnUnit(type: completedItem.unitType, team: building.team, position: building.rally)
+        }
+    }
+
+    private func queuedSupply(for team: Team) -> Int {
+        state.buildings.reduce(0) { partial, building in
+            guard building.team == team else {
+                return partial
+            }
+            let queueSupply = building.productionQueue.reduce(0) { queuePartial, item in
+                queuePartial + GameDefinitions.unit(item.unitType).supply
+            }
+            return partial + queueSupply
+        }
+    }
+
+    private mutating func spawnUnit(type: UnitType, team: Team, position: WorldPoint) {
+        let definition = GameDefinitions.unit(type)
+        state.units.append(
+            UnitSnapshot(
+                id: nextID(prefix: "unit"),
+                type: type,
+                team: team,
+                position: position.clampedToMap(),
+                hitPoints: definition.hitPoints,
+                maxHitPoints: definition.hitPoints
+            )
+        )
+    }
+
+    private mutating func nextID(prefix: String) -> String {
+        defer { state.nextEntityNumber += 1 }
+        return "\(prefix)-\(state.nextEntityNumber)"
     }
 }
 

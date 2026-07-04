@@ -14,8 +14,8 @@
 
 当前 iOS 版本是迁移地基，不是完整玩法 parity。它新增：
 
-- `swift/RustwarCore/`：无第三方依赖的 Swift core package，包含地图常量、三张地图初始布局、单位/建筑/资源模型、地形网格、初始状态、收入/人口计算、命中选择和单单位移动命令。
-- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位和 HUD；支持 tap 选择、拖拽平移、捏合缩放，选中己方单位后可用 Move 下达单单位移动命令，并通过简单 economy tick 推进金属收入。
+- `swift/RustwarCore/`：无第三方依赖的 Swift core package，包含地图常量、三张地图初始布局、单位/建筑/资源模型、地形网格、初始状态、收入/人口计算、命中选择、单单位移动命令和工厂生产队列 MVP。
+- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位和 HUD；支持 tap 选择、拖拽平移、捏合缩放，选中己方单位后可用 Move 下达单单位移动命令，选中己方陆军工厂后可生产 Scout / Light Tank，并通过简单 economy tick 推进金属收入和生产进度。
 
 本机验证命令：
 
@@ -91,6 +91,7 @@ xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -dest
 - 拖拽：平移战场视角。
 - 捏合：缩放战场视角。
 - Move：选中己方单位时显示；点按后进入移动落点模式，再 tap 战场下达单单位移动命令。
+- Scout / Light Tank：选中己方陆军工厂时显示；点按后扣除金属并加入生产队列，完成后在工厂集结点生成单位。
 - Reset：重置战场相机。
 
 ## 下一步复刻方向

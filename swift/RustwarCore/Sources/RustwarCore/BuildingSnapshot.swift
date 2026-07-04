@@ -8,6 +8,7 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
     public var buildProgress: Double
     public var rally: WorldPoint
     public var nodeID: String?
+    public var productionQueue: [ProductionQueueItem]
 
     public init(
         id: String,
@@ -18,7 +19,8 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
         maxHitPoints: Double,
         buildProgress: Double = 1,
         rally: WorldPoint,
-        nodeID: String? = nil
+        nodeID: String? = nil,
+        productionQueue: [ProductionQueueItem] = []
     ) {
         self.id = id
         self.type = type
@@ -29,5 +31,6 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
         self.buildProgress = buildProgress
         self.rally = rally
         self.nodeID = nodeID
+        self.productionQueue = productionQueue
     }
 }
