@@ -14,8 +14,8 @@
 
 当前 iOS 版本是迁移地基，不是完整玩法 parity。它新增：
 
-- `swift/RustwarCore/`：无第三方依赖的 Swift core package，包含地图常量、三张地图初始布局、单位/建筑/资源模型、地形网格、初始状态、收入/人口计算、命中选择、单单位移动命令、基础攻击命令、伤害/死亡清理和工厂生产队列 MVP。
-- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位和 HUD；支持 tap 选择、拖拽平移、捏合缩放，选中己方单位后可用 Move 下达单单位移动命令、用 Attack 点选敌方单位或建筑并显示血条/攻击目标，选中己方陆军工厂后可生产 Scout / Light Tank，并通过简单 economy tick 推进金属收入、生产进度和基础战斗。
+- `swift/RustwarCore/`：无第三方依赖的 Swift core package，包含地图常量、三张地图初始布局、单位/建筑/资源模型、地形网格、初始状态、收入/人口计算、命中选择、单单位移动命令、基础攻击命令、伤害/死亡清理、工厂生产队列 MVP 和红方生产/进攻 AI MVP。
+- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位和 HUD；支持 tap 选择、拖拽平移、捏合缩放，选中己方单位后可用 Move 下达单单位移动命令、用 Attack 点选敌方单位或建筑并显示血条/攻击目标，选中己方陆军工厂后可生产 Scout / Light Tank；红方会从现有陆军工厂排队造兵并主动攻击玩家目标，并通过简单 economy tick 推进金属收入、生产进度和基础战斗。
 
 本机验证命令：
 
@@ -93,6 +93,7 @@ xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -dest
 - Move：选中己方单位时显示；点按后进入移动落点模式，再 tap 战场下达单单位移动命令。
 - Attack：选中己方单位时显示；点按后进入攻击目标模式，再 tap 敌方单位或建筑下达攻击命令，单位会靠近射程、造成伤害并移除被摧毁目标。
 - Scout / Light Tank：选中己方陆军工厂时显示；点按后扣除金属并加入生产队列，完成后在工厂集结点生成单位。
+- 红方 AI：会用已有资源在红方陆军工厂排队生产 Scout / Light Tank，并让空闲战斗单位主动攻击最近的玩家单位或建筑。
 - Reset：重置战场相机。
 
 ## 下一步复刻方向

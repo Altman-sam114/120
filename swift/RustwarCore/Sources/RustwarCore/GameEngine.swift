@@ -1,8 +1,10 @@
 public struct GameEngine: Sendable {
     public private(set) var state: GameState
+    public private(set) var enemyAIEnabled: Bool
 
-    public init(mapID: MapID = .coast, mode: GameMode = .skirmish) {
+    public init(mapID: MapID = .coast, mode: GameMode = .skirmish, enemyAIEnabled: Bool = true) {
         self.state = GameState(mapID: mapID, mode: mode)
+        self.enemyAIEnabled = enemyAIEnabled
     }
 
     public mutating func update(deltaTime: Double) {
@@ -16,6 +18,9 @@ public struct GameEngine: Sendable {
             state.metal[team, default: 0] += state.income(for: team) * step
         }
         updateProduction(deltaTime: step)
+        if enemyAIEnabled {
+            updateEnemyAI()
+        }
         updateUnitOrders(deltaTime: step)
     }
 
@@ -72,34 +77,98 @@ public struct GameEngine: Sendable {
             return .selectedBuildingCannotProduce
         }
 
-        let buildingDefinition = GameDefinitions.building(state.buildings[buildingIndex].type)
-        guard !buildingDefinition.produces.isEmpty else {
-            return .selectedBuildingCannotProduce
+        return enqueueUnit(unitType, at: buildingIndex)
+    }
+
+    private mutating func updateEnemyAI() {
+        updateEnemyProduction()
+        updateEnemyAttackOrders()
+    }
+
+    private mutating func updateEnemyProduction() {
+        for buildingIndex in state.buildings.indices {
+            guard state.buildings[buildingIndex].team == .enemy,
+                  state.buildings[buildingIndex].hitPoints > 0,
+                  state.buildings[buildingIndex].buildProgress >= 1,
+                  state.buildings[buildingIndex].productionQueue.isEmpty,
+                  let unitType = enemyProductionChoice(for: state.buildings[buildingIndex]) else {
+                continue
+            }
+
+            _ = enqueueUnit(unitType, at: buildingIndex)
         }
-        guard buildingDefinition.produces.contains(unitType) else {
-            return .unsupportedUnit
+    }
+
+    private func enemyProductionChoice(for building: BuildingSnapshot) -> UnitType? {
+        let options = GameDefinitions.building(building.type).produces
+        guard !options.isEmpty else {
+            return nil
         }
 
-        let unitDefinition = GameDefinitions.unit(unitType)
-        guard state.metal[.player, default: 0] >= unitDefinition.metalCost else {
-            return .insufficientMetal
+        let enemyScouts = state.units.filter { $0.team == .enemy && $0.type == .scout }.count
+        let enemyTanks = state.units.filter { $0.team == .enemy && $0.type == .tank }.count
+        let preferredOptions: [UnitType]
+        if options.contains(.tank), enemyTanks <= enemyScouts {
+            preferredOptions = [.tank, .scout]
+        } else {
+            preferredOptions = [.scout, .tank]
         }
 
-        let supply = state.supply(for: .player)
-        let queuedSupply = queuedSupply(for: .player)
-        guard supply.used + queuedSupply + unitDefinition.supply <= supply.cap else {
-            return .insufficientSupply
+        for unitType in preferredOptions where options.contains(unitType) && canEnqueueUnit(unitType, for: building.team) {
+            return unitType
+        }
+        return options.first { canEnqueueUnit($0, for: building.team) }
+    }
+
+    private mutating func updateEnemyAttackOrders() {
+        for unitIndex in state.units.indices {
+            guard state.units[unitIndex].team == .enemy,
+                  state.units[unitIndex].hitPoints > 0,
+                  state.units[unitIndex].order == nil,
+                  isAICombatUnit(state.units[unitIndex]),
+                  let target = nearestCombatTarget(for: state.units[unitIndex]) else {
+                continue
+            }
+
+            state.units[unitIndex].order = .attack(targetID: target.id)
+        }
+    }
+
+    private func isAICombatUnit(_ unit: UnitSnapshot) -> Bool {
+        unit.type != .builder
+    }
+
+    private func nearestCombatTarget(for unit: UnitSnapshot) -> CombatTarget? {
+        var bestTarget: CombatTarget?
+        var bestDistance = Double.infinity
+
+        for targetUnit in state.units {
+            guard targetUnit.team != unit.team, targetUnit.hitPoints > 0 else {
+                continue
+            }
+            let definition = GameDefinitions.unit(targetUnit.type)
+            let target = CombatTarget(id: targetUnit.id, team: targetUnit.team, position: targetUnit.position, radius: definition.radius)
+            let distance = unit.position.distanceSquared(to: target.position)
+            if distance < bestDistance {
+                bestTarget = target
+                bestDistance = distance
+            }
         }
 
-        state.metal[.player, default: 0] -= unitDefinition.metalCost
-        state.buildings[buildingIndex].productionQueue.append(
-            ProductionQueueItem(
-                id: nextID(prefix: "queue"),
-                unitType: unitType,
-                buildTime: unitDefinition.buildTime
-            )
-        )
-        return .queued
+        for building in state.buildings {
+            guard building.team != unit.team, building.hitPoints > 0 else {
+                continue
+            }
+            let definition = GameDefinitions.building(building.type)
+            let target = CombatTarget(id: building.id, team: building.team, position: building.position, radius: definition.size / 2)
+            let distance = unit.position.distanceSquared(to: target.position)
+            if distance < bestDistance {
+                bestTarget = target
+                bestDistance = distance
+            }
+        }
+
+        return bestTarget
     }
 
     private mutating func updateUnitOrders(deltaTime: Double) {
@@ -257,6 +326,49 @@ public struct GameEngine: Sendable {
             let building = state.buildings[buildingIndex]
             spawnUnit(type: completedItem.unitType, team: building.team, position: building.rally)
         }
+    }
+
+    private mutating func enqueueUnit(_ unitType: UnitType, at buildingIndex: Int) -> ProductionCommandResult {
+        let buildingDefinition = GameDefinitions.building(state.buildings[buildingIndex].type)
+        guard !buildingDefinition.produces.isEmpty else {
+            return .selectedBuildingCannotProduce
+        }
+        guard buildingDefinition.produces.contains(unitType) else {
+            return .unsupportedUnit
+        }
+
+        let team = state.buildings[buildingIndex].team
+        let unitDefinition = GameDefinitions.unit(unitType)
+        guard state.metal[team, default: 0] >= unitDefinition.metalCost else {
+            return .insufficientMetal
+        }
+
+        let supply = state.supply(for: team)
+        let queuedSupply = queuedSupply(for: team)
+        guard supply.used + queuedSupply + unitDefinition.supply <= supply.cap else {
+            return .insufficientSupply
+        }
+
+        state.metal[team, default: 0] -= unitDefinition.metalCost
+        state.buildings[buildingIndex].productionQueue.append(
+            ProductionQueueItem(
+                id: nextID(prefix: "queue"),
+                unitType: unitType,
+                buildTime: unitDefinition.buildTime
+            )
+        )
+        return .queued
+    }
+
+    private func canEnqueueUnit(_ unitType: UnitType, for team: Team) -> Bool {
+        let unitDefinition = GameDefinitions.unit(unitType)
+        guard state.metal[team, default: 0] >= unitDefinition.metalCost else {
+            return false
+        }
+
+        let supply = state.supply(for: team)
+        let queuedSupply = queuedSupply(for: team)
+        return supply.used + queuedSupply + unitDefinition.supply <= supply.cap
     }
 
     private func queuedSupply(for team: Team) -> Int {

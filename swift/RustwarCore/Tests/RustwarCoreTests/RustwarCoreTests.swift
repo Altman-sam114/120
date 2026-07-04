@@ -26,7 +26,7 @@ import Testing
 }
 
 @Test func engineTickAccumulatesIncome() {
-    var engine = GameEngine(mapID: .coast)
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
     engine.update(deltaTime: 2)
 
@@ -35,7 +35,7 @@ import Testing
 }
 
 @Test func selectionFindsInitialPlayerCommand() {
-    var engine = GameEngine(mapID: .coast)
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
     let target = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
 
@@ -45,7 +45,7 @@ import Testing
 }
 
 @Test func moveCommandRejectsMissingOrInvalidSelection() {
-    var engine = GameEngine(mapID: .coast)
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
     #expect(engine.issueMove(to: WorldPoint(1_200, 2_000)) == .noSelection)
 
@@ -55,7 +55,7 @@ import Testing
 }
 
 @Test func moveCommandMovesSelectedPlayerUnitAndClearsOnArrival() throws {
-    var engine = GameEngine(mapID: .coast)
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
     let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
     let target = try #require(selectedTarget)
@@ -80,7 +80,7 @@ import Testing
 }
 
 @Test func attackCommandRejectsMissingInvalidAndFriendlyTargets() throws {
-    var engine = GameEngine(mapID: .coast)
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
     #expect(engine.issueAttack(targetID: "missing") == .noSelection)
 
@@ -100,7 +100,7 @@ import Testing
 }
 
 @Test func attackCommandMovesIntoRangeAndDamagesEnemy() throws {
-    var engine = GameEngine(mapID: .coast)
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
     let attackerTarget = engine.select(at: WorldPoint(1_010, 2_190), includeEnemies: false)
     let attacker = try #require(attackerTarget)
@@ -129,7 +129,7 @@ import Testing
 }
 
 @Test func attackCommandRemovesDestroyedTargetAndClearsOrder() throws {
-    var engine = GameEngine(mapID: .coast)
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
     let attackerTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
     let attacker = try #require(attackerTarget)
@@ -146,8 +146,101 @@ import Testing
     #expect(engine.state.units.first { $0.id == attacker.id }?.order == nil)
 }
 
-@Test func queueUnitDeductsMetalAndSpawnsAtFactoryRally() throws {
+@Test func enemyAIQueuesProductionWithoutChangingPlayerSelection() throws {
     var engine = GameEngine(mapID: .coast)
+
+    let selected = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    let playerSelection = try #require(selected)
+    let enemyFactory = try #require(engine.state.buildings.first { $0.team == .enemy && $0.type == .landFactory })
+    let startingEnemyMetal = engine.state.metal[.enemy, default: 0]
+
+    engine.update(deltaTime: 1)
+
+    let queuedFactory = try #require(engine.state.buildings.first { $0.id == enemyFactory.id })
+    #expect(queuedFactory.productionQueue.count == 1)
+    #expect(queuedFactory.productionQueue.first?.unitType == .scout)
+    #expect(engine.state.metal[.enemy, default: 0] < startingEnemyMetal + engine.state.income(for: .enemy))
+    #expect(engine.state.selectedEntityID == playerSelection.id)
+}
+
+@Test func enemyAIDoesNotStackFactoryQueueAndSpawnsUnit() throws {
+    var engine = GameEngine(mapID: .coast)
+
+    let enemyFactory = try #require(engine.state.buildings.first { $0.team == .enemy && $0.type == .landFactory })
+    let startingEnemyUnitCount = engine.state.units.filter { $0.team == .enemy }.count
+
+    engine.update(deltaTime: 1)
+    engine.update(deltaTime: 1)
+
+    let queuedFactory = try #require(engine.state.buildings.first { $0.id == enemyFactory.id })
+    #expect(queuedFactory.productionQueue.count == 1)
+
+    for _ in 0..<4 {
+        engine.update(deltaTime: 1)
+    }
+
+    let completedFactory = try #require(engine.state.buildings.first { $0.id == enemyFactory.id })
+    #expect(engine.state.units.filter { $0.team == .enemy }.count > startingEnemyUnitCount)
+    #expect(completedFactory.productionQueue.count <= 1)
+}
+
+@Test func enemyAIDoesNotQueueWhenSupplyBlocked() throws {
+    var engine = GameEngine(mapID: .coast)
+
+    let enemyFactory = try #require(engine.state.buildings.first { $0.team == .enemy && $0.type == .landFactory })
+
+    for _ in 0..<90 {
+        engine.update(deltaTime: 1)
+    }
+
+    let enemySupply = engine.state.supply(for: .enemy)
+    let cappedFactory = try #require(engine.state.buildings.first { $0.id == enemyFactory.id })
+    let queuedEnemySupply = cappedFactory.productionQueue.reduce(0) { partial, item in
+        partial + GameDefinitions.unit(item.unitType).supply
+    }
+    #expect(enemySupply.used == enemySupply.cap)
+    #expect(enemySupply.used + queuedEnemySupply <= enemySupply.cap)
+    #expect(cappedFactory.productionQueue.isEmpty)
+}
+
+@Test func enemyAIAssignsAttackOrdersToIdleCombatUnits() throws {
+    var engine = GameEngine(mapID: .coast)
+
+    engine.update(deltaTime: 1)
+
+    let attacker = try #require(engine.state.units.first {
+        if case .some(.attack(_)) = $0.order {
+            return $0.team == .enemy && $0.type != .builder
+        }
+        return false
+    })
+
+    let targetID: String?
+    if case let .attack(id)? = attacker.order {
+        targetID = id
+    } else {
+        targetID = nil
+    }
+    let issuedTargetID = try #require(targetID)
+    let targetsPlayerUnit = engine.state.units.contains { $0.id == issuedTargetID && $0.team == .player }
+    let targetsPlayerBuilding = engine.state.buildings.contains { $0.id == issuedTargetID && $0.team == .player }
+    #expect(targetsPlayerUnit || targetsPlayerBuilding)
+}
+
+@Test func enemyAIDamagesPlayerTargetsOverTime() {
+    var engine = GameEngine(mapID: .coast)
+    let startingPlayerHitPoints = totalHitPoints(in: engine.state, for: .player)
+
+    for _ in 0..<36 {
+        engine.update(deltaTime: 1)
+    }
+
+    let endingPlayerHitPoints = totalHitPoints(in: engine.state, for: .player)
+    #expect(endingPlayerHitPoints < startingPlayerHitPoints)
+}
+
+@Test func queueUnitDeductsMetalAndSpawnsAtFactoryRally() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
     let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
     let target = try #require(factoryTarget)
@@ -176,7 +269,7 @@ import Testing
 }
 
 @Test func queueUnitRejectsInvalidAndUnaffordableRequests() {
-    var engine = GameEngine(mapID: .coast)
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
     let noSelection = engine.queueUnit(.scout)
     #expect(noSelection == .noSelection)
@@ -195,4 +288,14 @@ import Testing
     }
     let unaffordable = engine.queueUnit(.scout)
     #expect(unaffordable == .insufficientMetal)
+}
+
+private func totalHitPoints(in state: GameState, for team: Team) -> Double {
+    let unitHitPoints = state.units.reduce(0.0) { partial, unit in
+        unit.team == team ? partial + unit.hitPoints : partial
+    }
+    let buildingHitPoints = state.buildings.reduce(0.0) { partial, building in
+        building.team == team ? partial + building.hitPoints : partial
+    }
+    return unitHitPoints + buildingHitPoints
 }

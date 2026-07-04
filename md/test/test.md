@@ -84,7 +84,7 @@ git diff --check
 
 当前基线：
 
-- `RustwarCore` tests 应通过，并覆盖地图/状态初始化、收入/人口计算、基础 tick、选择命中、己方单单位移动命令、陆军工厂生产队列、基础攻击命令、伤害推进和死亡目标清理。
+- `RustwarCore` tests 应通过，并覆盖地图/状态初始化、收入/人口计算、基础 tick、选择命中、己方单单位移动命令、陆军工厂生产队列、基础攻击命令、伤害推进、死亡目标清理和红方生产/进攻 AI。
 - 若本机 SwiftPM、PackageDescription、Swift/SDK 版本或权限导致 `swift test` 无法进入源码编译，必须记录原始错误；可额外执行 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 区分源码错误和工具链错误。
 
 ### 5. iOS App 检查

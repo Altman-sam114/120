@@ -14,8 +14,8 @@
 - 项目形态：完整可玩的 Web Canvas RTS 原型 + v1.0 起新增的原生 Swift/iOS 迁移地基。
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
-- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、单单位移动命令、陆军工厂生产队列 MVP、基础攻击、伤害和死亡清理。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、单单位移动命令 MVP、工厂生产按钮、Attack 命令、攻击目标线和 HP 条。
+- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、单单位移动命令、陆军工厂生产队列 MVP、基础攻击、伤害和死亡清理、红方生产/进攻 AI MVP。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、单单位移动命令 MVP、工厂生产按钮、Attack 命令、攻击目标线、HP 条和可见红方主动进攻。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -316,3 +316,33 @@
 遗留事项：
 
 - v1.3 仍不包含完整 Web 战斗 parity；尚无自动索敌、攻击移动、弹道/爆炸、范围伤害、炮塔开火、AI 作战、迷雾、战斗残骸、存档或沙盒迁移。
+
+### v1.4 / iOS native enemy AI combat MVP
+
+日期：2026-07-04
+
+核心变更：
+
+- `GameEngine` 新增默认开启的红方最小 AI 步骤，仍集中在 `RustwarCore`，不把 AI 逻辑写入 SwiftUI 或 SpriteKit。
+- 将生产入队逻辑抽为按建筑所属队伍工作的私有 helper，保留公开 `queueUnit(_:)` 的玩家选择语义不变。
+- 红方陆军工厂在队列为空、金属和人口允许时，从既有 `produces` 列表中按确定性偏好排队 Scout / Light Tank。
+- 红方空闲战斗单位会选择最近的玩家单位或建筑并写入 attack 订单，复用 v1.3 的靠近、伤害、死亡清理和攻击线渲染。
+- Swift tests 增加红方 AI 排队不污染玩家选择、队列不无限堆叠并完成出兵、攻击订单指向玩家目标、长时间推进造成玩家伤害覆盖。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.4-ios-enemy-ai-combat-mvp.md`
+
+验证结果：
+
+- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+
+遗留事项：
+
+- v1.4 仍不包含完整 Web AI parity；尚无扩张建造、资源点争夺、难度等级、目标优先级矩阵、攻击移动、寻路、炮塔开火、迷雾、存档或沙盒迁移。
