@@ -25,6 +25,7 @@ final class GameController {
     var isAwaitingMoveTarget = false
     var isAwaitingAttackTarget = false
     var isAwaitingAttackMoveTarget = false
+    var isAwaitingPatrolTarget = false
     var isAwaitingRallyTarget = false
     var isPaused = false
     var simulationSpeed = 1.0 {
@@ -104,6 +105,10 @@ final class GameController {
         selectedPlayerUnit != nil
     }
 
+    var canIssuePatrol: Bool {
+        selectedPlayerUnit != nil
+    }
+
     var canIssueStop: Bool {
         selectedPlayerUnit != nil
     }
@@ -124,12 +129,20 @@ final class GameController {
         isAwaitingAttackMoveTarget ? "Cancel" : "Attack Move"
     }
 
+    var patrolCommandButtonTitle: String {
+        isAwaitingPatrolTarget ? "Cancel" : "Patrol"
+    }
+
     var rallyCommandButtonTitle: String {
         isAwaitingRallyTarget ? "Cancel" : "Rally"
     }
 
     var isAwaitingTargetCommand: Bool {
-        isAwaitingMoveTarget || isAwaitingAttackTarget || isAwaitingAttackMoveTarget || isAwaitingRallyTarget
+        isAwaitingMoveTarget ||
+            isAwaitingAttackTarget ||
+            isAwaitingAttackMoveTarget ||
+            isAwaitingPatrolTarget ||
+            isAwaitingRallyTarget
     }
 
     func advance(deltaTime: TimeInterval) {
@@ -170,6 +183,10 @@ final class GameController {
             let result = engine.issueAttackMove(to: point)
             isAwaitingAttackMoveTarget = false
             commandStatus = statusText(forAttackMove: result)
+        } else if isAwaitingPatrolTarget {
+            let result = engine.issuePatrol(to: point)
+            isAwaitingPatrolTarget = false
+            commandStatus = statusText(forPatrol: result)
         } else if isAwaitingAttackTarget {
             let target = engine.state.selectionTarget(at: point, includeEnemies: true)
             let result: UnitCommandResult
@@ -223,6 +240,18 @@ final class GameController {
             clearPendingTargetCommands()
             isAwaitingAttackMoveTarget = true
             commandStatus = "Attack-move target"
+        }
+        renderRevision += 1
+    }
+
+    func togglePatrolCommand() {
+        if isAwaitingPatrolTarget {
+            isAwaitingPatrolTarget = false
+            commandStatus = nil
+        } else if canIssuePatrol {
+            clearPendingTargetCommands()
+            isAwaitingPatrolTarget = true
+            commandStatus = "Patrol target"
         }
         renderRevision += 1
     }
@@ -352,6 +381,7 @@ final class GameController {
         isAwaitingMoveTarget = false
         isAwaitingAttackTarget = false
         isAwaitingAttackMoveTarget = false
+        isAwaitingPatrolTarget = false
         isAwaitingRallyTarget = false
     }
 
@@ -406,6 +436,19 @@ final class GameController {
         switch result {
         case .issued:
             return "Attack-move order issued"
+        case .noSelection:
+            return "No unit selected"
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop:
+            return "Player unit required"
+        case .invalidAttackTarget:
+            return "No target required"
+        }
+    }
+
+    private func statusText(forPatrol result: UnitCommandResult) -> String? {
+        switch result {
+        case .issued:
+            return "Patrol route set"
         case .noSelection:
             return "No unit selected"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop:

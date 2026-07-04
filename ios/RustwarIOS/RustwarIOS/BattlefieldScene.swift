@@ -142,6 +142,8 @@ final class BattlefieldScene: SKScene {
             }
         case let .attackMove(destination)?:
             drawAttackMoveOrder(from: unit.position, to: destination, isSelected: unit.id == selectedID)
+        case let .patrol(origin, destination, returning)?:
+            drawPatrolOrder(origin: origin, destination: destination, returning: returning, isSelected: unit.id == selectedID)
         case nil:
             break
         }
@@ -207,6 +209,42 @@ final class BattlefieldScene: SKScene {
         label.fontColor = .white
         label.verticalAlignmentMode = .center
         marker.addChild(label)
+    }
+
+    private func drawPatrolOrder(origin: WorldPoint, destination: WorldPoint, returning: Bool, isSelected: Bool) {
+        let color = isSelected ? SKColor.systemYellow : SKColor.systemCyan.withAlphaComponent(0.62)
+        let path = CGMutablePath()
+        path.move(to: spritePoint(for: origin))
+        path.addLine(to: spritePoint(for: destination))
+
+        let line = SKShapeNode(path: path)
+        line.strokeColor = color.withAlphaComponent(isSelected ? 0.76 : 0.42)
+        line.lineWidth = isSelected ? 3 : 1.5
+        line.lineCap = .round
+        entityNode.addChild(line)
+
+        let passiveEndpoint = returning ? destination : origin
+        let activeEndpoint = returning ? origin : destination
+        let passiveMarker = SKShapeNode(circleOfRadius: isSelected ? 7 : 5)
+        passiveMarker.position = spritePoint(for: passiveEndpoint)
+        passiveMarker.fillColor = SKColor.systemCyan.withAlphaComponent(0.12)
+        passiveMarker.strokeColor = color.withAlphaComponent(0.72)
+        passiveMarker.lineWidth = isSelected ? 2 : 1.2
+        entityNode.addChild(passiveMarker)
+
+        let activeMarker = SKShapeNode(rectOf: CGSize(width: isSelected ? 22 : 18, height: isSelected ? 22 : 18), cornerRadius: 4)
+        activeMarker.position = spritePoint(for: activeEndpoint)
+        activeMarker.fillColor = SKColor.systemCyan.withAlphaComponent(isSelected ? 0.24 : 0.16)
+        activeMarker.strokeColor = color
+        activeMarker.lineWidth = isSelected ? 3 : 1.5
+        entityNode.addChild(activeMarker)
+
+        let label = SKLabelNode(text: "P")
+        label.fontName = "AvenirNext-Bold"
+        label.fontSize = isSelected ? 12 : 10
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        activeMarker.addChild(label)
     }
 
     private func drawAttackOrder(from start: WorldPoint, to destination: WorldPoint, isSelected: Bool) {

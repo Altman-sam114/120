@@ -114,6 +114,16 @@ struct GameHUDView: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .accessibilityLabel("Attack move")
                 }
+                if controller.canIssuePatrol || controller.isAwaitingPatrolTarget {
+                    Button(
+                        controller.patrolCommandButtonTitle,
+                        systemImage: controller.isAwaitingPatrolTarget ? "xmark.circle" : "arrow.triangle.2.circlepath",
+                        action: controller.togglePatrolCommand
+                    )
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                }
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                     Button(
                         controller.attackCommandButtonTitle,
@@ -124,7 +134,11 @@ struct GameHUDView: View {
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
                 }
-                if controller.canIssueStop || controller.isAwaitingMoveTarget || controller.isAwaitingAttackTarget || controller.isAwaitingAttackMoveTarget {
+                if controller.canIssueStop ||
+                    controller.isAwaitingMoveTarget ||
+                    controller.isAwaitingAttackTarget ||
+                    controller.isAwaitingAttackMoveTarget ||
+                    controller.isAwaitingPatrolTarget {
                     Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
                         .buttonStyle(.bordered)
                         .controlSize(.regular)

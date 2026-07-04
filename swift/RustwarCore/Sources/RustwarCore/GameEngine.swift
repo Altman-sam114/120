@@ -87,6 +87,24 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func issuePatrol(to destination: WorldPoint) -> UnitCommandResult {
+        guard let selectedEntityID = state.selectedEntityID else {
+            return .noSelection
+        }
+        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
+              state.units[unitIndex].team == .player else {
+            return .selectedEntityCannotMove
+        }
+
+        state.units[unitIndex].order = .patrol(
+            origin: state.units[unitIndex].position.clampedToMap(),
+            destination: destination.clampedToMap(),
+            returning: false
+        )
+        return .issued
+    }
+
+    @discardableResult
     public mutating func issueStop() -> UnitCommandResult {
         guard let selectedEntityID = state.selectedEntityID else {
             return .noSelection
@@ -268,6 +286,14 @@ public struct GameEngine: Sendable {
                 updateAttackOrder(unitIndex: unitIndex, targetID: targetID, deltaTime: deltaTime)
             case let .attackMove(destination):
                 updateAttackMoveOrder(unitIndex: unitIndex, destination: destination, deltaTime: deltaTime)
+            case let .patrol(origin, destination, returning):
+                updatePatrolOrder(
+                    unitIndex: unitIndex,
+                    origin: origin,
+                    destination: destination,
+                    returning: returning,
+                    deltaTime: deltaTime
+                )
             }
         }
         removeDestroyedEntities()
@@ -318,20 +344,52 @@ public struct GameEngine: Sendable {
         }
     }
 
+    private mutating func updatePatrolOrder(
+        unitIndex: Int,
+        origin: WorldPoint,
+        destination: WorldPoint,
+        returning: Bool,
+        deltaTime: Double
+    ) {
+        let unit = state.units[unitIndex]
+        let definition = GameDefinitions.unit(unit.type)
+        if let target = nearestCombatTarget(for: unit, maximumDistance: definition.vision) {
+            updateAttackOrder(unitIndex: unitIndex, targetID: target.id, deltaTime: deltaTime)
+            return
+        }
+
+        let activeDestination = returning ? origin : destination
+        let arrived = moveUnit(
+            at: unitIndex,
+            toward: activeDestination,
+            speed: definition.speed,
+            stoppingDistance: 0,
+            deltaTime: deltaTime,
+            clearsOrderOnArrival: false
+        )
+        if arrived {
+            state.units[unitIndex].order = .patrol(origin: origin, destination: destination, returning: !returning)
+        }
+    }
+
+    @discardableResult
     private mutating func moveUnit(
         at unitIndex: Int,
         toward destination: WorldPoint,
         speed: Double,
         stoppingDistance: Double,
-        deltaTime: Double
-    ) {
+        deltaTime: Double,
+        clearsOrderOnArrival: Bool = true
+    ) -> Bool {
         let position = state.units[unitIndex].position
         let dx = destination.x - position.x
         let dy = destination.y - position.y
         let distanceSquared = dx * dx + dy * dy
         guard distanceSquared > 0 else {
-            state.units[unitIndex].order = nil
-            return
+            if clearsOrderOnArrival {
+                state.units[unitIndex].order = nil
+            }
+            return true
         }
 
         let distance = distanceSquared.squareRoot()
@@ -340,7 +398,9 @@ public struct GameEngine: Sendable {
         if travel >= remainingDistance {
             if stoppingDistance <= 0 {
                 state.units[unitIndex].position = destination
-                state.units[unitIndex].order = nil
+                if clearsOrderOnArrival {
+                    state.units[unitIndex].order = nil
+                }
             } else if distance > 0 {
                 let ratio = remainingDistance / distance
                 state.units[unitIndex].position = WorldPoint(
@@ -348,12 +408,14 @@ public struct GameEngine: Sendable {
                     position.y + dy * ratio
                 )
             }
+            return true
         } else {
             let ratio = travel / distance
             state.units[unitIndex].position = WorldPoint(
                 position.x + dx * ratio,
                 position.y + dy * ratio
             )
+            return false
         }
     }
 

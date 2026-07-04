@@ -40,6 +40,9 @@ import Testing
     let movingUnit = try #require(engine.state.units.first { $0.team == .player })
     let attacker = try #require(engine.state.units.first { $0.team == .player && $0.id != movingUnit.id })
     let attackMover = try #require(engine.state.units.first { $0.team == .player && $0.id != movingUnit.id && $0.id != attacker.id })
+    let patroller = try #require(engine.state.units.first {
+        $0.team == .player && $0.id != movingUnit.id && $0.id != attacker.id && $0.id != attackMover.id
+    })
     let enemyTank = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
     let factory = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .landFactory })
 
@@ -52,6 +55,10 @@ import Testing
     let attackMoveSelectionTarget = engine.select(at: attackMover.position, includeEnemies: false)
     let attackMoveSelection = try #require(attackMoveSelectionTarget)
     #expect(engine.issueAttackMove(to: WorldPoint(attackMover.position.x + 360, attackMover.position.y)) == .issued)
+
+    let patrolSelectionTarget = engine.select(at: patroller.position, includeEnemies: false)
+    let patrolSelection = try #require(patrolSelectionTarget)
+    #expect(engine.issuePatrol(to: WorldPoint(patroller.position.x + 180, patroller.position.y)) == .issued)
 
     _ = engine.select(at: factory.position, includeEnemies: false)
     #expect(engine.setRally(to: WorldPoint(1_260, 2_180)) == .issued)
@@ -81,6 +88,12 @@ import Testing
     #expect(decoded.units.contains {
         if case .some(.attackMove(destination: _)) = $0.order {
             return $0.id == attackMoveSelection.id
+        }
+        return false
+    })
+    #expect(decoded.units.contains {
+        if case .some(.patrol(origin: _, destination: _, returning: _)) = $0.order {
+            return $0.id == patrolSelection.id
         }
         return false
     })
@@ -282,6 +295,141 @@ import Testing
     #expect(activeDestination == destination)
 }
 
+@Test func patrolCommandRejectsMissingOrInvalidSelectionAndClampsDestination() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    #expect(engine.issuePatrol(to: WorldPoint(1_200, 2_000)) == .noSelection)
+
+    _ = engine.select(at: WorldPoint(3_180, 720), includeEnemies: true)
+    #expect(engine.issuePatrol(to: WorldPoint(3_000, 700)) == .selectedEntityCannotMove)
+
+    _ = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    #expect(engine.issuePatrol(to: WorldPoint(1_200, 2_000)) == .selectedEntityCannotMove)
+
+    let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let selectedUnit = try #require(selectedTarget)
+    #expect(engine.issuePatrol(to: WorldPoint(-120, GameConstants.mapHeight + 240)) == .issued)
+
+    let patrollingUnit = try #require(engine.state.units.first { $0.id == selectedUnit.id })
+    if case let .patrol(origin, destination, returning)? = patrollingUnit.order {
+        #expect(origin == patrollingUnit.position)
+        #expect(destination == WorldPoint(0, GameConstants.mapHeight))
+        #expect(returning == false)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func patrolMovesTowardDestinationAndLoopsBetweenEndpoints() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let selectedUnit = try #require(selectedTarget)
+    let origin = try #require(engine.state.units.first { $0.id == selectedUnit.id }?.position)
+    let destination = WorldPoint(origin.x + 100, origin.y)
+
+    #expect(engine.issuePatrol(to: destination) == .issued)
+
+    engine.update(deltaTime: 1)
+
+    let outboundUnit = try #require(engine.state.units.first { $0.id == selectedUnit.id })
+    #expect(outboundUnit.position.x > origin.x)
+    #expect(outboundUnit.position.x < destination.x)
+    if case let .patrol(activeOrigin, activeDestination, returning)? = outboundUnit.order {
+        #expect(activeOrigin == origin)
+        #expect(activeDestination == destination)
+        #expect(returning == false)
+    } else {
+        #expect(Bool(false))
+    }
+
+    engine.update(deltaTime: 1)
+
+    let returningUnit = try #require(engine.state.units.first { $0.id == selectedUnit.id })
+    #expect(returningUnit.position == destination)
+    if case let .patrol(activeOrigin, activeDestination, returning)? = returningUnit.order {
+        #expect(activeOrigin == origin)
+        #expect(activeDestination == destination)
+        #expect(returning == true)
+    } else {
+        #expect(Bool(false))
+    }
+
+    engine.update(deltaTime: 1)
+
+    let inboundUnit = try #require(engine.state.units.first { $0.id == selectedUnit.id })
+    #expect(inboundUnit.position.x < destination.x)
+    #expect(inboundUnit.position.x > origin.x)
+    #expect(inboundUnit.order != nil)
+}
+
+@Test func patrolAcquiresNearbyEnemyAndPreservesRoute() throws {
+    let engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let attacker = try #require(engine.state.units.first { $0.team == .player && $0.type != .builder })
+    let enemy = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
+    let origin = WorldPoint(1_000, 1_000)
+    let destination = WorldPoint(1_800, 1_000)
+
+    var state = engine.state
+    let attackerIndex = try #require(state.units.firstIndex { $0.id == attacker.id })
+    let enemyIndex = try #require(state.units.firstIndex { $0.id == enemy.id })
+    state.units[attackerIndex].position = origin
+    state.units[attackerIndex].weaponCooldown = 0
+    state.units[enemyIndex].position = WorldPoint(1_100, 1_000)
+    state.selectedEntityID = attacker.id
+
+    var testEngine = GameEngine(state: state, enemyAIEnabled: false)
+    let startingHitPoints = try #require(testEngine.state.units.first { $0.id == enemy.id }?.hitPoints)
+
+    #expect(testEngine.issuePatrol(to: destination) == .issued)
+    testEngine.update(deltaTime: 1)
+
+    let damagedEnemy = try #require(testEngine.state.units.first { $0.id == enemy.id })
+    let attackerAfterUpdate = try #require(testEngine.state.units.first { $0.id == attacker.id })
+    let activeRoute: (WorldPoint, WorldPoint, Bool)?
+    if case let .patrol(origin, destination, returning)? = attackerAfterUpdate.order {
+        activeRoute = (origin, destination, returning)
+    } else {
+        activeRoute = nil
+    }
+
+    #expect(damagedEnemy.hitPoints < startingHitPoints)
+    #expect(activeRoute?.0 == origin)
+    #expect(activeRoute?.1 == destination)
+    #expect(activeRoute?.2 == false)
+}
+
+@Test func patrolContinuesAfterDestroyingAcquiredTarget() throws {
+    let engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let attacker = try #require(engine.state.units.first { $0.team == .player && $0.type != .builder })
+    let enemy = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .scout })
+    let origin = WorldPoint(1_000, 1_000)
+    let destination = WorldPoint(1_800, 1_000)
+
+    var state = engine.state
+    let attackerIndex = try #require(state.units.firstIndex { $0.id == attacker.id })
+    let enemyIndex = try #require(state.units.firstIndex { $0.id == enemy.id })
+    state.units[attackerIndex].position = origin
+    state.units[attackerIndex].weaponCooldown = 0
+    state.units[enemyIndex].position = WorldPoint(1_100, 1_000)
+    state.units[enemyIndex].hitPoints = 1
+    state.selectedEntityID = attacker.id
+
+    var testEngine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(testEngine.issuePatrol(to: destination) == .issued)
+    testEngine.update(deltaTime: 1)
+
+    let attackerAfterUpdate = try #require(testEngine.state.units.first { $0.id == attacker.id })
+    #expect(!testEngine.state.units.contains { $0.id == enemy.id })
+    if case let .patrol(activeOrigin, activeDestination, returning)? = attackerAfterUpdate.order {
+        #expect(activeOrigin == origin)
+        #expect(activeDestination == destination)
+        #expect(returning == false)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
 @Test func stopCommandRejectsMissingOrInvalidSelection() {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
@@ -337,6 +485,18 @@ import Testing
     let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
     let selectedUnit = try #require(selectedTarget)
     #expect(engine.issueAttackMove(to: WorldPoint(1_240, 2_020)) == .issued)
+    #expect(engine.issueStop() == .issued)
+
+    let stoppedUnit = try #require(engine.state.units.first { $0.id == selectedUnit.id })
+    #expect(stoppedUnit.order == nil)
+}
+
+@Test func stopCommandClearsPatrolOrder() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let selectedUnit = try #require(selectedTarget)
+    #expect(engine.issuePatrol(to: WorldPoint(1_240, 2_020)) == .issued)
     #expect(engine.issueStop() == .issued)
 
     let stoppedUnit = try #require(engine.state.units.first { $0.id == selectedUnit.id })
