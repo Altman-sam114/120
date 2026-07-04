@@ -1,0 +1,229 @@
+import SwiftUI
+import RustwarCore
+
+struct TacticalMapView: View {
+    let controller: GameController
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+
+    var body: some View {
+        GeometryReader { proxy in
+            let state = controller.engine.state
+            let resources = state.resources
+            let units = state.units
+            let buildings = state.buildings
+            let selectedEntityID = state.selectedEntityID
+            let cameraCenter = controller.camera.center
+            let shouldDifferentiateWithoutColor = differentiateWithoutColor
+
+            Canvas { context, size in
+                Self.drawMap(
+                    context: &context,
+                    size: size,
+                    resources: resources,
+                    units: units,
+                    buildings: buildings,
+                    selectedEntityID: selectedEntityID,
+                    cameraCenter: cameraCenter,
+                    differentiateWithoutColor: shouldDifferentiateWithoutColor
+                )
+            }
+            .contentShape(Rectangle())
+            .gesture(mapGesture(in: proxy.size))
+        }
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.white.opacity(0.24), lineWidth: 1)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Tactical map")
+        .accessibilityHint("Centers the battlefield camera on the selected map position.")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private func mapGesture(in size: CGSize) -> some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .local)
+            .onEnded { value in
+                centerCamera(at: value.location, in: size)
+            }
+    }
+
+    private func centerCamera(at location: CGPoint, in size: CGSize) {
+        guard size.width > 0, size.height > 0 else {
+            return
+        }
+
+        let clampedX = min(size.width, max(0, location.x))
+        let clampedY = min(size.height, max(0, location.y))
+        let worldPoint = WorldPoint(
+            Double(clampedX / size.width) * GameConstants.mapWidth,
+            Double(clampedY / size.height) * GameConstants.mapHeight
+        )
+        controller.centerCamera(on: worldPoint)
+    }
+
+    private static func drawMap(
+        context: inout GraphicsContext,
+        size: CGSize,
+        resources: [ResourceNode],
+        units: [UnitSnapshot],
+        buildings: [BuildingSnapshot],
+        selectedEntityID: String?,
+        cameraCenter: WorldPoint,
+        differentiateWithoutColor: Bool
+    ) {
+        guard size.width > 0, size.height > 0 else {
+            return
+        }
+
+        let mapRect = CGRect(origin: .zero, size: size)
+        context.fill(Path(mapRect), with: .color(.black.opacity(0.42)))
+
+        for resource in resources {
+            drawResource(resource, in: &context, size: size)
+        }
+
+        for building in buildings {
+            drawBuilding(
+                building,
+                in: &context,
+                size: size,
+                isSelected: building.id == selectedEntityID,
+                differentiateWithoutColor: differentiateWithoutColor
+            )
+        }
+
+        for unit in units {
+            drawUnit(
+                unit,
+                in: &context,
+                size: size,
+                isSelected: unit.id == selectedEntityID,
+                differentiateWithoutColor: differentiateWithoutColor
+            )
+        }
+
+        drawCameraCenter(cameraCenter, in: &context, size: size)
+    }
+
+    private static func drawResource(_ resource: ResourceNode, in context: inout GraphicsContext, size: CGSize) {
+        let point = mapPoint(for: resource.position, size: size)
+        let radius: CGFloat = resource.claimedBy == nil ? 3.2 : 3.8
+        var diamond = Path()
+        diamond.move(to: CGPoint(x: point.x, y: point.y - radius))
+        diamond.addLine(to: CGPoint(x: point.x + radius, y: point.y))
+        diamond.addLine(to: CGPoint(x: point.x, y: point.y + radius))
+        diamond.addLine(to: CGPoint(x: point.x - radius, y: point.y))
+        diamond.closeSubpath()
+
+        let fill = resource.claimedBy == nil ? Color.cyan.opacity(0.82) : Color.yellow.opacity(0.88)
+        context.fill(diamond, with: .color(fill))
+        context.stroke(diamond, with: .color(.white.opacity(0.42)), lineWidth: 0.7)
+    }
+
+    private static func drawBuilding(
+        _ building: BuildingSnapshot,
+        in context: inout GraphicsContext,
+        size: CGSize,
+        isSelected: Bool,
+        differentiateWithoutColor: Bool
+    ) {
+        let point = mapPoint(for: building.position, size: size)
+        let side: CGFloat = isSelected ? 8 : 6.5
+        let rect = CGRect(x: point.x - side / 2, y: point.y - side / 2, width: side, height: side)
+        let path = Path(rect)
+
+        context.fill(path, with: .color(color(for: building.team).opacity(0.92)))
+        context.stroke(path, with: .color(isSelected ? .yellow : .white.opacity(0.42)), lineWidth: isSelected ? 1.6 : 0.8)
+
+        if building.team == .enemy || differentiateWithoutColor {
+            drawSlash(in: &context, rect: rect, color: .white.opacity(0.72), lineWidth: 0.8)
+        }
+    }
+
+    private static func drawUnit(
+        _ unit: UnitSnapshot,
+        in context: inout GraphicsContext,
+        size: CGSize,
+        isSelected: Bool,
+        differentiateWithoutColor: Bool
+    ) {
+        let point = mapPoint(for: unit.position, size: size)
+        let radius: CGFloat = isSelected ? 4.6 : 3.4
+        let rect = CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2)
+        let path = Path(ellipseIn: rect)
+
+        context.fill(path, with: .color(color(for: unit.team).opacity(0.95)))
+        context.stroke(path, with: .color(isSelected ? .yellow : .white.opacity(0.46)), lineWidth: isSelected ? 1.4 : 0.7)
+
+        if unit.team == .enemy || differentiateWithoutColor {
+            drawCross(in: &context, center: point, radius: radius * 0.76, color: .white.opacity(0.72), lineWidth: 0.7)
+        }
+    }
+
+    private static func drawCameraCenter(_ center: WorldPoint, in context: inout GraphicsContext, size: CGSize) {
+        let point = mapPoint(for: center, size: size)
+        let radius: CGFloat = 7
+        let circleRect = CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2)
+        context.stroke(Path(ellipseIn: circleRect), with: .color(.white.opacity(0.9)), lineWidth: 1.2)
+
+        var horizontal = Path()
+        horizontal.move(to: CGPoint(x: point.x - radius - 3, y: point.y))
+        horizontal.addLine(to: CGPoint(x: point.x + radius + 3, y: point.y))
+        context.stroke(horizontal, with: .color(.white.opacity(0.8)), lineWidth: 1)
+
+        var vertical = Path()
+        vertical.move(to: CGPoint(x: point.x, y: point.y - radius - 3))
+        vertical.addLine(to: CGPoint(x: point.x, y: point.y + radius + 3))
+        context.stroke(vertical, with: .color(.white.opacity(0.8)), lineWidth: 1)
+    }
+
+    private static func drawSlash(in context: inout GraphicsContext, rect: CGRect, color: Color, lineWidth: CGFloat) {
+        var slash = Path()
+        slash.move(to: CGPoint(x: rect.minX + 1, y: rect.minY + 1))
+        slash.addLine(to: CGPoint(x: rect.maxX - 1, y: rect.maxY - 1))
+        context.stroke(slash, with: .color(color), lineWidth: lineWidth)
+    }
+
+    private static func drawCross(
+        in context: inout GraphicsContext,
+        center: CGPoint,
+        radius: CGFloat,
+        color: Color,
+        lineWidth: CGFloat
+    ) {
+        var first = Path()
+        first.move(to: CGPoint(x: center.x - radius, y: center.y - radius))
+        first.addLine(to: CGPoint(x: center.x + radius, y: center.y + radius))
+        context.stroke(first, with: .color(color), lineWidth: lineWidth)
+
+        var second = Path()
+        second.move(to: CGPoint(x: center.x - radius, y: center.y + radius))
+        second.addLine(to: CGPoint(x: center.x + radius, y: center.y - radius))
+        context.stroke(second, with: .color(color), lineWidth: lineWidth)
+    }
+
+    private static func mapPoint(for point: WorldPoint, size: CGSize) -> CGPoint {
+        CGPoint(
+            x: CGFloat(point.x / GameConstants.mapWidth) * size.width,
+            y: CGFloat(point.y / GameConstants.mapHeight) * size.height
+        )
+    }
+
+    private static func color(for team: Team) -> Color {
+        switch team {
+        case .player:
+            Color(red: 0.34, green: 0.86, blue: 0.42)
+        case .enemy:
+            Color(red: 0.95, green: 0.32, blue: 0.3)
+        }
+    }
+}
+
+#Preview {
+    TacticalMapView(controller: GameController())
+        .frame(width: 176, height: 118)
+        .padding()
+        .background(.black)
+}

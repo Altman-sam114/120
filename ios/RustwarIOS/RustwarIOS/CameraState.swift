@@ -27,6 +27,11 @@ struct CameraState {
         clampToMap()
     }
 
+    mutating func center(on point: WorldPoint) {
+        center = point
+        clampToMap()
+    }
+
     func worldPoint(for screenPoint: CGPoint, viewportSize: CGSize) -> WorldPoint {
         guard zoom > 0, viewportSize.width > 0, viewportSize.height > 0 else {
             return center

@@ -191,6 +191,14 @@ final class GameController {
         renderRevision += 1
     }
 
+    func centerCamera(on point: WorldPoint) {
+        camera.center(on: point)
+        if !isAwaitingMoveTarget && !isAwaitingAttackTarget {
+            commandStatus = "Camera centered"
+        }
+        renderRevision += 1
+    }
+
     private func resetBattle(on mapID: MapID, status: String) {
         let preset = MapPreset.preset(for: mapID)
         engine = GameEngine(mapID: mapID)
