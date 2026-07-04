@@ -49,7 +49,8 @@ import Testing
     _ = engine.select(at: attacker.position, includeEnemies: false)
     #expect(engine.issueAttack(targetID: enemyTank.id) == .issued)
 
-    let attackMoveSelection = try #require(engine.select(at: attackMover.position, includeEnemies: false))
+    let attackMoveSelectionTarget = engine.select(at: attackMover.position, includeEnemies: false)
+    let attackMoveSelection = try #require(attackMoveSelectionTarget)
     #expect(engine.issueAttackMove(to: WorldPoint(attackMover.position.x + 360, attackMover.position.y)) == .issued)
 
     _ = engine.select(at: factory.position, includeEnemies: false)
@@ -218,7 +219,7 @@ import Testing
 }
 
 @Test func attackMoveAcquiresNearbyEnemyAndDamagesBeforeDestination() throws {
-    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
     let attacker = try #require(engine.state.units.first { $0.team == .player && $0.type != .builder })
     let enemy = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
     let destination = WorldPoint(1_800, 1_000)
@@ -251,7 +252,7 @@ import Testing
 }
 
 @Test func attackMoveContinuesAfterDestroyingAcquiredTarget() throws {
-    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
     let attacker = try #require(engine.state.units.first { $0.team == .player && $0.type != .builder })
     let enemy = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .scout })
     let destination = WorldPoint(1_800, 1_000)
