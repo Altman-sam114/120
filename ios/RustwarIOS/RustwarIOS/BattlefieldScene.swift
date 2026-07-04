@@ -148,6 +148,10 @@ final class BattlefieldScene: SKScene {
             if let targetPosition = targetPosition(for: targetID, in: state) {
                 drawGuardOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
             }
+        case let .repair(targetID)?:
+            if let targetPosition = targetPosition(for: targetID, in: state) {
+                drawRepairOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
+            }
         case nil:
             break
         }
@@ -273,6 +277,33 @@ final class BattlefieldScene: SKScene {
         let label = SKLabelNode(text: "G")
         label.fontName = "AvenirNext-Bold"
         label.fontSize = isSelected ? 12 : 10
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        marker.addChild(label)
+    }
+
+    private func drawRepairOrder(from start: WorldPoint, to destination: WorldPoint, isSelected: Bool) {
+        let color = isSelected ? SKColor.systemYellow : SKColor.systemMint.withAlphaComponent(0.64)
+        let path = CGMutablePath()
+        path.move(to: spritePoint(for: start))
+        path.addLine(to: spritePoint(for: destination))
+
+        let line = SKShapeNode(path: path)
+        line.strokeColor = color.withAlphaComponent(isSelected ? 0.8 : 0.44)
+        line.lineWidth = isSelected ? 3 : 1.5
+        line.lineCap = .round
+        entityNode.addChild(line)
+
+        let marker = SKShapeNode(rectOf: CGSize(width: isSelected ? 22 : 18, height: isSelected ? 22 : 18), cornerRadius: 4)
+        marker.position = spritePoint(for: destination)
+        marker.fillColor = SKColor.systemMint.withAlphaComponent(isSelected ? 0.24 : 0.16)
+        marker.strokeColor = color
+        marker.lineWidth = isSelected ? 3 : 1.5
+        entityNode.addChild(marker)
+
+        let label = SKLabelNode(text: "+")
+        label.fontName = "AvenirNext-Bold"
+        label.fontSize = isSelected ? 14 : 12
         label.fontColor = .white
         label.verticalAlignmentMode = .center
         marker.addChild(label)

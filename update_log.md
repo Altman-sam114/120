@@ -14,8 +14,8 @@
 - 项目形态：完整可玩的 Web Canvas RTS 原型 + v1.0 起新增的原生 Swift/iOS 迁移地基。
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
-- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂集结点设置、基础攻击、伤害和死亡清理、红方生产/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、攻击目标线、HP 条、可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中和 Save/Load 单槽本地存档。
+- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂集结点设置、基础攻击、伤害和死亡清理、红方生产/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Repair 按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、维修线、攻击目标线、HP 条、可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中和 Save/Load 单槽本地存档。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -682,3 +682,40 @@
 遗留事项：
 
 - v1.14 Guard 只作用于当前选中己方单单位；尚无多选护航、队列/Shift 命令、战术小地图下达护航、工程单位护航修理、寻路/阵型、雾或沙盒迁移。
+
+### v1.15 / iOS native repair command foundation
+
+日期：2026-07-05
+
+核心变更：
+
+- `UnitOrder` 新增 `repair(targetID:)`，`UnitCommandResult` 新增 Repair 专用拒绝语义。
+- `GameEngine.issueRepair(targetID:)` 只允许当前选中的己方 Builder 维修受损友方单位或建筑，拒绝无选择、非 Builder、敌方目标、自身目标、缺失目标和满血目标。
+- `GameEngine.update` 推进 Repair 时会在目标无效、满血或消失时清除订单；距离超过 125 时靠近目标，进入范围后按 18 HP/s 恢复目标生命值并夹到最大生命值，不消耗金属。
+- Swift tests 增加 Repair JSON 往返、非法选择/目标拒绝、受损友方单位和建筑下令、远距靠近、单位/建筑回血、目标摧毁清除和 Stop 清除覆盖。
+- iOS HUD 新增 Repair 按钮，仅在己方 Builder 选中或维修待选中显示；Repair 待选态与 Move / Attack Move / Patrol / Guard / Attack / Rally 互斥，并由 Stop、Load、Restart 和切图统一清理。
+- SpriteKit 为 Repair 订单显示独立维修线和 `+` 标记。
+- 更新 README、flow、flowchart、test 和本日志，明确 v1.15 是原生 iOS 单 Builder Repair 地基，不是完整 Web 维修/建造/回收 parity。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/UnitOrder.swift`
+- `swift/RustwarCore/Sources/RustwarCore/UnitCommandResult.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.15-ios-repair-command-foundation.md`
+
+验证结果：
+
+- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+
+遗留事项：
+
+- v1.15 Repair 只作用于当前选中己方单个 Builder；尚无多选维修、队列/Shift 命令、战术小地图下达维修、Guard 自动修理、Repair Tank/Repair Bay 光环、自修、建造协助、回收、维修资源消耗、寻路/阵型、雾或沙盒迁移。

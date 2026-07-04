@@ -134,6 +134,16 @@ struct GameHUDView: View {
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
                 }
+                if controller.canIssueRepair || controller.isAwaitingRepairTarget {
+                    Button(
+                        controller.repairCommandButtonTitle,
+                        systemImage: controller.isAwaitingRepairTarget ? "xmark.circle" : "wrench.and.screwdriver",
+                        action: controller.toggleRepairCommand
+                    )
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                }
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                     Button(
                         controller.attackCommandButtonTitle,
@@ -149,7 +159,8 @@ struct GameHUDView: View {
                     controller.isAwaitingAttackTarget ||
                     controller.isAwaitingAttackMoveTarget ||
                     controller.isAwaitingPatrolTarget ||
-                    controller.isAwaitingGuardTarget {
+                    controller.isAwaitingGuardTarget ||
+                    controller.isAwaitingRepairTarget {
                     Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
                         .buttonStyle(.bordered)
                         .controlSize(.regular)

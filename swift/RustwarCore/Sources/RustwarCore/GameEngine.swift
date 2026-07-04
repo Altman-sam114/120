@@ -1,4 +1,7 @@
 public struct GameEngine: Sendable {
+    private static let builderRepairRange = 125.0
+    private static let builderRepairRate = 18.0
+
     public private(set) var state: GameState
     public private(set) var enemyAIEnabled: Bool
 
@@ -123,6 +126,27 @@ public struct GameEngine: Sendable {
             targetID: target.id,
             offset: guardOffset(for: state.units[unitIndex], around: target)
         )
+        return .issued
+    }
+
+    @discardableResult
+    public mutating func issueRepair(targetID: String) -> UnitCommandResult {
+        guard let selectedEntityID = state.selectedEntityID else {
+            return .noSelection
+        }
+        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
+              state.units[unitIndex].team == .player,
+              state.units[unitIndex].type == .builder else {
+            return .selectedEntityCannotRepair
+        }
+        guard let target = repairTarget(id: targetID),
+              target.team == state.units[unitIndex].team,
+              target.id != state.units[unitIndex].id,
+              target.hitPoints < target.maxHitPoints else {
+            return .invalidRepairTarget
+        }
+
+        state.units[unitIndex].order = .repair(targetID: target.id)
         return .issued
     }
 
@@ -365,6 +389,8 @@ public struct GameEngine: Sendable {
                 )
             case let .guardTarget(targetID, offset):
                 updateGuardOrder(unitIndex: unitIndex, targetID: targetID, offset: offset, deltaTime: deltaTime)
+            case let .repair(targetID):
+                updateRepairOrder(unitIndex: unitIndex, targetID: targetID, deltaTime: deltaTime)
             }
         }
         removeDestroyedEntities()
@@ -490,6 +516,36 @@ public struct GameEngine: Sendable {
         )
     }
 
+    private mutating func updateRepairOrder(unitIndex: Int, targetID: String, deltaTime: Double) {
+        guard state.units[unitIndex].type == .builder,
+              let target = repairTarget(id: targetID),
+              target.team == state.units[unitIndex].team,
+              target.id != state.units[unitIndex].id,
+              target.hitPoints < target.maxHitPoints else {
+            state.units[unitIndex].order = nil
+            return
+        }
+
+        let definition = GameDefinitions.unit(state.units[unitIndex].type)
+        let distance = state.units[unitIndex].position.distance(to: target.position)
+        if distance > Self.builderRepairRange {
+            moveUnit(
+                at: unitIndex,
+                toward: target.position,
+                speed: definition.speed,
+                stoppingDistance: Self.builderRepairRange * 0.92,
+                deltaTime: deltaTime,
+                clearsOrderOnArrival: false
+            )
+            return
+        }
+
+        let repairedToFull = applyRepair(Self.builderRepairRate * deltaTime, to: target.id)
+        if repairedToFull {
+            state.units[unitIndex].order = nil
+        }
+    }
+
     @discardableResult
     private mutating func moveUnit(
         at unitIndex: Int,
@@ -537,6 +593,24 @@ public struct GameEngine: Sendable {
         }
     }
 
+    @discardableResult
+    private mutating func applyRepair(_ amount: Double, to targetID: String) -> Bool {
+        if let unitIndex = state.units.firstIndex(where: { $0.id == targetID }) {
+            state.units[unitIndex].hitPoints = min(
+                state.units[unitIndex].maxHitPoints,
+                state.units[unitIndex].hitPoints + amount
+            )
+            return state.units[unitIndex].hitPoints >= state.units[unitIndex].maxHitPoints
+        } else if let buildingIndex = state.buildings.firstIndex(where: { $0.id == targetID }) {
+            state.buildings[buildingIndex].hitPoints = min(
+                state.buildings[buildingIndex].maxHitPoints,
+                state.buildings[buildingIndex].hitPoints + amount
+            )
+            return state.buildings[buildingIndex].hitPoints >= state.buildings[buildingIndex].maxHitPoints
+        }
+        return false
+    }
+
     private mutating func applyDamage(_ damage: Double, to targetID: String) {
         if let unitIndex = state.units.firstIndex(where: { $0.id == targetID }) {
             state.units[unitIndex].hitPoints -= damage
@@ -553,6 +627,32 @@ public struct GameEngine: Sendable {
         if let building = state.buildings.first(where: { $0.id == targetID && $0.hitPoints > 0 }) {
             let definition = GameDefinitions.building(building.type)
             return CombatTarget(id: building.id, team: building.team, position: building.position, radius: definition.size / 2)
+        }
+        return nil
+    }
+
+    private func repairTarget(id targetID: String) -> RepairTarget? {
+        if let unit = state.units.first(where: { $0.id == targetID && $0.hitPoints > 0 }) {
+            let definition = GameDefinitions.unit(unit.type)
+            return RepairTarget(
+                id: unit.id,
+                team: unit.team,
+                position: unit.position,
+                radius: definition.radius,
+                hitPoints: unit.hitPoints,
+                maxHitPoints: unit.maxHitPoints
+            )
+        }
+        if let building = state.buildings.first(where: { $0.id == targetID && $0.hitPoints > 0 }) {
+            let definition = GameDefinitions.building(building.type)
+            return RepairTarget(
+                id: building.id,
+                team: building.team,
+                position: building.position,
+                radius: definition.size / 2,
+                hitPoints: building.hitPoints,
+                maxHitPoints: building.maxHitPoints
+            )
         }
         return nil
     }
@@ -582,6 +682,9 @@ public struct GameEngine: Sendable {
                 state.units[unitIndex].order = nil
             }
             if case let .guardTarget(targetID, _)? = state.units[unitIndex].order, destroyedIDs.contains(targetID) {
+                state.units[unitIndex].order = nil
+            }
+            if case let .repair(targetID)? = state.units[unitIndex].order, destroyedIDs.contains(targetID) {
                 state.units[unitIndex].order = nil
             }
         }
@@ -706,4 +809,13 @@ private struct CombatTarget {
     let team: Team
     let position: WorldPoint
     let radius: Double
+}
+
+private struct RepairTarget {
+    let id: String
+    let team: Team
+    let position: WorldPoint
+    let radius: Double
+    let hitPoints: Double
+    let maxHitPoints: Double
 }
