@@ -97,7 +97,7 @@ flowchart TD
   SL --> E
   E --> TF["Turret Fire<br/>中文注释：完成状态炮塔自动攻击射程内敌方单位或建筑并进入冷却"]
   TF --> E
-  E --> AI["Enemy AI<br/>中文注释：红方 Builder 维修受损友军、扩张资源点、建造 Land Factory / Turret 并回收附近残骸，红方完成状态 Command Center 可排队 Builder，Land Factory 按完整 T1 列表排队造兵，空闲战斗单位获得攻击玩家目标的订单，其中 Artillery 新订单优先玩家建筑"]
+  E --> AI["Enemy AI<br/>中文注释：红方 Builder 维修受损友军、扩张资源点、建造 Land Factory / Turret 并回收附近残骸，红方完成状态 Command Center 可排队 Builder，Land Factory 按完整 T1 列表排队造兵，空闲战斗单位按 Web-lite 评分获得攻击玩家目标的订单"]
   AI --> E
   C --> E
   B --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html，显示血条、建造进度、残骸、移动线、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线和红方行动"]

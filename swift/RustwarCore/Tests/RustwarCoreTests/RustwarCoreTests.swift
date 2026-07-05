@@ -2968,14 +2968,34 @@ import Testing
     #expect(attackTargetID(for: artillery) == "player-priority-building")
 }
 
-@Test func enemyAINonArtilleryKeepsNearestTargetPriority() throws {
+@Test func enemyAINonArtilleryPrioritizesCommandOverNearerUnit() throws {
     let state = enemyTargetPriorityState(attackerType: .tank, includePlayerBuilding: true)
     var engine = GameEngine(state: state)
 
     engine.update(deltaTime: 0.1)
 
     let tank = try #require(engine.state.units.first { $0.id == "enemy-attacker" })
-    #expect(attackTargetID(for: tank) == "near-player-unit")
+    #expect(attackTargetID(for: tank) == "player-priority-building")
+}
+
+@Test func enemyAINonArtilleryPrioritizesDamagedUnitWhenNoBuildingExists() throws {
+    let state = enemyDamagedUnitPriorityState(attackerType: .tank)
+    var engine = GameEngine(state: state)
+
+    engine.update(deltaTime: 0.1)
+
+    let tank = try #require(engine.state.units.first { $0.id == "enemy-attacker" })
+    #expect(attackTargetID(for: tank) == "damaged-player-unit")
+}
+
+@Test func enemyAIArtilleryScoresBuildingsInsteadOfPickingNearestBuilding() throws {
+    let state = enemyBuildingPriorityState(attackerType: .artillery)
+    var engine = GameEngine(state: state)
+
+    engine.update(deltaTime: 0.1)
+
+    let artillery = try #require(engine.state.units.first { $0.id == "enemy-attacker" })
+    #expect(attackTargetID(for: artillery) == "player-command")
 }
 
 @Test func enemyAIArtilleryFallsBackToNearestUnitWhenNoPlayerBuildingExists() throws {
@@ -3609,6 +3629,85 @@ private func enemyTargetPriorityState(attackerType: UnitType, includePlayerBuild
     } else {
         state.buildings = []
     }
+    state.resources = []
+    state.metal[.enemy] = 0
+    state.metal[.player] = 0
+    return state
+}
+
+private func enemyDamagedUnitPriorityState(attackerType: UnitType) -> GameState {
+    var state = GameState(mapID: .coast)
+    let attackerDefinition = GameDefinitions.unit(attackerType)
+    let scoutDefinition = GameDefinitions.unit(.scout)
+    let tankDefinition = GameDefinitions.unit(.tank)
+    state.units = [
+        UnitSnapshot(
+            id: "enemy-attacker",
+            type: attackerType,
+            team: .enemy,
+            position: WorldPoint(1_000, 1_000),
+            hitPoints: attackerDefinition.hitPoints,
+            maxHitPoints: attackerDefinition.hitPoints
+        ),
+        UnitSnapshot(
+            id: "near-player-unit",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(1_040, 1_000),
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        ),
+        UnitSnapshot(
+            id: "damaged-player-unit",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(1_130, 1_000),
+            hitPoints: tankDefinition.hitPoints * 0.18,
+            maxHitPoints: tankDefinition.hitPoints
+        )
+    ]
+    state.buildings = []
+    state.resources = []
+    state.metal[.enemy] = 0
+    state.metal[.player] = 0
+    return state
+}
+
+private func enemyBuildingPriorityState(attackerType: UnitType) -> GameState {
+    var state = GameState(mapID: .coast)
+    let attackerDefinition = GameDefinitions.unit(attackerType)
+    let turretDefinition = GameDefinitions.building(.turret)
+    let commandDefinition = GameDefinitions.building(.command)
+    state.units = [
+        UnitSnapshot(
+            id: "enemy-attacker",
+            type: attackerType,
+            team: .enemy,
+            position: WorldPoint(1_000, 1_000),
+            hitPoints: attackerDefinition.hitPoints,
+            maxHitPoints: attackerDefinition.hitPoints
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "near-player-turret",
+            type: .turret,
+            team: .player,
+            position: WorldPoint(1_060, 1_000),
+            hitPoints: turretDefinition.hitPoints,
+            maxHitPoints: turretDefinition.hitPoints,
+            rally: WorldPoint(1_060, 1_000)
+        ),
+        BuildingSnapshot(
+            id: "player-command",
+            type: .command,
+            team: .player,
+            position: WorldPoint(1_520, 1_000),
+            hitPoints: commandDefinition.hitPoints,
+            maxHitPoints: commandDefinition.hitPoints,
+            rally: WorldPoint(1_520, 1_000)
+        )
+    ]
     state.resources = []
     state.metal[.enemy] = 0
     state.metal[.player] = 0

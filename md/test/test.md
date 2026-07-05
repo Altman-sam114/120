@@ -84,7 +84,7 @@ git diff --check
 
 当前基线：
 
-- `RustwarCore` tests 应通过，并覆盖地图/状态初始化、收入/人口计算、基础 tick、选择命中、己方单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Build Turret 命令、Build Land Factory 命令、Stop 命令、Command Center Builder 生产、Land Factory T1 生产列表、生产建筑队列、生产取消/退款、重复生产、生产建筑集结点设置、基础攻击命令、炮塔对单位/建筑防御开火、伤害推进、死亡目标清理与残骸生成、红方 Command Center Builder 生产、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI、红方 Artillery 建筑优先目标选择、`GameState` JSON 往返和恢复后继续模拟。
+- `RustwarCore` tests 应通过，并覆盖地图/状态初始化、收入/人口计算、基础 tick、选择命中、己方单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Build Turret 命令、Build Land Factory 命令、Stop 命令、Command Center Builder 生产、Land Factory T1 生产列表、生产建筑队列、生产取消/退款、重复生产、生产建筑集结点设置、基础攻击命令、炮塔对单位/建筑防御开火、伤害推进、死亡目标清理与残骸生成、红方 Command Center Builder 生产、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI、红方 AI Web-lite 目标评分、`GameState` JSON 往返和恢复后继续模拟。
 - 若本机 SwiftPM、PackageDescription、Swift/SDK 版本或权限导致 `swift test` 无法进入源码编译，必须记录原始错误；可额外执行 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 区分源码错误和工具链错误。
 
 ### 5. iOS App 检查

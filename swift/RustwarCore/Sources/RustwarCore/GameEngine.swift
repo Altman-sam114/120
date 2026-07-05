@@ -556,36 +556,95 @@ public struct GameEngine: Sendable {
     }
 
     private func enemyAttackTarget(for unit: UnitSnapshot) -> CombatTarget? {
-        if unit.type == .artillery,
-           let buildingTarget = nearestEnemyArtilleryBuildingTarget(for: unit) {
-            return buildingTarget
-        }
-        return nearestCombatTarget(for: unit)
-    }
+        var bestCandidate: EnemyAttackCandidate?
+        var bestScore = Double.infinity
 
-    private func nearestEnemyArtilleryBuildingTarget(for unit: UnitSnapshot) -> CombatTarget? {
-        var bestTarget: CombatTarget?
-        var bestDistance = Double.infinity
+        for targetUnit in state.units {
+            guard targetUnit.team == .player, targetUnit.hitPoints > 0 else {
+                continue
+            }
+            let definition = GameDefinitions.unit(targetUnit.type)
+            let candidate = EnemyAttackCandidate(
+                target: CombatTarget(
+                    id: targetUnit.id,
+                    team: targetUnit.team,
+                    position: targetUnit.position,
+                    radius: definition.radius
+                ),
+                unitType: targetUnit.type,
+                buildingType: nil,
+                hitPoints: targetUnit.hitPoints,
+                maxHitPoints: targetUnit.maxHitPoints
+            )
+            let score = enemyAttackTargetScore(for: unit, candidate: candidate)
+            if score < bestScore {
+                bestCandidate = candidate
+                bestScore = score
+            }
+        }
 
         for building in state.buildings {
             guard building.team == .player, building.hitPoints > 0 else {
                 continue
             }
             let definition = GameDefinitions.building(building.type)
-            let target = CombatTarget(
-                id: building.id,
-                team: building.team,
-                position: building.position,
-                radius: definition.size / 2
+            let candidate = EnemyAttackCandidate(
+                target: CombatTarget(
+                    id: building.id,
+                    team: building.team,
+                    position: building.position,
+                    radius: definition.size / 2
+                ),
+                unitType: nil,
+                buildingType: building.type,
+                hitPoints: building.hitPoints,
+                maxHitPoints: building.maxHitPoints
             )
-            let distance = unit.position.distanceSquared(to: target.position)
-            if distance < bestDistance {
-                bestTarget = target
-                bestDistance = distance
+            let score = enemyAttackTargetScore(for: unit, candidate: candidate)
+            if score < bestScore {
+                bestCandidate = candidate
+                bestScore = score
             }
         }
 
-        return bestTarget
+        return bestCandidate?.target
+    }
+
+    private func enemyAttackTargetScore(for attacker: UnitSnapshot, candidate: EnemyAttackCandidate) -> Double {
+        let distance = attacker.position.distance(to: candidate.target.position)
+        let healthPercent = max(0, min(1, candidate.hitPoints / max(1, candidate.maxHitPoints)))
+        var score = distance / 18
+
+        score -= (1 - healthPercent) * 52
+
+        if let buildingType = candidate.buildingType {
+            score -= attacker.type == .artillery ? 58 : 34
+            switch buildingType {
+            case .command:
+                score -= 78
+            case .landFactory:
+                score -= 48
+            case .extractor:
+                score -= 36
+            case .turret:
+                score -= 30
+            }
+        } else if let unitType = candidate.unitType {
+            switch unitType {
+            case .artillery:
+                score -= 16
+            case .aaTank:
+                score -= 10
+            case .tank, .hover:
+                score -= 8
+            case .builder:
+                score -= 6
+            case .scout, .gunboat:
+                break
+            }
+        }
+
+        return score
     }
 
     private func nearestCombatTarget(for unit: UnitSnapshot, maximumDistance: Double? = nil) -> CombatTarget? {
@@ -1682,6 +1741,14 @@ private struct CombatTarget {
     let team: Team
     let position: WorldPoint
     let radius: Double
+}
+
+private struct EnemyAttackCandidate {
+    let target: CombatTarget
+    let unitType: UnitType?
+    let buildingType: BuildingType?
+    let hitPoints: Double
+    let maxHitPoints: Double
 }
 
 private struct RepairTarget {
