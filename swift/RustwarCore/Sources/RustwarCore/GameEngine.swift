@@ -353,6 +353,7 @@ public struct GameEngine: Sendable {
 
     private mutating func updateEnemyAI() {
         updateEnemyFactoryConstruction(rebuildMissingFactoryOnly: true)
+        updateEnemyRepair()
         updateEnemyExpansion()
         updateEnemyFactoryConstruction(rebuildMissingFactoryOnly: false)
         updateEnemyTurretConstruction()
@@ -400,6 +401,21 @@ public struct GameEngine: Sendable {
             }
 
             startExtractorBuild(builderIndex: unitIndex, resourceIndex: resourceIndex)
+        }
+    }
+
+    private mutating func updateEnemyRepair() {
+        for unitIndex in state.units.indices {
+            guard state.units[unitIndex].team == .enemy,
+                  state.units[unitIndex].type == .builder,
+                  state.units[unitIndex].hitPoints > 0,
+                  state.units[unitIndex].order == nil,
+                  let target = enemyRepairTarget(for: state.units[unitIndex]) else {
+                continue
+            }
+
+            state.units[unitIndex].order = .repair(targetID: target.id)
+            return
         }
     }
 
@@ -1370,6 +1386,68 @@ public struct GameEngine: Sendable {
         state.buildings.filter {
             $0.team == .enemy && $0.type == type && $0.hitPoints > 0
         }.count
+    }
+
+    private func enemyRepairTarget(for builder: UnitSnapshot) -> RepairTarget? {
+        var bestBuilding: RepairTarget?
+        for building in state.buildings {
+            guard building.team == builder.team,
+                  building.hitPoints > 0,
+                  building.hitPoints < building.maxHitPoints else {
+                continue
+            }
+            let definition = GameDefinitions.building(building.type)
+            let candidate = RepairTarget(
+                id: building.id,
+                team: building.team,
+                position: building.position,
+                radius: definition.size / 2,
+                hitPoints: building.hitPoints,
+                maxHitPoints: building.maxHitPoints
+            )
+            if isBetterRepairTarget(candidate, for: builder, than: bestBuilding) {
+                bestBuilding = candidate
+            }
+        }
+        if let bestBuilding {
+            return bestBuilding
+        }
+
+        var bestUnit: RepairTarget?
+        for unit in state.units {
+            guard unit.team == builder.team,
+                  unit.id != builder.id,
+                  unit.hitPoints > 0,
+                  unit.hitPoints < unit.maxHitPoints else {
+                continue
+            }
+            let definition = GameDefinitions.unit(unit.type)
+            let candidate = RepairTarget(
+                id: unit.id,
+                team: unit.team,
+                position: unit.position,
+                radius: definition.radius,
+                hitPoints: unit.hitPoints,
+                maxHitPoints: unit.maxHitPoints
+            )
+            if isBetterRepairTarget(candidate, for: builder, than: bestUnit) {
+                bestUnit = candidate
+            }
+        }
+        return bestUnit
+    }
+
+    private func isBetterRepairTarget(_ candidate: RepairTarget, for builder: UnitSnapshot, than current: RepairTarget?) -> Bool {
+        guard let current else {
+            return true
+        }
+
+        let candidateHealthFraction = candidate.hitPoints / candidate.maxHitPoints
+        let currentHealthFraction = current.hitPoints / current.maxHitPoints
+        if abs(candidateHealthFraction - currentHealthFraction) > Self.buildCompletionEpsilon {
+            return candidateHealthFraction < currentHealthFraction
+        }
+        return builder.position.distanceSquared(to: candidate.position) < builder.position.distanceSquared(to: current.position)
     }
 
     private func shouldPrioritizeEnemyFactoryConstruction(enemyFactoryCount: Int) -> Bool {

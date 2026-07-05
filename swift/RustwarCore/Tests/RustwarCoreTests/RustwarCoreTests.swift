@@ -2027,6 +2027,130 @@ import Testing
     }
 }
 
+@Test func enemyAIBuilderRepairsDamagedFriendlyBuildingWithoutChangingPlayerSelection() throws {
+    var state = GameState(mapID: .coast)
+    let selectedPlayerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let enemyCommand = try #require(state.buildings.first { $0.team == .enemy && $0.type == .command })
+    let enemyCommandIndex = try #require(state.buildings.firstIndex { $0.id == enemyCommand.id })
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    let enemyBuilderIndex = try #require(state.units.firstIndex { $0.id == enemyBuilder.id })
+    state.selectedEntityID = selectedPlayerBuilding.id
+    state.buildings[enemyCommandIndex].hitPoints = enemyCommand.maxHitPoints - 72
+    state.units[enemyBuilderIndex].position = enemyCommand.position
+
+    var engine = GameEngine(state: state)
+    let startingHitPoints = try #require(engine.state.buildings.first { $0.id == enemyCommand.id }?.hitPoints)
+    engine.update(deltaTime: 1)
+
+    let repairedCommand = try #require(engine.state.buildings.first { $0.id == enemyCommand.id })
+    let repairer = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+    #expect(engine.state.selectedEntityID == selectedPlayerBuilding.id)
+    #expect(repairedCommand.hitPoints == startingHitPoints + 18)
+    if case let .repair(targetID)? = repairer.order {
+        #expect(targetID == enemyCommand.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func enemyAIRepairRestoresDamagedUnitAndClearsAtFullHealth() throws {
+    var state = GameState(mapID: .coast)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    let enemyBuilderIndex = try #require(state.units.firstIndex { $0.id == enemyBuilder.id })
+    let enemyTank = try #require(state.units.first { $0.team == .enemy && $0.type == .tank })
+    let enemyTankIndex = try #require(state.units.firstIndex { $0.id == enemyTank.id })
+    state.units[enemyBuilderIndex].position = enemyTank.position
+    state.units[enemyTankIndex].hitPoints = enemyTank.maxHitPoints - 10
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let repairedTank = try #require(engine.state.units.first { $0.id == enemyTank.id })
+    let repairer = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+    #expect(repairedTank.hitPoints == repairedTank.maxHitPoints)
+    #expect(repairer.order == nil)
+}
+
+@Test func enemyAIRepairWaitsForIdleBuilderAndDamagedEnemyTarget() throws {
+    let baseState = GameState(mapID: .coast)
+    let enemyBuilder = try #require(baseState.units.first { $0.team == .enemy && $0.type == .builder })
+    let enemyBuilderIndex = try #require(baseState.units.firstIndex { $0.id == enemyBuilder.id })
+    let enemyCommand = try #require(baseState.buildings.first { $0.team == .enemy && $0.type == .command })
+    let enemyCommandIndex = try #require(baseState.buildings.firstIndex { $0.id == enemyCommand.id })
+    let playerCommand = try #require(baseState.buildings.first { $0.team == .player && $0.type == .command })
+    let playerCommandIndex = try #require(baseState.buildings.firstIndex { $0.id == playerCommand.id })
+
+    var busyState = baseState
+    busyState.buildings[enemyCommandIndex].hitPoints = enemyCommand.maxHitPoints - 80
+    busyState.units[enemyBuilderIndex].order = .move(destination: WorldPoint(3_800, 1_120))
+    var busyEngine = GameEngine(state: busyState)
+    busyEngine.update(deltaTime: 1)
+    let busyBuilder = try #require(busyEngine.state.units.first { $0.id == enemyBuilder.id })
+    if case .some(.move) = busyBuilder.order {
+        #expect(Bool(true))
+    } else {
+        #expect(Bool(false))
+    }
+
+    var playerOnlyDamageState = baseState
+    playerOnlyDamageState.metal[.enemy] = 0
+    for resourceIndex in playerOnlyDamageState.resources.indices {
+        playerOnlyDamageState.resources[resourceIndex].claimedBy = playerOnlyDamageState.resources[resourceIndex].claimedBy ?? .enemy
+    }
+    playerOnlyDamageState.buildings[playerCommandIndex].hitPoints = playerCommand.maxHitPoints - 200
+    var playerOnlyDamageEngine = GameEngine(state: playerOnlyDamageState)
+    playerOnlyDamageEngine.update(deltaTime: 1)
+    let idleBuilder = try #require(playerOnlyDamageEngine.state.units.first { $0.id == enemyBuilder.id })
+    #expect(idleBuilder.order == nil)
+}
+
+@Test func enemyAIRepairPrioritizesDamagedBuildingsBeforeUnits() throws {
+    var state = GameState(mapID: .coast)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    let enemyBuilderIndex = try #require(state.units.firstIndex { $0.id == enemyBuilder.id })
+    let enemyCommand = try #require(state.buildings.first { $0.team == .enemy && $0.type == .command })
+    let enemyCommandIndex = try #require(state.buildings.firstIndex { $0.id == enemyCommand.id })
+    let enemyTank = try #require(state.units.first { $0.team == .enemy && $0.type == .tank })
+    let enemyTankIndex = try #require(state.units.firstIndex { $0.id == enemyTank.id })
+    state.units[enemyBuilderIndex].position = enemyCommand.position
+    state.buildings[enemyCommandIndex].hitPoints = enemyCommand.maxHitPoints - 100
+    state.units[enemyTankIndex].hitPoints = enemyTank.maxHitPoints * 0.2
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let repairer = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+    if case let .repair(targetID)? = repairer.order {
+        #expect(targetID == enemyCommand.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func enemyAIRebuildsMissingFactoryBeforeRepairingDamagedBuilding() throws {
+    var state = GameState(mapID: .coast)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    let enemyCommand = try #require(state.buildings.first { $0.team == .enemy && $0.type == .command })
+    let enemyCommandIndex = try #require(state.buildings.firstIndex { $0.id == enemyCommand.id })
+    state.buildings.removeAll { $0.team == .enemy && $0.type == .landFactory }
+    let initialBuildingIDs = Set(state.buildings.map(\.id))
+    state.buildings[enemyCommandIndex].hitPoints = enemyCommand.maxHitPoints - 180
+    state.metal[.enemy] = 1_000
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let newFactory = try #require(engine.state.buildings.first {
+        !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .landFactory
+    })
+    let builderAfterUpdate = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+    if case let .build(targetID)? = builderAfterUpdate.order {
+        #expect(targetID == newFactory.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
 @Test func enemyAIExtractorExpansionProducesIncomeAfterCompletion() throws {
     var engine = GameEngine(mapID: .coast)
     let startingEnemyIncome = engine.state.income(for: .enemy)
