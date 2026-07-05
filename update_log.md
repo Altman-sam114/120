@@ -1318,7 +1318,11 @@
 
 验证结果：
 
-- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+- Agent C 先下载并核对失败 run `28743092230`，attempt `1`，artifact `rustwar-ci-v1.0-main-dac0104-run28743092230-attempt1`，commit `dac01042021b34cdd107db07f4bc53783aa0e643`；manifest / JUnit / build.log 确认失败原因是旧测试 `incompleteEnemyLandFactoryDoesNotProduceUntilCompleted` 仍断言完成后的红方工厂首单为 Scout。
+- Agent B 随后追加修复 commit `bb61cd7ca3c2be13dc099f7ac62648622e5223e3`，将该测试预期更新为新完整 T1 均衡策略下的 Hover。
+- Agent C 已下载并核对最新 GitHub Actions artifact：run `28743223958`，attempt `1`，artifact `rustwar-ci-v1.0-main-bb61cd7-run28743223958-attempt1`，commit `bb61cd7ca3c2be13dc099f7ac62648622e5223e3`。
+- manifest 确认 `branch=main`、`commitSha=bb61cd7ca3c2be13dc099f7ac62648622e5223e3`、`runId=28743223958`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke。
+- build.log 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0；Swift Testing 131 tests passed。
 
 遗留事项：
 
