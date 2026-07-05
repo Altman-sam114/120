@@ -280,6 +280,9 @@ final class GameController {
         if handlePointCommand(at: point) {
             return
         }
+        if handleTacticalMapTargetCommand(at: point) {
+            return
+        }
         centerCamera(on: point)
     }
 
@@ -529,6 +532,34 @@ final class GameController {
             let result = engine.setRally(to: point)
             isAwaitingRallyTarget = false
             commandStatus = statusText(forRally: result)
+        } else {
+            return false
+        }
+        renderRevision += 1
+        return true
+    }
+
+    private func handleTacticalMapTargetCommand(at point: WorldPoint) -> Bool {
+        if isAwaitingReclaimTarget {
+            let wreck = engine.state.wreckTarget(at: point)
+            let result: UnitCommandResult
+            if let wreck {
+                result = engine.issueReclaim(wreckID: wreck.id)
+            } else {
+                result = .invalidReclaimTarget
+            }
+            isAwaitingReclaimTarget = false
+            commandStatus = statusText(forReclaim: result)
+        } else if isAwaitingBuildExtractorTarget {
+            let resource = engine.state.resourceTarget(at: point)
+            let result: UnitCommandResult
+            if let resource {
+                result = engine.issueBuildExtractor(on: resource.id)
+            } else {
+                result = .invalidBuildTarget
+            }
+            isAwaitingBuildExtractorTarget = false
+            commandStatus = statusText(forBuildExtractor: result)
         } else {
             return false
         }
