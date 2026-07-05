@@ -1220,7 +1220,11 @@
 
 验证结果：
 
-- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+- Agent C 先下载并核对失败 run `28738263125`，attempt `1`，artifact `rustwar-ci-v1.0-main-1fdee8a-run28738263125-attempt1`，commit `1fdee8ac1c3a728337a641da16aeca6c3e125acc`；manifest / JUnit / build.log 确认失败原因是 Swift package test `enemyAITurretDoesNotFireUntilCompleted` 的测试时序问题。
+- Agent B 随后追加修复 commit `70b7ea05fa9eaec756c0069d32ce33499e459909`，收紧该测试的隔离和完成前/完成后开火断言。
+- Agent C 已下载并核对最新 GitHub Actions artifact：run `28738399743`，attempt `1`，artifact `rustwar-ci-v1.0-main-70b7ea0-run28738399743-attempt1`，commit `70b7ea05fa9eaec756c0069d32ce33499e459909`。
+- manifest 确认 `branch=main`、`commitSha=70b7ea05fa9eaec756c0069d32ce33499e459909`、`runId=28738399743`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke。
+- build.log 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0；Swift Testing 115 tests passed。
 
 遗留事项：
 
