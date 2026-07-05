@@ -1448,6 +1448,96 @@ import Testing
     #expect(engine.state.selectedEntityID == playerSelection.id)
 }
 
+@Test func enemyAIBuilderStartsExtractorExpansionWithoutChangingPlayerSelection() throws {
+    var engine = GameEngine(mapID: .coast)
+
+    let selected = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    let playerSelection = try #require(selected)
+    let initialBuildingIDs = Set(engine.state.buildings.map(\.id))
+    let startingEnemyMetal = engine.state.metal[.enemy, default: 0]
+    let startingEnemyIncome = engine.state.income(for: .enemy)
+
+    engine.update(deltaTime: 1)
+
+    let newExtractor = try #require(engine.state.buildings.first {
+        !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .extractor
+    })
+    let nodeID = try #require(newExtractor.nodeID)
+    let resource = try #require(engine.state.resources.first { $0.id == nodeID })
+    let enemyBuilder = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .builder })
+
+    #expect(newExtractor.buildProgress == 0)
+    #expect(newExtractor.hitPoints == newExtractor.maxHitPoints * 0.1)
+    #expect(resource.claimedBy == .enemy)
+    #expect(engine.state.income(for: .enemy) == startingEnemyIncome)
+    #expect(engine.state.metal[.enemy, default: 0] <= startingEnemyMetal + startingEnemyIncome - 260)
+    #expect(engine.state.selectedEntityID == playerSelection.id)
+    if case let .build(targetID)? = enemyBuilder.order {
+        #expect(targetID == newExtractor.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func enemyAIExtractorExpansionProducesIncomeAfterCompletion() throws {
+    var engine = GameEngine(mapID: .coast)
+    let startingEnemyIncome = engine.state.income(for: .enemy)
+
+    engine.update(deltaTime: 1)
+
+    let newExtractor = try #require(engine.state.buildings.first {
+        $0.team == .enemy && $0.type == .extractor && $0.buildProgress < 1
+    })
+    #expect(engine.state.income(for: .enemy) == startingEnemyIncome)
+
+    var buildOnlyEngine = GameEngine(state: engine.state, enemyAIEnabled: false)
+    for _ in 0..<20 {
+        buildOnlyEngine.update(deltaTime: 1)
+    }
+
+    let completedExtractor = try #require(buildOnlyEngine.state.buildings.first { $0.id == newExtractor.id })
+    let enemyBuilder = try #require(buildOnlyEngine.state.units.first { $0.team == .enemy && $0.type == .builder })
+    #expect(completedExtractor.buildProgress == 1)
+    #expect(completedExtractor.hitPoints == completedExtractor.maxHitPoints)
+    #expect(buildOnlyEngine.state.income(for: .enemy) == startingEnemyIncome + GameDefinitions.building(.extractor).income)
+    #expect(enemyBuilder.order == nil)
+}
+
+@Test func enemyAIExtractorExpansionWaitsForMetalIdleBuilderAndFreeNode() throws {
+    let baseState = GameState(mapID: .coast)
+    let startingBuildingCount = baseState.buildings.count
+    let enemyBuilder = try #require(baseState.units.first { $0.team == .enemy && $0.type == .builder })
+    let enemyBuilderIndex = try #require(baseState.units.firstIndex { $0.id == enemyBuilder.id })
+
+    var poorState = baseState
+    poorState.metal[.enemy] = 0
+    var poorEngine = GameEngine(state: poorState)
+    poorEngine.update(deltaTime: 1)
+    #expect(poorEngine.state.buildings.count == startingBuildingCount)
+    #expect(poorEngine.state.units.first { $0.id == enemyBuilder.id }?.order == nil)
+
+    var busyState = baseState
+    busyState.units[enemyBuilderIndex].order = .move(destination: WorldPoint(3_800, 1_120))
+    var busyEngine = GameEngine(state: busyState)
+    busyEngine.update(deltaTime: 1)
+    #expect(busyEngine.state.buildings.count == startingBuildingCount)
+    let busyBuilder = try #require(busyEngine.state.units.first { $0.id == enemyBuilder.id })
+    if case .some(.move) = busyBuilder.order {
+        #expect(Bool(true))
+    } else {
+        #expect(Bool(false))
+    }
+
+    var occupiedState = baseState
+    for resourceIndex in occupiedState.resources.indices {
+        occupiedState.resources[resourceIndex].claimedBy = .enemy
+    }
+    var occupiedEngine = GameEngine(state: occupiedState)
+    occupiedEngine.update(deltaTime: 1)
+    #expect(occupiedEngine.state.buildings.count == startingBuildingCount)
+    #expect(occupiedEngine.state.units.first { $0.id == enemyBuilder.id }?.order == nil)
+}
+
 @Test func enemyAIDoesNotStackFactoryQueueAndSpawnsUnit() throws {
     var engine = GameEngine(mapID: .coast)
 

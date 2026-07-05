@@ -200,25 +200,7 @@ public struct GameEngine: Sendable {
             return .insufficientMetal
         }
 
-        let buildingID = nextID(prefix: "building")
-        let position = state.resources[resourceIndex].position
-        let startingHitPoints = definition.hitPoints * Self.incompleteBuildingMinimumHealthFraction
-        state.metal[team, default: 0] -= definition.metalCost
-        state.resources[resourceIndex].claimedBy = team
-        state.buildings.append(
-            BuildingSnapshot(
-                id: buildingID,
-                type: .extractor,
-                team: team,
-                position: position,
-                hitPoints: startingHitPoints,
-                maxHitPoints: definition.hitPoints,
-                buildProgress: 0,
-                rally: position,
-                nodeID: nodeID
-            )
-        )
-        state.units[unitIndex].order = .build(targetID: buildingID)
+        startExtractorBuild(builderIndex: unitIndex, resourceIndex: resourceIndex)
         return .issued
     }
 
@@ -286,8 +268,24 @@ public struct GameEngine: Sendable {
     }
 
     private mutating func updateEnemyAI() {
+        updateEnemyExpansion()
         updateEnemyProduction()
         updateEnemyAttackOrders()
+    }
+
+    private mutating func updateEnemyExpansion() {
+        for unitIndex in state.units.indices {
+            guard state.units[unitIndex].team == .enemy,
+                  state.units[unitIndex].type == .builder,
+                  state.units[unitIndex].hitPoints > 0,
+                  state.units[unitIndex].order == nil,
+                  state.metal[.enemy, default: 0] >= GameDefinitions.building(.extractor).metalCost,
+                  let resourceIndex = nearestAvailableResourceIndex(for: state.units[unitIndex]) else {
+                continue
+            }
+
+            startExtractorBuild(builderIndex: unitIndex, resourceIndex: resourceIndex)
+        }
     }
 
     private mutating func updateEnemyProduction() {
@@ -997,6 +995,30 @@ public struct GameEngine: Sendable {
         )
     }
 
+    private mutating func startExtractorBuild(builderIndex: Int, resourceIndex: Int) {
+        let definition = GameDefinitions.building(.extractor)
+        let team = state.units[builderIndex].team
+        let buildingID = nextID(prefix: "building")
+        let position = state.resources[resourceIndex].position
+        let startingHitPoints = definition.hitPoints * Self.incompleteBuildingMinimumHealthFraction
+        state.metal[team, default: 0] -= definition.metalCost
+        state.resources[resourceIndex].claimedBy = team
+        state.buildings.append(
+            BuildingSnapshot(
+                id: buildingID,
+                type: .extractor,
+                team: team,
+                position: position,
+                hitPoints: startingHitPoints,
+                maxHitPoints: definition.hitPoints,
+                buildProgress: 0,
+                rally: position,
+                nodeID: state.resources[resourceIndex].id
+            )
+        )
+        state.units[builderIndex].order = .build(targetID: buildingID)
+    }
+
     private mutating func nextID(prefix: String) -> String {
         defer { state.nextEntityNumber += 1 }
         return "\(prefix)-\(state.nextEntityNumber)"
@@ -1006,6 +1028,27 @@ public struct GameEngine: Sendable {
         state.buildings.contains {
             $0.type == .extractor && $0.nodeID == nodeID && $0.hitPoints > 0
         }
+    }
+
+    private func nearestAvailableResourceIndex(for unit: UnitSnapshot) -> Int? {
+        var bestIndex: Int?
+        var bestDistance = Double.infinity
+
+        for resourceIndex in state.resources.indices {
+            let resource = state.resources[resourceIndex]
+            guard resource.claimedBy == nil,
+                  !hasLivingExtractor(on: resource.id) else {
+                continue
+            }
+
+            let distance = unit.position.distanceSquared(to: resource.position)
+            if distance < bestDistance {
+                bestIndex = resourceIndex
+                bestDistance = distance
+            }
+        }
+
+        return bestIndex
     }
 
     private func guardOffset(for unit: UnitSnapshot, around target: CombatTarget) -> WorldPoint {
