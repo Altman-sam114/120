@@ -15,6 +15,8 @@ struct TacticalMapView: View {
             let selectedEntityID = state.selectedEntityID
             let cameraCenter = controller.camera.center
             let shouldDifferentiateWithoutColor = differentiateWithoutColor
+            let pendingCommandLabel = controller.tacticalMapPendingCommandLabel
+            let pendingCommandSymbol = controller.tacticalMapPendingCommandSymbol
 
             Canvas { context, size in
                 Self.drawMap(
@@ -26,21 +28,42 @@ struct TacticalMapView: View {
                     wrecks: wrecks,
                     selectedEntityID: selectedEntityID,
                     cameraCenter: cameraCenter,
+                    pendingCommandSymbol: pendingCommandSymbol,
                     differentiateWithoutColor: shouldDifferentiateWithoutColor
                 )
             }
             .contentShape(Rectangle())
             .gesture(mapGesture(in: proxy.size))
+            .overlay(alignment: .topLeading) {
+                if let pendingCommandLabel {
+                    Label(
+                        pendingCommandLabel,
+                        systemImage: controller.tacticalMapPendingSystemImage
+                    )
+                    .font(.caption.bold())
+                    .lineLimit(1)
+                    .labelStyle(.titleAndIcon)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
+                    .background(.black.opacity(0.62), in: Capsule())
+                    .foregroundStyle(.yellow)
+                    .padding(6)
+                }
+            }
         }
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
-                .stroke(.white.opacity(0.24), lineWidth: 1)
+                .stroke(
+                    controller.isAwaitingTargetCommand ? .yellow.opacity(0.82) : .white.opacity(0.24),
+                    lineWidth: controller.isAwaitingTargetCommand ? 1.8 : 1
+                )
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Tactical map")
-        .accessibilityHint("Centers the battlefield camera, or issues the pending map command.")
+        .accessibilityValue(controller.tacticalMapAccessibilityValue)
+        .accessibilityHint(controller.tacticalMapAccessibilityHint)
         .accessibilityAddTraits(.isButton)
     }
 
@@ -74,6 +97,7 @@ struct TacticalMapView: View {
         wrecks: [WreckSnapshot],
         selectedEntityID: String?,
         cameraCenter: WorldPoint,
+        pendingCommandSymbol: String?,
         differentiateWithoutColor: Bool
     ) {
         guard size.width > 0, size.height > 0 else {
@@ -112,6 +136,10 @@ struct TacticalMapView: View {
         }
 
         drawCameraCenter(cameraCenter, in: &context, size: size)
+
+        if let pendingCommandSymbol {
+            drawPendingCommandIndicator(pendingCommandSymbol, in: &context, size: size)
+        }
     }
 
     private static func drawResource(_ resource: ResourceNode, in context: inout GraphicsContext, size: CGSize) {
@@ -197,6 +225,53 @@ struct TacticalMapView: View {
         vertical.move(to: CGPoint(x: point.x, y: point.y - radius - 3))
         vertical.addLine(to: CGPoint(x: point.x, y: point.y + radius + 3))
         context.stroke(vertical, with: .color(.white.opacity(0.8)), lineWidth: 1)
+    }
+
+    private static func drawPendingCommandIndicator(
+        _ symbol: String,
+        in context: inout GraphicsContext,
+        size: CGSize
+    ) {
+        let inset: CGFloat = 5
+        let length: CGFloat = 18
+        let color = Color.yellow.opacity(0.88)
+        let lineWidth: CGFloat = 1.5
+        var corners = Path()
+
+        corners.move(to: CGPoint(x: inset, y: inset + length))
+        corners.addLine(to: CGPoint(x: inset, y: inset))
+        corners.addLine(to: CGPoint(x: inset + length, y: inset))
+
+        corners.move(to: CGPoint(x: size.width - inset - length, y: inset))
+        corners.addLine(to: CGPoint(x: size.width - inset, y: inset))
+        corners.addLine(to: CGPoint(x: size.width - inset, y: inset + length))
+
+        corners.move(to: CGPoint(x: inset, y: size.height - inset - length))
+        corners.addLine(to: CGPoint(x: inset, y: size.height - inset))
+        corners.addLine(to: CGPoint(x: inset + length, y: size.height - inset))
+
+        corners.move(to: CGPoint(x: size.width - inset - length, y: size.height - inset))
+        corners.addLine(to: CGPoint(x: size.width - inset, y: size.height - inset))
+        corners.addLine(to: CGPoint(x: size.width - inset, y: size.height - inset - length))
+
+        context.stroke(corners, with: .color(color), lineWidth: lineWidth)
+
+        let symbolSize = CGSize(width: 26, height: 18)
+        let symbolRect = CGRect(
+            x: size.width - inset - symbolSize.width,
+            y: size.height - inset - symbolSize.height,
+            width: symbolSize.width,
+            height: symbolSize.height
+        )
+        context.fill(Path(roundedRect: symbolRect, cornerRadius: 5), with: .color(.black.opacity(0.68)))
+        context.stroke(Path(roundedRect: symbolRect, cornerRadius: 5), with: .color(color), lineWidth: 0.8)
+
+        let resolvedText = context.resolve(
+            Text(symbol)
+                .font(.caption.bold())
+                .foregroundStyle(.yellow)
+        )
+        context.draw(resolvedText, at: CGPoint(x: symbolRect.midX, y: symbolRect.midY), anchor: .center)
     }
 
     private static func drawSlash(in context: inout GraphicsContext, rect: CGRect, color: Color, lineWidth: CGFloat) {

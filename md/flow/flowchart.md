@@ -55,10 +55,10 @@ flowchart TD
   S --> E["GameEngine.update / select / issueMove / issueAttackMove / issuePatrol / issueGuard / issueRepair / issueReclaim / issueBuildExtractor / issueStop / issueAttack / queueUnit / cancelLastProduction / setRally / init(state)<br/>中文注释：推进收入 tick、点选、单单位移动、攻击移动、巡逻、护航、维修、回收、建造 Extractor、停止、基础攻击、炮塔防御开火、死亡残骸、工厂生产、生产取消、集结点、红方扩张/生产/进攻 AI 和存档状态恢复"]
   E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、移动命令、攻击移动、护航、维修、回收、建造、生产、生产取消、集结点和 Save/Load 入口"]
   C --> H["SwiftUI RootGameView / GameHUDView<br/>中文注释：显示资源、收入、人口和选择反馈"]
-  C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、残骸、双方单位建筑和相机中心，并复用点位、Builder 目标和实体目标命令"]
+  C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、残骸、双方单位建筑、相机中心和等待命令反馈，并复用点位、Builder 目标和实体目标命令"]
   C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、双方初始建筑、单位和移动目标"]
   T["SpatialTap / Drag / Magnify<br/>中文注释：iOS 触摸选择、移动落点、拖拽平移和捏合缩放"] --> C
-  TT["TacticalMap DragTap<br/>中文注释：点按小地图换算世界坐标；等待点位、Builder 目标或实体目标命令时下令，否则居中相机"] --> C
+  TT["TacticalMap DragTap<br/>中文注释：点按小地图换算世界坐标；等待点位、Builder 目标或实体目标命令时显示反馈并下令，否则居中相机"] --> C
   C --> M["UnitOrder.move<br/>中文注释：选中己方单位后写入移动目标"]
   M --> E
   C --> AM["UnitOrder.attackMove<br/>中文注释：选中己方单位后写入攻击移动目的地，core 在视野内临时索敌"]

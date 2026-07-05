@@ -185,6 +185,137 @@ final class GameController {
             isAwaitingRallyTarget
     }
 
+    var tacticalMapPendingCommandLabel: String? {
+        if isAwaitingMoveTarget {
+            return "Move"
+        }
+        if isAwaitingAttackMoveTarget {
+            return "Attack Move"
+        }
+        if isAwaitingPatrolTarget {
+            return "Patrol"
+        }
+        if isAwaitingRallyTarget {
+            return "Rally"
+        }
+        if isAwaitingReclaimTarget {
+            return "Reclaim"
+        }
+        if isAwaitingBuildExtractorTarget {
+            return "Extractor"
+        }
+        if isAwaitingAttackTarget {
+            return "Attack"
+        }
+        if isAwaitingGuardTarget {
+            return "Guard"
+        }
+        if isAwaitingRepairTarget {
+            return "Repair"
+        }
+        return nil
+    }
+
+    var tacticalMapPendingCommandSymbol: String? {
+        if isAwaitingMoveTarget {
+            return "M"
+        }
+        if isAwaitingAttackMoveTarget {
+            return "AM"
+        }
+        if isAwaitingPatrolTarget {
+            return "P"
+        }
+        if isAwaitingRallyTarget {
+            return "R"
+        }
+        if isAwaitingReclaimTarget {
+            return "$"
+        }
+        if isAwaitingBuildExtractorTarget {
+            return "E"
+        }
+        if isAwaitingAttackTarget {
+            return "A"
+        }
+        if isAwaitingGuardTarget {
+            return "G"
+        }
+        if isAwaitingRepairTarget {
+            return "+"
+        }
+        return nil
+    }
+
+    var tacticalMapPendingSystemImage: String {
+        if isAwaitingMoveTarget {
+            return "arrow.up.right"
+        }
+        if isAwaitingAttackMoveTarget {
+            return "arrow.up.right.circle"
+        }
+        if isAwaitingPatrolTarget {
+            return "arrow.triangle.2.circlepath"
+        }
+        if isAwaitingRallyTarget {
+            return "flag.checkered"
+        }
+        if isAwaitingReclaimTarget {
+            return "dollarsign.circle"
+        }
+        if isAwaitingBuildExtractorTarget {
+            return "hammer"
+        }
+        if isAwaitingAttackTarget {
+            return "scope"
+        }
+        if isAwaitingGuardTarget {
+            return "shield"
+        }
+        if isAwaitingRepairTarget {
+            return "wrench.and.screwdriver"
+        }
+        return "map"
+    }
+
+    var tacticalMapAccessibilityHint: String {
+        if isAwaitingMoveTarget {
+            return "Tap the tactical map to issue the move destination."
+        }
+        if isAwaitingAttackMoveTarget {
+            return "Tap the tactical map to issue the attack move destination."
+        }
+        if isAwaitingPatrolTarget {
+            return "Tap the tactical map to set the patrol endpoint."
+        }
+        if isAwaitingRallyTarget {
+            return "Tap the tactical map to set the factory rally point."
+        }
+        if isAwaitingReclaimTarget {
+            return "Tap a wreck marker on the tactical map to issue reclaim."
+        }
+        if isAwaitingBuildExtractorTarget {
+            return "Tap an unclaimed resource marker on the tactical map to build an extractor."
+        }
+        if isAwaitingAttackTarget {
+            return "Tap an enemy unit or building marker on the tactical map to issue attack."
+        }
+        if isAwaitingGuardTarget {
+            return "Tap a friendly unit or building marker on the tactical map to issue guard."
+        }
+        if isAwaitingRepairTarget {
+            return "Tap a damaged friendly unit or building marker on the tactical map to issue repair."
+        }
+        return "Tap the tactical map to center the battlefield camera."
+    }
+
+    var tacticalMapAccessibilityValue: String {
+        if let label = tacticalMapPendingCommandLabel {
+            return "Pending \(label)"
+        }
+        return "Camera center mode"
+    }
+
     func advance(deltaTime: TimeInterval) {
         let clamped = min(0.25, max(0, deltaTime))
         guard !isPaused else {
