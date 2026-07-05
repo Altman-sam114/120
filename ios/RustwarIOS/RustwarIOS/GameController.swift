@@ -30,6 +30,7 @@ final class GameController {
     var isAwaitingRepairTarget = false
     var isAwaitingReclaimTarget = false
     var isAwaitingBuildExtractorTarget = false
+    var isAwaitingBuildTurretTarget = false
     var isAwaitingRallyTarget = false
     var isPaused = false
     var simulationSpeed = 1.0 {
@@ -155,6 +156,10 @@ final class GameController {
         selectedPlayerBuilder != nil
     }
 
+    var canIssueBuildTurret: Bool {
+        selectedPlayerBuilder != nil
+    }
+
     var canIssueStop: Bool {
         selectedPlayerUnit != nil
     }
@@ -195,6 +200,10 @@ final class GameController {
         isAwaitingBuildExtractorTarget ? "Cancel" : "Extractor"
     }
 
+    var buildTurretCommandButtonTitle: String {
+        isAwaitingBuildTurretTarget ? "Cancel" : "Turret"
+    }
+
     var rallyCommandButtonTitle: String {
         isAwaitingRallyTarget ? "Cancel" : "Rally"
     }
@@ -208,6 +217,7 @@ final class GameController {
             isAwaitingRepairTarget ||
             isAwaitingReclaimTarget ||
             isAwaitingBuildExtractorTarget ||
+            isAwaitingBuildTurretTarget ||
             isAwaitingRallyTarget
     }
 
@@ -229,6 +239,9 @@ final class GameController {
         }
         if isAwaitingBuildExtractorTarget {
             return "Extractor"
+        }
+        if isAwaitingBuildTurretTarget {
+            return "Turret"
         }
         if isAwaitingAttackTarget {
             return "Attack"
@@ -261,6 +274,9 @@ final class GameController {
         if isAwaitingBuildExtractorTarget {
             return "E"
         }
+        if isAwaitingBuildTurretTarget {
+            return "T"
+        }
         if isAwaitingAttackTarget {
             return "A"
         }
@@ -292,6 +308,9 @@ final class GameController {
         if isAwaitingBuildExtractorTarget {
             return "hammer"
         }
+        if isAwaitingBuildTurretTarget {
+            return "shield.lefthalf.filled"
+        }
         if isAwaitingAttackTarget {
             return "scope"
         }
@@ -322,6 +341,9 @@ final class GameController {
         }
         if isAwaitingBuildExtractorTarget {
             return "Tap an unclaimed resource marker on the tactical map to build an extractor."
+        }
+        if isAwaitingBuildTurretTarget {
+            return "Tap the tactical map to choose a clear land position for a turret."
         }
         if isAwaitingAttackTarget {
             return "Tap an enemy unit or building marker on the tactical map to issue attack."
@@ -497,6 +519,18 @@ final class GameController {
         renderRevision += 1
     }
 
+    func toggleBuildTurretCommand() {
+        if isAwaitingBuildTurretTarget {
+            isAwaitingBuildTurretTarget = false
+            commandStatus = nil
+        } else if canIssueBuildTurret {
+            clearPendingTargetCommands()
+            isAwaitingBuildTurretTarget = true
+            commandStatus = "Turret position"
+        }
+        renderRevision += 1
+    }
+
     func toggleRallyCommand() {
         if isAwaitingRallyTarget {
             isAwaitingRallyTarget = false
@@ -649,6 +683,7 @@ final class GameController {
         isAwaitingRepairTarget = false
         isAwaitingReclaimTarget = false
         isAwaitingBuildExtractorTarget = false
+        isAwaitingBuildTurretTarget = false
         isAwaitingRallyTarget = false
     }
 
@@ -669,6 +704,10 @@ final class GameController {
             let result = engine.setRally(to: point)
             isAwaitingRallyTarget = false
             commandStatus = statusText(forRally: result)
+        } else if isAwaitingBuildTurretTarget {
+            let result = engine.issueBuildTurret(at: point)
+            isAwaitingBuildTurretTarget = false
+            commandStatus = statusText(forBuildTurret: result)
         } else {
             return false
         }
@@ -901,6 +940,21 @@ final class GameController {
             return "Need more metal"
         case .occupiedResourceNode:
             return "Resource node occupied"
+        }
+    }
+
+    private func statusText(forBuildTurret result: UnitCommandResult) -> String? {
+        switch result {
+        case .issued:
+            return "Turret build started"
+        case .noSelection:
+            return "No builder selected"
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
+            return "Builder required"
+        case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .occupiedResourceNode:
+            return "Clear land required"
+        case .insufficientMetal:
+            return "Need more metal"
         }
     }
 

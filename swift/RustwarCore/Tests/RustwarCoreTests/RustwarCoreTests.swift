@@ -998,6 +998,162 @@ import Testing
     #expect(builderAfterDestruction.order == nil)
 }
 
+@Test func buildTurretCommandRejectsMissingInvalidAndInsufficientMetal() throws {
+    let baseState = GameState(mapID: .coast)
+    let builder = try #require(baseState.units.first { $0.team == .player && $0.type == .builder })
+    let enemyBuilder = try #require(baseState.units.first { $0.team == .enemy && $0.type == .builder })
+    let playerTank = try #require(baseState.units.first { $0.team == .player && $0.type == .tank })
+    let playerBuilding = try #require(baseState.buildings.first { $0.team == .player })
+    let resource = try #require(baseState.resources.first)
+    let clearPoint = clearTurretBuildPoint(in: baseState)
+
+    var noSelectionEngine = GameEngine(state: baseState, enemyAIEnabled: false)
+    #expect(noSelectionEngine.issueBuildTurret(at: clearPoint) == .noSelection)
+
+    var enemySelectedState = baseState
+    enemySelectedState.selectedEntityID = enemyBuilder.id
+    var enemySelectedEngine = GameEngine(state: enemySelectedState, enemyAIEnabled: false)
+    #expect(enemySelectedEngine.issueBuildTurret(at: clearPoint) == .selectedEntityCannotBuild)
+
+    var tankSelectedState = baseState
+    tankSelectedState.selectedEntityID = playerTank.id
+    var tankSelectedEngine = GameEngine(state: tankSelectedState, enemyAIEnabled: false)
+    #expect(tankSelectedEngine.issueBuildTurret(at: clearPoint) == .selectedEntityCannotBuild)
+
+    var buildingSelectedState = baseState
+    buildingSelectedState.selectedEntityID = playerBuilding.id
+    var buildingSelectedEngine = GameEngine(state: buildingSelectedState, enemyAIEnabled: false)
+    #expect(buildingSelectedEngine.issueBuildTurret(at: clearPoint) == .selectedEntityCannotBuild)
+
+    var builderSelectedState = baseState
+    builderSelectedState.selectedEntityID = builder.id
+    var builderSelectedEngine = GameEngine(state: builderSelectedState, enemyAIEnabled: false)
+    #expect(builderSelectedEngine.issueBuildTurret(at: WorldPoint(2_350, 1_280)) == .invalidBuildTarget)
+    #expect(builderSelectedEngine.issueBuildTurret(at: resource.position) == .invalidBuildTarget)
+    #expect(builderSelectedEngine.issueBuildTurret(at: playerBuilding.position) == .invalidBuildTarget)
+
+    var poorState = builderSelectedState
+    poorState.metal[.player] = 20
+    var poorEngine = GameEngine(state: poorState, enemyAIEnabled: false)
+    #expect(poorEngine.issueBuildTurret(at: clearPoint) == .insufficientMetal)
+}
+
+@Test func buildTurretCommandCreatesIncompleteTurretAndBuildOrder() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let point = clearTurretBuildPoint(in: state)
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    let startingMetal = engine.state.metal[.player, default: 0]
+    let startingBuildingCount = engine.state.buildings.count
+    #expect(engine.issueBuildTurret(at: point) == .issued)
+
+    let turret = try #require(engine.state.buildings.first { $0.type == .turret && $0.team == .player })
+    let builderAfterIssue = try #require(engine.state.units.first { $0.id == builder.id })
+
+    #expect(engine.state.buildings.count == startingBuildingCount + 1)
+    #expect(engine.state.metal[.player, default: 0] == startingMetal - GameDefinitions.building(.turret).metalCost)
+    #expect(turret.position == point)
+    #expect(turret.nodeID == nil)
+    #expect(turret.buildProgress == 0)
+    #expect(turret.hitPoints == turret.maxHitPoints * 0.1)
+    #expect(engine.state.selectedEntityID == builder.id)
+    if case let .build(targetID)? = builderAfterIssue.order {
+        #expect(targetID == turret.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func buildTurretCommandMovesBuilderIntoRangeAndKeepsOrder() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    let point = clearTurretBuildPoint(in: state)
+    state.units[builderIndex].position = WorldPoint(point.x - 360, point.y)
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.issueBuildTurret(at: point) == .issued)
+
+    let startingPosition = try #require(engine.state.units.first { $0.id == builder.id }?.position)
+    engine.update(deltaTime: 1)
+
+    let builderAfterUpdate = try #require(engine.state.units.first { $0.id == builder.id })
+    let turret = try #require(engine.state.buildings.first { $0.type == .turret && $0.team == .player })
+    #expect(builderAfterUpdate.position.x > startingPosition.x)
+    #expect(builderAfterUpdate.position.x < point.x)
+    #expect(turret.buildProgress == 0)
+    if case let .build(targetID)? = builderAfterUpdate.order {
+        #expect(targetID == turret.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func buildTurretCompletesAndThenDefendsAgainstEnemies() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    let point = clearTurretBuildPoint(in: state)
+    state.units[builderIndex].position = WorldPoint(point.x - 100, point.y)
+    let scoutDefinition = GameDefinitions.unit(.scout)
+    state.units.append(
+        UnitSnapshot(
+            id: "enemy-build-target",
+            type: .scout,
+            team: .enemy,
+            position: WorldPoint(point.x + 140, point.y),
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        )
+    )
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.issueBuildTurret(at: point) == .issued)
+
+    engine.update(deltaTime: 1)
+    let incompleteTurret = try #require(engine.state.buildings.first { $0.type == .turret && $0.team == .player })
+    let enemyBeforeCompletion = try #require(engine.state.units.first { $0.id == "enemy-build-target" })
+    #expect(incompleteTurret.buildProgress > 0)
+    #expect(incompleteTurret.buildProgress < 1)
+    #expect(enemyBeforeCompletion.hitPoints == scoutDefinition.hitPoints)
+
+    for _ in 0..<12 {
+        engine.update(deltaTime: 1)
+    }
+
+    let completedTurret = try #require(engine.state.buildings.first { $0.id == incompleteTurret.id })
+    let builderAfterCompletion = try #require(engine.state.units.first { $0.id == builder.id })
+    let enemyAfterCompletionTick = try #require(engine.state.units.first { $0.id == "enemy-build-target" })
+    #expect(completedTurret.buildProgress == 1)
+    #expect(completedTurret.hitPoints == completedTurret.maxHitPoints)
+    #expect(builderAfterCompletion.order == nil)
+    #expect(enemyAfterCompletionTick.hitPoints == scoutDefinition.hitPoints)
+
+    engine.update(deltaTime: 1)
+
+    let enemyAfterDefensiveFire = try #require(engine.state.units.first { $0.id == "enemy-build-target" })
+    #expect(enemyAfterDefensiveFire.hitPoints == scoutDefinition.hitPoints - GameDefinitions.building(.turret).damage)
+}
+
+@Test func stopCommandClearsTurretBuildOrder() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let point = clearTurretBuildPoint(in: state)
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.issueBuildTurret(at: point) == .issued)
+    #expect(engine.issueStop() == .issued)
+
+    let stoppedBuilder = try #require(engine.state.units.first { $0.id == builder.id })
+    #expect(stoppedBuilder.order == nil)
+    #expect(engine.state.selectedEntityID == builder.id)
+}
+
 @Test func gameStateJSONRoundTripPreservesBuildExtractorState() throws {
     var state = GameState(mapID: .coast)
     let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
@@ -2212,6 +2368,55 @@ private func totalHitPoints(in state: GameState, for team: Team) -> Double {
         building.team == team ? partial + building.hitPoints : partial
     }
     return unitHitPoints + buildingHitPoints
+}
+
+private func clearTurretBuildPoint(in state: GameState) -> WorldPoint {
+    let turretRadius = GameDefinitions.building(.turret).size / 2
+    for y in stride(from: 1_700.0, through: 2_350.0, by: 70.0) {
+        for x in stride(from: 1_100.0, through: 1_650.0, by: 70.0) {
+            let point = WorldPoint(x, y)
+            guard terrainAllowsBuildingForTest(at: point, in: state) else {
+                continue
+            }
+            guard state.resources.allSatisfy({
+                let minimumDistance = turretRadius + $0.radius + 12
+                return point.distanceSquared(to: $0.position) >= minimumDistance * minimumDistance
+            }) else {
+                continue
+            }
+            guard state.buildings.allSatisfy({
+                guard $0.hitPoints > 0 else {
+                    return true
+                }
+                let definition = GameDefinitions.building($0.type)
+                let minimumDistance = turretRadius + definition.size / 2 + 18
+                return point.distanceSquared(to: $0.position) >= minimumDistance * minimumDistance
+            }) else {
+                continue
+            }
+            guard state.units.allSatisfy({
+                guard $0.hitPoints > 0 else {
+                    return true
+                }
+                let definition = GameDefinitions.unit($0.type)
+                let minimumDistance = turretRadius + definition.radius + 10
+                return point.distanceSquared(to: $0.position) >= minimumDistance * minimumDistance
+            }) else {
+                continue
+            }
+            return point
+        }
+    }
+    fatalError("No clear turret build point found in test map.")
+}
+
+private func terrainAllowsBuildingForTest(at point: WorldPoint, in state: GameState) -> Bool {
+    switch state.terrain.terrain(at: point) {
+    case .water, .deep, .lava:
+        return false
+    case .grass, .grass2, .dirt, .sand, .rock:
+        return true
+    }
 }
 
 private func isolatedTurretState(turretPosition: WorldPoint, targetPosition: WorldPoint) -> GameState {

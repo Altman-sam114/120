@@ -14,8 +14,8 @@
 - 项目形态：完整可玩的 Web Canvas RTS 原型 + v1.0 起新增的原生 Swift/iOS 迁移地基。
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
-- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、资源点命中、残骸模型、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂重复生产开关、工厂集结点设置、基础攻击、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方生产/扩张/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Repair 按钮、Reclaim 按钮、Build Extractor 按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
+- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、资源点命中、残骸模型、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Build Turret 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂重复生产开关、工厂集结点设置、基础攻击、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方生产/扩张/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Repair 按钮、Reclaim 按钮、Build Extractor 按钮、Turret 建造按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -1055,3 +1055,37 @@
 遗留事项：
 
 - v1.25 Repeat 只作用于当前选中的己方单个生产建筑；尚无多工厂生产面板、指定队列项取消、Shift 队列命令、自动暂停 repeat、红方 repeat 配置、生产优先级或完整 Web 生产 UI parity。
+
+### v1.26 / iOS native Build Turret foundation
+
+日期：2026-07-05
+
+核心变更：
+
+- `GameDefinitions` 为 Turret 明确 `buildTime = 13`，避免原生新建炮塔沿用默认 1 秒完成。
+- `GameEngine` 新增 `issueBuildTurret(at:)`，只允许当前选中的己方 Builder 在清晰陆地点建造 Turret；命令会扣除 330 金属、创建未完成己方 Turret，并给 Builder 写入 `.build(targetID:)`。
+- Turret 放置做最小合法性校验：目标点夹到地图内，拒绝水/深水/岩浆，拒绝贴近资源点、存活建筑或存活单位；本轮不迁移完整 Web 建造幽灵和碰撞系统。
+- iOS HUD 新增 Turret 按钮和等待态，主战场或战术小地图点按都可作为建造点；Stop、Load、Restart 和切图会清除该等待态。
+- Swift tests 增加 Build Turret 拒绝非法选择/地形/重叠/资源不足、成功创建未完成 Turret、远距靠近、完成后自动开火和 Stop 清除订单覆盖。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/GameDefinitions.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.26-ios-build-turret-foundation.md`
+- `update_log.md`
+
+验证结果：
+
+- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+
+遗留事项：
+
+- v1.26 Turret 建造只作用于当前选中己方单个 Builder；尚无完整建筑菜单、建造幽灵、拖拽放置、Shift 建造队列、多 Builder 协同、取消未完成建筑退款、红方造炮塔或完整 Web 建造系统 parity。

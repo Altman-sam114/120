@@ -206,6 +206,32 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func issueBuildTurret(at point: WorldPoint) -> UnitCommandResult {
+        guard let selectedEntityID = state.selectedEntityID else {
+            return .noSelection
+        }
+        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
+              state.units[unitIndex].team == .player,
+              state.units[unitIndex].type == .builder else {
+            return .selectedEntityCannotBuild
+        }
+
+        let position = point.clampedToMap()
+        guard canPlaceBuilding(.turret, at: position) else {
+            return .invalidBuildTarget
+        }
+
+        let definition = GameDefinitions.building(.turret)
+        let team = state.units[unitIndex].team
+        guard state.metal[team, default: 0] >= definition.metalCost else {
+            return .insufficientMetal
+        }
+
+        startTurretBuild(builderIndex: unitIndex, position: position)
+        return .issued
+    }
+
+    @discardableResult
     public mutating func issueStop() -> UnitCommandResult {
         guard let selectedEntityID = state.selectedEntityID else {
             return .noSelection
@@ -1130,6 +1156,69 @@ public struct GameEngine: Sendable {
             )
         )
         state.units[builderIndex].order = .build(targetID: buildingID)
+    }
+
+    private mutating func startTurretBuild(builderIndex: Int, position: WorldPoint) {
+        let definition = GameDefinitions.building(.turret)
+        let team = state.units[builderIndex].team
+        let buildingID = nextID(prefix: "building")
+        let startingHitPoints = definition.hitPoints * Self.incompleteBuildingMinimumHealthFraction
+        state.metal[team, default: 0] -= definition.metalCost
+        state.buildings.append(
+            BuildingSnapshot(
+                id: buildingID,
+                type: .turret,
+                team: team,
+                position: position,
+                hitPoints: startingHitPoints,
+                maxHitPoints: definition.hitPoints,
+                buildProgress: 0,
+                rally: position
+            )
+        )
+        state.units[builderIndex].order = .build(targetID: buildingID)
+    }
+
+    private func canPlaceBuilding(_ buildingType: BuildingType, at position: WorldPoint) -> Bool {
+        guard terrainAllowsBuilding(at: position) else {
+            return false
+        }
+
+        let definition = GameDefinitions.building(buildingType)
+        let radius = definition.size / 2
+        for resource in state.resources {
+            let minimumDistance = radius + resource.radius + 12
+            if position.distanceSquared(to: resource.position) < minimumDistance * minimumDistance {
+                return false
+            }
+        }
+
+        for building in state.buildings where building.hitPoints > 0 {
+            let buildingDefinition = GameDefinitions.building(building.type)
+            let minimumDistance = radius + buildingDefinition.size / 2 + 18
+            if position.distanceSquared(to: building.position) < minimumDistance * minimumDistance {
+                return false
+            }
+        }
+
+        for unit in state.units where unit.hitPoints > 0 {
+            let unitDefinition = GameDefinitions.unit(unit.type)
+            let minimumDistance = radius + unitDefinition.radius + 10
+            if position.distanceSquared(to: unit.position) < minimumDistance * minimumDistance {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    private func terrainAllowsBuilding(at position: WorldPoint) -> Bool {
+        switch state.terrain.terrain(at: position) {
+        case .water, .deep, .lava:
+            return false
+        case .grass, .grass2, .dirt, .sand, .rock:
+            return true
+        }
     }
 
     private mutating func nextID(prefix: String) -> String {

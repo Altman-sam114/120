@@ -165,6 +165,17 @@ struct GameHUDView: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .accessibilityLabel("Build extractor")
                 }
+                if controller.canIssueBuildTurret || controller.isAwaitingBuildTurretTarget {
+                    Button(
+                        controller.buildTurretCommandButtonTitle,
+                        systemImage: controller.isAwaitingBuildTurretTarget ? "xmark.circle" : "shield.lefthalf.filled",
+                        action: controller.toggleBuildTurretCommand
+                    )
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .accessibilityLabel("Build turret")
+                }
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                     Button(
                         controller.attackCommandButtonTitle,
@@ -183,7 +194,8 @@ struct GameHUDView: View {
                     controller.isAwaitingGuardTarget ||
                     controller.isAwaitingRepairTarget ||
                     controller.isAwaitingReclaimTarget ||
-                    controller.isAwaitingBuildExtractorTarget {
+                    controller.isAwaitingBuildExtractorTarget ||
+                    controller.isAwaitingBuildTurretTarget {
                     Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
                         .buttonStyle(.bordered)
                         .controlSize(.regular)
