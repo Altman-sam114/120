@@ -389,7 +389,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v1.18 起，`GameEngine.updateEnemyAI()` 会先尝试红方经济扩张：空闲 enemy Builder 在红方金属足够时选择最近的空闲资源点，复用 Extractor 建造 helper 扣除 260 金属、创建未完成 enemy Extractor、认领资源点并写入 `.build(targetID:)`；未完成 enemy Extractor 仍不提供收入，完成后才增加红方收入。该 AI 步骤不改变玩家当前选择。
 - v1.19 起，`BuildingDefinition` 保存最小建筑武器参数，`BuildingSnapshot.weaponCooldown` 保存建筑开火冷却并兼容旧 JSON 默认 0。`GameEngine.update` 会推进完成状态 Turret 的自动防御开火：炮塔在射程内选择最近敌方单位、按冷却造成伤害，死亡清理和残骸生成仍复用统一实体清理。SpriteKit 在炮塔冷却期间绘制淡红火力线。
 - v1.20 起，`GameController.handleTacticalMapTap(at:)` 复用主战场点位命令派发：若当前等待 Move / Attack Move / Patrol / Rally 落点，小地图点按会直接下达对应命令并清除等待态；若没有可消费的点位命令，仍保持旧行为居中相机。
-- v1.21 起，战术小地图在 Reclaim / Build Extractor 等待态下会调用现有 `GameState.wreckTarget(at:)` / `resourceTarget(at:)` 命中残骸或资源点，并复用 `issueReclaim` / `issueBuildExtractor` 下达 Builder 命令；Attack / Guard / Repair 这类需要精确单位或建筑实体命中的命令仍不由小地图处理。
+- v1.21 起，战术小地图在 Reclaim / Build Extractor 等待态下会调用现有 `GameState.wreckTarget(at:)` / `resourceTarget(at:)` 命中残骸或资源点，并复用 `issueReclaim` / `issueBuildExtractor` 下达 Builder 命令；当时 Attack / Guard / Repair 这类需要精确单位或建筑实体命中的命令仍不由小地图处理，后续 v1.22 已补齐最小入口。
 - v1.22 起，战术小地图在 Attack / Guard / Repair 等待态下会调用现有 `GameState.selectionTarget(at:includeEnemies:)` 命中单位或建筑，并复用 `issueAttack` / `issueGuard` / `issueRepair` 的目标合法性校验；未命中或目标非法时沿用主战场相同状态文案。
 
 输入：

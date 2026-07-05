@@ -40,7 +40,7 @@ struct TacticalMapView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Tactical map")
-        .accessibilityHint("Centers the battlefield camera, or issues the pending point command.")
+        .accessibilityHint("Centers the battlefield camera, or issues the pending map command.")
         .accessibilityAddTraits(.isButton)
     }
 
