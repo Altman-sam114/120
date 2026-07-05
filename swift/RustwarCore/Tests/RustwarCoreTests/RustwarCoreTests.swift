@@ -2314,6 +2314,7 @@ import Testing
 @Test func enemyAITurretDoesNotFireUntilCompleted() throws {
     var state = enemyTurretConstructionReadyState(mapID: .coast)
     state.buildings.removeAll { $0.team == .enemy && $0.type == .turret }
+    state.units.removeAll { $0.team == .enemy && $0.type != .builder }
     let playerTarget = try #require(state.units.first { $0.team == .player && $0.type == .tank })
     let playerTargetIndex = try #require(state.units.firstIndex { $0.id == playerTarget.id })
     state.units[playerTargetIndex].position = WorldPoint(3_040, 1_080)
@@ -2328,14 +2329,31 @@ import Testing
     let targetBeforeCompletion = try #require(engine.state.units.first { $0.id == playerTarget.id })
     #expect(targetBeforeCompletion.hitPoints == playerTarget.hitPoints)
 
-    var buildOnlyEngine = GameEngine(state: engine.state, enemyAIEnabled: false)
-    for _ in 0..<20 {
-        buildOnlyEngine.update(deltaTime: 1)
-    }
+    var nearlyCompleteState = engine.state
+    let nearlyCompleteTurretIndex = try #require(nearlyCompleteState.buildings.firstIndex { $0.id == newTurret.id })
+    let turretBuildTime = GameDefinitions.building(.turret).buildTime
+    let nearlyCompleteProgress = 1 - (0.5 / turretBuildTime)
+    nearlyCompleteState.buildings[nearlyCompleteTurretIndex].buildProgress = nearlyCompleteProgress
+    nearlyCompleteState.buildings[nearlyCompleteTurretIndex].hitPoints =
+        nearlyCompleteState.buildings[nearlyCompleteTurretIndex].maxHitPoints * nearlyCompleteProgress
+    let nearlyCompleteTurret = nearlyCompleteState.buildings[nearlyCompleteTurretIndex]
+    let buildBuilderIndex = try #require(nearlyCompleteState.units.firstIndex {
+        if case let .build(targetID)? = $0.order {
+            return targetID == newTurret.id
+        }
+        return false
+    })
+    nearlyCompleteState.units[buildBuilderIndex].position = nearlyCompleteTurret.position
+    let targetIndex = try #require(nearlyCompleteState.units.firstIndex { $0.id == playerTarget.id })
+    nearlyCompleteState.units[targetIndex].position = WorldPoint(nearlyCompleteTurret.position.x + 80, nearlyCompleteTurret.position.y)
 
+    var buildOnlyEngine = GameEngine(state: nearlyCompleteState, enemyAIEnabled: false)
+    buildOnlyEngine.update(deltaTime: 1)
     let completedTurret = try #require(buildOnlyEngine.state.buildings.first { $0.id == newTurret.id })
     #expect(completedTurret.buildProgress == 1)
     #expect(completedTurret.hitPoints == completedTurret.maxHitPoints)
+    let targetAfterCompletion = try #require(buildOnlyEngine.state.units.first { $0.id == playerTarget.id })
+    #expect(targetAfterCompletion.hitPoints == playerTarget.hitPoints)
 
     buildOnlyEngine.update(deltaTime: 1)
 
