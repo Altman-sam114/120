@@ -232,6 +232,32 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func issueBuildLandFactory(at point: WorldPoint) -> UnitCommandResult {
+        guard let selectedEntityID = state.selectedEntityID else {
+            return .noSelection
+        }
+        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
+              state.units[unitIndex].team == .player,
+              state.units[unitIndex].type == .builder else {
+            return .selectedEntityCannotBuild
+        }
+
+        let position = point.clampedToMap()
+        guard canPlaceBuilding(.landFactory, at: position) else {
+            return .invalidBuildTarget
+        }
+
+        let definition = GameDefinitions.building(.landFactory)
+        let team = state.units[unitIndex].team
+        guard state.metal[team, default: 0] >= definition.metalCost else {
+            return .insufficientMetal
+        }
+
+        startPointBuildingBuild(.landFactory, builderIndex: unitIndex, position: position)
+        return .issued
+    }
+
+    @discardableResult
     public mutating func issueStop() -> UnitCommandResult {
         guard let selectedEntityID = state.selectedEntityID else {
             return .noSelection
@@ -264,7 +290,9 @@ public struct GameEngine: Sendable {
             return .noSelection
         }
         guard let buildingIndex = state.buildings.firstIndex(where: { $0.id == selectedEntityID }),
-              state.buildings[buildingIndex].team == .player else {
+              state.buildings[buildingIndex].team == .player,
+              state.buildings[buildingIndex].hitPoints > 0,
+              state.buildings[buildingIndex].buildProgress >= 1 else {
             return .selectedBuildingCannotRepeatProduction
         }
 
@@ -287,6 +315,8 @@ public struct GameEngine: Sendable {
         }
         guard let buildingIndex = state.buildings.firstIndex(where: { $0.id == selectedEntityID }),
               state.buildings[buildingIndex].team == .player,
+              state.buildings[buildingIndex].hitPoints > 0,
+              state.buildings[buildingIndex].buildProgress >= 1,
               !GameDefinitions.building(state.buildings[buildingIndex].type).produces.isEmpty else {
             return .selectedBuildingCannotSetRally
         }
@@ -302,6 +332,8 @@ public struct GameEngine: Sendable {
         }
         guard let buildingIndex = state.buildings.firstIndex(where: { $0.id == selectedEntityID }),
               state.buildings[buildingIndex].team == .player,
+              state.buildings[buildingIndex].hitPoints > 0,
+              state.buildings[buildingIndex].buildProgress >= 1,
               !GameDefinitions.building(state.buildings[buildingIndex].type).produces.isEmpty else {
             return .selectedBuildingCannotCancelProduction
         }
@@ -1036,6 +1068,11 @@ public struct GameEngine: Sendable {
 
     private mutating func updateProduction(deltaTime: Double) {
         for buildingIndex in state.buildings.indices {
+            guard state.buildings[buildingIndex].hitPoints > 0,
+                  state.buildings[buildingIndex].buildProgress >= 1 else {
+                continue
+            }
+
             if state.buildings[buildingIndex].productionQueue.isEmpty {
                 enqueueRepeatedUnitIfReady(at: buildingIndex)
                 continue
@@ -1066,6 +1103,11 @@ public struct GameEngine: Sendable {
     }
 
     private mutating func enqueueUnit(_ unitType: UnitType, at buildingIndex: Int) -> ProductionCommandResult {
+        guard state.buildings[buildingIndex].hitPoints > 0,
+              state.buildings[buildingIndex].buildProgress >= 1 else {
+            return .selectedBuildingCannotProduce
+        }
+
         let buildingDefinition = GameDefinitions.building(state.buildings[buildingIndex].type)
         guard !buildingDefinition.produces.isEmpty else {
             return .selectedBuildingCannotProduce
@@ -1159,7 +1201,11 @@ public struct GameEngine: Sendable {
     }
 
     private mutating func startTurretBuild(builderIndex: Int, position: WorldPoint) {
-        let definition = GameDefinitions.building(.turret)
+        startPointBuildingBuild(.turret, builderIndex: builderIndex, position: position)
+    }
+
+    private mutating func startPointBuildingBuild(_ buildingType: BuildingType, builderIndex: Int, position: WorldPoint) {
+        let definition = GameDefinitions.building(buildingType)
         let team = state.units[builderIndex].team
         let buildingID = nextID(prefix: "building")
         let startingHitPoints = definition.hitPoints * Self.incompleteBuildingMinimumHealthFraction
@@ -1167,7 +1213,7 @@ public struct GameEngine: Sendable {
         state.buildings.append(
             BuildingSnapshot(
                 id: buildingID,
-                type: .turret,
+                type: buildingType,
                 team: team,
                 position: position,
                 hitPoints: startingHitPoints,

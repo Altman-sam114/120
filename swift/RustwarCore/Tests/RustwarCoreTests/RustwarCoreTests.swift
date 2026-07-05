@@ -1154,6 +1154,170 @@ import Testing
     #expect(engine.state.selectedEntityID == builder.id)
 }
 
+@Test func buildLandFactoryCommandRejectsMissingInvalidAndInsufficientMetal() throws {
+    let baseState = GameState(mapID: .coast)
+    let builder = try #require(baseState.units.first { $0.team == .player && $0.type == .builder })
+    let enemyBuilder = try #require(baseState.units.first { $0.team == .enemy && $0.type == .builder })
+    let playerTank = try #require(baseState.units.first { $0.team == .player && $0.type == .tank })
+    let playerBuilding = try #require(baseState.buildings.first { $0.team == .player })
+    let resource = try #require(baseState.resources.first)
+    let clearPoint = clearLandFactoryBuildPoint(in: baseState)
+
+    var noSelectionEngine = GameEngine(state: baseState, enemyAIEnabled: false)
+    #expect(noSelectionEngine.issueBuildLandFactory(at: clearPoint) == .noSelection)
+
+    var enemySelectedState = baseState
+    enemySelectedState.selectedEntityID = enemyBuilder.id
+    var enemySelectedEngine = GameEngine(state: enemySelectedState, enemyAIEnabled: false)
+    #expect(enemySelectedEngine.issueBuildLandFactory(at: clearPoint) == .selectedEntityCannotBuild)
+
+    var tankSelectedState = baseState
+    tankSelectedState.selectedEntityID = playerTank.id
+    var tankSelectedEngine = GameEngine(state: tankSelectedState, enemyAIEnabled: false)
+    #expect(tankSelectedEngine.issueBuildLandFactory(at: clearPoint) == .selectedEntityCannotBuild)
+
+    var buildingSelectedState = baseState
+    buildingSelectedState.selectedEntityID = playerBuilding.id
+    var buildingSelectedEngine = GameEngine(state: buildingSelectedState, enemyAIEnabled: false)
+    #expect(buildingSelectedEngine.issueBuildLandFactory(at: clearPoint) == .selectedEntityCannotBuild)
+
+    var builderSelectedState = baseState
+    builderSelectedState.selectedEntityID = builder.id
+    var builderSelectedEngine = GameEngine(state: builderSelectedState, enemyAIEnabled: false)
+    #expect(builderSelectedEngine.issueBuildLandFactory(at: WorldPoint(2_350, 1_280)) == .invalidBuildTarget)
+    #expect(builderSelectedEngine.issueBuildLandFactory(at: resource.position) == .invalidBuildTarget)
+    #expect(builderSelectedEngine.issueBuildLandFactory(at: playerBuilding.position) == .invalidBuildTarget)
+    #expect(builderSelectedEngine.issueBuildLandFactory(at: playerTank.position) == .invalidBuildTarget)
+
+    var poorState = builderSelectedState
+    poorState.metal[.player] = 20
+    var poorEngine = GameEngine(state: poorState, enemyAIEnabled: false)
+    #expect(poorEngine.issueBuildLandFactory(at: clearPoint) == .insufficientMetal)
+}
+
+@Test func buildLandFactoryCommandCreatesIncompleteFactoryAndBuildOrder() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let point = clearLandFactoryBuildPoint(in: state)
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    let startingMetal = engine.state.metal[.player, default: 0]
+    let startingBuildingCount = engine.state.buildings.count
+    #expect(engine.issueBuildLandFactory(at: point) == .issued)
+
+    let factory = try #require(engine.state.buildings.first { $0.type == .landFactory && $0.team == .player && $0.buildProgress < 1 })
+    let builderAfterIssue = try #require(engine.state.units.first { $0.id == builder.id })
+
+    #expect(engine.state.buildings.count == startingBuildingCount + 1)
+    #expect(engine.state.metal[.player, default: 0] == startingMetal - GameDefinitions.building(.landFactory).metalCost)
+    #expect(factory.position == point)
+    #expect(factory.nodeID == nil)
+    #expect(factory.rally == point)
+    #expect(factory.productionQueue.isEmpty)
+    #expect(factory.buildProgress == 0)
+    #expect(factory.hitPoints == factory.maxHitPoints * 0.1)
+    #expect(engine.state.selectedEntityID == builder.id)
+    if case let .build(targetID)? = builderAfterIssue.order {
+        #expect(targetID == factory.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func buildLandFactoryCommandMovesBuilderIntoRangeAndKeepsOrder() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    let point = clearLandFactoryBuildPoint(in: state)
+    state.units[builderIndex].position = WorldPoint(point.x - 360, point.y)
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.issueBuildLandFactory(at: point) == .issued)
+
+    let startingPosition = try #require(engine.state.units.first { $0.id == builder.id }?.position)
+    engine.update(deltaTime: 1)
+
+    let builderAfterUpdate = try #require(engine.state.units.first { $0.id == builder.id })
+    let factory = try #require(engine.state.buildings.first { $0.type == .landFactory && $0.team == .player && $0.buildProgress < 1 })
+    #expect(builderAfterUpdate.position.x > startingPosition.x)
+    #expect(builderAfterUpdate.position.x < point.x)
+    #expect(factory.buildProgress == 0)
+    if case let .build(targetID)? = builderAfterUpdate.order {
+        #expect(targetID == factory.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func buildLandFactoryCompletesAndEnablesProduction() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    let point = clearLandFactoryBuildPoint(in: state)
+    state.units[builderIndex].position = WorldPoint(point.x - 100, point.y)
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.issueBuildLandFactory(at: point) == .issued)
+    engine.update(deltaTime: 1)
+
+    let incompleteFactory = try #require(engine.state.buildings.first { $0.type == .landFactory && $0.team == .player && $0.buildProgress < 1 })
+    var incompleteFactorySelectedState = engine.state
+    incompleteFactorySelectedState.selectedEntityID = incompleteFactory.id
+    var incompleteProductionEngine = GameEngine(state: incompleteFactorySelectedState, enemyAIEnabled: false)
+    #expect(incompleteProductionEngine.queueUnit(.scout) == .selectedBuildingCannotProduce)
+    #expect(incompleteProductionEngine.setRepeatProduction(.scout) == .selectedBuildingCannotRepeatProduction)
+    #expect(incompleteProductionEngine.setRally(to: WorldPoint(point.x + 120, point.y)) == .selectedBuildingCannotSetRally)
+    #expect(incompleteProductionEngine.cancelLastProduction() == .selectedBuildingCannotCancelProduction)
+
+    var legacyQueueState = incompleteFactorySelectedState
+    let legacyFactoryIndex = try #require(legacyQueueState.buildings.firstIndex { $0.id == incompleteFactory.id })
+    legacyQueueState.buildings[legacyFactoryIndex].productionQueue = [
+        ProductionQueueItem(id: "legacy-scout", unitType: .scout, buildTime: 1)
+    ]
+    var legacyQueueEngine = GameEngine(state: legacyQueueState, enemyAIEnabled: false)
+    let unitCountBeforeLegacyQueueUpdate = legacyQueueEngine.state.units.count
+    legacyQueueEngine.update(deltaTime: 2)
+    let legacyFactoryAfterUpdate = try #require(legacyQueueEngine.state.buildings.first { $0.id == incompleteFactory.id })
+    #expect(legacyQueueEngine.state.units.count == unitCountBeforeLegacyQueueUpdate)
+    #expect(legacyFactoryAfterUpdate.productionQueue.first?.progress == 0)
+
+    for _ in 0..<21 {
+        engine.update(deltaTime: 1)
+    }
+
+    let completedFactory = try #require(engine.state.buildings.first { $0.id == incompleteFactory.id })
+    let builderAfterCompletion = try #require(engine.state.units.first { $0.id == builder.id })
+    #expect(completedFactory.buildProgress == 1)
+    #expect(completedFactory.hitPoints == completedFactory.maxHitPoints)
+    #expect(builderAfterCompletion.order == nil)
+
+    var completedFactorySelectedState = engine.state
+    completedFactorySelectedState.selectedEntityID = completedFactory.id
+    var productionEngine = GameEngine(state: completedFactorySelectedState, enemyAIEnabled: false)
+    #expect(productionEngine.queueUnit(.scout) == .queued)
+
+    let producingFactory = try #require(productionEngine.state.buildings.first { $0.id == completedFactory.id })
+    #expect(producingFactory.productionQueue.first?.unitType == .scout)
+}
+
+@Test func stopCommandClearsLandFactoryBuildOrder() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let point = clearLandFactoryBuildPoint(in: state)
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.issueBuildLandFactory(at: point) == .issued)
+    #expect(engine.issueStop() == .issued)
+
+    let stoppedBuilder = try #require(engine.state.units.first { $0.id == builder.id })
+    #expect(stoppedBuilder.order == nil)
+    #expect(engine.state.selectedEntityID == builder.id)
+}
+
 @Test func gameStateJSONRoundTripPreservesBuildExtractorState() throws {
     var state = GameState(mapID: .coast)
     let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
@@ -2371,7 +2535,15 @@ private func totalHitPoints(in state: GameState, for team: Team) -> Double {
 }
 
 private func clearTurretBuildPoint(in state: GameState) -> WorldPoint {
-    let turretRadius = GameDefinitions.building(.turret).size / 2
+    clearBuildPoint(for: .turret, in: state)
+}
+
+private func clearLandFactoryBuildPoint(in state: GameState) -> WorldPoint {
+    clearBuildPoint(for: .landFactory, in: state)
+}
+
+private func clearBuildPoint(for buildingType: BuildingType, in state: GameState) -> WorldPoint {
+    let buildingRadius = GameDefinitions.building(buildingType).size / 2
     for y in stride(from: 1_700.0, through: 2_350.0, by: 70.0) {
         for x in stride(from: 1_100.0, through: 1_650.0, by: 70.0) {
             let point = WorldPoint(x, y)
@@ -2379,7 +2551,7 @@ private func clearTurretBuildPoint(in state: GameState) -> WorldPoint {
                 continue
             }
             guard state.resources.allSatisfy({
-                let minimumDistance = turretRadius + $0.radius + 12
+                let minimumDistance = buildingRadius + $0.radius + 12
                 return point.distanceSquared(to: $0.position) >= minimumDistance * minimumDistance
             }) else {
                 continue
@@ -2389,7 +2561,7 @@ private func clearTurretBuildPoint(in state: GameState) -> WorldPoint {
                     return true
                 }
                 let definition = GameDefinitions.building($0.type)
-                let minimumDistance = turretRadius + definition.size / 2 + 18
+                let minimumDistance = buildingRadius + definition.size / 2 + 18
                 return point.distanceSquared(to: $0.position) >= minimumDistance * minimumDistance
             }) else {
                 continue
@@ -2399,7 +2571,7 @@ private func clearTurretBuildPoint(in state: GameState) -> WorldPoint {
                     return true
                 }
                 let definition = GameDefinitions.unit($0.type)
-                let minimumDistance = turretRadius + definition.radius + 10
+                let minimumDistance = buildingRadius + definition.radius + 10
                 return point.distanceSquared(to: $0.position) >= minimumDistance * minimumDistance
             }) else {
                 continue
@@ -2407,7 +2579,7 @@ private func clearTurretBuildPoint(in state: GameState) -> WorldPoint {
             return point
         }
     }
-    fatalError("No clear turret build point found in test map.")
+    fatalError("No clear \(buildingType.rawValue) build point found in test map.")
 }
 
 private func terrainAllowsBuildingForTest(at point: WorldPoint, in state: GameState) -> Bool {

@@ -31,6 +31,7 @@ final class GameController {
     var isAwaitingReclaimTarget = false
     var isAwaitingBuildExtractorTarget = false
     var isAwaitingBuildTurretTarget = false
+    var isAwaitingBuildFactoryTarget = false
     var isAwaitingRallyTarget = false
     var isPaused = false
     var simulationSpeed = 1.0 {
@@ -160,6 +161,10 @@ final class GameController {
         selectedPlayerBuilder != nil
     }
 
+    var canIssueBuildFactory: Bool {
+        selectedPlayerBuilder != nil
+    }
+
     var canIssueStop: Bool {
         selectedPlayerUnit != nil
     }
@@ -204,6 +209,10 @@ final class GameController {
         isAwaitingBuildTurretTarget ? "Cancel" : "Turret"
     }
 
+    var buildFactoryCommandButtonTitle: String {
+        isAwaitingBuildFactoryTarget ? "Cancel" : "Factory"
+    }
+
     var rallyCommandButtonTitle: String {
         isAwaitingRallyTarget ? "Cancel" : "Rally"
     }
@@ -218,6 +227,7 @@ final class GameController {
             isAwaitingReclaimTarget ||
             isAwaitingBuildExtractorTarget ||
             isAwaitingBuildTurretTarget ||
+            isAwaitingBuildFactoryTarget ||
             isAwaitingRallyTarget
     }
 
@@ -242,6 +252,9 @@ final class GameController {
         }
         if isAwaitingBuildTurretTarget {
             return "Turret"
+        }
+        if isAwaitingBuildFactoryTarget {
+            return "Factory"
         }
         if isAwaitingAttackTarget {
             return "Attack"
@@ -277,6 +290,9 @@ final class GameController {
         if isAwaitingBuildTurretTarget {
             return "T"
         }
+        if isAwaitingBuildFactoryTarget {
+            return "F"
+        }
         if isAwaitingAttackTarget {
             return "A"
         }
@@ -311,6 +327,9 @@ final class GameController {
         if isAwaitingBuildTurretTarget {
             return "shield.lefthalf.filled"
         }
+        if isAwaitingBuildFactoryTarget {
+            return "building.2"
+        }
         if isAwaitingAttackTarget {
             return "scope"
         }
@@ -344,6 +363,9 @@ final class GameController {
         }
         if isAwaitingBuildTurretTarget {
             return "Tap the tactical map to choose a clear land position for a turret."
+        }
+        if isAwaitingBuildFactoryTarget {
+            return "Tap the tactical map to choose a clear land position for a factory."
         }
         if isAwaitingAttackTarget {
             return "Tap an enemy unit or building marker on the tactical map to issue attack."
@@ -531,6 +553,18 @@ final class GameController {
         renderRevision += 1
     }
 
+    func toggleBuildFactoryCommand() {
+        if isAwaitingBuildFactoryTarget {
+            isAwaitingBuildFactoryTarget = false
+            commandStatus = nil
+        } else if canIssueBuildFactory {
+            clearPendingTargetCommands()
+            isAwaitingBuildFactoryTarget = true
+            commandStatus = "Factory position"
+        }
+        renderRevision += 1
+    }
+
     func toggleRallyCommand() {
         if isAwaitingRallyTarget {
             isAwaitingRallyTarget = false
@@ -684,6 +718,7 @@ final class GameController {
         isAwaitingReclaimTarget = false
         isAwaitingBuildExtractorTarget = false
         isAwaitingBuildTurretTarget = false
+        isAwaitingBuildFactoryTarget = false
         isAwaitingRallyTarget = false
     }
 
@@ -708,6 +743,10 @@ final class GameController {
             let result = engine.issueBuildTurret(at: point)
             isAwaitingBuildTurretTarget = false
             commandStatus = statusText(forBuildTurret: result)
+        } else if isAwaitingBuildFactoryTarget {
+            let result = engine.issueBuildLandFactory(at: point)
+            isAwaitingBuildFactoryTarget = false
+            commandStatus = statusText(forBuildFactory: result)
         } else {
             return false
         }
@@ -800,6 +839,9 @@ final class GameController {
             return nil
         }
         guard let building = engine.state.buildings.first(where: { $0.id == selectedEntityID && $0.team == .player }) else {
+            return nil
+        }
+        guard building.buildProgress >= 1 else {
             return nil
         }
         return GameDefinitions.building(building.type).produces.isEmpty ? nil : building
@@ -947,6 +989,21 @@ final class GameController {
         switch result {
         case .issued:
             return "Turret build started"
+        case .noSelection:
+            return "No builder selected"
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
+            return "Builder required"
+        case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .occupiedResourceNode:
+            return "Clear land required"
+        case .insufficientMetal:
+            return "Need more metal"
+        }
+    }
+
+    private func statusText(forBuildFactory result: UnitCommandResult) -> String? {
+        switch result {
+        case .issued:
+            return "Factory build started"
         case .noSelection:
             return "No builder selected"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:

@@ -176,6 +176,17 @@ struct GameHUDView: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .accessibilityLabel("Build turret")
                 }
+                if controller.canIssueBuildFactory || controller.isAwaitingBuildFactoryTarget {
+                    Button(
+                        controller.buildFactoryCommandButtonTitle,
+                        systemImage: controller.isAwaitingBuildFactoryTarget ? "xmark.circle" : "building.2",
+                        action: controller.toggleBuildFactoryCommand
+                    )
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .accessibilityLabel("Build factory")
+                }
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                     Button(
                         controller.attackCommandButtonTitle,
@@ -195,7 +206,8 @@ struct GameHUDView: View {
                     controller.isAwaitingRepairTarget ||
                     controller.isAwaitingReclaimTarget ||
                     controller.isAwaitingBuildExtractorTarget ||
-                    controller.isAwaitingBuildTurretTarget {
+                    controller.isAwaitingBuildTurretTarget ||
+                    controller.isAwaitingBuildFactoryTarget {
                     Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
                         .buttonStyle(.bordered)
                         .controlSize(.regular)
