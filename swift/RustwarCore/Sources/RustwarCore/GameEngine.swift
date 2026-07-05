@@ -11,6 +11,7 @@ public struct GameEngine: Sendable {
     private static let enemyLandFactoryLimit = 2
     private static let enemyTurretLimit = 2
     private static let enemyExtractorCountBeforeAdditionalFactory = 3
+    private static let enemyReclaimSearchRange = 560.0
 
     public private(set) var state: GameState
     public private(set) var enemyAIEnabled: Bool
@@ -357,6 +358,7 @@ public struct GameEngine: Sendable {
         updateEnemyExpansion()
         updateEnemyFactoryConstruction(rebuildMissingFactoryOnly: false)
         updateEnemyTurretConstruction()
+        updateEnemyReclaim()
         updateEnemyProduction()
         updateEnemyAttackOrders()
     }
@@ -415,6 +417,21 @@ public struct GameEngine: Sendable {
             }
 
             state.units[unitIndex].order = .repair(targetID: target.id)
+            return
+        }
+    }
+
+    private mutating func updateEnemyReclaim() {
+        for unitIndex in state.units.indices {
+            guard state.units[unitIndex].team == .enemy,
+                  state.units[unitIndex].type == .builder,
+                  state.units[unitIndex].hitPoints > 0,
+                  state.units[unitIndex].order == nil,
+                  let wreck = enemyReclaimTarget(for: state.units[unitIndex]) else {
+                continue
+            }
+
+            state.units[unitIndex].order = .reclaim(wreckID: wreck.id)
             return
         }
     }
@@ -1448,6 +1465,54 @@ public struct GameEngine: Sendable {
             return candidateHealthFraction < currentHealthFraction
         }
         return builder.position.distanceSquared(to: candidate.position) < builder.position.distanceSquared(to: current.position)
+    }
+
+    private func enemyReclaimTarget(for builder: UnitSnapshot) -> WreckSnapshot? {
+        let maximumDistanceSquared = Self.enemyReclaimSearchRange * Self.enemyReclaimSearchRange
+        var bestWreck: WreckSnapshot?
+        var bestDistanceSquared = Double.infinity
+
+        for wreck in state.wrecks {
+            guard wreck.metal > 0,
+                  wreck.ttl > 0 else {
+                continue
+            }
+            let distanceSquared = builder.position.distanceSquared(to: wreck.position)
+            guard distanceSquared <= maximumDistanceSquared else {
+                continue
+            }
+
+            if isBetterReclaimTarget(
+                wreck,
+                distanceSquared: distanceSquared,
+                than: bestWreck,
+                currentDistanceSquared: bestDistanceSquared
+            ) {
+                bestWreck = wreck
+                bestDistanceSquared = distanceSquared
+            }
+        }
+
+        return bestWreck
+    }
+
+    private func isBetterReclaimTarget(
+        _ candidate: WreckSnapshot,
+        distanceSquared candidateDistanceSquared: Double,
+        than current: WreckSnapshot?,
+        currentDistanceSquared: Double
+    ) -> Bool {
+        guard let current else {
+            return true
+        }
+
+        if abs(candidateDistanceSquared - currentDistanceSquared) > 1 {
+            return candidateDistanceSquared < currentDistanceSquared
+        }
+        if abs(candidate.metal - current.metal) > Self.buildCompletionEpsilon {
+            return candidate.metal > current.metal
+        }
+        return candidate.ttl > current.ttl
     }
 
     private func shouldPrioritizeEnemyFactoryConstruction(enemyFactoryCount: Int) -> Bool {

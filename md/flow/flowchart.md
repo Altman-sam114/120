@@ -52,7 +52,7 @@ flowchart TD
 ```mermaid
 flowchart TD
   P["RustwarCore MapPreset<br/>中文注释：三张地图的基础坐标、资源和初始单位建筑"] --> S["GameState<br/>中文注释：Swift 原生状态快照，包含资源、单位、建筑、残骸、金属和选择"]
-  S --> E["GameEngine.update / select / issueMove / issueAttackMove / issuePatrol / issueGuard / issueRepair / issueReclaim / issueBuildExtractor / issueBuildTurret / issueBuildLandFactory / issueStop / issueAttack / queueUnit / cancelLastProduction / setRepeatProduction / setRally / init(state)<br/>中文注释：推进收入 tick、点选、单单位移动、攻击移动、巡逻、护航、维修、回收、建造 Extractor、建造 Turret、建造 Land Factory、停止、基础攻击、炮塔防御开火、死亡残骸、工厂生产、生产取消、重复生产、集结点、红方资源扩张/维修/建造 Land Factory/建造 Turret/生产/进攻 AI 和存档状态恢复"]
+  S --> E["GameEngine.update / select / issueMove / issueAttackMove / issuePatrol / issueGuard / issueRepair / issueReclaim / issueBuildExtractor / issueBuildTurret / issueBuildLandFactory / issueStop / issueAttack / queueUnit / cancelLastProduction / setRepeatProduction / setRally / init(state)<br/>中文注释：推进收入 tick、点选、单单位移动、攻击移动、巡逻、护航、维修、回收、建造 Extractor、建造 Turret、建造 Land Factory、停止、基础攻击、炮塔防御开火、死亡残骸、工厂生产、生产取消、重复生产、集结点、红方资源扩张/维修/回收/建造 Land Factory/建造 Turret/生产/进攻 AI 和存档状态恢复"]
   E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、移动命令、攻击移动、护航、维修、回收、建造、生产、生产取消、重复生产、集结点和 Save/Load 入口"]
   C --> H["SwiftUI RootGameView / GameHUDView<br/>中文注释：显示资源、收入、人口和选择反馈"]
   C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、残骸、双方单位建筑、相机中心和等待命令反馈，并复用点位、Builder 目标和实体目标命令"]
@@ -97,7 +97,7 @@ flowchart TD
   SL --> E
   E --> TF["Turret Fire<br/>中文注释：完成状态炮塔自动攻击射程内敌方单位或建筑并进入冷却"]
   TF --> E
-  E --> AI["Enemy AI<br/>中文注释：红方 Builder 维修受损友军、扩张资源点并建造 Land Factory / Turret，红方完成状态工厂排队造兵，空闲战斗单位获得攻击玩家目标的订单"]
+  E --> AI["Enemy AI<br/>中文注释：红方 Builder 维修受损友军、扩张资源点、建造 Land Factory / Turret 并回收附近残骸，红方完成状态工厂排队造兵，空闲战斗单位获得攻击玩家目标的订单"]
   AI --> E
   C --> E
   B --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html，显示血条、建造进度、残骸、移动线、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线和红方行动"]

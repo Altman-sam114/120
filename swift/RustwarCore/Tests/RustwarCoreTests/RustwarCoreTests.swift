@@ -2151,6 +2151,266 @@ import Testing
     }
 }
 
+@Test func enemyAIBuilderReclaimsNearbyWreckWithoutChangingPlayerSelection() throws {
+    var state = GameState(mapID: .coast)
+    let selectedPlayerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    state.selectedEntityID = selectedPlayerBuilding.id
+    state.metal[.enemy] = 0
+    keepEnemyFactoriesBusy(in: &state)
+    claimRemainingResourcesForEnemy(in: &state)
+    state.wrecks = [
+        WreckSnapshot(
+            id: "near-rich-wreck",
+            position: WorldPoint(enemyBuilder.position.x + 70, enemyBuilder.position.y),
+            size: 24,
+            team: .player,
+            metal: 80,
+            maxMetal: 80,
+            ttl: 58
+        )
+    ]
+
+    var engine = GameEngine(state: state)
+    let startingEnemyIncome = engine.state.income(for: .enemy)
+    engine.update(deltaTime: 1)
+
+    let repairer = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+    let wreck = try #require(engine.state.wrecks.first { $0.id == "near-rich-wreck" })
+    #expect(engine.state.selectedEntityID == selectedPlayerBuilding.id)
+    #expect(engine.state.metal[.enemy, default: 0] > startingEnemyIncome)
+    #expect(wreck.metal < 80)
+    if case let .reclaim(wreckID)? = repairer.order {
+        #expect(wreckID == "near-rich-wreck")
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func enemyAIReclaimTransfersMetalAndClearsEmptyWreck() throws {
+    var state = GameState(mapID: .coast)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    state.metal[.enemy] = 0
+    keepEnemyFactoriesBusy(in: &state)
+    claimRemainingResourcesForEnemy(in: &state)
+    state.wrecks = [
+        WreckSnapshot(
+            id: "small-near-wreck",
+            position: enemyBuilder.position,
+            size: 24,
+            team: .player,
+            metal: 10,
+            maxMetal: 10,
+            ttl: 58
+        )
+    ]
+
+    var engine = GameEngine(state: state)
+    let startingEnemyIncome = engine.state.income(for: .enemy)
+    engine.update(deltaTime: 1)
+
+    let repairer = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+    #expect(engine.state.metal[.enemy, default: 0] == startingEnemyIncome + 10)
+    #expect(!engine.state.wrecks.contains { $0.id == "small-near-wreck" })
+    #expect(repairer.order == nil)
+}
+
+@Test func enemyAIReclaimIgnoresInvalidFarAndBusyBuilderCases() throws {
+    let baseState = GameState(mapID: .coast)
+    let enemyBuilder = try #require(baseState.units.first { $0.team == .enemy && $0.type == .builder })
+    let enemyBuilderIndex = try #require(baseState.units.firstIndex { $0.id == enemyBuilder.id })
+
+    var invalidState = baseState
+    invalidState.metal[.enemy] = 0
+    keepEnemyFactoriesBusy(in: &invalidState)
+    claimRemainingResourcesForEnemy(in: &invalidState)
+    invalidState.wrecks = [
+        WreckSnapshot(id: "empty-wreck", position: enemyBuilder.position, size: 24, team: .player, metal: 0, maxMetal: 40, ttl: 58),
+        WreckSnapshot(id: "expired-wreck", position: enemyBuilder.position, size: 24, team: .player, metal: 40, maxMetal: 40, ttl: 0),
+        WreckSnapshot(id: "far-wreck", position: WorldPoint(enemyBuilder.position.x - 900, enemyBuilder.position.y), size: 24, team: .player, metal: 60, maxMetal: 60, ttl: 58)
+    ]
+    var invalidEngine = GameEngine(state: invalidState)
+    invalidEngine.update(deltaTime: 1)
+    let idleBuilder = try #require(invalidEngine.state.units.first { $0.id == enemyBuilder.id })
+    #expect(idleBuilder.order == nil)
+
+    var busyState = baseState
+    busyState.metal[.enemy] = 0
+    keepEnemyFactoriesBusy(in: &busyState)
+    claimRemainingResourcesForEnemy(in: &busyState)
+    busyState.units[enemyBuilderIndex].order = .move(destination: WorldPoint(3_900, 1_100))
+    busyState.wrecks = [
+        WreckSnapshot(id: "busy-near-wreck", position: enemyBuilder.position, size: 24, team: .player, metal: 60, maxMetal: 60, ttl: 58)
+    ]
+    var busyEngine = GameEngine(state: busyState)
+    busyEngine.update(deltaTime: 1)
+    let busyBuilder = try #require(busyEngine.state.units.first { $0.id == enemyBuilder.id })
+    if case .some(.move) = busyBuilder.order {
+        #expect(Bool(true))
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func enemyAIReclaimChoosesNearestThenMetalThenTTL() throws {
+    let baseState = GameState(mapID: .coast)
+    let enemyBuilder = try #require(baseState.units.first { $0.team == .enemy && $0.type == .builder })
+
+    var nearestState = baseState
+    nearestState.metal[.enemy] = 0
+    keepEnemyFactoriesBusy(in: &nearestState)
+    claimRemainingResourcesForEnemy(in: &nearestState)
+    nearestState.wrecks = [
+        WreckSnapshot(id: "near-wreck", position: WorldPoint(enemyBuilder.position.x + 100, enemyBuilder.position.y), size: 24, team: .player, metal: 80, maxMetal: 80, ttl: 30),
+        WreckSnapshot(id: "far-rich-wreck", position: WorldPoint(enemyBuilder.position.x + 130, enemyBuilder.position.y), size: 24, team: .player, metal: 160, maxMetal: 160, ttl: 58)
+    ]
+    var nearestEngine = GameEngine(state: nearestState)
+    nearestEngine.update(deltaTime: 1)
+    let nearestBuilder = try #require(nearestEngine.state.units.first { $0.id == enemyBuilder.id })
+    if case let .reclaim(wreckID)? = nearestBuilder.order {
+        #expect(wreckID == "near-wreck")
+    } else {
+        #expect(Bool(false))
+    }
+
+    var metalState = baseState
+    metalState.metal[.enemy] = 0
+    keepEnemyFactoriesBusy(in: &metalState)
+    claimRemainingResourcesForEnemy(in: &metalState)
+    metalState.wrecks = [
+        WreckSnapshot(id: "same-distance-poor-wreck", position: WorldPoint(enemyBuilder.position.x + 100, enemyBuilder.position.y), size: 24, team: .player, metal: 40, maxMetal: 40, ttl: 58),
+        WreckSnapshot(id: "same-distance-rich-wreck", position: WorldPoint(enemyBuilder.position.x - 100, enemyBuilder.position.y), size: 24, team: .player, metal: 90, maxMetal: 90, ttl: 40)
+    ]
+    var metalEngine = GameEngine(state: metalState)
+    metalEngine.update(deltaTime: 1)
+    let metalBuilder = try #require(metalEngine.state.units.first { $0.id == enemyBuilder.id })
+    if case let .reclaim(wreckID)? = metalBuilder.order {
+        #expect(wreckID == "same-distance-rich-wreck")
+    } else {
+        #expect(Bool(false))
+    }
+
+    var ttlState = baseState
+    ttlState.metal[.enemy] = 0
+    keepEnemyFactoriesBusy(in: &ttlState)
+    claimRemainingResourcesForEnemy(in: &ttlState)
+    ttlState.wrecks = [
+        WreckSnapshot(id: "same-score-short-ttl-wreck", position: WorldPoint(enemyBuilder.position.x + 100, enemyBuilder.position.y), size: 24, team: .player, metal: 80, maxMetal: 80, ttl: 20),
+        WreckSnapshot(id: "same-score-long-ttl-wreck", position: WorldPoint(enemyBuilder.position.x - 100, enemyBuilder.position.y), size: 24, team: .player, metal: 80, maxMetal: 80, ttl: 55)
+    ]
+    var ttlEngine = GameEngine(state: ttlState)
+    ttlEngine.update(deltaTime: 1)
+    let ttlBuilder = try #require(ttlEngine.state.units.first { $0.id == enemyBuilder.id })
+    if case let .reclaim(wreckID)? = ttlBuilder.order {
+        #expect(wreckID == "same-score-long-ttl-wreck")
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func enemyAIRepairPriorityPreventsReclaimStealingBuilder() throws {
+    var state = GameState(mapID: .coast)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    let enemyCommand = try #require(state.buildings.first { $0.team == .enemy && $0.type == .command })
+    let enemyCommandIndex = try #require(state.buildings.firstIndex { $0.id == enemyCommand.id })
+    state.metal[.enemy] = 0
+    keepEnemyFactoriesBusy(in: &state)
+    claimRemainingResourcesForEnemy(in: &state)
+    state.buildings[enemyCommandIndex].hitPoints = enemyCommand.maxHitPoints - 100
+    state.wrecks = [
+        WreckSnapshot(id: "repair-priority-wreck", position: enemyBuilder.position, size: 24, team: .player, metal: 80, maxMetal: 80, ttl: 58)
+    ]
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let repairer = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+    let wreck = try #require(engine.state.wrecks.first { $0.id == "repair-priority-wreck" })
+    #expect(wreck.metal == 80)
+    if case let .repair(targetID)? = repairer.order {
+        #expect(targetID == enemyCommand.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func enemyAIRebuildsMissingFactoryBeforeReclaimingWreck() throws {
+    var state = GameState(mapID: .coast)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    state.buildings.removeAll { $0.team == .enemy && $0.type == .landFactory }
+    keepEnemyFactoriesBusy(in: &state)
+    let initialBuildingIDs = Set(state.buildings.map(\.id))
+    state.metal[.enemy] = 1_000
+    state.wrecks = [
+        WreckSnapshot(id: "factory-priority-wreck", position: enemyBuilder.position, size: 24, team: .player, metal: 80, maxMetal: 80, ttl: 58)
+    ]
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let newFactory = try #require(engine.state.buildings.first {
+        !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .landFactory
+    })
+    let builderAfterUpdate = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+    let wreck = try #require(engine.state.wrecks.first { $0.id == "factory-priority-wreck" })
+    #expect(wreck.metal == 80)
+    if case let .build(targetID)? = builderAfterUpdate.order {
+        #expect(targetID == newFactory.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func enemyAIExtractorExpansionPreventsReclaimStealingBuilder() throws {
+    var state = GameState(mapID: .coast)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    let initialBuildingIDs = Set(state.buildings.map(\.id))
+    state.metal[.enemy] = GameDefinitions.building(.extractor).metalCost
+    keepEnemyFactoriesBusy(in: &state)
+    state.wrecks = [
+        WreckSnapshot(id: "expansion-priority-wreck", position: enemyBuilder.position, size: 24, team: .player, metal: 80, maxMetal: 80, ttl: 58)
+    ]
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let newExtractor = try #require(engine.state.buildings.first {
+        !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .extractor
+    })
+    let builderAfterUpdate = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+    let wreck = try #require(engine.state.wrecks.first { $0.id == "expansion-priority-wreck" })
+    #expect(wreck.metal == 80)
+    if case let .build(targetID)? = builderAfterUpdate.order {
+        #expect(targetID == newExtractor.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func enemyAITurretConstructionPreventsReclaimStealingBuilder() throws {
+    var state = enemyTurretConstructionReadyState(mapID: .coast)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    let initialBuildingIDs = Set(state.buildings.map(\.id))
+    state.wrecks = [
+        WreckSnapshot(id: "turret-priority-wreck", position: enemyBuilder.position, size: 24, team: .player, metal: 80, maxMetal: 80, ttl: 58)
+    ]
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let newTurret = try #require(engine.state.buildings.first {
+        !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .turret
+    })
+    let builderAfterUpdate = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+    let wreck = try #require(engine.state.wrecks.first { $0.id == "turret-priority-wreck" })
+    #expect(wreck.metal == 80)
+    if case let .build(targetID)? = builderAfterUpdate.order {
+        #expect(targetID == newTurret.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
 @Test func enemyAIExtractorExpansionProducesIncomeAfterCompletion() throws {
     var engine = GameEngine(mapID: .coast)
     let startingEnemyIncome = engine.state.income(for: .enemy)
@@ -3043,6 +3303,29 @@ private func totalHitPoints(in state: GameState, for team: Team) -> Double {
         building.team == team ? partial + building.hitPoints : partial
     }
     return unitHitPoints + buildingHitPoints
+}
+
+private func claimRemainingResourcesForEnemy(in state: inout GameState) {
+    for resourceIndex in state.resources.indices {
+        state.resources[resourceIndex].claimedBy = state.resources[resourceIndex].claimedBy ?? .enemy
+    }
+}
+
+private func keepEnemyFactoriesBusy(in state: inout GameState) {
+    for buildingIndex in state.buildings.indices {
+        guard state.buildings[buildingIndex].team == .enemy,
+              state.buildings[buildingIndex].type == .landFactory,
+              state.buildings[buildingIndex].productionQueue.isEmpty else {
+            continue
+        }
+        state.buildings[buildingIndex].productionQueue = [
+            ProductionQueueItem(
+                id: "busy-\(state.buildings[buildingIndex].id)",
+                unitType: .scout,
+                buildTime: 99
+            )
+        ]
+    }
 }
 
 private func clearTurretBuildPoint(in state: GameState) -> WorldPoint {

@@ -14,8 +14,8 @@
 - 项目形态：完整可玩的 Web Canvas RTS 原型 + v1.0 起新增的原生 Swift/iOS 迁移地基。
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
-- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、资源点命中、残骸模型、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Build Turret 命令、Build Land Factory 命令、Stop 命令、Land Factory T1 生产列表、陆军工厂生产队列 MVP、生产取消/退款、工厂重复生产开关、工厂集结点设置、基础攻击、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方生产/资源扩张/维修/Land Factory 建造/Turret 建造/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Repair 按钮、Reclaim 按钮、Build Extractor 按钮、Turret 建造按钮、Factory 建造按钮、Stop 命令、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张、维修受损友军、Land Factory / Turret 建造和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
+- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、资源点命中、残骸模型、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Build Turret 命令、Build Land Factory 命令、Stop 命令、Land Factory T1 生产列表、陆军工厂生产队列 MVP、生产取消/退款、工厂重复生产开关、工厂集结点设置、基础攻击、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Repair 按钮、Reclaim 按钮、Build Extractor 按钮、Turret 建造按钮、Factory 建造按钮、Stop 命令、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张、维修受损友军、回收附近残骸、Land Factory / Turret 建造和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -1261,3 +1261,33 @@
 遗留事项：
 
 - v1.31 只补红方 Builder 自动维修 MVP；尚无 Repair Tank、Repair Bay 光环、玩家自动维修、金属消耗、多 Builder 协同维修、维修优先级矩阵、红方回收残骸或完整 Web 支援 AI parity。
+
+### v1.32 / iOS native enemy reclaim AI
+
+日期：2026-07-05
+
+核心变更：
+
+- `GameEngine.updateEnemyAI()` 新增红方 Builder 自动回收步骤：缺厂补建、维修、资源扩张、第二工厂和炮塔建造都优先于回收，只有仍空闲的 enemy Builder 会选择附近残骸并写入 `.reclaim(wreckID:)`。
+- 红方回收复用现有 `UnitOrder.reclaim` 和 `updateReclaimOrder()`，距离超过 92 时靠近，进入范围后按 `builderReclaimRate` 把残骸金属转入红方金属，残骸耗尽、过期或消失后清除订单。
+- 回收目标只接受 `metal > 0`、`ttl > 0` 且距离 Builder 不超过 560 的残骸；选择保持确定性，先取最近，再按金属更多、TTL 更高打平。
+- Swift tests 增加红方回收下单不污染玩家选择、金属转移和残骸清理、无效/过远/忙碌负例、目标选择 tie-break，以及维修、缺厂补建、资源扩张和炮塔建造优先于回收覆盖。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.32-ios-enemy-reclaim-ai.md`
+- `update_log.md`
+
+验证结果：
+
+- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+
+遗留事项：
+
+- v1.32 只补红方 Builder 自动回收 MVP；尚无难度倍率、危险规避、路径规划、多 Builder 协同回收、回收优先级矩阵、红方专用视觉反馈、沙盒残骸摆放或完整 Web 支援 AI parity。
