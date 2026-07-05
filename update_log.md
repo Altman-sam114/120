@@ -240,7 +240,9 @@
 
 验证结果：
 
-- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+- Agent C 已下载并核对 GitHub Actions artifact：run `28741982755`，attempt `1`，artifact `rustwar-ci-v1.0-main-25a7250-run28741982755-attempt1`，commit `25a7250a75844fd6495b4c55cbb7d1e027753948`。
+- manifest 确认 `branch=main`、`commitSha=25a7250a75844fd6495b4c55cbb7d1e027753948`、`runId=28741982755`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke。
+- build.log 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0；Swift Testing 128 tests passed。
 
 遗留事项：
 

@@ -2547,7 +2547,7 @@ import Testing
 }
 
 @Test func incompleteEnemyLandFactoryDoesNotProduceUntilCompleted() throws {
-    var state = enemyFactoryConstructionReadyState(mapID: .coast)
+    let state = enemyFactoryConstructionReadyState(mapID: .coast)
     let initialBuildingIDs = Set(state.buildings.map(\.id))
 
     var engine = GameEngine(state: state)
