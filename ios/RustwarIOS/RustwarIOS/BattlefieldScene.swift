@@ -100,6 +100,9 @@ final class BattlefieldScene: SKScene {
 
     private func drawEntities(_ state: GameState) {
         entityNode.removeAllChildren()
+        for wreck in state.wrecks {
+            drawWreck(wreck)
+        }
         for building in state.buildings {
             drawBuilding(building, selectedID: state.selectedEntityID)
         }
@@ -152,6 +155,10 @@ final class BattlefieldScene: SKScene {
             if let targetPosition = targetPosition(for: targetID, in: state) {
                 drawRepairOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
             }
+        case let .reclaim(wreckID)?:
+            if let targetPosition = targetPosition(for: wreckID, in: state) {
+                drawReclaimOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
+            }
         case nil:
             break
         }
@@ -170,6 +177,39 @@ final class BattlefieldScene: SKScene {
         node.addChild(label)
         drawHealthBar(current: unit.hitPoints, max: unit.maxHitPoints, width: definition.radius * 2.4, yOffset: definition.radius + 7, on: node)
         entityNode.addChild(node)
+    }
+
+    private func drawWreck(_ wreck: WreckSnapshot) {
+        guard wreck.metal > 0, wreck.ttl > 0 else {
+            return
+        }
+
+        let side = max(12, wreck.size)
+        let alpha = CGFloat(Swift.max(0.22, Swift.min(0.82, wreck.ttl / 58)))
+        let rect = CGRect(x: -side / 2, y: -side / 2, width: side, height: side)
+        let node = SKShapeNode(rect: rect, cornerRadius: 4)
+        node.position = spritePoint(for: wreck.position)
+        node.zRotation = CGFloat.pi / 4
+        node.fillColor = SKColor(red: 0.38, green: 0.32, blue: 0.25, alpha: alpha)
+        node.strokeColor = SKColor.systemYellow.withAlphaComponent(0.48)
+        node.lineWidth = 1.5
+        entityNode.addChild(node)
+
+        let fraction = Swift.min(1, Swift.max(0, wreck.metal / wreck.maxMetal))
+        let barWidth = side
+        let barBackground = SKShapeNode(rect: CGRect(x: -barWidth / 2, y: -side / 2 - 9, width: barWidth, height: 4), cornerRadius: 2)
+        barBackground.position = spritePoint(for: wreck.position)
+        barBackground.fillColor = .black.withAlphaComponent(0.58)
+        barBackground.strokeColor = barBackground.fillColor
+        barBackground.lineWidth = 0
+        entityNode.addChild(barBackground)
+
+        let barFill = SKShapeNode(rect: CGRect(x: -barWidth / 2, y: -side / 2 - 9, width: barWidth * fraction, height: 4), cornerRadius: 2)
+        barFill.position = spritePoint(for: wreck.position)
+        barFill.fillColor = SKColor.systemYellow.withAlphaComponent(0.82)
+        barFill.strokeColor = barFill.fillColor
+        barFill.lineWidth = 0
+        entityNode.addChild(barFill)
     }
 
     private func drawMoveOrder(from start: WorldPoint, to destination: WorldPoint, isSelected: Bool) {
@@ -309,6 +349,33 @@ final class BattlefieldScene: SKScene {
         marker.addChild(label)
     }
 
+    private func drawReclaimOrder(from start: WorldPoint, to destination: WorldPoint, isSelected: Bool) {
+        let color = isSelected ? SKColor.systemYellow : SKColor.systemBrown.withAlphaComponent(0.68)
+        let path = CGMutablePath()
+        path.move(to: spritePoint(for: start))
+        path.addLine(to: spritePoint(for: destination))
+
+        let line = SKShapeNode(path: path)
+        line.strokeColor = color.withAlphaComponent(isSelected ? 0.82 : 0.46)
+        line.lineWidth = isSelected ? 3 : 1.5
+        line.lineCap = .round
+        entityNode.addChild(line)
+
+        let marker = SKShapeNode(rectOf: CGSize(width: isSelected ? 22 : 18, height: isSelected ? 22 : 18), cornerRadius: 4)
+        marker.position = spritePoint(for: destination)
+        marker.fillColor = SKColor.systemYellow.withAlphaComponent(isSelected ? 0.24 : 0.16)
+        marker.strokeColor = color
+        marker.lineWidth = isSelected ? 3 : 1.5
+        entityNode.addChild(marker)
+
+        let label = SKLabelNode(text: "$")
+        label.fontName = "AvenirNext-Bold"
+        label.fontSize = isSelected ? 13 : 11
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        marker.addChild(label)
+    }
+
     private func drawAttackOrder(from start: WorldPoint, to destination: WorldPoint, isSelected: Bool) {
         let color = isSelected ? SKColor.systemOrange : SKColor.systemRed.withAlphaComponent(0.55)
         let path = CGMutablePath()
@@ -381,6 +448,9 @@ final class BattlefieldScene: SKScene {
         }
         if let building = state.buildings.first(where: { $0.id == targetID }) {
             return building.position
+        }
+        if let wreck = state.wrecks.first(where: { $0.id == targetID }) {
+            return wreck.position
         }
         return nil
     }

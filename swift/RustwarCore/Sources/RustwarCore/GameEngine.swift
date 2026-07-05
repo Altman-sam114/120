@@ -1,6 +1,10 @@
 public struct GameEngine: Sendable {
     private static let builderRepairRange = 125.0
     private static let builderRepairRate = 18.0
+    private static let builderReclaimRange = 92.0
+    private static let builderReclaimRate = 34.0 * 0.58
+    private static let wreckTTL = 58.0
+    private static let activeReclaimWreckMinimumTTL = 8.0
 
     public private(set) var state: GameState
     public private(set) var enemyAIEnabled: Bool
@@ -30,6 +34,7 @@ public struct GameEngine: Sendable {
             updateEnemyAI()
         }
         updateUnitOrders(deltaTime: step)
+        updateWrecks(deltaTime: step)
     }
 
     @discardableResult
@@ -147,6 +152,24 @@ public struct GameEngine: Sendable {
         }
 
         state.units[unitIndex].order = .repair(targetID: target.id)
+        return .issued
+    }
+
+    @discardableResult
+    public mutating func issueReclaim(wreckID: String) -> UnitCommandResult {
+        guard let selectedEntityID = state.selectedEntityID else {
+            return .noSelection
+        }
+        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
+              state.units[unitIndex].team == .player,
+              state.units[unitIndex].type == .builder else {
+            return .selectedEntityCannotReclaim
+        }
+        guard activeWreck(id: wreckID) != nil else {
+            return .invalidReclaimTarget
+        }
+
+        state.units[unitIndex].order = .reclaim(wreckID: wreckID)
         return .issued
     }
 
@@ -391,6 +414,8 @@ public struct GameEngine: Sendable {
                 updateGuardOrder(unitIndex: unitIndex, targetID: targetID, offset: offset, deltaTime: deltaTime)
             case let .repair(targetID):
                 updateRepairOrder(unitIndex: unitIndex, targetID: targetID, deltaTime: deltaTime)
+            case let .reclaim(wreckID):
+                updateReclaimOrder(unitIndex: unitIndex, wreckID: wreckID, deltaTime: deltaTime)
             }
         }
         removeDestroyedEntities()
@@ -546,6 +571,39 @@ public struct GameEngine: Sendable {
         }
     }
 
+    private mutating func updateReclaimOrder(unitIndex: Int, wreckID: String, deltaTime: Double) {
+        guard state.units[unitIndex].type == .builder,
+              let wreckIndex = activeWreckIndex(id: wreckID) else {
+            state.units[unitIndex].order = nil
+            return
+        }
+
+        let wreck = state.wrecks[wreckIndex]
+        let definition = GameDefinitions.unit(state.units[unitIndex].type)
+        let distance = state.units[unitIndex].position.distance(to: wreck.position)
+        if distance > Self.builderReclaimRange {
+            moveUnit(
+                at: unitIndex,
+                toward: wreck.position,
+                speed: definition.speed,
+                stoppingDistance: Self.builderReclaimRange * 0.92,
+                deltaTime: deltaTime,
+                clearsOrderOnArrival: false
+            )
+            return
+        }
+
+        let amount = min(state.wrecks[wreckIndex].metal, Self.builderReclaimRate * deltaTime)
+        state.wrecks[wreckIndex].metal -= amount
+        state.wrecks[wreckIndex].ttl = max(state.wrecks[wreckIndex].ttl, Self.activeReclaimWreckMinimumTTL)
+        state.metal[state.units[unitIndex].team, default: 0] += amount
+        if state.wrecks[wreckIndex].metal <= 0.1 {
+            state.wrecks[wreckIndex].metal = 0
+            state.wrecks[wreckIndex].ttl = 0
+            state.units[unitIndex].order = nil
+        }
+    }
+
     @discardableResult
     private mutating func moveUnit(
         at unitIndex: Int,
@@ -657,8 +715,17 @@ public struct GameEngine: Sendable {
         return nil
     }
 
+    private func activeWreck(id wreckID: String) -> WreckSnapshot? {
+        state.wrecks.first { $0.id == wreckID && $0.metal > 0 && $0.ttl > 0 }
+    }
+
+    private func activeWreckIndex(id wreckID: String) -> Int? {
+        state.wrecks.firstIndex { $0.id == wreckID && $0.metal > 0 && $0.ttl > 0 }
+    }
+
     private mutating func removeDestroyedEntities() {
-        let destroyedUnitIDs = Set(state.units.filter { $0.hitPoints <= 0 }.map(\.id))
+        let destroyedUnits = state.units.filter { $0.hitPoints <= 0 }
+        let destroyedUnitIDs = Set(destroyedUnits.map(\.id))
         let destroyedBuildings = state.buildings.filter { $0.hitPoints <= 0 }
         let destroyedBuildingIDs = Set(destroyedBuildings.map(\.id))
         guard !destroyedUnitIDs.isEmpty || !destroyedBuildingIDs.isEmpty else {
@@ -668,6 +735,13 @@ public struct GameEngine: Sendable {
         let destroyedExtractorNodeIDs = Set(destroyedBuildings.compactMap(\.nodeID))
         for resourceIndex in state.resources.indices where destroyedExtractorNodeIDs.contains(state.resources[resourceIndex].id) {
             state.resources[resourceIndex].claimedBy = nil
+        }
+
+        for unit in destroyedUnits {
+            state.wrecks.append(wreck(for: unit))
+        }
+        for building in destroyedBuildings {
+            state.wrecks.append(wreck(for: building))
         }
 
         state.units.removeAll { destroyedUnitIDs.contains($0.id) }
@@ -688,6 +762,52 @@ public struct GameEngine: Sendable {
                 state.units[unitIndex].order = nil
             }
         }
+    }
+
+    private mutating func updateWrecks(deltaTime: Double) {
+        for wreckIndex in state.wrecks.indices {
+            state.wrecks[wreckIndex].ttl -= deltaTime
+        }
+        state.wrecks.removeAll { $0.ttl <= 0 || $0.metal <= 0 }
+        clearInvalidReclaimOrders()
+    }
+
+    private mutating func clearInvalidReclaimOrders() {
+        let activeWreckIDs = Set(state.wrecks.filter { $0.ttl > 0 && $0.metal > 0 }.map(\.id))
+        for unitIndex in state.units.indices {
+            if case let .reclaim(wreckID)? = state.units[unitIndex].order, !activeWreckIDs.contains(wreckID) {
+                state.units[unitIndex].order = nil
+            }
+        }
+    }
+
+    private mutating func wreck(for unit: UnitSnapshot) -> WreckSnapshot {
+        let definition = GameDefinitions.unit(unit.type)
+        let salvage = max(18, (definition.metalCost * 0.24).rounded())
+        return WreckSnapshot(
+            id: nextID(prefix: "wreck"),
+            position: unit.position,
+            size: definition.radius * 1.7,
+            team: unit.team,
+            metal: salvage,
+            maxMetal: salvage,
+            ttl: Self.wreckTTL
+        )
+    }
+
+    private mutating func wreck(for building: BuildingSnapshot) -> WreckSnapshot {
+        let definition = GameDefinitions.building(building.type)
+        let baseCost = definition.metalCost > 0 ? definition.metalCost : 320
+        let salvage = max(18, (baseCost * 0.24).rounded())
+        return WreckSnapshot(
+            id: nextID(prefix: "wreck"),
+            position: building.position,
+            size: definition.size * 0.55,
+            team: building.team,
+            metal: salvage,
+            maxMetal: salvage,
+            ttl: Self.wreckTTL
+        )
     }
 
     private mutating func updateProduction(deltaTime: Double) {

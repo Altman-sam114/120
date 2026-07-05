@@ -51,11 +51,11 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  P["RustwarCore MapPreset<br/>中文注释：三张地图的基础坐标、资源和初始单位建筑"] --> S["GameState<br/>中文注释：Swift 原生状态快照，包含资源、单位、建筑、金属和选择"]
-  S --> E["GameEngine.update / select / issueMove / issueAttackMove / issuePatrol / issueGuard / issueRepair / issueStop / issueAttack / queueUnit / cancelLastProduction / setRally / init(state)<br/>中文注释：推进收入 tick、点选、单单位移动、攻击移动、巡逻、护航、维修、停止、基础攻击、工厂生产、生产取消、集结点、红方 AI 和存档状态恢复"]
-  E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、移动命令、攻击移动、护航、维修、生产、生产取消、集结点和 Save/Load 入口"]
+  P["RustwarCore MapPreset<br/>中文注释：三张地图的基础坐标、资源和初始单位建筑"] --> S["GameState<br/>中文注释：Swift 原生状态快照，包含资源、单位、建筑、残骸、金属和选择"]
+  S --> E["GameEngine.update / select / issueMove / issueAttackMove / issuePatrol / issueGuard / issueRepair / issueReclaim / issueStop / issueAttack / queueUnit / cancelLastProduction / setRally / init(state)<br/>中文注释：推进收入 tick、点选、单单位移动、攻击移动、巡逻、护航、维修、回收、停止、基础攻击、死亡残骸、工厂生产、生产取消、集结点、红方 AI 和存档状态恢复"]
+  E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、移动命令、攻击移动、护航、维修、回收、生产、生产取消、集结点和 Save/Load 入口"]
   C --> H["SwiftUI RootGameView / GameHUDView<br/>中文注释：显示资源、收入、人口和选择反馈"]
-  C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、双方单位建筑和相机中心"]
+  C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、残骸、双方单位建筑和相机中心"]
   C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、双方初始建筑、单位和移动目标"]
   T["SpatialTap / Drag / Magnify<br/>中文注释：iOS 触摸选择、移动落点、拖拽平移和捏合缩放"] --> C
   TT["TacticalMap DragTap<br/>中文注释：点按小地图换算世界坐标并居中相机"] --> C
@@ -69,6 +69,8 @@ flowchart TD
   GD --> E
   C --> REP["UnitOrder.repair<br/>中文注释：选中己方 Builder 后点选受损友方单位或建筑，core 靠近到 125 范围并按 18 HP/s 维修"]
   REP --> E
+  C --> REC["UnitOrder.reclaim<br/>中文注释：选中己方 Builder 后点选残骸，core 靠近到 92 范围并把残骸金属转为己方金属"]
+  REC --> E
   C --> STP["issueStop<br/>中文注释：选中己方单位后清除当前移动、攻击移动、巡逻、护航、维修或攻击订单"]
   STP --> E
   C --> A["UnitOrder.attack<br/>中文注释：选中己方单位后点选敌方目标，core 推进靠近、伤害和死亡清理"]
@@ -88,7 +90,7 @@ flowchart TD
   E --> AI["Enemy AI<br/>中文注释：红方工厂排队造兵，空闲战斗单位获得攻击玩家目标的订单"]
   AI --> E
   C --> E
-  B --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html，显示血条、移动线、攻击移动线、巡逻线、护航线、维修线、攻击目标线和红方行动"]
+  B --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html，显示血条、残骸、移动线、攻击移动线、巡逻线、护航线、维修线、回收线、攻击目标线和红方行动"]
   H --> O
   TM --> O
 ```

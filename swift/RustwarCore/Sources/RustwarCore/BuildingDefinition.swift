@@ -4,6 +4,7 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
     public let icon: String
     public let hitPoints: Double
     public let size: Double
+    public let metalCost: Double
     public let income: Double
     public let supply: Int
     public let vision: Double
@@ -15,6 +16,7 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
         icon: String,
         hitPoints: Double,
         size: Double,
+        metalCost: Double = 0,
         income: Double,
         supply: Int,
         vision: Double,
@@ -25,6 +27,7 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
         self.icon = icon
         self.hitPoints = hitPoints
         self.size = size
+        self.metalCost = metalCost
         self.income = income
         self.supply = supply
         self.vision = vision

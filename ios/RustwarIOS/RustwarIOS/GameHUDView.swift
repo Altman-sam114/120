@@ -144,6 +144,16 @@ struct GameHUDView: View {
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
                 }
+                if controller.canIssueReclaim || controller.isAwaitingReclaimTarget {
+                    Button(
+                        controller.reclaimCommandButtonTitle,
+                        systemImage: controller.isAwaitingReclaimTarget ? "xmark.circle" : "dollarsign.circle",
+                        action: controller.toggleReclaimCommand
+                    )
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                }
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                     Button(
                         controller.attackCommandButtonTitle,
@@ -160,7 +170,8 @@ struct GameHUDView: View {
                     controller.isAwaitingAttackMoveTarget ||
                     controller.isAwaitingPatrolTarget ||
                     controller.isAwaitingGuardTarget ||
-                    controller.isAwaitingRepairTarget {
+                    controller.isAwaitingRepairTarget ||
+                    controller.isAwaitingReclaimTarget {
                     Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
                         .buttonStyle(.bordered)
                         .controlSize(.regular)

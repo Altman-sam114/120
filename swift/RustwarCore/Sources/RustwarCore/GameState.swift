@@ -4,11 +4,26 @@ public struct GameState: Codable, Equatable, Sendable {
     public var resources: [ResourceNode]
     public var units: [UnitSnapshot]
     public var buildings: [BuildingSnapshot]
+    public var wrecks: [WreckSnapshot]
     public var metal: [Team: Double]
     public var elapsed: Double
     public var selectedEntityID: String?
     public var mode: GameMode
     public var nextEntityNumber: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case map
+        case terrain
+        case resources
+        case units
+        case buildings
+        case wrecks
+        case metal
+        case elapsed
+        case selectedEntityID
+        case mode
+        case nextEntityNumber
+    }
 
     public init(mapID: MapID = .coast, mode: GameMode = .skirmish) {
         let map = MapPreset.preset(for: mapID)
@@ -92,6 +107,7 @@ public struct GameState: Codable, Equatable, Sendable {
         self.resources = resources
         self.units = units
         self.buildings = buildings
+        self.wrecks = []
         self.metal = [
             .player: GameConstants.playerStartingMetal,
             .enemy: GameConstants.enemyStartingMetal
@@ -100,5 +116,20 @@ public struct GameState: Codable, Equatable, Sendable {
         self.selectedEntityID = nil
         self.mode = mode
         self.nextEntityNumber = nextEntityNumber
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.map = try container.decode(MapPreset.self, forKey: .map)
+        self.terrain = try container.decode(TerrainGrid.self, forKey: .terrain)
+        self.resources = try container.decode([ResourceNode].self, forKey: .resources)
+        self.units = try container.decode([UnitSnapshot].self, forKey: .units)
+        self.buildings = try container.decode([BuildingSnapshot].self, forKey: .buildings)
+        self.wrecks = try container.decodeIfPresent([WreckSnapshot].self, forKey: .wrecks) ?? []
+        self.metal = try container.decode([Team: Double].self, forKey: .metal)
+        self.elapsed = try container.decode(Double.self, forKey: .elapsed)
+        self.selectedEntityID = try container.decodeIfPresent(String.self, forKey: .selectedEntityID)
+        self.mode = try container.decode(GameMode.self, forKey: .mode)
+        self.nextEntityNumber = try container.decode(Int.self, forKey: .nextEntityNumber)
     }
 }

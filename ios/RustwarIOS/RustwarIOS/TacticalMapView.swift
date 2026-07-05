@@ -11,6 +11,7 @@ struct TacticalMapView: View {
             let resources = state.resources
             let units = state.units
             let buildings = state.buildings
+            let wrecks = state.wrecks
             let selectedEntityID = state.selectedEntityID
             let cameraCenter = controller.camera.center
             let shouldDifferentiateWithoutColor = differentiateWithoutColor
@@ -22,6 +23,7 @@ struct TacticalMapView: View {
                     resources: resources,
                     units: units,
                     buildings: buildings,
+                    wrecks: wrecks,
                     selectedEntityID: selectedEntityID,
                     cameraCenter: cameraCenter,
                     differentiateWithoutColor: shouldDifferentiateWithoutColor
@@ -69,6 +71,7 @@ struct TacticalMapView: View {
         resources: [ResourceNode],
         units: [UnitSnapshot],
         buildings: [BuildingSnapshot],
+        wrecks: [WreckSnapshot],
         selectedEntityID: String?,
         cameraCenter: WorldPoint,
         differentiateWithoutColor: Bool
@@ -82,6 +85,10 @@ struct TacticalMapView: View {
 
         for resource in resources {
             drawResource(resource, in: &context, size: size)
+        }
+
+        for wreck in wrecks {
+            drawWreck(wreck, in: &context, size: size)
         }
 
         for building in buildings {
@@ -120,6 +127,19 @@ struct TacticalMapView: View {
         let fill = resource.claimedBy == nil ? Color.cyan.opacity(0.82) : Color.yellow.opacity(0.88)
         context.fill(diamond, with: .color(fill))
         context.stroke(diamond, with: .color(.white.opacity(0.42)), lineWidth: 0.7)
+    }
+
+    private static func drawWreck(_ wreck: WreckSnapshot, in context: inout GraphicsContext, size: CGSize) {
+        guard wreck.metal > 0, wreck.ttl > 0 else {
+            return
+        }
+
+        let point = mapPoint(for: wreck.position, size: size)
+        let side: CGFloat = 4.6
+        let rect = CGRect(x: point.x - side / 2, y: point.y - side / 2, width: side, height: side)
+        let path = Path(roundedRect: rect, cornerRadius: 1)
+        context.fill(path, with: .color(.brown.opacity(0.82)))
+        context.stroke(path, with: .color(.yellow.opacity(0.66)), lineWidth: 0.6)
     }
 
     private static func drawBuilding(

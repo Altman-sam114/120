@@ -44,4 +44,22 @@ public extension GameState {
         }
         return "No selection"
     }
+
+    func wreckTarget(at point: WorldPoint, maxDistance: Double = 95) -> WreckSnapshot? {
+        var best: WreckSnapshot?
+        var bestDistance = maxDistance * maxDistance
+
+        for wreck in wrecks {
+            guard wreck.metal > 0, wreck.ttl > 0 else {
+                continue
+            }
+            let distance = wreck.position.distanceSquared(to: point)
+            if distance < bestDistance {
+                best = wreck
+                bestDistance = distance
+            }
+        }
+
+        return best
+    }
 }
