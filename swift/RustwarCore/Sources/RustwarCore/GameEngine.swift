@@ -2,6 +2,7 @@ public struct GameEngine: Sendable {
     private static let builderRepairRange = 125.0
     private static let builderRepairRate = 18.0
     private static let builderBuildRange = 125.0
+    private static let buildCompletionEpsilon = 1e-9
     private static let incompleteBuildingMinimumHealthFraction = 0.1
     private static let builderReclaimRange = 92.0
     private static let builderReclaimRate = 34.0 * 0.58
@@ -627,7 +628,7 @@ public struct GameEngine: Sendable {
             max(state.buildings[buildingIndex].hitPoints, healthFloor)
         )
 
-        if state.buildings[buildingIndex].buildProgress >= 1 {
+        if state.buildings[buildingIndex].buildProgress >= 1 - Self.buildCompletionEpsilon {
             state.buildings[buildingIndex].buildProgress = 1
             state.buildings[buildingIndex].hitPoints = state.buildings[buildingIndex].maxHitPoints
             if let nodeID = state.buildings[buildingIndex].nodeID,
