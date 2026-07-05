@@ -14,8 +14,8 @@
 - 项目形态：完整可玩的 Web Canvas RTS 原型 + v1.0 起新增的原生 Swift/iOS 迁移地基。
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
-- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、资源点命中、残骸模型、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Build Turret 命令、Build Land Factory 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂重复生产开关、工厂集结点设置、基础攻击、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方生产/扩张/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Repair 按钮、Reclaim 按钮、Build Extractor 按钮、Turret 建造按钮、Factory 建造按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
+- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、资源点命中、残骸模型、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Build Turret 命令、Build Land Factory 命令、Stop 命令、Land Factory T1 生产列表、陆军工厂生产队列 MVP、生产取消/退款、工厂重复生产开关、工厂集结点设置、基础攻击、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方生产/扩张/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Repair 按钮、Reclaim 按钮、Build Extractor 按钮、Turret 建造按钮、Factory 建造按钮、Stop 命令、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -1121,8 +1121,41 @@
 
 验证结果：
 
-- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+- Agent C 已下载并核对 GitHub Actions artifact：run `28735567681`，attempt `1`，artifact `rustwar-ci-v1.0-main-80ab550-run28735567681-attempt1`，commit `80ab5508bb40246c4fb51a3c184a77c572fcf68e`。
+- manifest 确认 `branch=main`、`commitSha=80ab5508bb40246c4fb51a3c184a77c572fcf68e`、`runId=28735567681`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke。
+- build.log 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0；Swift Testing 103 tests passed。
 
 遗留事项：
 
 - v1.27 Factory 建造只作用于当前选中己方单个 Builder；尚无完整建筑菜单、建造幽灵、拖拽放置、Shift 建造队列、多 Builder 协同、取消未完成建筑退款、红方建厂、其它生产建筑或完整 Web 建造系统 parity。
+
+### v1.28 / iOS native Land Factory T1 production expansion
+
+日期：2026-07-05
+
+核心变更：
+
+- `GameDefinitions` 将 Land Factory 的原生生产列表从 Scout / Light Tank 扩展为 Scout / Light Tank / Hover Tank / Artillery / AA Tank，并保持 Web T1 顺序。
+- 现有 `GameEngine.queueUnit(_:)`、`cancelLastProduction()`、`setRepeatProduction(_:)`、`setRally(to:)` 和生产完成生成单位逻辑直接复用扩展后的生产列表；Gunboat 仍不是 Land Factory 支持单位。
+- iOS HUD 生产按钮区从单行 `HStack` 改为自适应 `LazyVGrid`，五个生产按钮保留文字 Label、plus 图标和 44pt 最小触控高度，避免窄屏挤压。
+- Swift tests 增加 Land Factory T1 顺序断言、Hover / Artillery / AA Tank 入队扣金属和完成生成覆盖，以及 AA Tank Repeat 自动续造覆盖。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/GameDefinitions.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.28-ios-land-factory-t1-production.md`
+- `update_log.md`
+
+验证结果：
+
+- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+
+遗留事项：
+
+- v1.28 只扩展 Land Factory T1 原生生产列表；尚无 Land Factory T2 升级、Heavy Tank / Heavy Hover / Missile Tank / Laser Tank / Repair Tank / Shield Tank、Command Center 生产 Builder、其它工厂、红方建厂或完整 Web 生产 UI parity。

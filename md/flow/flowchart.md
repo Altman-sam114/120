@@ -81,11 +81,11 @@ flowchart TD
   STP --> E
   C --> A["UnitOrder.attack<br/>中文注释：选中己方单位后点选敌方目标，core 推进靠近、伤害和死亡清理"]
   A --> E
-  C --> Q["ProductionQueueItem<br/>中文注释：选中己方陆军工厂后排队生产 Scout / Light Tank；队列完成并清空时可按 repeatUnitType 自动尝试续造"]
+  C --> Q["ProductionQueueItem<br/>中文注释：选中己方陆军工厂后排队生产 Scout、Light Tank、Hover Tank、Artillery 或 AA Tank；队列完成并清空时可按 repeatUnitType 自动尝试续造"]
   Q --> E
   C --> CQ["ProductionCancelResult<br/>中文注释：选中己方生产建筑后取消队尾生产并按未完成进度退款"]
   CQ --> E
-  C --> RPT["ProductionRepeatResult / BuildingSnapshot.repeatUnitType<br/>中文注释：选中己方生产建筑后循环 Repeat Off / Scout / Light Tank，状态随 GameState 存档"]
+  C --> RPT["ProductionRepeatResult / BuildingSnapshot.repeatUnitType<br/>中文注释：选中己方生产建筑后在当前生产列表内循环 Repeat 目标，状态随 GameState 存档"]
   RPT --> E
   C --> RP["BuildingSnapshot.rally<br/>中文注释：选中己方生产建筑后设置后续出兵集结点"]
   RP --> E

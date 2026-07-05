@@ -19,7 +19,7 @@
 
 v0.5 起，文档体系支持未来 Agent X 主控循环。Agent X 不直接替代 A/B/C，而是在人工用 `agentx:` / `x:` / `X:` 给出总目标后，把总目标拆成多个小轮次，每轮仍必须走 Agent A -> Agent B -> Agent C，并在 Agent C artifact 验收后判断继续、退回、暂停或完成。本轮只建立文档基线，不自动启动真实 Agent X 循环。
 
-v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制、v1.6 新增的原生三地图切换和当前地图重开、v1.7 新增的原生战术小地图点按居中、v1.8 新增的原生 Stop 命令、v1.9 新增的原生工厂集结点命令、v1.10 新增的原生生产取消/退款命令、v1.11 新增的原生单槽 Save/Load MVP、v1.12 新增的原生单单位 Attack-Move 命令地基、v1.13 新增的原生单单位 Patrol 命令地基、v1.14 新增的原生单单位 Guard 命令地基、v1.15 新增的原生单 Builder Repair 命令地基、v1.16 新增的原生单 Builder Reclaim 残骸回收地基、v1.17 新增的原生单 Builder 在资源点建造 Extractor 地基、v1.18 新增的红方 Builder 自动扩张建造 Extractor MVP、v1.19 新增的原生 Turret 自动防御开火 MVP、v1.20 新增的战术小地图点位命令入口、v1.21 新增的战术小地图 Builder 目标命令入口、v1.22 新增的战术小地图实体目标命令入口、v1.23 新增的战术小地图等待命令反馈、v1.24 新增的 Turret 攻击建筑目标、v1.25 新增的工厂重复生产开关、v1.26 新增的 Builder 建造 Turret 地基，以及 v1.27 新增的 Builder 建造 Land Factory 地基。
+v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制、v1.6 新增的原生三地图切换和当前地图重开、v1.7 新增的原生战术小地图点按居中、v1.8 新增的原生 Stop 命令、v1.9 新增的原生工厂集结点命令、v1.10 新增的原生生产取消/退款命令、v1.11 新增的原生单槽 Save/Load MVP、v1.12 新增的原生单单位 Attack-Move 命令地基、v1.13 新增的原生单单位 Patrol 命令地基、v1.14 新增的原生单单位 Guard 命令地基、v1.15 新增的原生单 Builder Repair 命令地基、v1.16 新增的原生单 Builder Reclaim 残骸回收地基、v1.17 新增的原生单 Builder 在资源点建造 Extractor 地基、v1.18 新增的红方 Builder 自动扩张建造 Extractor MVP、v1.19 新增的原生 Turret 自动防御开火 MVP、v1.20 新增的战术小地图点位命令入口、v1.21 新增的战术小地图 Builder 目标命令入口、v1.22 新增的战术小地图实体目标命令入口、v1.23 新增的战术小地图等待命令反馈、v1.24 新增的 Turret 攻击建筑目标、v1.25 新增的工厂重复生产开关、v1.26 新增的 Builder 建造 Turret 地基、v1.27 新增的 Builder 建造 Land Factory 地基，以及 v1.28 新增的 Land Factory T1 生产列表扩展。
 
 ```text
 RustwarCore MapPreset / GameState / GameEngine
@@ -370,7 +370,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 用 `GameController` 持有 `GameEngine` 和 `CameraState`。
 - 支持 Coast / Islands / Lava 地图切换、当前地图重开、tap 选择、Move / Attack Move / Patrol 模式落点、Guard 友方目标点选、Repair 受损友方目标点选、Reclaim 残骸目标点选、Build Extractor 资源点目标点选、拖拽平移、捏合缩放、暂停/恢复、0.5x / 1x / 2x 速度切换和基础 economy tick。
 - v1.1 起，HUD Move 命令只作用于当前选中的己方单位；`RustwarCore` 推进位置，SpriteKit 只渲染状态。
-- v1.2 起，选中己方陆军工厂时 HUD 显示 Scout / Light Tank 生产按钮和队列进度；生产完成后由 `RustwarCore` 生成单位。
+- v1.2 起，选中己方陆军工厂时 HUD 显示生产按钮和队列进度；生产完成后由 `RustwarCore` 生成单位。
 - v1.3 起，选中己方单位时 HUD 显示 Attack 命令；Attack 模式下一次 tap 由 `GameController` 命中敌方目标并调用 `GameEngine.issueAttack`，`RustwarCore` 推进靠近、开火、扣血和死亡清理，SpriteKit 只显示 HP 条和攻击目标线。
 - v1.4 起，`GameEngine.update` 内部推进红方最小 AI：红方陆军工厂在资源/人口允许且队列为空时排队 Scout / Light Tank，红方空闲战斗单位会获得攻击玩家目标的订单；iOS 侧继续只渲染状态。
 - v1.5 起，`GameController.advance(deltaTime:)` 在调用 `GameEngine.update` 前执行暂停和速度倍率门控；暂停时模拟不推进，但 SpriteKit 仍可渲染当前状态，相机和 HUD 控件仍可响应。
@@ -392,9 +392,10 @@ RustwarCore MapPreset / GameState / GameEngine
 - v1.21 起，战术小地图在 Reclaim / Build Extractor 等待态下会调用现有 `GameState.wreckTarget(at:)` / `resourceTarget(at:)` 命中残骸或资源点，并复用 `issueReclaim` / `issueBuildExtractor` 下达 Builder 命令；当时 Attack / Guard / Repair 这类需要精确单位或建筑实体命中的命令仍不由小地图处理，后续 v1.22 已补齐最小入口。
 - v1.22 起，战术小地图在 Attack / Guard / Repair 等待态下会调用现有 `GameState.selectionTarget(at:includeEnemies:)` 命中单位或建筑，并复用 `issueAttack` / `issueGuard` / `issueRepair` 的目标合法性校验；未命中或目标非法时沿用主战场相同状态文案。
 - v1.23 起，`GameController` 暴露战术小地图 pending 命令的只读派生标签、符号、系统图标和 accessibility 文案；`TacticalMapView` 在等待命令时显示短标签、角标和高亮边框，并把同一语义写入 VoiceOver value/hint。该反馈只反映现有等待态，不改变 core 命中半径、命令优先级或目标合法性。
-- v1.25 起，`BuildingSnapshot.repeatUnitType` 保存生产建筑重复生产目标，缺失旧 JSON 字段时默认 `nil`。选中己方生产建筑时 HUD 显示 Repeat 循环按钮，点按会调用 `GameEngine.setRepeatProduction(_:)` 在 Off / Scout / Light Tank 间切换；`RustwarCore` 在生产完成且队列清空后复用 `enqueueUnit` 自动尝试续造，资源或人口不足时保留 repeat 目标且不追加队列。Repeat 不是待选目标命令，不由 Stop 清除。
+- v1.25 起，`BuildingSnapshot.repeatUnitType` 保存生产建筑重复生产目标，缺失旧 JSON 字段时默认 `nil`。选中己方生产建筑时 HUD 显示 Repeat 循环按钮，点按会调用 `GameEngine.setRepeatProduction(_:)` 在当前生产列表内循环；`RustwarCore` 在生产完成且队列清空后复用 `enqueueUnit` 自动尝试续造，资源或人口不足时保留 repeat 目标且不追加队列。Repeat 不是待选目标命令，不由 Stop 清除。
 - v1.26 起，选中己方 Builder 时 HUD 显示 Turret 建造命令；Turret 模式下一次主战场或战术小地图 tap 会调用 `GameEngine.issueBuildTurret(at:)`，目标点夹到地图内并通过最小地形/重叠校验后扣除 330 金属、创建 `buildProgress = 0` 的己方 Turret，并写入 `UnitOrder.build(targetID:)`。Turret 建造完成后复用现有自动防御开火，可攻击射程内敌方单位或建筑。本轮不迁移完整 Web 建造菜单、建造幽灵或多 Builder 协同。
-- v1.27 起，选中己方 Builder 时 HUD 显示 Factory 建造命令；Factory 模式下一次主战场或战术小地图 tap 会调用 `GameEngine.issueBuildLandFactory(at:)`，目标点夹到地图内并通过最小地形/重叠校验后扣除 620 金属、创建 `buildProgress = 0` 的己方 Land Factory，并写入 `UnitOrder.build(targetID:)`。未完成 Land Factory 在 core 层不可生产、不可设置 Repeat/Rally、不可取消生产，iOS HUD 也不暴露对应入口；完成后才复用 Scout / Light Tank 生产、Cancel Production、Repeat 和 Rally 逻辑。本轮不迁移完整建筑菜单、建造幽灵或红方建厂 AI。
+- v1.27 起，选中己方 Builder 时 HUD 显示 Factory 建造命令；Factory 模式下一次主战场或战术小地图 tap 会调用 `GameEngine.issueBuildLandFactory(at:)`，目标点夹到地图内并通过最小地形/重叠校验后扣除 620 金属、创建 `buildProgress = 0` 的己方 Land Factory，并写入 `UnitOrder.build(targetID:)`。未完成 Land Factory 在 core 层不可生产、不可设置 Repeat/Rally、不可取消生产，iOS HUD 也不暴露对应入口；完成后才复用生产、Cancel Production、Repeat 和 Rally 逻辑。本轮不迁移完整建筑菜单、建造幽灵或红方建厂 AI。
+- v1.28 起，原生 Land Factory 的 T1 生产列表扩展为 Scout / Light Tank / Hover Tank / Artillery / AA Tank，并按 Web T1 顺序驱动 `queueUnit`、Cancel Production、Repeat 和 Rally；iOS HUD 生产按钮区改用自适应网格，避免五个生产按钮在窄屏单行挤压。本轮不迁移 Land Factory T2 升级、重型单位、维修车、护盾车或其它生产建筑。
 
 输入：
 

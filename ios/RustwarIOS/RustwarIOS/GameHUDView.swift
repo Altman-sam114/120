@@ -4,6 +4,7 @@ import RustwarCore
 struct GameHUDView: View {
     @Bindable var controller: GameController
     private let commandColumns = [GridItem(.adaptive(minimum: 112), spacing: 8)]
+    private let productionColumns = [GridItem(.adaptive(minimum: 132), spacing: 8)]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -251,15 +252,20 @@ struct GameHUDView: View {
             }
 
             if !controller.productionOptions.isEmpty {
-                HStack(spacing: 8) {
+                LazyVGrid(columns: productionColumns, alignment: .leading, spacing: 8) {
                     ForEach(controller.productionOptions) { unitType in
                         let definition = GameDefinitions.unit(unitType)
-                        Button(definition.name, systemImage: "plus") {
+                        Button {
                             controller.queueUnit(unitType)
+                        } label: {
+                            Label(definition.name, systemImage: "plus")
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.85)
+                                .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.regular)
-                        .frame(minHeight: 44)
+                        .frame(maxWidth: .infinity, minHeight: 44)
                     }
                 }
             }

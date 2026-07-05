@@ -2162,6 +2162,10 @@ import Testing
     #expect(endingPlayerHitPoints < startingPlayerHitPoints)
 }
 
+@Test func landFactoryProductionListMatchesWebT1Order() {
+    #expect(GameDefinitions.building(.landFactory).produces == [.scout, .tank, .hover, .artillery, .aaTank])
+}
+
 @Test func queueUnitDeductsMetalAndSpawnsAtFactoryRally() throws {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
@@ -2193,6 +2197,39 @@ import Testing
     #expect(spawnedUnit.team == .player)
     #expect(spawnedUnit.position == completedFactory.rally)
     #expect(spawnedUnit.position == newRally)
+}
+
+@Test func queueUnitSupportsExpandedLandFactoryRoster() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let target = try #require(factoryTarget)
+    let startingMetal = engine.state.metal[.player, default: 0]
+    let startingUnitCount = engine.state.units.count
+    let expandedUnits: [UnitType] = [.hover, .artillery, .aaTank]
+
+    for unitType in expandedUnits {
+        #expect(engine.queueUnit(unitType) == .queued)
+    }
+
+    let queuedFactory = try #require(engine.state.buildings.first { $0.id == target.id })
+    #expect(queuedFactory.productionQueue.map(\.unitType) == expandedUnits)
+    #expect(engine.state.metal[.player, default: 0] == startingMetal - expandedUnits.reduce(0) { partial, unitType in
+        partial + GameDefinitions.unit(unitType).metalCost
+    })
+
+    let totalBuildTime = expandedUnits.reduce(0) { partial, unitType in
+        partial + Int(GameDefinitions.unit(unitType).buildTime)
+    }
+    for _ in 0..<totalBuildTime {
+        engine.update(deltaTime: 1)
+    }
+
+    let completedFactory = try #require(engine.state.buildings.first { $0.id == target.id })
+    let spawnedTypes = engine.state.units.suffix(expandedUnits.count).map(\.type)
+    #expect(completedFactory.productionQueue.isEmpty)
+    #expect(engine.state.units.count == startingUnitCount + expandedUnits.count)
+    #expect(Array(spawnedTypes) == expandedUnits)
 }
 
 @Test func queueUnitRejectsInvalidAndUnaffordableRequests() {
@@ -2277,6 +2314,27 @@ import Testing
     #expect(repeatedItem.progress == 0)
     #expect(engine.state.units.count == unitCountBeforeCompletion + 1)
     #expect(engine.state.metal[.player, default: 0] == metalBeforeCompletion + income - GameDefinitions.unit(.scout).metalCost)
+}
+
+@Test func repeatProductionSupportsExpandedLandFactoryRoster() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let target = try #require(factoryTarget)
+    #expect(engine.setRepeatProduction(.aaTank) == .updated(repeatUnitType: .aaTank))
+    #expect(engine.queueUnit(.aaTank) == .queued)
+
+    for _ in 0..<Int(GameDefinitions.unit(.aaTank).buildTime) {
+        engine.update(deltaTime: 1)
+    }
+
+    let factoryAfterCompletion = try #require(engine.state.buildings.first { $0.id == target.id })
+    let repeatedItem = try #require(factoryAfterCompletion.productionQueue.first)
+    #expect(factoryAfterCompletion.productionQueue.count == 1)
+    #expect(factoryAfterCompletion.repeatUnitType == .aaTank)
+    #expect(repeatedItem.unitType == .aaTank)
+    #expect(repeatedItem.progress == 0)
+    #expect(engine.state.units.last?.type == .aaTank)
 }
 
 @Test func repeatProductionWaitsForQueueToFullyDrain() throws {

@@ -15,7 +15,7 @@
 当前 iOS 版本是迁移地基，不是完整玩法 parity。它新增：
 
 - `swift/RustwarCore/`：无第三方依赖的 Swift core package，包含地图常量、三张地图初始布局、单位/建筑/资源/残骸模型、地形网格、初始状态、收入/人口计算、命中选择、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Build Turret 命令、Build Land Factory 命令、Stop 命令、基础攻击命令、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、工厂生产队列 MVP、生产取消/退款、工厂重复生产开关、工厂集结点设置、红方生产/扩张/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
-- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位、战斗残骸和 HUD；支持 Coast / Islands / Lava 地图切换、重开当前地图、tap 选择、拖拽平移、捏合缩放、右下战术小地图点按居中，或在 Move / Attack Move / Patrol / Rally / Turret / Factory 等待状态下下达点位命令，在 Reclaim / Build Extractor 等待状态下点选残骸或资源点目标，以及在 Attack / Guard / Repair 等待状态下点选单位或建筑目标；战术小地图会在等待命令时显示当前命令角标、强化边框并提供对应 VoiceOver 提示。原生 iOS 版还支持 Pause/Play 和 0.5x / 1x / 2x 速度切换，选中己方单位后可用 Move 下达单单位移动命令、用 Attack Move 指定行军攻击目的地、用 Patrol 设置当前位置和端点之间的往返巡逻、用 Guard 点选友方单位或建筑进行护航、选中己方 Builder 时可用 Repair 点选受损友方单位或建筑进行维修、用 Reclaim 点选残骸持续回收金属、用 Build Extractor 点选空闲资源点扣金属并建造未完成采集器、用 Turret 选择清晰陆地点扣金属并建造未完成炮塔、用 Factory 选择清晰陆地点扣金属并建造未完成陆军工厂、用 Attack 点选敌方单位或建筑并显示血条/攻击目标、用 Stop 清除当前移动、攻击移动、巡逻、护航、维修、回收、建造或攻击命令，完成状态己方陆军工厂可生产 Scout / Light Tank、取消队尾生产并按未完成进度退款、循环设置 Repeat Off / Scout / Light Tank 并在队列清空后自动尝试续造，还可用 Rally 改变后续出兵集结点；Save / Load 可用本机单槽存档保存和恢复当前原生对局、相机、地图、暂停和速度；完成状态炮塔会自动攻击射程内敌方单位或建筑并显示轻量火力线；红方会用空闲 Builder 扩张空闲资源点、从现有陆军工厂排队造兵并主动攻击玩家目标，并通过简单 economy tick 推进金属收入、建造、生产进度和基础战斗。
+- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位、战斗残骸和 HUD；支持 Coast / Islands / Lava 地图切换、重开当前地图、tap 选择、拖拽平移、捏合缩放、右下战术小地图点按居中，或在 Move / Attack Move / Patrol / Rally / Turret / Factory 等待状态下下达点位命令，在 Reclaim / Build Extractor 等待状态下点选残骸或资源点目标，以及在 Attack / Guard / Repair 等待状态下点选单位或建筑目标；战术小地图会在等待命令时显示当前命令角标、强化边框并提供对应 VoiceOver 提示。原生 iOS 版还支持 Pause/Play 和 0.5x / 1x / 2x 速度切换，选中己方单位后可用 Move 下达单单位移动命令、用 Attack Move 指定行军攻击目的地、用 Patrol 设置当前位置和端点之间的往返巡逻、用 Guard 点选友方单位或建筑进行护航、选中己方 Builder 时可用 Repair 点选受损友方单位或建筑进行维修、用 Reclaim 点选残骸持续回收金属、用 Build Extractor 点选空闲资源点扣金属并建造未完成采集器、用 Turret 选择清晰陆地点扣金属并建造未完成炮塔、用 Factory 选择清晰陆地点扣金属并建造未完成陆军工厂、用 Attack 点选敌方单位或建筑并显示血条/攻击目标、用 Stop 清除当前移动、攻击移动、巡逻、护航、维修、回收、建造或攻击命令，完成状态己方陆军工厂可生产 Scout / Light Tank / Hover Tank / Artillery / AA Tank、取消队尾生产并按未完成进度退款、循环设置 Repeat Off / Scout / Light Tank / Hover Tank / Artillery / AA Tank 并在队列清空后自动尝试续造，还可用 Rally 改变后续出兵集结点；Save / Load 可用本机单槽存档保存和恢复当前原生对局、相机、地图、暂停和速度；完成状态炮塔会自动攻击射程内敌方单位或建筑并显示轻量火力线；红方会用空闲 Builder 扩张空闲资源点、从现有陆军工厂排队造兵并主动攻击玩家目标，并通过简单 economy tick 推进金属收入、建造、生产进度和基础战斗。
 
 本机验证命令：
 
@@ -98,12 +98,12 @@ xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -dest
 - Reclaim：选中己方 Builder 时显示；点按后进入回收目标模式，再 tap 战场残骸下达单单位回收命令；Builder 会靠近残骸并把剩余残骸金属持续转入己方金属，残骸耗尽、过期或消失后清除命令。
 - Build Extractor：选中己方 Builder 时显示；点按后进入资源点目标模式，再 tap 空闲资源点扣除 260 金属并创建未完成 Extractor；Builder 会靠近并推进建造，完成后该资源点开始增加收入。
 - Turret：选中己方 Builder 时显示；点按后进入炮塔放置模式，再 tap 清晰陆地点扣除 330 金属并创建未完成 Turret；Builder 会靠近并推进建造，完成后的 Turret 会自动攻击射程内敌方单位或建筑。
-- Factory：选中己方 Builder 时显示；点按后进入工厂放置模式，再 tap 清晰陆地点扣除 620 金属并创建未完成 Land Factory；Builder 会靠近并推进建造，完成后该工厂可生产 Scout / Light Tank。
+- Factory：选中己方 Builder 时显示；点按后进入工厂放置模式，再 tap 清晰陆地点扣除 620 金属并创建未完成 Land Factory；Builder 会靠近并推进建造，完成后该工厂可生产 Scout / Light Tank / Hover Tank / Artillery / AA Tank。
 - Attack：选中己方单位时显示；点按后进入攻击目标模式，再 tap 敌方单位或建筑下达攻击命令，单位会靠近射程、造成伤害并移除被摧毁目标。
 - Stop：选中己方单位时显示；点按后清除该单位当前移动、攻击移动、巡逻、护航、维修、回收、建造或攻击命令，并取消正在等待落点/目标的 Move、Attack Move、Patrol、Guard、Repair、Reclaim、Build Extractor、Turret、Factory 或 Attack 模式。
-- Scout / Light Tank：选中完成状态己方陆军工厂时显示；点按后扣除金属并加入生产队列，完成后在工厂集结点生成单位。
+- Scout / Light Tank / Hover Tank / Artillery / AA Tank：选中完成状态己方陆军工厂时显示；点按后扣除金属并加入生产队列，完成后在工厂集结点生成单位。
 - Cancel Production：选中完成状态己方陆军工厂且队列不为空时显示；点按后取消队尾生产项，并按未完成进度返还金属。
-- Repeat：选中完成状态己方陆军工厂时显示；点按会循环 Repeat Off / Scout / Light Tank，队列清空后自动尝试续造当前重复单位；金属或人口不足时保留重复目标但不会追加队列。
+- Repeat：选中完成状态己方陆军工厂时显示；点按会循环 Repeat Off / Scout / Light Tank / Hover Tank / Artillery / AA Tank，队列清空后自动尝试续造当前重复单位；金属或人口不足时保留重复目标但不会追加队列。
 - Rally：选中完成状态己方陆军工厂时显示；点按后进入集结点模式，再 tap 主战场设置新集结点，后续完成生产的单位会在该点生成；选中工厂时战场会显示集结线和标记。
 - 炮塔：完成状态的 Turret 会自动攻击射程内敌方单位或建筑，开火冷却期间显示淡红火力线。
 - 红方 AI：会用空闲 Builder 在空闲资源点建造 Extractor，用已有资源在红方陆军工厂排队生产 Scout / Light Tank，并让空闲战斗单位主动攻击最近的玩家单位或建筑。
