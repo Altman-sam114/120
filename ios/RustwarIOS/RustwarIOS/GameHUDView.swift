@@ -154,6 +154,17 @@ struct GameHUDView: View {
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
                 }
+                if controller.canIssueBuildExtractor || controller.isAwaitingBuildExtractorTarget {
+                    Button(
+                        controller.buildExtractorCommandButtonTitle,
+                        systemImage: controller.isAwaitingBuildExtractorTarget ? "xmark.circle" : "hammer",
+                        action: controller.toggleBuildExtractorCommand
+                    )
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .accessibilityLabel("Build extractor")
+                }
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                     Button(
                         controller.attackCommandButtonTitle,
@@ -171,7 +182,8 @@ struct GameHUDView: View {
                     controller.isAwaitingPatrolTarget ||
                     controller.isAwaitingGuardTarget ||
                     controller.isAwaitingRepairTarget ||
-                    controller.isAwaitingReclaimTarget {
+                    controller.isAwaitingReclaimTarget ||
+                    controller.isAwaitingBuildExtractorTarget {
                     Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
                         .buttonStyle(.bordered)
                         .controlSize(.regular)

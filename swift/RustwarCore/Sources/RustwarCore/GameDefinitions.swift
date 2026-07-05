@@ -11,7 +11,7 @@ public enum GameDefinitions {
 
     public static let buildings: [BuildingType: BuildingDefinition] = [
         .command: BuildingDefinition(type: .command, name: "Command Center", icon: "CC", hitPoints: 1_850, size: 84, metalCost: 0, income: 4, supply: 18, vision: 520),
-        .extractor: BuildingDefinition(type: .extractor, name: "Extractor", icon: "EX", hitPoints: 560, size: 48, metalCost: 260, income: 9, supply: 0, vision: 240),
+        .extractor: BuildingDefinition(type: .extractor, name: "Extractor", icon: "EX", hitPoints: 560, size: 48, metalCost: 260, buildTime: 10, income: 9, supply: 0, vision: 240),
         .landFactory: BuildingDefinition(type: .landFactory, name: "Land Factory", icon: "LF", hitPoints: 920, size: 76, metalCost: 620, income: 0, supply: 8, vision: 310, produces: [.scout, .tank]),
         .turret: BuildingDefinition(type: .turret, name: "Turret", icon: "TR", hitPoints: 650, size: 48, metalCost: 330, income: 0, supply: 0, vision: 330)
     ]

@@ -214,6 +214,24 @@ import Testing
     }
 }
 
+@Test func buildOrderJSONRoundTripPreservesTarget() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let target = try #require(state.buildings.first { $0.team == .player && $0.type == .extractor })
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    state.units[builderIndex].order = .build(targetID: target.id)
+
+    let encoded = try JSONEncoder().encode(state)
+    let decoded = try JSONDecoder().decode(GameState.self, from: encoded)
+    let decodedBuilder = try #require(decoded.units.first { $0.id == builder.id })
+
+    if case let .build(targetID)? = decodedBuilder.order {
+        #expect(targetID == target.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
 @Test func gameStateDecodesOldJSONWithoutWrecksAsEmptyList() throws {
     let state = GameState(mapID: .coast)
     let encoded = try JSONEncoder().encode(state)
@@ -808,6 +826,204 @@ import Testing
     let repairer = try #require(engine.state.units.first { $0.id == builder.id })
     #expect(repairer.order == nil)
     #expect(!engine.state.buildings.contains { $0.id == friendlyBuilding.id })
+}
+
+@Test func buildExtractorCommandRejectsMissingInvalidOccupiedAndInsufficientMetal() throws {
+    let baseState = GameState(mapID: .coast)
+    let builder = try #require(baseState.units.first { $0.team == .player && $0.type == .builder })
+    let enemyBuilder = try #require(baseState.units.first { $0.team == .enemy && $0.type == .builder })
+    let playerTank = try #require(baseState.units.first { $0.team == .player && $0.type == .tank })
+    let playerBuilding = try #require(baseState.buildings.first { $0.team == .player })
+    let occupiedNodeID = try #require(baseState.buildings.first { $0.team == .player && $0.type == .extractor }?.nodeID)
+    let freeNode = try #require(baseState.resources.first { $0.claimedBy == nil })
+
+    var noSelectionEngine = GameEngine(state: baseState, enemyAIEnabled: false)
+    #expect(noSelectionEngine.issueBuildExtractor(on: freeNode.id) == .noSelection)
+
+    var enemySelectedState = baseState
+    enemySelectedState.selectedEntityID = enemyBuilder.id
+    var enemySelectedEngine = GameEngine(state: enemySelectedState, enemyAIEnabled: false)
+    #expect(enemySelectedEngine.issueBuildExtractor(on: freeNode.id) == .selectedEntityCannotBuild)
+
+    var tankSelectedState = baseState
+    tankSelectedState.selectedEntityID = playerTank.id
+    var tankSelectedEngine = GameEngine(state: tankSelectedState, enemyAIEnabled: false)
+    #expect(tankSelectedEngine.issueBuildExtractor(on: freeNode.id) == .selectedEntityCannotBuild)
+
+    var buildingSelectedState = baseState
+    buildingSelectedState.selectedEntityID = playerBuilding.id
+    var buildingSelectedEngine = GameEngine(state: buildingSelectedState, enemyAIEnabled: false)
+    #expect(buildingSelectedEngine.issueBuildExtractor(on: freeNode.id) == .selectedEntityCannotBuild)
+
+    var builderSelectedState = baseState
+    builderSelectedState.selectedEntityID = builder.id
+    var builderSelectedEngine = GameEngine(state: builderSelectedState, enemyAIEnabled: false)
+    #expect(builderSelectedEngine.issueBuildExtractor(on: "missing-node") == .invalidBuildTarget)
+    #expect(builderSelectedEngine.issueBuildExtractor(on: occupiedNodeID) == .occupiedResourceNode)
+
+    var poorState = builderSelectedState
+    poorState.metal[.player] = 20
+    var poorEngine = GameEngine(state: poorState, enemyAIEnabled: false)
+    #expect(poorEngine.issueBuildExtractor(on: freeNode.id) == .insufficientMetal)
+}
+
+@Test func buildExtractorCommandCreatesIncompleteExtractorAndClaimsResourceNode() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let freeNode = try #require(state.resources.first { $0.claimedBy == nil })
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    let startingMetal = engine.state.metal[.player, default: 0]
+    let startingBuildingCount = engine.state.buildings.count
+    #expect(engine.issueBuildExtractor(on: freeNode.id) == .issued)
+
+    let extractor = try #require(engine.state.buildings.first { $0.nodeID == freeNode.id && $0.team == .player })
+    let resource = try #require(engine.state.resources.first { $0.id == freeNode.id })
+    let builderAfterIssue = try #require(engine.state.units.first { $0.id == builder.id })
+
+    #expect(engine.state.buildings.count == startingBuildingCount + 1)
+    #expect(engine.state.metal[.player, default: 0] == startingMetal - 260)
+    #expect(extractor.type == .extractor)
+    #expect(extractor.position == freeNode.position)
+    #expect(extractor.buildProgress == 0)
+    #expect(extractor.hitPoints == extractor.maxHitPoints * 0.1)
+    #expect(resource.claimedBy == .player)
+    #expect(engine.state.selectedEntityID == builder.id)
+    if case let .build(targetID)? = builderAfterIssue.order {
+        #expect(targetID == extractor.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func incompleteExtractorDoesNotProduceIncomeUntilBuildCompletes() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    let freeNode = try #require(state.resources.first { $0.claimedBy == nil })
+    state.units[builderIndex].position = freeNode.position
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    let startingIncome = engine.state.income(for: .player)
+    #expect(engine.issueBuildExtractor(on: freeNode.id) == .issued)
+    #expect(engine.state.income(for: .player) == startingIncome)
+
+    for _ in 0..<5 {
+        engine.update(deltaTime: 1)
+    }
+
+    let partialExtractor = try #require(engine.state.buildings.first { $0.nodeID == freeNode.id && $0.team == .player })
+    #expect(abs(partialExtractor.buildProgress - 0.5) < 0.0001)
+    #expect(engine.state.income(for: .player) == startingIncome)
+
+    for _ in 0..<5 {
+        engine.update(deltaTime: 1)
+    }
+
+    let completedExtractor = try #require(engine.state.buildings.first { $0.nodeID == freeNode.id && $0.team == .player })
+    let builderAfterCompletion = try #require(engine.state.units.first { $0.id == builder.id })
+    #expect(completedExtractor.buildProgress == 1)
+    #expect(completedExtractor.hitPoints == completedExtractor.maxHitPoints)
+    #expect(engine.state.income(for: .player) == startingIncome + GameDefinitions.building(.extractor).income)
+    #expect(builderAfterCompletion.order == nil)
+}
+
+@Test func buildExtractorCommandMovesBuilderIntoRangeAndKeepsOrder() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    let freeNode = try #require(state.resources.first { $0.claimedBy == nil })
+    state.units[builderIndex].position = WorldPoint(freeNode.position.x - 360, freeNode.position.y)
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.issueBuildExtractor(on: freeNode.id) == .issued)
+
+    let startingPosition = try #require(engine.state.units.first { $0.id == builder.id }?.position)
+    engine.update(deltaTime: 1)
+
+    let builderAfterUpdate = try #require(engine.state.units.first { $0.id == builder.id })
+    let extractor = try #require(engine.state.buildings.first { $0.nodeID == freeNode.id && $0.team == .player })
+    #expect(builderAfterUpdate.position.x > startingPosition.x)
+    #expect(builderAfterUpdate.position.x < freeNode.position.x)
+    #expect(extractor.buildProgress == 0)
+    if case let .build(targetID)? = builderAfterUpdate.order {
+        #expect(targetID == extractor.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func stopCommandClearsBuildOrder() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let freeNode = try #require(state.resources.first { $0.claimedBy == nil })
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.issueBuildExtractor(on: freeNode.id) == .issued)
+    #expect(engine.issueStop() == .issued)
+
+    let stoppedBuilder = try #require(engine.state.units.first { $0.id == builder.id })
+    #expect(stoppedBuilder.order == nil)
+    #expect(engine.state.selectedEntityID == builder.id)
+}
+
+@Test func destroyedIncompleteExtractorReleasesResourceNodeAndCreatesWreck() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let freeNode = try #require(state.resources.first { $0.claimedBy == nil })
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.issueBuildExtractor(on: freeNode.id) == .issued)
+
+    var damagedState = engine.state
+    let extractor = try #require(damagedState.buildings.first { $0.nodeID == freeNode.id && $0.team == .player })
+    let extractorIndex = try #require(damagedState.buildings.firstIndex { $0.id == extractor.id })
+    damagedState.buildings[extractorIndex].hitPoints = 0
+
+    var damagedEngine = GameEngine(state: damagedState, enemyAIEnabled: false)
+    damagedEngine.update(deltaTime: 1)
+
+    let resource = try #require(damagedEngine.state.resources.first { $0.id == freeNode.id })
+    let wreck = try #require(damagedEngine.state.wrecks.first)
+    let builderAfterDestruction = try #require(damagedEngine.state.units.first { $0.id == builder.id })
+    #expect(!damagedEngine.state.buildings.contains { $0.id == extractor.id })
+    #expect(resource.claimedBy == nil)
+    #expect(wreck.position == extractor.position)
+    #expect(wreck.metal == 62)
+    #expect(builderAfterDestruction.order == nil)
+}
+
+@Test func gameStateJSONRoundTripPreservesBuildExtractorState() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    let freeNode = try #require(state.resources.first { $0.claimedBy == nil })
+    state.units[builderIndex].position = freeNode.position
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.issueBuildExtractor(on: freeNode.id) == .issued)
+    for _ in 0..<3 {
+        engine.update(deltaTime: 1)
+    }
+
+    let encoded = try JSONEncoder().encode(engine.state)
+    let decoded = try JSONDecoder().decode(GameState.self, from: encoded)
+    let decodedBuilder = try #require(decoded.units.first { $0.id == builder.id })
+    let decodedExtractor = try #require(decoded.buildings.first { $0.nodeID == freeNode.id && $0.team == .player })
+
+    #expect(decoded == engine.state)
+    #expect(abs(decodedExtractor.buildProgress - 0.3) < 0.0001)
+    if case let .build(targetID)? = decodedBuilder.order {
+        #expect(targetID == decodedExtractor.id)
+    } else {
+        #expect(Bool(false))
+    }
 }
 
 @Test func destroyedUnitCreatesReclaimableWreck() throws {

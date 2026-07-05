@@ -14,8 +14,8 @@
 - 项目形态：完整可玩的 Web Canvas RTS 原型 + v1.0 起新增的原生 Swift/iOS 迁移地基。
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
-- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、残骸模型、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂集结点设置、基础攻击、伤害/死亡残骸清理、红方生产/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Repair 按钮、Reclaim 按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、维修线、回收线、攻击目标线、残骸/HP 条、可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中和 Save/Load 单槽本地存档。
+- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、资源点命中、残骸模型、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂集结点设置、基础攻击、伤害/死亡残骸清理、红方生产/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Repair 按钮、Reclaim 按钮、Build Extractor 按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、建造进度、残骸/HP 条、可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中和 Save/Load 单槽本地存档。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -762,3 +762,43 @@
 遗留事项：
 
 - v1.16 Reclaim 只作用于当前选中己方单个 Builder；尚无多选回收、队列/Shift 命令、右键上下文回收、战术小地图下达回收、AI 自动回收残骸、沙盒残骸摆放/清理、粒子效果、雾内残骸规则、寻路/阵型或完整 Web Reclaim parity。
+
+### v1.17 / iOS native build Extractor foundation
+
+日期：2026-07-05
+
+核心变更：
+
+- `BuildingDefinition` 新增 `buildTime`，Extractor 使用 Web 近似语义：260 金属、10 秒建造、560 HP、48 尺寸、9 收入、240 视野。
+- `GameStateSelection` 新增资源点命中 helper；`UnitOrder` 新增 `build(targetID:)`，`UnitCommandResult` 新增 Build Extractor 专用拒绝语义。
+- `GameEngine.issueBuildExtractor(on:)` 只允许当前选中己方 Builder 在空闲资源点建造 Extractor；成功时扣除 260 金属、创建未完成 Extractor、立即认领资源点防止重复下令，并给 Builder 写入 Build 订单。
+- `GameEngine.update` 推进 Build：Builder 距离超过 125 时靠近目标，进入范围后按 `deltaTime / buildTime` 推进建造；未完成 Extractor 不提供收入，完成后 HP 回满并开始提供收入；Stop 可清除 Build 订单，未完成 Extractor 被摧毁会释放资源点并生成残骸。
+- iOS HUD 新增 Build Extractor 按钮，等待态与 Move / Attack Move / Patrol / Guard / Repair / Reclaim / Attack / Rally 互斥，并由 Stop、Load、Restart 和切图统一清理。
+- SpriteKit 为 Build 订单显示独立建造线和 `B` 标记，为未完成建筑显示建造进度条，并让资源点占用颜色随状态变化刷新。
+- Swift tests 增加 Build 订单 JSON 往返、非法选择/目标/资源不足/占用拒绝、成功建造下令、未完成收入门控、远距靠近、进度完成、Stop 清除、未完成 Extractor 摧毁释放资源点和 `GameState` JSON 往返覆盖。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/BuildingDefinition.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameDefinitions.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameStateSelection.swift`
+- `swift/RustwarCore/Sources/RustwarCore/UnitOrder.swift`
+- `swift/RustwarCore/Sources/RustwarCore/UnitCommandResult.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.17-ios-build-extractor-foundation.md`
+
+验证结果：
+
+- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+
+遗留事项：
+
+- v1.17 Build Extractor 只作用于当前选中己方单个 Builder；尚无完整建筑菜单、任意地块建筑放置、多 Builder 协同、队列/Shift 命令、右键协助未完成建筑、战术小地图下达建造、AI 扩张建造、其它建筑类型、建造幽灵、沙盒建筑摆放、雾内建造规则、寻路/阵型或完整 Web Build parity。

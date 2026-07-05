@@ -43,11 +43,11 @@ final class BattlefieldScene: SKScene {
         let state = controller.engine.state
         if renderedMapID != state.map.id || renderedMapRevision != controller.mapRenderRevision {
             drawTerrain(state.terrain)
-            drawResources(state.resources)
             renderedMapID = state.map.id
             renderedMapRevision = controller.mapRenderRevision
         }
         syncCamera(controller.camera)
+        drawResources(state.resources)
         drawEntities(state)
     }
 
@@ -120,7 +120,7 @@ final class BattlefieldScene: SKScene {
         let rect = CGRect(x: -definition.size / 2, y: -definition.size / 2, width: definition.size, height: definition.size)
         let node = SKShapeNode(rect: rect, cornerRadius: 6)
         node.position = spritePoint(for: building.position)
-        node.fillColor = teamColor(building.team).withAlphaComponent(0.88)
+        node.fillColor = teamColor(building.team).withAlphaComponent(building.buildProgress < 1 ? 0.58 : 0.88)
         node.strokeColor = building.id == selectedID ? .systemYellow : .black.withAlphaComponent(0.5)
         node.lineWidth = building.id == selectedID ? 5 : 2
 
@@ -131,6 +131,9 @@ final class BattlefieldScene: SKScene {
         label.verticalAlignmentMode = .center
         node.addChild(label)
         drawHealthBar(current: building.hitPoints, max: building.maxHitPoints, width: definition.size, yOffset: definition.size / 2 + 8, on: node)
+        if building.buildProgress < 1 {
+            drawBuildProgressBar(progress: building.buildProgress, width: definition.size, yOffset: -definition.size / 2 - 11, on: node)
+        }
         entityNode.addChild(node)
     }
 
@@ -150,6 +153,10 @@ final class BattlefieldScene: SKScene {
         case let .guardTarget(targetID, _)?:
             if let targetPosition = targetPosition(for: targetID, in: state) {
                 drawGuardOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
+            }
+        case let .build(targetID)?:
+            if let targetPosition = targetPosition(for: targetID, in: state) {
+                drawBuildOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
             }
         case let .repair(targetID)?:
             if let targetPosition = targetPosition(for: targetID, in: state) {
@@ -322,6 +329,33 @@ final class BattlefieldScene: SKScene {
         marker.addChild(label)
     }
 
+    private func drawBuildOrder(from start: WorldPoint, to destination: WorldPoint, isSelected: Bool) {
+        let color = isSelected ? SKColor.systemYellow : SKColor.systemBlue.withAlphaComponent(0.66)
+        let path = CGMutablePath()
+        path.move(to: spritePoint(for: start))
+        path.addLine(to: spritePoint(for: destination))
+
+        let line = SKShapeNode(path: path)
+        line.strokeColor = color.withAlphaComponent(isSelected ? 0.82 : 0.44)
+        line.lineWidth = isSelected ? 3 : 1.5
+        line.lineCap = .round
+        entityNode.addChild(line)
+
+        let marker = SKShapeNode(rectOf: CGSize(width: isSelected ? 22 : 18, height: isSelected ? 22 : 18), cornerRadius: 4)
+        marker.position = spritePoint(for: destination)
+        marker.fillColor = SKColor.systemBlue.withAlphaComponent(isSelected ? 0.24 : 0.16)
+        marker.strokeColor = color
+        marker.lineWidth = isSelected ? 3 : 1.5
+        entityNode.addChild(marker)
+
+        let label = SKLabelNode(text: "B")
+        label.fontName = "AvenirNext-Bold"
+        label.fontSize = isSelected ? 13 : 11
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        marker.addChild(label)
+    }
+
     private func drawRepairOrder(from start: WorldPoint, to destination: WorldPoint, isSelected: Bool) {
         let color = isSelected ? SKColor.systemYellow : SKColor.systemMint.withAlphaComponent(0.64)
         let path = CGMutablePath()
@@ -437,6 +471,22 @@ final class BattlefieldScene: SKScene {
 
         let fill = SKShapeNode(rect: CGRect(x: -width / 2, y: yOffset, width: width * fraction, height: height), cornerRadius: 2)
         fill.fillColor = healthColor(fraction)
+        fill.strokeColor = fill.fillColor
+        fill.lineWidth = 0
+        node.addChild(fill)
+    }
+
+    private func drawBuildProgressBar(progress: Double, width: Double, yOffset: Double, on node: SKNode) {
+        let height = 5.0
+        let fraction = Swift.min(1, Swift.max(0, progress))
+        let background = SKShapeNode(rect: CGRect(x: -width / 2, y: yOffset, width: width, height: height), cornerRadius: 2)
+        background.fillColor = .black.withAlphaComponent(0.62)
+        background.strokeColor = background.fillColor
+        background.lineWidth = 0
+        node.addChild(background)
+
+        let fill = SKShapeNode(rect: CGRect(x: -width / 2, y: yOffset, width: width * fraction, height: height), cornerRadius: 2)
+        fill.fillColor = SKColor.systemBlue.withAlphaComponent(0.92)
         fill.strokeColor = fill.fillColor
         fill.lineWidth = 0
         node.addChild(fill)

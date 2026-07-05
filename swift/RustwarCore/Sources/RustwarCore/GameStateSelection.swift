@@ -62,4 +62,19 @@ public extension GameState {
 
         return best
     }
+
+    func resourceTarget(at point: WorldPoint, maxDistance: Double = 56) -> ResourceNode? {
+        var best: ResourceNode?
+        var bestDistance = maxDistance * maxDistance
+
+        for resource in resources {
+            let distance = resource.position.distanceSquared(to: point)
+            if distance < bestDistance {
+                best = resource
+                bestDistance = distance
+            }
+        }
+
+        return best
+    }
 }

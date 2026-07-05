@@ -1,6 +1,8 @@
 public struct GameEngine: Sendable {
     private static let builderRepairRange = 125.0
     private static let builderRepairRate = 18.0
+    private static let builderBuildRange = 125.0
+    private static let incompleteBuildingMinimumHealthFraction = 0.1
     private static let builderReclaimRange = 92.0
     private static let builderReclaimRate = 34.0 * 0.58
     private static let wreckTTL = 58.0
@@ -170,6 +172,52 @@ public struct GameEngine: Sendable {
         }
 
         state.units[unitIndex].order = .reclaim(wreckID: wreckID)
+        return .issued
+    }
+
+    @discardableResult
+    public mutating func issueBuildExtractor(on nodeID: String) -> UnitCommandResult {
+        guard let selectedEntityID = state.selectedEntityID else {
+            return .noSelection
+        }
+        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
+              state.units[unitIndex].team == .player,
+              state.units[unitIndex].type == .builder else {
+            return .selectedEntityCannotBuild
+        }
+        guard let resourceIndex = state.resources.firstIndex(where: { $0.id == nodeID }) else {
+            return .invalidBuildTarget
+        }
+        guard state.resources[resourceIndex].claimedBy == nil,
+              !hasLivingExtractor(on: nodeID) else {
+            return .occupiedResourceNode
+        }
+
+        let definition = GameDefinitions.building(.extractor)
+        let team = state.units[unitIndex].team
+        guard state.metal[team, default: 0] >= definition.metalCost else {
+            return .insufficientMetal
+        }
+
+        let buildingID = nextID(prefix: "building")
+        let position = state.resources[resourceIndex].position
+        let startingHitPoints = definition.hitPoints * Self.incompleteBuildingMinimumHealthFraction
+        state.metal[team, default: 0] -= definition.metalCost
+        state.resources[resourceIndex].claimedBy = team
+        state.buildings.append(
+            BuildingSnapshot(
+                id: buildingID,
+                type: .extractor,
+                team: team,
+                position: position,
+                hitPoints: startingHitPoints,
+                maxHitPoints: definition.hitPoints,
+                buildProgress: 0,
+                rally: position,
+                nodeID: nodeID
+            )
+        )
+        state.units[unitIndex].order = .build(targetID: buildingID)
         return .issued
     }
 
@@ -412,6 +460,8 @@ public struct GameEngine: Sendable {
                 )
             case let .guardTarget(targetID, offset):
                 updateGuardOrder(unitIndex: unitIndex, targetID: targetID, offset: offset, deltaTime: deltaTime)
+            case let .build(targetID):
+                updateBuildOrder(unitIndex: unitIndex, targetID: targetID, deltaTime: deltaTime)
             case let .repair(targetID):
                 updateRepairOrder(unitIndex: unitIndex, targetID: targetID, deltaTime: deltaTime)
             case let .reclaim(wreckID):
@@ -539,6 +589,53 @@ public struct GameEngine: Sendable {
             deltaTime: deltaTime,
             clearsOrderOnArrival: false
         )
+    }
+
+    private mutating func updateBuildOrder(unitIndex: Int, targetID: String, deltaTime: Double) {
+        guard state.units[unitIndex].type == .builder,
+              let buildingIndex = state.buildings.firstIndex(where: { $0.id == targetID && $0.hitPoints > 0 }),
+              state.buildings[buildingIndex].team == state.units[unitIndex].team,
+              state.buildings[buildingIndex].buildProgress < 1 else {
+            state.units[unitIndex].order = nil
+            return
+        }
+
+        let building = state.buildings[buildingIndex]
+        let definition = GameDefinitions.unit(state.units[unitIndex].type)
+        let distance = state.units[unitIndex].position.distance(to: building.position)
+        if distance > Self.builderBuildRange {
+            moveUnit(
+                at: unitIndex,
+                toward: building.position,
+                speed: definition.speed,
+                stoppingDistance: Self.builderBuildRange * 0.92,
+                deltaTime: deltaTime,
+                clearsOrderOnArrival: false
+            )
+            return
+        }
+
+        let buildingDefinition = GameDefinitions.building(building.type)
+        let progressDelta = deltaTime / max(0.1, buildingDefinition.buildTime)
+        state.buildings[buildingIndex].buildProgress = min(1, state.buildings[buildingIndex].buildProgress + progressDelta)
+        let healthFloor = state.buildings[buildingIndex].maxHitPoints * max(
+            Self.incompleteBuildingMinimumHealthFraction,
+            state.buildings[buildingIndex].buildProgress
+        )
+        state.buildings[buildingIndex].hitPoints = min(
+            state.buildings[buildingIndex].maxHitPoints,
+            max(state.buildings[buildingIndex].hitPoints, healthFloor)
+        )
+
+        if state.buildings[buildingIndex].buildProgress >= 1 {
+            state.buildings[buildingIndex].buildProgress = 1
+            state.buildings[buildingIndex].hitPoints = state.buildings[buildingIndex].maxHitPoints
+            if let nodeID = state.buildings[buildingIndex].nodeID,
+               let resourceIndex = state.resources.firstIndex(where: { $0.id == nodeID }) {
+                state.resources[resourceIndex].claimedBy = state.buildings[buildingIndex].team
+            }
+            state.units[unitIndex].order = nil
+        }
     }
 
     private mutating func updateRepairOrder(unitIndex: Int, targetID: String, deltaTime: Double) {
@@ -758,6 +855,9 @@ public struct GameEngine: Sendable {
             if case let .guardTarget(targetID, _)? = state.units[unitIndex].order, destroyedIDs.contains(targetID) {
                 state.units[unitIndex].order = nil
             }
+            if case let .build(targetID)? = state.units[unitIndex].order, destroyedIDs.contains(targetID) {
+                state.units[unitIndex].order = nil
+            }
             if case let .repair(targetID)? = state.units[unitIndex].order, destroyedIDs.contains(targetID) {
                 state.units[unitIndex].order = nil
             }
@@ -899,6 +999,12 @@ public struct GameEngine: Sendable {
     private mutating func nextID(prefix: String) -> String {
         defer { state.nextEntityNumber += 1 }
         return "\(prefix)-\(state.nextEntityNumber)"
+    }
+
+    private func hasLivingExtractor(on nodeID: String) -> Bool {
+        state.buildings.contains {
+            $0.type == .extractor && $0.nodeID == nodeID && $0.hitPoints > 0
+        }
     }
 
     private func guardOffset(for unit: UnitSnapshot, around target: CombatTarget) -> WorldPoint {

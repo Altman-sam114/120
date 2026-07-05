@@ -29,6 +29,7 @@ final class GameController {
     var isAwaitingGuardTarget = false
     var isAwaitingRepairTarget = false
     var isAwaitingReclaimTarget = false
+    var isAwaitingBuildExtractorTarget = false
     var isAwaitingRallyTarget = false
     var isPaused = false
     var simulationSpeed = 1.0 {
@@ -124,6 +125,10 @@ final class GameController {
         selectedPlayerBuilder != nil
     }
 
+    var canIssueBuildExtractor: Bool {
+        selectedPlayerBuilder != nil
+    }
+
     var canIssueStop: Bool {
         selectedPlayerUnit != nil
     }
@@ -160,6 +165,10 @@ final class GameController {
         isAwaitingReclaimTarget ? "Cancel" : "Reclaim"
     }
 
+    var buildExtractorCommandButtonTitle: String {
+        isAwaitingBuildExtractorTarget ? "Cancel" : "Extractor"
+    }
+
     var rallyCommandButtonTitle: String {
         isAwaitingRallyTarget ? "Cancel" : "Rally"
     }
@@ -172,6 +181,7 @@ final class GameController {
             isAwaitingGuardTarget ||
             isAwaitingRepairTarget ||
             isAwaitingReclaimTarget ||
+            isAwaitingBuildExtractorTarget ||
             isAwaitingRallyTarget
     }
 
@@ -247,6 +257,16 @@ final class GameController {
             }
             isAwaitingReclaimTarget = false
             commandStatus = statusText(forReclaim: result)
+        } else if isAwaitingBuildExtractorTarget {
+            let resource = engine.state.resourceTarget(at: point)
+            let result: UnitCommandResult
+            if let resource {
+                result = engine.issueBuildExtractor(on: resource.id)
+            } else {
+                result = .invalidBuildTarget
+            }
+            isAwaitingBuildExtractorTarget = false
+            commandStatus = statusText(forBuildExtractor: result)
         } else if isAwaitingAttackTarget {
             let target = engine.state.selectionTarget(at: point, includeEnemies: true)
             let result: UnitCommandResult
@@ -348,6 +368,18 @@ final class GameController {
             clearPendingTargetCommands()
             isAwaitingReclaimTarget = true
             commandStatus = "Reclaim target"
+        }
+        renderRevision += 1
+    }
+
+    func toggleBuildExtractorCommand() {
+        if isAwaitingBuildExtractorTarget {
+            isAwaitingBuildExtractorTarget = false
+            commandStatus = nil
+        } else if canIssueBuildExtractor {
+            clearPendingTargetCommands()
+            isAwaitingBuildExtractorTarget = true
+            commandStatus = "Extractor resource"
         }
         renderRevision += 1
     }
@@ -481,6 +513,7 @@ final class GameController {
         isAwaitingGuardTarget = false
         isAwaitingRepairTarget = false
         isAwaitingReclaimTarget = false
+        isAwaitingBuildExtractorTarget = false
         isAwaitingRallyTarget = false
     }
 
@@ -520,6 +553,8 @@ final class GameController {
             return "Player attacker required"
         case .selectedEntityCannotStop:
             return "Player unit required"
+        case .selectedEntityCannotBuild:
+            return "Builder required"
         case .selectedEntityCannotRepair:
             return "Builder required"
         case .selectedEntityCannotReclaim:
@@ -528,10 +563,16 @@ final class GameController {
             return "Enemy target required"
         case .invalidGuardTarget:
             return "Friendly target required"
+        case .invalidBuildTarget:
+            return "Resource node required"
         case .invalidRepairTarget:
             return "Damaged friendly target required"
         case .invalidReclaimTarget:
             return "Wreck target required"
+        case .insufficientMetal:
+            return "Need more metal"
+        case .occupiedResourceNode:
+            return "Resource node occupied"
         }
     }
 
@@ -541,11 +582,11 @@ final class GameController {
             return "Attack order issued"
         case .noSelection:
             return "No unit selected"
-        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
             return "Player attacker required"
         case .invalidAttackTarget:
             return "Enemy target required"
-        case .invalidGuardTarget, .invalidRepairTarget, .invalidReclaimTarget:
+        case .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
             return "Enemy target required"
         }
     }
@@ -556,11 +597,11 @@ final class GameController {
             return "Attack-move order issued"
         case .noSelection:
             return "No unit selected"
-        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
             return "Player unit required"
         case .invalidAttackTarget:
             return "No target required"
-        case .invalidGuardTarget, .invalidRepairTarget, .invalidReclaimTarget:
+        case .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
             return "No target required"
         }
     }
@@ -571,11 +612,11 @@ final class GameController {
             return "Patrol route set"
         case .noSelection:
             return "No unit selected"
-        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
             return "Player unit required"
         case .invalidAttackTarget:
             return "No target required"
-        case .invalidGuardTarget, .invalidRepairTarget, .invalidReclaimTarget:
+        case .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
             return "No target required"
         }
     }
@@ -586,11 +627,11 @@ final class GameController {
             return "Guard order issued"
         case .noSelection:
             return "No unit selected"
-        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
             return "Player unit required"
         case .invalidAttackTarget:
             return "Friendly target required"
-        case .invalidGuardTarget, .invalidRepairTarget, .invalidReclaimTarget:
+        case .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
             return "Friendly target required"
         }
     }
@@ -601,9 +642,9 @@ final class GameController {
             return "Repair order issued"
         case .noSelection:
             return "No builder selected"
-        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
             return "Builder required"
-        case .invalidAttackTarget, .invalidGuardTarget, .invalidRepairTarget, .invalidReclaimTarget:
+        case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
             return "Damaged friendly target required"
         }
     }
@@ -614,10 +655,27 @@ final class GameController {
             return "Reclaim order issued"
         case .noSelection:
             return "No builder selected"
-        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
             return "Builder required"
-        case .invalidAttackTarget, .invalidGuardTarget, .invalidRepairTarget, .invalidReclaimTarget:
+        case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
             return "Wreck target required"
+        }
+    }
+
+    private func statusText(forBuildExtractor result: UnitCommandResult) -> String? {
+        switch result {
+        case .issued:
+            return "Extractor build started"
+        case .noSelection:
+            return "No builder selected"
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
+            return "Builder required"
+        case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget:
+            return "Resource node required"
+        case .insufficientMetal:
+            return "Need more metal"
+        case .occupiedResourceNode:
+            return "Resource node occupied"
         }
     }
 
@@ -627,11 +685,11 @@ final class GameController {
             return "Stop order issued"
         case .noSelection:
             return "No unit selected"
-        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
             return "Player unit required"
         case .invalidAttackTarget:
             return "No active target"
-        case .invalidGuardTarget, .invalidRepairTarget, .invalidReclaimTarget:
+        case .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
             return "No active target"
         }
     }

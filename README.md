@@ -14,8 +14,8 @@
 
 当前 iOS 版本是迁移地基，不是完整玩法 parity。它新增：
 
-- `swift/RustwarCore/`：无第三方依赖的 Swift core package，包含地图常量、三张地图初始布局、单位/建筑/资源/残骸模型、地形网格、初始状态、收入/人口计算、命中选择、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Stop 命令、基础攻击命令、伤害/死亡残骸清理、工厂生产队列 MVP、生产取消/退款、工厂集结点设置、红方生产/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
-- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位、战斗残骸和 HUD；支持 Coast / Islands / Lava 地图切换、重开当前地图、tap 选择、拖拽平移、捏合缩放、右下战术小地图点按居中、Pause/Play 和 0.5x / 1x / 2x 速度切换，选中己方单位后可用 Move 下达单单位移动命令、用 Attack Move 指定行军攻击目的地、用 Patrol 设置当前位置和端点之间的往返巡逻、用 Guard 点选友方单位或建筑进行护航、选中己方 Builder 时可用 Repair 点选受损友方单位或建筑进行维修、用 Reclaim 点选残骸持续回收金属、用 Attack 点选敌方单位或建筑并显示血条/攻击目标、用 Stop 清除当前移动、攻击移动、巡逻、护航、维修、回收或攻击命令，选中己方陆军工厂后可生产 Scout / Light Tank、取消队尾生产并按未完成进度退款，并用 Rally 改变后续出兵集结点；Save / Load 可用本机单槽存档保存和恢复当前原生对局、相机、地图、暂停和速度；红方会从现有陆军工厂排队造兵并主动攻击玩家目标，并通过简单 economy tick 推进金属收入、生产进度和基础战斗。
+- `swift/RustwarCore/`：无第三方依赖的 Swift core package，包含地图常量、三张地图初始布局、单位/建筑/资源/残骸模型、地形网格、初始状态、收入/人口计算、命中选择、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Stop 命令、基础攻击命令、伤害/死亡残骸清理、工厂生产队列 MVP、生产取消/退款、工厂集结点设置、红方生产/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
+- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位、战斗残骸和 HUD；支持 Coast / Islands / Lava 地图切换、重开当前地图、tap 选择、拖拽平移、捏合缩放、右下战术小地图点按居中、Pause/Play 和 0.5x / 1x / 2x 速度切换，选中己方单位后可用 Move 下达单单位移动命令、用 Attack Move 指定行军攻击目的地、用 Patrol 设置当前位置和端点之间的往返巡逻、用 Guard 点选友方单位或建筑进行护航、选中己方 Builder 时可用 Repair 点选受损友方单位或建筑进行维修、用 Reclaim 点选残骸持续回收金属、用 Build Extractor 点选空闲资源点扣金属并建造未完成采集器、用 Attack 点选敌方单位或建筑并显示血条/攻击目标、用 Stop 清除当前移动、攻击移动、巡逻、护航、维修、回收、建造或攻击命令，选中己方陆军工厂后可生产 Scout / Light Tank、取消队尾生产并按未完成进度退款，并用 Rally 改变后续出兵集结点；Save / Load 可用本机单槽存档保存和恢复当前原生对局、相机、地图、暂停和速度；红方会从现有陆军工厂排队造兵并主动攻击玩家目标，并通过简单 economy tick 推进金属收入、生产进度和基础战斗。
 
 本机验证命令：
 
@@ -87,7 +87,7 @@ xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -dest
 
 ### 原生 iOS 迁移地基
 
-- Tap：选择单位或建筑；Move、Attack Move 和 Patrol 模式下作为目的地；Guard 模式下作为友方护航目标点选；Repair 模式下作为受损友方维修目标点选；Attack 模式下作为敌方目标点选。
+- Tap：选择单位或建筑；Move、Attack Move 和 Patrol 模式下作为目的地；Guard 模式下作为友方护航目标点选；Repair 模式下作为受损友方维修目标点选；Reclaim 模式下作为残骸目标点选；Build Extractor 模式下作为资源点目标点选；Attack 模式下作为敌方目标点选。
 - 拖拽：平移战场视角。
 - 捏合：缩放战场视角。
 - Move：选中己方单位时显示；点按后进入移动落点模式，再 tap 战场下达单单位移动命令。
@@ -96,8 +96,9 @@ xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -dest
 - Guard：选中己方单位时显示；点按后进入护航目标模式，再 tap 友方单位或建筑下达单单位护航命令；单位会保持目标附近的稳定偏移，在自身视野或被护航目标附近发现敌人时临时攻击，然后继续护航。
 - Repair：选中己方 Builder 时显示；点按后进入维修目标模式，再 tap 受损友方单位或建筑下达单单位维修命令；Builder 会靠近目标并每秒恢复 18 HP，不消耗金属，满血或目标消失后清除命令。
 - Reclaim：选中己方 Builder 时显示；点按后进入回收目标模式，再 tap 战场残骸下达单单位回收命令；Builder 会靠近残骸并把剩余残骸金属持续转入己方金属，残骸耗尽、过期或消失后清除命令。
+- Build Extractor：选中己方 Builder 时显示；点按后进入资源点目标模式，再 tap 空闲资源点扣除 260 金属并创建未完成 Extractor；Builder 会靠近并推进建造，完成后该资源点开始增加收入。
 - Attack：选中己方单位时显示；点按后进入攻击目标模式，再 tap 敌方单位或建筑下达攻击命令，单位会靠近射程、造成伤害并移除被摧毁目标。
-- Stop：选中己方单位时显示；点按后清除该单位当前移动、攻击移动、巡逻、护航、维修、回收或攻击命令，并取消正在等待落点/目标的 Move、Attack Move、Patrol、Guard、Repair、Reclaim 或 Attack 模式。
+- Stop：选中己方单位时显示；点按后清除该单位当前移动、攻击移动、巡逻、护航、维修、回收、建造或攻击命令，并取消正在等待落点/目标的 Move、Attack Move、Patrol、Guard、Repair、Reclaim、Build Extractor 或 Attack 模式。
 - Scout / Light Tank：选中己方陆军工厂时显示；点按后扣除金属并加入生产队列，完成后在工厂集结点生成单位。
 - Cancel Production：选中己方陆军工厂且队列不为空时显示；点按后取消队尾生产项，并按未完成进度返还金属。
 - Rally：选中己方陆军工厂时显示；点按后进入集结点模式，再 tap 主战场设置新集结点，后续完成生产的单位会在该点生成；选中工厂时战场会显示集结线和标记。
