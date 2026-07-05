@@ -1467,6 +1467,61 @@ import Testing
     #expect(engine.state.buildings.first?.weaponCooldown == 0)
 }
 
+@Test func turretDamagesEnemyBuildingInRangeAndUsesCooldown() throws {
+    let turretPosition = WorldPoint(1_200, 1_200)
+    var state = isolatedTurretState(turretPosition: turretPosition, targetPosition: WorldPoint(1_620, 1_200))
+    state.units = []
+    let targetDefinition = GameDefinitions.building(.landFactory)
+    state.buildings.append(
+        BuildingSnapshot(
+            id: "building-target",
+            type: .landFactory,
+            team: .player,
+            position: WorldPoint(1_330, 1_200),
+            hitPoints: targetDefinition.hitPoints,
+            maxHitPoints: targetDefinition.hitPoints,
+            rally: WorldPoint(1_330, 1_200)
+        )
+    )
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    engine.update(deltaTime: 1)
+
+    let targetAfterFirstShot = try #require(engine.state.buildings.first { $0.id == "building-target" })
+    #expect(targetAfterFirstShot.hitPoints == targetDefinition.hitPoints - GameDefinitions.building(.turret).damage)
+
+    engine.update(deltaTime: 1)
+    let targetDuringCooldown = try #require(engine.state.buildings.first { $0.id == "building-target" })
+    #expect(targetDuringCooldown.hitPoints == targetAfterFirstShot.hitPoints)
+}
+
+@Test func turretChoosesNearestTargetAcrossUnitsAndBuildings() throws {
+    let turretPosition = WorldPoint(1_200, 1_200)
+    var state = isolatedTurretState(turretPosition: turretPosition, targetPosition: WorldPoint(1_330, 1_200))
+    let unitID = try #require(state.units.first?.id)
+    let unitStartingHitPoints = try #require(state.units.first?.hitPoints)
+    let targetDefinition = GameDefinitions.building(.landFactory)
+    state.buildings.append(
+        BuildingSnapshot(
+            id: "building-target",
+            type: .landFactory,
+            team: .player,
+            position: WorldPoint(1_250, 1_200),
+            hitPoints: targetDefinition.hitPoints,
+            maxHitPoints: targetDefinition.hitPoints,
+            rally: WorldPoint(1_250, 1_200)
+        )
+    )
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    engine.update(deltaTime: 1)
+
+    let targetBuilding = try #require(engine.state.buildings.first { $0.id == "building-target" })
+    let targetUnit = try #require(engine.state.units.first { $0.id == unitID })
+    #expect(targetBuilding.hitPoints == targetDefinition.hitPoints - GameDefinitions.building(.turret).damage)
+    #expect(targetUnit.hitPoints == unitStartingHitPoints)
+}
+
 @Test func incompleteDestroyedAndNonCombatBuildingsDoNotFire() throws {
     let turretPosition = WorldPoint(1_200, 1_200)
     let targetPosition = WorldPoint(1_330, 1_200)
@@ -1515,6 +1570,33 @@ import Testing
     let wreck = try #require(engine.state.wrecks.first)
     #expect(wreck.team == .player)
     #expect(wreck.position == WorldPoint(1_330, 1_200))
+}
+
+@Test func turretDestroysBuildingAndCreatesWreck() throws {
+    let turretPosition = WorldPoint(1_200, 1_200)
+    var state = isolatedTurretState(turretPosition: turretPosition, targetPosition: WorldPoint(1_620, 1_200))
+    state.units = []
+    let targetDefinition = GameDefinitions.building(.landFactory)
+    state.buildings.append(
+        BuildingSnapshot(
+            id: "building-target",
+            type: .landFactory,
+            team: .player,
+            position: WorldPoint(1_330, 1_200),
+            hitPoints: 12,
+            maxHitPoints: targetDefinition.hitPoints,
+            rally: WorldPoint(1_330, 1_200)
+        )
+    )
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    engine.update(deltaTime: 1)
+
+    #expect(!engine.state.buildings.contains { $0.id == "building-target" })
+    let wreck = try #require(engine.state.wrecks.first)
+    #expect(wreck.team == .player)
+    #expect(wreck.position == WorldPoint(1_330, 1_200))
+    #expect(wreck.metal == 149)
 }
 
 @Test func gameStateJSONRoundTripPreservesBuildingWeaponCooldown() throws {

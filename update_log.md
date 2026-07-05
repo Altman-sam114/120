@@ -14,7 +14,7 @@
 - 项目形态：完整可玩的 Web Canvas RTS 原型 + v1.0 起新增的原生 Swift/iOS 迁移地基。
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
-- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、资源点命中、残骸模型、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂集结点设置、基础攻击、炮塔自动防御开火、伤害/死亡残骸清理、红方生产/扩张/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
+- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、资源点命中、残骸模型、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂集结点设置、基础攻击、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方生产/扩张/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
 - iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Repair 按钮、Reclaim 按钮、Build Extractor 按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
@@ -989,3 +989,34 @@
 遗留事项：
 
 - v1.23 只提升等待命令的可见性和可访问性；仍无小地图放大镜、目标吸附、二次确认、多单位命令、队形命令或完整 Web 迷你地图上下文命令 parity。实体图标较小导致的精确点选风险仍存在，但玩家现在能在下令前确认当前小地图命令模式。
+
+### v1.24 / iOS native turret building targets
+
+日期：2026-07-05
+
+核心变更：
+
+- `GameEngine.nearestBuildingWeaponTarget(for:definition:)` 从只扫描敌方单位扩展为扫描敌方单位和敌方建筑，并继续按射程内最近目标开火。
+- Turret 对建筑目标复用现有 `applyDamage`、建筑摧毁清理、残骸生成和资源点释放流程；本轮不新增炮弹实体、范围伤害或目标优先级矩阵。
+- `BattlefieldScene.nearestBuildingWeaponTargetPosition` 同步支持建筑目标，让炮塔冷却期间的淡红火力线能指向正在被攻击的敌方建筑。
+- Swift tests 增加炮塔伤害建筑、单位/建筑最近目标选择和摧毁建筑生成残骸覆盖。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.24-ios-turret-building-targets.md`
+- `update_log.md`
+
+验证结果：
+
+- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+
+遗留事项：
+
+- v1.24 只补 Turret 对建筑目标；仍无炮弹实体、范围伤害、防空、激光拦截、护盾、升级、目标优先级矩阵、炮塔攻击地形目标或完整 Web 防御系统 parity。

@@ -485,6 +485,28 @@ public struct GameEngine: Sendable {
             }
         }
 
+        for targetBuilding in state.buildings {
+            guard targetBuilding.team != building.team, targetBuilding.hitPoints > 0 else {
+                continue
+            }
+            let buildingDefinition = GameDefinitions.building(targetBuilding.type)
+            let target = CombatTarget(
+                id: targetBuilding.id,
+                team: targetBuilding.team,
+                position: targetBuilding.position,
+                radius: buildingDefinition.size / 2
+            )
+            let distance = building.position.distanceSquared(to: target.position)
+            let effectiveRange = definition.attackRange + target.radius
+            guard distance <= effectiveRange * effectiveRange else {
+                continue
+            }
+            if distance < bestDistance {
+                bestTarget = target
+                bestDistance = distance
+            }
+        }
+
         return bestTarget
     }
 

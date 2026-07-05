@@ -89,7 +89,7 @@ flowchart TD
   MP --> E
   C --> SL["UserDefaults Save / Load<br/>中文注释：JSON 保存 GameState、CameraState、地图、暂停、速度和 AI 开关，读取后刷新原生状态"]
   SL --> E
-  E --> TF["Turret Fire<br/>中文注释：完成状态炮塔自动攻击射程内敌方单位并进入冷却"]
+  E --> TF["Turret Fire<br/>中文注释：完成状态炮塔自动攻击射程内敌方单位或建筑并进入冷却"]
   TF --> E
   E --> AI["Enemy AI<br/>中文注释：红方 Builder 扩张资源点，红方工厂排队造兵，空闲战斗单位获得攻击玩家目标的订单"]
   AI --> E

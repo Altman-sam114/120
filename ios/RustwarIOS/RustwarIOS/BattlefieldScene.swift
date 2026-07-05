@@ -548,6 +548,22 @@ final class BattlefieldScene: SKScene {
             }
         }
 
+        for targetBuilding in state.buildings {
+            guard targetBuilding.team != building.team, targetBuilding.hitPoints > 0 else {
+                continue
+            }
+            let targetDefinition = GameDefinitions.building(targetBuilding.type)
+            let effectiveRange = definition.attackRange + targetDefinition.size / 2
+            let distance = building.position.distanceSquared(to: targetBuilding.position)
+            guard distance <= effectiveRange * effectiveRange else {
+                continue
+            }
+            if distance < bestDistance {
+                bestPosition = targetBuilding.position
+                bestDistance = distance
+            }
+        }
+
         return bestPosition
     }
 
