@@ -40,18 +40,18 @@ struct TacticalMapView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Tactical map")
-        .accessibilityHint("Centers the battlefield camera on the selected map position.")
+        .accessibilityHint("Centers the battlefield camera, or issues the pending point command.")
         .accessibilityAddTraits(.isButton)
     }
 
     private func mapGesture(in size: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .local)
             .onEnded { value in
-                centerCamera(at: value.location, in: size)
+                handleTap(at: value.location, in: size)
             }
     }
 
-    private func centerCamera(at location: CGPoint, in size: CGSize) {
+    private func handleTap(at location: CGPoint, in size: CGSize) {
         guard size.width > 0, size.height > 0 else {
             return
         }
@@ -62,7 +62,7 @@ struct TacticalMapView: View {
             Double(clampedX / size.width) * GameConstants.mapWidth,
             Double(clampedY / size.height) * GameConstants.mapHeight
         )
-        controller.centerCamera(on: worldPoint)
+        controller.handleTacticalMapTap(at: worldPoint)
     }
 
     private static func drawMap(

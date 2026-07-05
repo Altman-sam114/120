@@ -215,19 +215,11 @@ final class GameController {
 
     func handleBattlefieldTap(screenPoint: CGPoint, viewportSize: CGSize) {
         let point = camera.worldPoint(for: screenPoint, viewportSize: viewportSize)
-        if isAwaitingMoveTarget {
-            let result = engine.issueMove(to: point)
-            isAwaitingMoveTarget = false
-            commandStatus = statusText(for: result)
-        } else if isAwaitingAttackMoveTarget {
-            let result = engine.issueAttackMove(to: point)
-            isAwaitingAttackMoveTarget = false
-            commandStatus = statusText(forAttackMove: result)
-        } else if isAwaitingPatrolTarget {
-            let result = engine.issuePatrol(to: point)
-            isAwaitingPatrolTarget = false
-            commandStatus = statusText(forPatrol: result)
-        } else if isAwaitingGuardTarget {
+        if handlePointCommand(at: point) {
+            return
+        }
+
+        if isAwaitingGuardTarget {
             let target = engine.state.selectionTarget(at: point, includeEnemies: true)
             let result: UnitCommandResult
             if let target {
@@ -277,15 +269,18 @@ final class GameController {
             }
             isAwaitingAttackTarget = false
             commandStatus = statusText(forAttack: result)
-        } else if isAwaitingRallyTarget {
-            let result = engine.setRally(to: point)
-            isAwaitingRallyTarget = false
-            commandStatus = statusText(forRally: result)
         } else {
             engine.select(at: point, includeEnemies: true)
             commandStatus = nil
         }
         renderRevision += 1
+    }
+
+    func handleTacticalMapTap(at point: WorldPoint) {
+        if handlePointCommand(at: point) {
+            return
+        }
+        centerCamera(on: point)
     }
 
     func toggleMoveCommand() {
@@ -515,6 +510,30 @@ final class GameController {
         isAwaitingReclaimTarget = false
         isAwaitingBuildExtractorTarget = false
         isAwaitingRallyTarget = false
+    }
+
+    private func handlePointCommand(at point: WorldPoint) -> Bool {
+        if isAwaitingMoveTarget {
+            let result = engine.issueMove(to: point)
+            isAwaitingMoveTarget = false
+            commandStatus = statusText(for: result)
+        } else if isAwaitingAttackMoveTarget {
+            let result = engine.issueAttackMove(to: point)
+            isAwaitingAttackMoveTarget = false
+            commandStatus = statusText(forAttackMove: result)
+        } else if isAwaitingPatrolTarget {
+            let result = engine.issuePatrol(to: point)
+            isAwaitingPatrolTarget = false
+            commandStatus = statusText(forPatrol: result)
+        } else if isAwaitingRallyTarget {
+            let result = engine.setRally(to: point)
+            isAwaitingRallyTarget = false
+            commandStatus = statusText(forRally: result)
+        } else {
+            return false
+        }
+        renderRevision += 1
+        return true
     }
 
     private var selectedPlayerUnit: UnitSnapshot? {
