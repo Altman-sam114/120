@@ -19,7 +19,7 @@
 
 v0.5 起，文档体系支持未来 Agent X 主控循环。Agent X 不直接替代 A/B/C，而是在人工用 `agentx:` / `x:` / `X:` 给出总目标后，把总目标拆成多个小轮次，每轮仍必须走 Agent A -> Agent B -> Agent C，并在 Agent C artifact 验收后判断继续、退回、暂停或完成。本轮只建立文档基线，不自动启动真实 Agent X 循环。
 
-v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制、v1.6 新增的原生三地图切换和当前地图重开、v1.7 新增的原生战术小地图点按居中、v1.8 新增的原生 Stop 命令、v1.9 新增的原生工厂集结点命令、v1.10 新增的原生生产取消/退款命令、v1.11 新增的原生单槽 Save/Load MVP、v1.12 新增的原生单单位 Attack-Move 命令地基、v1.13 新增的原生单单位 Patrol 命令地基、v1.14 新增的原生单单位 Guard 命令地基、v1.15 新增的原生单 Builder Repair 命令地基、v1.16 新增的原生单 Builder Reclaim 残骸回收地基、v1.17 新增的原生单 Builder 在资源点建造 Extractor 地基、v1.18 新增的红方 Builder 自动扩张建造 Extractor MVP、v1.19 新增的原生 Turret 自动防御开火 MVP、v1.20 新增的战术小地图点位命令入口、v1.21 新增的战术小地图 Builder 目标命令入口、v1.22 新增的战术小地图实体目标命令入口、v1.23 新增的战术小地图等待命令反馈，以及 v1.24 新增的 Turret 攻击建筑目标。
+v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制、v1.6 新增的原生三地图切换和当前地图重开、v1.7 新增的原生战术小地图点按居中、v1.8 新增的原生 Stop 命令、v1.9 新增的原生工厂集结点命令、v1.10 新增的原生生产取消/退款命令、v1.11 新增的原生单槽 Save/Load MVP、v1.12 新增的原生单单位 Attack-Move 命令地基、v1.13 新增的原生单单位 Patrol 命令地基、v1.14 新增的原生单单位 Guard 命令地基、v1.15 新增的原生单 Builder Repair 命令地基、v1.16 新增的原生单 Builder Reclaim 残骸回收地基、v1.17 新增的原生单 Builder 在资源点建造 Extractor 地基、v1.18 新增的红方 Builder 自动扩张建造 Extractor MVP、v1.19 新增的原生 Turret 自动防御开火 MVP、v1.20 新增的战术小地图点位命令入口、v1.21 新增的战术小地图 Builder 目标命令入口、v1.22 新增的战术小地图实体目标命令入口、v1.23 新增的战术小地图等待命令反馈、v1.24 新增的 Turret 攻击建筑目标，以及 v1.25 新增的工厂重复生产开关。
 
 ```text
 RustwarCore MapPreset / GameState / GameEngine
@@ -27,7 +27,7 @@ RustwarCore MapPreset / GameState / GameEngine
   -> SwiftUI RootGameView / GameHUDView / TacticalMapView
   -> SpriteKit BattlefieldScene 渲染地形、资源、单位和建筑
   -> SpatialTapGesture / DragGesture / MagnifyGesture / TacticalMap drag-tap
-  -> CameraState / UserDefaults save payload / pause-speed gate / TacticalMap point commands and pending feedback / GameEngine.select / GameEngine.issueMove / GameEngine.issueAttackMove / GameEngine.issuePatrol / GameEngine.issueGuard / GameEngine.issueRepair / GameEngine.issueReclaim / GameEngine.issueBuildExtractor / GameEngine.issueStop / GameEngine.issueAttack / GameEngine.queueUnit / GameEngine.cancelLastProduction / GameEngine.setRally / GameEngine.update / GameEngine(state:)
+  -> CameraState / UserDefaults save payload / pause-speed gate / TacticalMap point commands and pending feedback / GameEngine.select / GameEngine.issueMove / GameEngine.issueAttackMove / GameEngine.issuePatrol / GameEngine.issueGuard / GameEngine.issueRepair / GameEngine.issueReclaim / GameEngine.issueBuildExtractor / GameEngine.issueStop / GameEngine.issueAttack / GameEngine.queueUnit / GameEngine.cancelLastProduction / GameEngine.setRepeatProduction / GameEngine.setRally / GameEngine.update / GameEngine(state:)
   -> GameEngine turret defensive fire targets units/buildings and enemy AI expands resource nodes, queues production and attack orders
 ```
 
@@ -342,9 +342,9 @@ RustwarCore MapPreset / GameState / GameEngine
 职责：
 
 - 保存 iOS 迁移使用的共享 Swift 数据模型和小步确定性逻辑。
-- 定义 `MapPreset`、`TerrainGrid`、`ResourceNode`、`UnitSnapshot`、`UnitOrder`、`BuildingSnapshot`、`WreckSnapshot`、`ProductionQueueItem`、`GameState`、`GameEngine`。
+- 定义 `MapPreset`、`TerrainGrid`、`ResourceNode`、`UnitSnapshot`、`UnitOrder`、`BuildingSnapshot`、`WreckSnapshot`、`ProductionQueueItem`、`ProductionRepeatResult`、`GameState`、`GameEngine`。
 - 初始化三张 Web 地图对应的基础首屏布局。
-- 计算收入、人口、简单 tick、实体/残骸/资源点命中选择、己方单单位移动、己方单单位 Attack-Move、己方单单位 Patrol、己方单单位 Guard、己方单 Builder Repair、己方单 Builder Reclaim、己方单 Builder 建造 Extractor、己方 Stop、己方单单位攻击、炮塔自动防御开火、基础伤害/死亡残骸清理、陆军工厂生产队列、生产取消/退款、己方工厂集结点设置、红方最小生产/扩张/进攻 AI，以及从已保存 `GameState` 恢复 `GameEngine`。
+- 计算收入、人口、简单 tick、实体/残骸/资源点命中选择、己方单单位移动、己方单单位 Attack-Move、己方单单位 Patrol、己方单单位 Guard、己方单 Builder Repair、己方单 Builder Reclaim、己方单 Builder 建造 Extractor、己方 Stop、己方单单位攻击、炮塔自动防御开火、基础伤害/死亡残骸清理、陆军工厂生产队列、生产取消/退款、重复生产、己方工厂集结点设置、红方最小生产/扩张/进攻 AI，以及从已保存 `GameState` 恢复 `GameEngine`。
 
 输入：
 
@@ -392,6 +392,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v1.21 起，战术小地图在 Reclaim / Build Extractor 等待态下会调用现有 `GameState.wreckTarget(at:)` / `resourceTarget(at:)` 命中残骸或资源点，并复用 `issueReclaim` / `issueBuildExtractor` 下达 Builder 命令；当时 Attack / Guard / Repair 这类需要精确单位或建筑实体命中的命令仍不由小地图处理，后续 v1.22 已补齐最小入口。
 - v1.22 起，战术小地图在 Attack / Guard / Repair 等待态下会调用现有 `GameState.selectionTarget(at:includeEnemies:)` 命中单位或建筑，并复用 `issueAttack` / `issueGuard` / `issueRepair` 的目标合法性校验；未命中或目标非法时沿用主战场相同状态文案。
 - v1.23 起，`GameController` 暴露战术小地图 pending 命令的只读派生标签、符号、系统图标和 accessibility 文案；`TacticalMapView` 在等待命令时显示短标签、角标和高亮边框，并把同一语义写入 VoiceOver value/hint。该反馈只反映现有等待态，不改变 core 命中半径、命令优先级或目标合法性。
+- v1.25 起，`BuildingSnapshot.repeatUnitType` 保存生产建筑重复生产目标，缺失旧 JSON 字段时默认 `nil`。选中己方生产建筑时 HUD 显示 Repeat 循环按钮，点按会调用 `GameEngine.setRepeatProduction(_:)` 在 Off / Scout / Light Tank 间切换；`RustwarCore` 在生产完成且队列清空后复用 `enqueueUnit` 自动尝试续造，资源或人口不足时保留 repeat 目标且不追加队列。Repeat 不是待选目标命令，不由 Stop 清除。
 
 输入：
 
@@ -494,7 +495,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 文档-only：本地至少 `git diff --check`，再通过 `main` push 触发 CI artifact。
 - 改 `.github/workflows/ci-results.yml`：本地 YAML 解析检查 + `git diff --check`，再通过云端 workflow 自检 artifact。
 - 改 `app.js` 语法或逻辑：本地至少 `node --check app.js` 和 `git diff --check`，CI 重跑同类检查。
-- 改 `swift/RustwarCore/`：本地尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 阻塞，至少尝试 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 并记录工具链错误；当前 Swift tests 覆盖初始化、经济 tick、选择、移动、Attack-Move、Patrol、Guard、Repair、Reclaim、Build Extractor、Stop、生产、生产取消/退款、工厂集结点、基础攻击/炮塔防御开火/死亡残骸清理、红方生产/扩张/进攻 AI、`GameState` JSON 往返和恢复后继续模拟。
+- 改 `swift/RustwarCore/`：本地尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 阻塞，至少尝试 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 并记录工具链错误；当前 Swift tests 覆盖初始化、经济 tick、选择、移动、Attack-Move、Patrol、Guard、Repair、Reclaim、Build Extractor、Stop、生产、生产取消/退款、重复生产、工厂集结点、基础攻击/炮塔防御开火/死亡残骸清理、红方生产/扩张/进攻 AI、`GameState` JSON 往返和恢复后继续模拟。
 - 改 `ios/RustwarIOS/`：本地尽量跑 `xcodebuild -list` 和 iOS build；若只有 Command Line Tools 或 Swift/SDK 不匹配，记录阻塞并由云端 macOS artifact 复验；涉及战术小地图时还要确认新 Swift 文件已加入 Xcode target。
 - 改 HTML id 或 UI 引用：云端轻量检查之外，若人工要求则做 Smoke 浏览器验证。
 - 改输入/命令：人工要求本机回归时验证主地图、迷你地图、Shift 追加、Esc 取消。

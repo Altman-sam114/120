@@ -14,8 +14,8 @@
 - 项目形态：完整可玩的 Web Canvas RTS 原型 + v1.0 起新增的原生 Swift/iOS 迁移地基。
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
-- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、资源点命中、残骸模型、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂集结点设置、基础攻击、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方生产/扩张/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Repair 按钮、Reclaim 按钮、Build Extractor 按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
+- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、资源点命中、残骸模型、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂重复生产开关、工厂集结点设置、基础攻击、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方生产/扩张/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Repair 按钮、Reclaim 按钮、Build Extractor 按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -1020,3 +1020,38 @@
 遗留事项：
 
 - v1.24 只补 Turret 对建筑目标；仍无炮弹实体、范围伤害、防空、激光拦截、护盾、升级、目标优先级矩阵、炮塔攻击地形目标或完整 Web 防御系统 parity。
+
+### v1.25 / iOS native factory repeat production
+
+日期：2026-07-05
+
+核心变更：
+
+- `BuildingSnapshot` 新增 `repeatUnitType`，用于保存当前工厂重复生产目标，并通过旧 JSON 缺失字段默认 `nil` 保持存档兼容。
+- 新增 `ProductionRepeatResult` 和 `GameEngine.setRepeatProduction(_:)`，只允许当前选中的己方生产建筑设置或清除其可生产单位的 repeat 目标。
+- `GameEngine.updateProduction` 在生产完成且队列清空后，会对玩家工厂复用现有 `enqueueUnit` 自动尝试续造 repeat 单位；资源或人口不足时不追加队列、不扣负资源，并保留 repeat 目标。
+- iOS HUD 在选中己方陆军工厂时新增 Repeat 循环按钮，可在 Off / Scout / Light Tank 间切换，并提供文字状态、系统图标和 VoiceOver 当前值。
+- Swift tests 增加 repeat 状态 JSON 往返、旧 JSON 兼容、API 拒绝、设置/清除/覆盖、队列清空续造、多队列等待、资源/人口不足保留目标和取消生产不清 repeat 覆盖。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/BuildingSnapshot.swift`
+- `swift/RustwarCore/Sources/RustwarCore/ProductionRepeatResult.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.25-ios-factory-repeat-production.md`
+- `update_log.md`
+
+验证结果：
+
+- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+
+遗留事项：
+
+- v1.25 Repeat 只作用于当前选中的己方单个生产建筑；尚无多工厂生产面板、指定队列项取消、Shift 队列命令、自动暂停 repeat、红方 repeat 配置、生产优先级或完整 Web 生产 UI parity。

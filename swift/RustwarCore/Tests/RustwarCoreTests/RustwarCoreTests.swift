@@ -1629,6 +1629,36 @@ import Testing
     #expect(decoded.buildings.count == state.buildings.count)
 }
 
+@Test func gameStateJSONRoundTripPreservesBuildingRepeatProduction() throws {
+    var state = GameState(mapID: .coast)
+    let factoryIndex = try #require(state.buildings.firstIndex { $0.type == .landFactory && $0.team == .player })
+    state.buildings[factoryIndex].repeatUnitType = .scout
+
+    let encoded = try JSONEncoder().encode(state)
+    let decoded = try JSONDecoder().decode(GameState.self, from: encoded)
+
+    #expect(decoded == state)
+    #expect(decoded.buildings.first { $0.id == state.buildings[factoryIndex].id }?.repeatUnitType == .scout)
+}
+
+@Test func gameStateDecodesOldJSONWithoutBuildingRepeatProductionAsNil() throws {
+    let state = GameState(mapID: .coast)
+    let encoded = try JSONEncoder().encode(state)
+    var json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    var buildings = try #require(json["buildings"] as? [[String: Any]])
+    for index in buildings.indices {
+        buildings[index].removeValue(forKey: "repeatUnitType")
+    }
+    json["buildings"] = buildings
+    let legacyEncoded = try JSONSerialization.data(withJSONObject: json)
+
+    let decoded = try JSONDecoder().decode(GameState.self, from: legacyEncoded)
+
+    #expect(decoded.buildings.allSatisfy { $0.repeatUnitType == nil })
+    #expect(decoded.units.count == state.units.count)
+    #expect(decoded.buildings.count == state.buildings.count)
+}
+
 @Test func enemyAIQueuesProductionWithoutChangingPlayerSelection() throws {
     var engine = GameEngine(mapID: .coast)
 
@@ -1867,6 +1897,176 @@ import Testing
     #expect(unaffordable == .insufficientMetal)
 }
 
+@Test func repeatProductionRejectsMissingOrInvalidSelection() {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    #expect(engine.setRepeatProduction(.scout) == .noSelection)
+
+    _ = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    #expect(engine.setRepeatProduction(.scout) == .selectedBuildingCannotRepeatProduction)
+
+    _ = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    #expect(engine.setRepeatProduction(.scout) == .selectedBuildingCannotRepeatProduction)
+
+    _ = engine.select(at: WorldPoint(3_300, 735), includeEnemies: true)
+    #expect(engine.setRepeatProduction(.scout) == .selectedBuildingCannotRepeatProduction)
+
+    _ = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    #expect(engine.setRepeatProduction(.gunboat) == .unsupportedUnit)
+}
+
+@Test func repeatProductionSetsClearsAndOverwritesUnit() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let target = try #require(factoryTarget)
+
+    #expect(engine.setRepeatProduction(.scout) == .updated(repeatUnitType: .scout))
+    #expect(engine.state.buildings.first { $0.id == target.id }?.repeatUnitType == .scout)
+
+    #expect(engine.setRepeatProduction(.tank) == .updated(repeatUnitType: .tank))
+    #expect(engine.state.buildings.first { $0.id == target.id }?.repeatUnitType == .tank)
+
+    #expect(engine.setRepeatProduction(nil) == .updated(repeatUnitType: nil))
+    #expect(engine.state.buildings.first { $0.id == target.id }?.repeatUnitType == nil)
+}
+
+@Test func repeatProductionQueuesNextUnitWhenQueueDrains() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let target = try #require(factoryTarget)
+    #expect(engine.setRepeatProduction(.scout) == .updated(repeatUnitType: .scout))
+    #expect(engine.queueUnit(.scout) == .queued)
+
+    for _ in 0..<3 {
+        engine.update(deltaTime: 1)
+    }
+
+    let metalBeforeCompletion = engine.state.metal[.player, default: 0]
+    let income = engine.state.income(for: .player)
+    let unitCountBeforeCompletion = engine.state.units.count
+
+    engine.update(deltaTime: 1)
+
+    let factoryAfterCompletion = try #require(engine.state.buildings.first { $0.id == target.id })
+    let repeatedItem = try #require(factoryAfterCompletion.productionQueue.first)
+    #expect(factoryAfterCompletion.productionQueue.count == 1)
+    #expect(factoryAfterCompletion.repeatUnitType == .scout)
+    #expect(repeatedItem.unitType == .scout)
+    #expect(repeatedItem.progress == 0)
+    #expect(engine.state.units.count == unitCountBeforeCompletion + 1)
+    #expect(engine.state.metal[.player, default: 0] == metalBeforeCompletion + income - GameDefinitions.unit(.scout).metalCost)
+}
+
+@Test func repeatProductionWaitsForQueueToFullyDrain() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let target = try #require(factoryTarget)
+    #expect(engine.setRepeatProduction(.scout) == .updated(repeatUnitType: .scout))
+    #expect(engine.queueUnit(.scout) == .queued)
+    #expect(engine.queueUnit(.tank) == .queued)
+
+    for _ in 0..<4 {
+        engine.update(deltaTime: 1)
+    }
+
+    let factoryAfterScout = try #require(engine.state.buildings.first { $0.id == target.id })
+    #expect(factoryAfterScout.productionQueue.count == 1)
+    #expect(factoryAfterScout.productionQueue.first?.unitType == .tank)
+
+    for _ in 0..<6 {
+        engine.update(deltaTime: 1)
+    }
+
+    let factoryAfterTank = try #require(engine.state.buildings.first { $0.id == target.id })
+    #expect(factoryAfterTank.productionQueue.count == 1)
+    #expect(factoryAfterTank.productionQueue.first?.unitType == .scout)
+    #expect(factoryAfterTank.repeatUnitType == .scout)
+}
+
+@Test func repeatProductionKeepsTargetWhenResourcesAreInsufficient() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let target = try #require(factoryTarget)
+    #expect(engine.setRepeatProduction(.scout) == .updated(repeatUnitType: .scout))
+    #expect(engine.queueUnit(.scout) == .queued)
+
+    var state = engine.state
+    let factoryIndex = try #require(state.buildings.firstIndex { $0.id == target.id })
+    let buildTime = try #require(state.buildings[factoryIndex].productionQueue.first?.buildTime)
+    state.buildings[factoryIndex].productionQueue[0].progress = buildTime - 0.1
+    state.metal[.player] = 0
+
+    var constrainedEngine = GameEngine(state: state, enemyAIEnabled: false)
+    constrainedEngine.update(deltaTime: 1)
+
+    let factoryAfterCompletion = try #require(constrainedEngine.state.buildings.first { $0.id == target.id })
+    #expect(factoryAfterCompletion.productionQueue.isEmpty)
+    #expect(factoryAfterCompletion.repeatUnitType == .scout)
+    #expect(constrainedEngine.state.metal[.player, default: 0] < GameDefinitions.unit(.scout).metalCost)
+
+    for _ in 0..<6 {
+        constrainedEngine.update(deltaTime: 1)
+    }
+
+    let factoryAfterIncomeRecovery = try #require(constrainedEngine.state.buildings.first { $0.id == target.id })
+    #expect(factoryAfterIncomeRecovery.productionQueue.count == 1)
+    #expect(factoryAfterIncomeRecovery.productionQueue.first?.unitType == .scout)
+    #expect(factoryAfterIncomeRecovery.repeatUnitType == .scout)
+}
+
+@Test func repeatProductionKeepsTargetWhenSupplyIsInsufficient() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let target = try #require(factoryTarget)
+    #expect(engine.setRepeatProduction(.scout) == .updated(repeatUnitType: .scout))
+    #expect(engine.queueUnit(.scout) == .queued)
+
+    var state = engine.state
+    let factoryIndex = try #require(state.buildings.firstIndex { $0.id == target.id })
+    let buildTime = try #require(state.buildings[factoryIndex].productionQueue.first?.buildTime)
+    state.buildings[factoryIndex].productionQueue[0].progress = buildTime - 0.1
+    state.metal[.player] = 1_000
+
+    let supply = state.supply(for: .player)
+    let slotsToFill = max(0, supply.cap - supply.used - GameDefinitions.unit(.scout).supply)
+    for index in 0..<slotsToFill {
+        state.units.append(
+            UnitSnapshot(
+                id: "supply-fill-\(index)",
+                type: .scout,
+                team: .player,
+                position: WorldPoint(800 + Double(index), 2_000),
+                hitPoints: GameDefinitions.unit(.scout).hitPoints,
+                maxHitPoints: GameDefinitions.unit(.scout).hitPoints
+            )
+        )
+    }
+
+    var constrainedEngine = GameEngine(state: state, enemyAIEnabled: false)
+    constrainedEngine.update(deltaTime: 1)
+
+    let factoryAfterCompletion = try #require(constrainedEngine.state.buildings.first { $0.id == target.id })
+    #expect(factoryAfterCompletion.productionQueue.isEmpty)
+    #expect(factoryAfterCompletion.repeatUnitType == .scout)
+
+    var recoveredState = constrainedEngine.state
+    let fillerIndex = try #require(recoveredState.units.firstIndex { $0.id.hasPrefix("supply-fill-") })
+    recoveredState.units.remove(at: fillerIndex)
+
+    var recoveredEngine = GameEngine(state: recoveredState, enemyAIEnabled: false)
+    recoveredEngine.update(deltaTime: 1)
+
+    let factoryAfterSupplyRecovery = try #require(recoveredEngine.state.buildings.first { $0.id == target.id })
+    #expect(factoryAfterSupplyRecovery.productionQueue.count == 1)
+    #expect(factoryAfterSupplyRecovery.productionQueue.first?.unitType == .scout)
+    #expect(factoryAfterSupplyRecovery.repeatUnitType == .scout)
+}
+
 @Test func cancelProductionRejectsMissingOrInvalidSelection() {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
@@ -1957,6 +2157,22 @@ import Testing
     #expect(engine.queueUnit(.tank) == .insufficientSupply)
     #expect(engine.cancelLastProduction() == .cancelled(refundedMetal: GameDefinitions.unit(.tank).metalCost))
     #expect(engine.queueUnit(.tank) == .queued)
+}
+
+@Test func cancelProductionDoesNotClearRepeatProduction() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let target = try #require(factoryTarget)
+    #expect(engine.setRepeatProduction(.scout) == .updated(repeatUnitType: .scout))
+    #expect(engine.queueUnit(.scout) == .queued)
+
+    let result = engine.cancelLastProduction()
+
+    #expect(result.refundedMetal == GameDefinitions.unit(.scout).metalCost)
+    let factoryAfterCancel = try #require(engine.state.buildings.first { $0.id == target.id })
+    #expect(factoryAfterCancel.productionQueue.isEmpty)
+    #expect(factoryAfterCancel.repeatUnitType == .scout)
 }
 
 @Test func rallyCommandRejectsMissingOrInvalidSelection() {

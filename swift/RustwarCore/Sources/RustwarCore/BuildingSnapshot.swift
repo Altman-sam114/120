@@ -9,6 +9,7 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
     public var rally: WorldPoint
     public var nodeID: String?
     public var productionQueue: [ProductionQueueItem]
+    public var repeatUnitType: UnitType?
     public var weaponCooldown: Double
 
     private enum CodingKeys: String, CodingKey {
@@ -22,6 +23,7 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
         case rally
         case nodeID
         case productionQueue
+        case repeatUnitType
         case weaponCooldown
     }
 
@@ -36,6 +38,7 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
         rally: WorldPoint,
         nodeID: String? = nil,
         productionQueue: [ProductionQueueItem] = [],
+        repeatUnitType: UnitType? = nil,
         weaponCooldown: Double = 0
     ) {
         self.id = id
@@ -48,6 +51,7 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
         self.rally = rally
         self.nodeID = nodeID
         self.productionQueue = productionQueue
+        self.repeatUnitType = repeatUnitType
         self.weaponCooldown = weaponCooldown
     }
 
@@ -63,6 +67,7 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
         self.rally = try container.decode(WorldPoint.self, forKey: .rally)
         self.nodeID = try container.decodeIfPresent(String.self, forKey: .nodeID)
         self.productionQueue = try container.decodeIfPresent([ProductionQueueItem].self, forKey: .productionQueue) ?? []
+        self.repeatUnitType = try container.decodeIfPresent(UnitType.self, forKey: .repeatUnitType)
         self.weaponCooldown = try container.decodeIfPresent(Double.self, forKey: .weaponCooldown) ?? 0
     }
 }

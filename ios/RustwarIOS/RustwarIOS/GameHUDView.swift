@@ -199,6 +199,19 @@ struct GameHUDView: View {
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
                 }
+                if controller.canCycleRepeatProduction {
+                    Button(
+                        controller.repeatProductionButtonTitle,
+                        systemImage: controller.repeatProductionSystemImage,
+                        action: controller.cycleRepeatProduction
+                    )
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .accessibilityLabel("Repeat production")
+                    .accessibilityValue(controller.repeatProductionAccessibilityValue)
+                    .accessibilityHint("Cycles the selected factory repeat production target.")
+                }
             }
 
             Text("Selected: \(controller.selectedSummary)")

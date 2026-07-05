@@ -233,6 +233,28 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func setRepeatProduction(_ unitType: UnitType?) -> ProductionRepeatResult {
+        guard let selectedEntityID = state.selectedEntityID else {
+            return .noSelection
+        }
+        guard let buildingIndex = state.buildings.firstIndex(where: { $0.id == selectedEntityID }),
+              state.buildings[buildingIndex].team == .player else {
+            return .selectedBuildingCannotRepeatProduction
+        }
+
+        let buildingDefinition = GameDefinitions.building(state.buildings[buildingIndex].type)
+        guard !buildingDefinition.produces.isEmpty else {
+            return .selectedBuildingCannotRepeatProduction
+        }
+        if let unitType, !buildingDefinition.produces.contains(unitType) {
+            return .unsupportedUnit
+        }
+
+        state.buildings[buildingIndex].repeatUnitType = unitType
+        return .updated(repeatUnitType: unitType)
+    }
+
+    @discardableResult
     public mutating func setRally(to destination: WorldPoint) -> RallyCommandResult {
         guard let selectedEntityID = state.selectedEntityID else {
             return .noSelection
@@ -988,7 +1010,8 @@ public struct GameEngine: Sendable {
 
     private mutating func updateProduction(deltaTime: Double) {
         for buildingIndex in state.buildings.indices {
-            guard !state.buildings[buildingIndex].productionQueue.isEmpty else {
+            if state.buildings[buildingIndex].productionQueue.isEmpty {
+                enqueueRepeatedUnitIfReady(at: buildingIndex)
                 continue
             }
 
@@ -1000,7 +1023,20 @@ public struct GameEngine: Sendable {
             let completedItem = state.buildings[buildingIndex].productionQueue.removeFirst()
             let building = state.buildings[buildingIndex]
             spawnUnit(type: completedItem.unitType, team: building.team, position: building.rally)
+            enqueueRepeatedUnitIfReady(at: buildingIndex)
         }
+    }
+
+    private mutating func enqueueRepeatedUnitIfReady(at buildingIndex: Int) {
+        guard state.buildings[buildingIndex].team == .player,
+              state.buildings[buildingIndex].hitPoints > 0,
+              state.buildings[buildingIndex].buildProgress >= 1,
+              state.buildings[buildingIndex].productionQueue.isEmpty,
+              let repeatUnitType = state.buildings[buildingIndex].repeatUnitType else {
+            return
+        }
+
+        _ = enqueueUnit(repeatUnitType, at: buildingIndex)
     }
 
     private mutating func enqueueUnit(_ unitType: UnitType, at buildingIndex: Int) -> ProductionCommandResult {

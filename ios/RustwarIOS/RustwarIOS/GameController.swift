@@ -93,6 +93,32 @@ final class GameController {
         selectedPlayerProducer?.productionQueue.isEmpty == false
     }
 
+    var canCycleRepeatProduction: Bool {
+        selectedPlayerProducer != nil
+    }
+
+    var repeatProductionUnit: UnitType? {
+        selectedPlayerProducer?.repeatUnitType
+    }
+
+    var repeatProductionButtonTitle: String {
+        guard let unitType = repeatProductionUnit else {
+            return "Repeat Off"
+        }
+        return "Repeat \(GameDefinitions.unit(unitType).name)"
+    }
+
+    var repeatProductionSystemImage: String {
+        repeatProductionUnit == nil ? "repeat" : "repeat.circle.fill"
+    }
+
+    var repeatProductionAccessibilityValue: String {
+        guard let unitType = repeatProductionUnit else {
+            return "Off"
+        }
+        return "Repeating \(GameDefinitions.unit(unitType).name)"
+    }
+
     var canLoadGame: Bool {
         UserDefaults.standard.data(forKey: Self.saveKey) != nil
     }
@@ -498,6 +524,28 @@ final class GameController {
 
     func cancelProduction() {
         let result = engine.cancelLastProduction()
+        commandStatus = statusText(for: result)
+        renderRevision += 1
+    }
+
+    func cycleRepeatProduction() {
+        guard let producer = selectedPlayerProducer else {
+            commandStatus = statusText(for: ProductionRepeatResult.selectedBuildingCannotRepeatProduction)
+            renderRevision += 1
+            return
+        }
+
+        let options = GameDefinitions.building(producer.type).produces
+        let nextUnitType: UnitType?
+        if let repeatUnitType = producer.repeatUnitType,
+           let currentIndex = options.firstIndex(of: repeatUnitType) {
+            let nextIndex = options.index(after: currentIndex)
+            nextUnitType = nextIndex == options.endIndex ? nil : options[nextIndex]
+        } else {
+            nextUnitType = options.first
+        }
+
+        let result = engine.setRepeatProduction(nextUnitType)
         commandStatus = statusText(for: result)
         renderRevision += 1
     }
@@ -911,6 +959,22 @@ final class GameController {
             return "Factory required"
         case .emptyQueue:
             return "No production queued"
+        }
+    }
+
+    private func statusText(for result: ProductionRepeatResult) -> String? {
+        switch result {
+        case let .updated(repeatUnitType):
+            guard let repeatUnitType else {
+                return "Repeat production off"
+            }
+            return "Repeat: \(GameDefinitions.unit(repeatUnitType).name)"
+        case .noSelection:
+            return "No factory selected"
+        case .selectedBuildingCannotRepeatProduction:
+            return "Factory required"
+        case .unsupportedUnit:
+            return "Unsupported unit"
         }
     }
 }

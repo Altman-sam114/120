@@ -52,8 +52,8 @@ flowchart TD
 ```mermaid
 flowchart TD
   P["RustwarCore MapPreset<br/>中文注释：三张地图的基础坐标、资源和初始单位建筑"] --> S["GameState<br/>中文注释：Swift 原生状态快照，包含资源、单位、建筑、残骸、金属和选择"]
-  S --> E["GameEngine.update / select / issueMove / issueAttackMove / issuePatrol / issueGuard / issueRepair / issueReclaim / issueBuildExtractor / issueStop / issueAttack / queueUnit / cancelLastProduction / setRally / init(state)<br/>中文注释：推进收入 tick、点选、单单位移动、攻击移动、巡逻、护航、维修、回收、建造 Extractor、停止、基础攻击、炮塔防御开火、死亡残骸、工厂生产、生产取消、集结点、红方扩张/生产/进攻 AI 和存档状态恢复"]
-  E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、移动命令、攻击移动、护航、维修、回收、建造、生产、生产取消、集结点和 Save/Load 入口"]
+  S --> E["GameEngine.update / select / issueMove / issueAttackMove / issuePatrol / issueGuard / issueRepair / issueReclaim / issueBuildExtractor / issueStop / issueAttack / queueUnit / cancelLastProduction / setRepeatProduction / setRally / init(state)<br/>中文注释：推进收入 tick、点选、单单位移动、攻击移动、巡逻、护航、维修、回收、建造 Extractor、停止、基础攻击、炮塔防御开火、死亡残骸、工厂生产、生产取消、重复生产、集结点、红方扩张/生产/进攻 AI 和存档状态恢复"]
+  E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、移动命令、攻击移动、护航、维修、回收、建造、生产、生产取消、重复生产、集结点和 Save/Load 入口"]
   C --> H["SwiftUI RootGameView / GameHUDView<br/>中文注释：显示资源、收入、人口和选择反馈"]
   C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、残骸、双方单位建筑、相机中心和等待命令反馈，并复用点位、Builder 目标和实体目标命令"]
   C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、双方初始建筑、单位和移动目标"]
@@ -77,10 +77,12 @@ flowchart TD
   STP --> E
   C --> A["UnitOrder.attack<br/>中文注释：选中己方单位后点选敌方目标，core 推进靠近、伤害和死亡清理"]
   A --> E
-  C --> Q["ProductionQueueItem<br/>中文注释：选中己方陆军工厂后排队生产 Scout / Light Tank"]
+  C --> Q["ProductionQueueItem<br/>中文注释：选中己方陆军工厂后排队生产 Scout / Light Tank；队列完成并清空时可按 repeatUnitType 自动尝试续造"]
   Q --> E
   C --> CQ["ProductionCancelResult<br/>中文注释：选中己方生产建筑后取消队尾生产并按未完成进度退款"]
   CQ --> E
+  C --> RPT["ProductionRepeatResult / BuildingSnapshot.repeatUnitType<br/>中文注释：选中己方生产建筑后循环 Repeat Off / Scout / Light Tank，状态随 GameState 存档"]
+  RPT --> E
   C --> RP["BuildingSnapshot.rally<br/>中文注释：选中己方生产建筑后设置后续出兵集结点"]
   RP --> E
   C --> PS["Pause / Speed Gate<br/>中文注释：暂停时不调用 update，运行时按 0.5x / 1x / 2x 缩放 deltaTime"]
