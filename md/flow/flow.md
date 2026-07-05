@@ -19,7 +19,7 @@
 
 v0.5 起，文档体系支持未来 Agent X 主控循环。Agent X 不直接替代 A/B/C，而是在人工用 `agentx:` / `x:` / `X:` 给出总目标后，把总目标拆成多个小轮次，每轮仍必须走 Agent A -> Agent B -> Agent C，并在 Agent C artifact 验收后判断继续、退回、暂停或完成。本轮只建立文档基线，不自动启动真实 Agent X 循环。
 
-v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制、v1.6 新增的原生三地图切换和当前地图重开、v1.7 新增的原生战术小地图点按居中、v1.8 新增的原生 Stop 命令、v1.9 新增的原生生产建筑集结点命令、v1.10 新增的原生生产取消/退款命令、v1.11 新增的原生单槽 Save/Load MVP、v1.12 新增的原生单单位 Attack-Move 命令地基、v1.13 新增的原生单单位 Patrol 命令地基、v1.14 新增的原生单单位 Guard 命令地基、v1.15 新增的原生单 Builder Repair 命令地基、v1.16 新增的原生单 Builder Reclaim 残骸回收地基、v1.17 新增的原生单 Builder 在资源点建造 Extractor 地基、v1.18 新增的红方 Builder 自动扩张建造 Extractor MVP、v1.19 新增的原生 Turret 自动防御开火 MVP、v1.20 新增的战术小地图点位命令入口、v1.21 新增的战术小地图 Builder 目标命令入口、v1.22 新增的战术小地图实体目标命令入口、v1.23 新增的战术小地图等待命令反馈、v1.24 新增的 Turret 攻击建筑目标、v1.25 新增的生产建筑重复生产开关、v1.26 新增的 Builder 建造 Turret 地基、v1.27 新增的 Builder 建造 Land Factory 地基、v1.28 新增的 Land Factory T1 生产列表扩展、v1.29 新增的红方 Builder 建造 Land Factory AI MVP、v1.30 新增的红方 Builder 建造 Turret AI MVP、v1.31 新增的红方 Builder 自动维修 AI MVP、v1.32 新增的红方 Builder 自动回收残骸 AI MVP、v1.33 新增的红方完整 T1 混合生产 AI，以及 v1.34 新增的 Command Center Builder 生产。
+v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制、v1.6 新增的原生三地图切换和当前地图重开、v1.7 新增的原生战术小地图点按居中、v1.8 新增的原生 Stop 命令、v1.9 新增的原生生产建筑集结点命令、v1.10 新增的原生生产取消/退款命令、v1.11 新增的原生单槽 Save/Load MVP、v1.12 新增的原生单单位 Attack-Move 命令地基、v1.13 新增的原生单单位 Patrol 命令地基、v1.14 新增的原生单单位 Guard 命令地基、v1.15 新增的原生单 Builder Repair 命令地基、v1.16 新增的原生单 Builder Reclaim 残骸回收地基、v1.17 新增的原生单 Builder 在资源点建造 Extractor 地基、v1.18 新增的红方 Builder 自动扩张建造 Extractor MVP、v1.19 新增的原生 Turret 自动防御开火 MVP、v1.20 新增的战术小地图点位命令入口、v1.21 新增的战术小地图 Builder 目标命令入口、v1.22 新增的战术小地图实体目标命令入口、v1.23 新增的战术小地图等待命令反馈、v1.24 新增的 Turret 攻击建筑目标、v1.25 新增的生产建筑重复生产开关、v1.26 新增的 Builder 建造 Turret 地基、v1.27 新增的 Builder 建造 Land Factory 地基、v1.28 新增的 Land Factory T1 生产列表扩展、v1.29 新增的红方 Builder 建造 Land Factory AI MVP、v1.30 新增的红方 Builder 建造 Turret AI MVP、v1.31 新增的红方 Builder 自动维修 AI MVP、v1.32 新增的红方 Builder 自动回收残骸 AI MVP、v1.33 新增的红方完整 T1 混合生产 AI、v1.34 新增的 Command Center Builder 生产，以及 v1.35 新增的红方 Artillery 建筑优先目标选择。
 
 ```text
 RustwarCore MapPreset / GameState / GameEngine
@@ -28,7 +28,7 @@ RustwarCore MapPreset / GameState / GameEngine
   -> SpriteKit BattlefieldScene 渲染地形、资源、单位和建筑
   -> SpatialTapGesture / DragGesture / MagnifyGesture / TacticalMap drag-tap
   -> CameraState / UserDefaults save payload / pause-speed gate / TacticalMap point commands and pending feedback / GameEngine.select / GameEngine.issueMove / GameEngine.issueAttackMove / GameEngine.issuePatrol / GameEngine.issueGuard / GameEngine.issueRepair / GameEngine.issueReclaim / GameEngine.issueBuildExtractor / GameEngine.issueBuildTurret / GameEngine.issueBuildLandFactory / GameEngine.issueStop / GameEngine.issueAttack / GameEngine.queueUnit / GameEngine.cancelLastProduction / GameEngine.setRepeatProduction / GameEngine.setRally / GameEngine.update / GameEngine(state:)
-  -> GameEngine turret defensive fire targets units/buildings and enemy AI repairs friendly targets, expands resource nodes, builds Land Factories and Turrets, reclaims nearby wrecks, queues production and attack orders
+  -> GameEngine turret defensive fire targets units/buildings and enemy AI repairs friendly targets, expands resource nodes, builds Land Factories and Turrets, reclaims nearby wrecks, queues production and assigns attack orders with Artillery building priority
 ```
 
 ```text
@@ -344,7 +344,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 保存 iOS 迁移使用的共享 Swift 数据模型和小步确定性逻辑。
 - 定义 `MapPreset`、`TerrainGrid`、`ResourceNode`、`UnitSnapshot`、`UnitOrder`、`BuildingSnapshot`、`WreckSnapshot`、`ProductionQueueItem`、`ProductionRepeatResult`、`GameState`、`GameEngine`。
 - 初始化三张 Web 地图对应的基础首屏布局。
-- 计算收入、人口、简单 tick、实体/残骸/资源点命中选择、己方单单位移动、己方单单位 Attack-Move、己方单单位 Patrol、己方单单位 Guard、己方单 Builder Repair、己方单 Builder Reclaim、己方单 Builder 建造 Extractor、己方单 Builder 建造 Turret、己方单 Builder 建造 Land Factory、己方 Stop、己方单单位攻击、炮塔自动防御开火、基础伤害/死亡残骸清理、Command Center Builder 生产、Land Factory T1 生产队列、生产取消/退款、重复生产、己方生产建筑集结点设置、红方最小生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI，以及从已保存 `GameState` 恢复 `GameEngine`。
+- 计算收入、人口、简单 tick、实体/残骸/资源点命中选择、己方单单位移动、己方单单位 Attack-Move、己方单单位 Patrol、己方单单位 Guard、己方单 Builder Repair、己方单 Builder Reclaim、己方单 Builder 建造 Extractor、己方单 Builder 建造 Turret、己方单 Builder 建造 Land Factory、己方 Stop、己方单单位攻击、炮塔自动防御开火、基础伤害/死亡残骸清理、Command Center Builder 生产、Land Factory T1 生产队列、生产取消/退款、重复生产、己方生产建筑集结点设置、红方最小生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI、红方 Artillery 建筑优先目标选择，以及从已保存 `GameState` 恢复 `GameEngine`。
 
 输入：
 
@@ -402,6 +402,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v1.32 起，`GameEngine.updateEnemyAI()` 会让仍空闲的红方 Builder 自动回收附近有效残骸：顺序在缺厂补建、维修、资源扩张、第二工厂和炮塔建造之后，生产和进攻之前。候选残骸必须 `metal > 0`、`ttl > 0` 且距离 Builder 不超过 560，选择规则先取最近，距离近似相同再取金属更多、TTL 更高；执行复用 `UnitOrder.reclaim`、92 范围和 `builderReclaimRate`，不新增玩家 UI，也不改变玩家当前选择。
 - v1.33 起，红方完成状态 Land Factory 的生产 AI 使用完整 T1 列表 Scout / Light Tank / Hover Tank / Artillery / AA Tank。`enemyProductionChoice(for:)` 只在当前建筑 `produces` 且 `canEnqueueUnit` 允许的候选中选择，按红方现有单位加所有红方工厂队列中的同类数量取最少者，平局按 Land Factory 生产列表顺序打平；入队仍复用 `enqueueUnit` 的金属、人口、完成度和队列校验。
 - v1.34 起，Command Center 的 `BuildingDefinition.produces` 增加 Builder，完成状态己方 Command Center 会通过现有 iOS 生产按钮显示 Builder，并复用 `queueUnit`、Cancel Production、Repeat 和 Rally。红方完成状态 Command Center 在资源/人口允许且队列为空时也会走同一 `enemyProductionChoice(for:)` / `enqueueUnit` 通用生产路径排队 Builder；本轮不新增 Builder 数量上限或专用红方建造策略。
+- v1.35 起，`updateEnemyAttackOrders()` 改走红方 AI 专用 `enemyAttackTarget(for:)`：红方空闲 Artillery 新获得 AI 攻击订单时会优先选择存活玩家建筑中最近者，没有玩家建筑时回退 `nearestCombatTarget(for:)`；其它红方 T1 战斗单位仍使用最近玩家单位/建筑。玩家手动 `issueAttack`、Attack-Move、Patrol 和 Guard 仍使用原有目标路径。
 
 输入：
 
@@ -504,7 +505,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 文档-only：本地至少 `git diff --check`，再通过 `main` push 触发 CI artifact。
 - 改 `.github/workflows/ci-results.yml`：本地 YAML 解析检查 + `git diff --check`，再通过云端 workflow 自检 artifact。
 - 改 `app.js` 语法或逻辑：本地至少 `node --check app.js` 和 `git diff --check`，CI 重跑同类检查。
-- 改 `swift/RustwarCore/`：本地尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 阻塞，至少尝试 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 并记录工具链错误；当前 Swift tests 覆盖初始化、经济 tick、选择、移动、Attack-Move、Patrol、Guard、Repair、Reclaim、Build Extractor、Build Turret、Build Land Factory、Stop、生产、生产取消/退款、重复生产、工厂集结点、基础攻击/炮塔防御开火/死亡残骸清理、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI、`GameState` JSON 往返和恢复后继续模拟。
+- 改 `swift/RustwarCore/`：本地尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 阻塞，至少尝试 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 并记录工具链错误；当前 Swift tests 覆盖初始化、经济 tick、选择、移动、Attack-Move、Patrol、Guard、Repair、Reclaim、Build Extractor、Build Turret、Build Land Factory、Stop、生产、生产取消/退款、重复生产、生产建筑集结点、基础攻击/炮塔防御开火/死亡残骸清理、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI、红方 Artillery 建筑优先目标选择、`GameState` JSON 往返和恢复后继续模拟。
 - 改 `ios/RustwarIOS/`：本地尽量跑 `xcodebuild -list` 和 iOS build；若只有 Command Line Tools 或 Swift/SDK 不匹配，记录阻塞并由云端 macOS artifact 复验；涉及战术小地图时还要确认新 Swift 文件已加入 Xcode target。
 - 改 HTML id 或 UI 引用：云端轻量检查之外，若人工要求则做 Smoke 浏览器验证。
 - 改输入/命令：人工要求本机回归时验证主地图、迷你地图、Shift 追加、Esc 取消。

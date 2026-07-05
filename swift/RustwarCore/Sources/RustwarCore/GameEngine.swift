@@ -543,7 +543,7 @@ public struct GameEngine: Sendable {
                   state.units[unitIndex].hitPoints > 0,
                   state.units[unitIndex].order == nil,
                   isAICombatUnit(state.units[unitIndex]),
-                  let target = nearestCombatTarget(for: state.units[unitIndex]) else {
+                  let target = enemyAttackTarget(for: state.units[unitIndex]) else {
                 continue
             }
 
@@ -553,6 +553,39 @@ public struct GameEngine: Sendable {
 
     private func isAICombatUnit(_ unit: UnitSnapshot) -> Bool {
         unit.type != .builder
+    }
+
+    private func enemyAttackTarget(for unit: UnitSnapshot) -> CombatTarget? {
+        if unit.type == .artillery,
+           let buildingTarget = nearestEnemyArtilleryBuildingTarget(for: unit) {
+            return buildingTarget
+        }
+        return nearestCombatTarget(for: unit)
+    }
+
+    private func nearestEnemyArtilleryBuildingTarget(for unit: UnitSnapshot) -> CombatTarget? {
+        var bestTarget: CombatTarget?
+        var bestDistance = Double.infinity
+
+        for building in state.buildings {
+            guard building.team == .player, building.hitPoints > 0 else {
+                continue
+            }
+            let definition = GameDefinitions.building(building.type)
+            let target = CombatTarget(
+                id: building.id,
+                team: building.team,
+                position: building.position,
+                radius: definition.size / 2
+            )
+            let distance = unit.position.distanceSquared(to: target.position)
+            if distance < bestDistance {
+                bestTarget = target
+                bestDistance = distance
+            }
+        }
+
+        return bestTarget
     }
 
     private func nearestCombatTarget(for unit: UnitSnapshot, maximumDistance: Double? = nil) -> CombatTarget? {
