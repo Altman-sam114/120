@@ -8,6 +8,8 @@ public struct GameEngine: Sendable {
     private static let builderReclaimRate = 34.0 * 0.58
     private static let wreckTTL = 58.0
     private static let activeReclaimWreckMinimumTTL = 8.0
+    private static let enemyLandFactoryLimit = 2
+    private static let enemyExtractorCountBeforeAdditionalFactory = 3
 
     public private(set) var state: GameState
     public private(set) var enemyAIEnabled: Bool
@@ -349,7 +351,9 @@ public struct GameEngine: Sendable {
     }
 
     private mutating func updateEnemyAI() {
+        updateEnemyFactoryConstruction(rebuildMissingFactoryOnly: true)
         updateEnemyExpansion()
+        updateEnemyFactoryConstruction(rebuildMissingFactoryOnly: false)
         updateEnemyProduction()
         updateEnemyAttackOrders()
     }
@@ -377,6 +381,13 @@ public struct GameEngine: Sendable {
     }
 
     private mutating func updateEnemyExpansion() {
+        let enemyFactoryCount = livingEnemyBuildingCount(type: .landFactory)
+        if enemyFactoryCount > 0,
+           enemyFactoryCount < Self.enemyLandFactoryLimit,
+           livingEnemyBuildingCount(type: .extractor) >= Self.enemyExtractorCountBeforeAdditionalFactory {
+            return
+        }
+
         for unitIndex in state.units.indices {
             guard state.units[unitIndex].team == .enemy,
                   state.units[unitIndex].type == .builder,
@@ -388,6 +399,39 @@ public struct GameEngine: Sendable {
             }
 
             startExtractorBuild(builderIndex: unitIndex, resourceIndex: resourceIndex)
+        }
+    }
+
+    private mutating func updateEnemyFactoryConstruction(rebuildMissingFactoryOnly: Bool) {
+        let enemyFactoryCount = livingEnemyBuildingCount(type: .landFactory)
+        if rebuildMissingFactoryOnly {
+            guard enemyFactoryCount == 0 else {
+                return
+            }
+        } else {
+            guard enemyFactoryCount > 0,
+                  enemyFactoryCount < Self.enemyLandFactoryLimit,
+                  livingEnemyBuildingCount(type: .extractor) >= Self.enemyExtractorCountBeforeAdditionalFactory else {
+                return
+            }
+        }
+
+        let definition = GameDefinitions.building(.landFactory)
+        guard state.metal[.enemy, default: 0] >= definition.metalCost else {
+            return
+        }
+
+        for unitIndex in state.units.indices {
+            guard state.units[unitIndex].team == .enemy,
+                  state.units[unitIndex].type == .builder,
+                  state.units[unitIndex].hitPoints > 0,
+                  state.units[unitIndex].order == nil,
+                  let position = enemyLandFactoryBuildPosition(for: state.units[unitIndex]) else {
+                continue
+            }
+
+            startPointBuildingBuild(.landFactory, builderIndex: unitIndex, position: position)
+            return
         }
     }
 
@@ -1297,6 +1341,53 @@ public struct GameEngine: Sendable {
         }
 
         return bestIndex
+    }
+
+    private func livingEnemyBuildingCount(type: BuildingType) -> Int {
+        state.buildings.filter {
+            $0.team == .enemy && $0.type == type && $0.hitPoints > 0
+        }.count
+    }
+
+    private func enemyLandFactoryBuildPosition(for builder: UnitSnapshot) -> WorldPoint? {
+        let anchors = enemyFactoryBuildAnchors(for: builder)
+        let offsets = [
+            WorldPoint(-240, 260),
+            WorldPoint(-120, 320),
+            WorldPoint(80, 300),
+            WorldPoint(240, 220),
+            WorldPoint(-360, 120),
+            WorldPoint(-340, -120),
+            WorldPoint(120, -300),
+            WorldPoint(360, -140),
+            WorldPoint(0, 420),
+            WorldPoint(-520, 260),
+            WorldPoint(480, 160),
+            WorldPoint(-80, -420)
+        ]
+
+        for anchor in anchors {
+            for offset in offsets {
+                let position = WorldPoint(anchor.x + offset.x, anchor.y + offset.y).clampedToMap()
+                if canPlaceBuilding(.landFactory, at: position) {
+                    return position
+                }
+            }
+        }
+        return nil
+    }
+
+    private func enemyFactoryBuildAnchors(for builder: UnitSnapshot) -> [WorldPoint] {
+        var anchors: [WorldPoint] = []
+        if let command = state.buildings.first(where: {
+            $0.team == .enemy && $0.type == .command && $0.hitPoints > 0
+        }) {
+            anchors.append(command.position)
+        }
+        anchors.append(state.map.enemyBase)
+        anchors.append(state.map.enemyFactory)
+        anchors.append(builder.position)
+        return anchors
     }
 
     private func guardOffset(for unit: UnitSnapshot, around target: CombatTarget) -> WorldPoint {

@@ -2086,6 +2086,187 @@ import Testing
     #expect(occupiedEngine.state.units.first { $0.id == enemyBuilder.id }?.order == nil)
 }
 
+@Test func enemyAIRebuildsMissingLandFactoryBeforeExtractorExpansion() throws {
+    var state = GameState(mapID: .coast)
+    state.buildings.removeAll { $0.team == .enemy && $0.type == .landFactory }
+    let selectedPlayerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    state.selectedEntityID = selectedPlayerBuilding.id
+    let initialBuildingIDs = Set(state.buildings.map(\.id))
+    let startingEnemyMetal = state.metal[.enemy, default: 0]
+    let startingEnemyIncome = state.income(for: .enemy)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let newFactory = try #require(engine.state.buildings.first {
+        !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .landFactory
+    })
+    let builderAfterUpdate = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+
+    #expect(newFactory.buildProgress == 0)
+    #expect(newFactory.hitPoints == newFactory.maxHitPoints * 0.1)
+    #expect(newFactory.nodeID == nil)
+    #expect(newFactory.rally == newFactory.position)
+    #expect(engine.state.selectedEntityID == selectedPlayerBuilding.id)
+    #expect(engine.state.metal[.enemy, default: 0] == startingEnemyMetal + startingEnemyIncome - GameDefinitions.building(.landFactory).metalCost)
+    if case let .build(targetID)? = builderAfterUpdate.order {
+        #expect(targetID == newFactory.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func enemyAIBuildsSecondLandFactoryAfterExtractorFoothold() throws {
+    var state = enemyFactoryConstructionReadyState(mapID: .coast)
+    let selectedPlayerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    state.selectedEntityID = selectedPlayerBuilding.id
+    let initialBuildingIDs = Set(state.buildings.map(\.id))
+    let startingEnemyMetal = state.metal[.enemy, default: 0]
+    let startingEnemyIncome = state.income(for: .enemy)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let newFactory = try #require(engine.state.buildings.first {
+        !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .landFactory
+    })
+    let builderAfterUpdate = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+
+    #expect(newFactory.buildProgress == 0)
+    #expect(newFactory.hitPoints == newFactory.maxHitPoints * 0.1)
+    #expect(newFactory.nodeID == nil)
+    #expect(newFactory.rally == newFactory.position)
+    #expect(newFactory.productionQueue.isEmpty)
+    #expect(engine.state.selectedEntityID == selectedPlayerBuilding.id)
+    #expect(engine.state.metal[.enemy, default: 0] == startingEnemyMetal + startingEnemyIncome - GameDefinitions.building(.landFactory).metalCost)
+    if case let .build(targetID)? = builderAfterUpdate.order {
+        #expect(targetID == newFactory.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func enemyLandFactoryAIFindsBuildPointOnEveryNativeMap() throws {
+    for mapID in MapID.allCases {
+        let state = enemyFactoryConstructionReadyState(mapID: mapID)
+        let initialBuildingIDs = Set(state.buildings.map(\.id))
+
+        var engine = GameEngine(state: state)
+        engine.update(deltaTime: 1)
+
+        #expect(engine.state.buildings.contains {
+            !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .landFactory
+        })
+    }
+}
+
+@Test func incompleteEnemyLandFactoryDoesNotProduceUntilCompleted() throws {
+    var state = enemyFactoryConstructionReadyState(mapID: .coast)
+    let initialBuildingIDs = Set(state.buildings.map(\.id))
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let newFactory = try #require(engine.state.buildings.first {
+        !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .landFactory
+    })
+
+    var incompleteProductionState = engine.state
+    let incompleteFactoryIndex = try #require(incompleteProductionState.buildings.firstIndex { $0.id == newFactory.id })
+    incompleteProductionState.buildings[incompleteFactoryIndex].productionQueue = [
+        ProductionQueueItem(id: "legacy-enemy-scout", unitType: .scout, buildTime: 1)
+    ]
+    var incompleteProductionEngine = GameEngine(state: incompleteProductionState)
+    let unitCountBeforeIncompleteUpdate = incompleteProductionEngine.state.units.count
+    incompleteProductionEngine.update(deltaTime: 2)
+    let incompleteFactoryAfterUpdate = try #require(incompleteProductionEngine.state.buildings.first { $0.id == newFactory.id })
+    #expect(incompleteProductionEngine.state.units.count == unitCountBeforeIncompleteUpdate)
+    #expect(incompleteFactoryAfterUpdate.productionQueue.first?.progress == 0)
+
+    var buildOnlyEngine = GameEngine(state: engine.state, enemyAIEnabled: false)
+    for _ in 0..<32 {
+        buildOnlyEngine.update(deltaTime: 1)
+    }
+
+    var completedState = buildOnlyEngine.state
+    let completedFactory = try #require(completedState.buildings.first { $0.id == newFactory.id })
+    #expect(completedFactory.buildProgress == 1)
+    #expect(completedFactory.hitPoints == completedFactory.maxHitPoints)
+    let existingFactoryIndex = try #require(completedState.buildings.firstIndex {
+        $0.team == .enemy && $0.type == .landFactory && $0.id != newFactory.id
+    })
+    completedState.buildings[existingFactoryIndex].productionQueue = [
+        ProductionQueueItem(id: "busy-original-enemy-factory", unitType: .scout, buildTime: 99)
+    ]
+    completedState.metal[.enemy] = 1_000
+
+    var productionEngine = GameEngine(state: completedState)
+    productionEngine.update(deltaTime: 1)
+
+    let producingFactory = try #require(productionEngine.state.buildings.first { $0.id == newFactory.id })
+    #expect(producingFactory.productionQueue.count == 1)
+    #expect(producingFactory.productionQueue.first?.unitType == .scout)
+}
+
+@Test func enemyLandFactoryAIWaitsForMetalIdleBuilderLimitAndLegalPoint() throws {
+    let baseState = enemyFactoryConstructionReadyState(mapID: .coast)
+    let startingLandFactoryCount = baseState.buildings.filter { $0.team == .enemy && $0.type == .landFactory }.count
+    let enemyBuilder = try #require(baseState.units.first { $0.team == .enemy && $0.type == .builder })
+    let enemyBuilderIndex = try #require(baseState.units.firstIndex { $0.id == enemyBuilder.id })
+
+    var poorState = baseState
+    poorState.metal[.enemy] = max(0, GameDefinitions.building(.landFactory).metalCost - poorState.income(for: .enemy) - 1)
+    var poorEngine = GameEngine(state: poorState)
+    poorEngine.update(deltaTime: 1)
+    #expect(poorEngine.state.buildings.filter { $0.team == .enemy && $0.type == .landFactory }.count == startingLandFactoryCount)
+    #expect(poorEngine.state.units.first { $0.id == enemyBuilder.id }?.order == nil)
+
+    var busyState = baseState
+    busyState.units[enemyBuilderIndex].order = .move(destination: WorldPoint(3_800, 1_120))
+    var busyEngine = GameEngine(state: busyState)
+    busyEngine.update(deltaTime: 1)
+    #expect(busyEngine.state.buildings.filter { $0.team == .enemy && $0.type == .landFactory }.count == startingLandFactoryCount)
+    let busyBuilder = try #require(busyEngine.state.units.first { $0.id == enemyBuilder.id })
+    if case .some(.move) = busyBuilder.order {
+        #expect(Bool(true))
+    } else {
+        #expect(Bool(false))
+    }
+
+    var cappedState = baseState
+    for resourceIndex in cappedState.resources.indices {
+        cappedState.resources[resourceIndex].claimedBy = .enemy
+    }
+    let extraFactoryDefinition = GameDefinitions.building(.landFactory)
+    cappedState.buildings.append(
+        BuildingSnapshot(
+            id: "enemy-extra-land-factory",
+            type: .landFactory,
+            team: .enemy,
+            position: WorldPoint(3_000, 1_160),
+            hitPoints: extraFactoryDefinition.hitPoints,
+            maxHitPoints: extraFactoryDefinition.hitPoints,
+            rally: WorldPoint(3_000, 1_160)
+        )
+    )
+    var cappedEngine = GameEngine(state: cappedState)
+    cappedEngine.update(deltaTime: 1)
+    #expect(cappedEngine.state.buildings.filter { $0.team == .enemy && $0.type == .landFactory }.count == 2)
+
+    var blockedState = baseState
+    blockedState.terrain = TerrainGrid(
+        columns: blockedState.terrain.columns,
+        rows: blockedState.terrain.rows,
+        tiles: Array(repeating: .water, count: blockedState.terrain.tiles.count)
+    )
+    var blockedEngine = GameEngine(state: blockedState)
+    blockedEngine.update(deltaTime: 1)
+    #expect(blockedEngine.state.buildings.filter { $0.team == .enemy && $0.type == .landFactory }.count == startingLandFactoryCount)
+    #expect(blockedEngine.state.units.first { $0.id == enemyBuilder.id }?.order == nil)
+}
+
 @Test func enemyAIDoesNotStackFactoryQueueAndSpawnsUnit() throws {
     var engine = GameEngine(mapID: .coast)
 
@@ -2598,6 +2779,40 @@ private func clearTurretBuildPoint(in state: GameState) -> WorldPoint {
 
 private func clearLandFactoryBuildPoint(in state: GameState) -> WorldPoint {
     clearBuildPoint(for: .landFactory, in: state)
+}
+
+private func enemyFactoryConstructionReadyState(mapID: MapID) -> GameState {
+    var state = GameState(mapID: mapID)
+    let extractorDefinition = GameDefinitions.building(.extractor)
+    let resourceIndex = state.resources.firstIndex {
+        $0.claimedBy == nil && $0.position.x >= state.map.enemyBase.x - 650
+    } ?? state.resources.firstIndex { $0.claimedBy == nil }
+    guard let resourceIndex else {
+        fatalError("No free resource available for enemy factory construction setup.")
+    }
+
+    let resource = state.resources[resourceIndex]
+    state.resources[resourceIndex].claimedBy = .enemy
+    state.buildings.append(
+        BuildingSnapshot(
+            id: "enemy-extra-extractor",
+            type: .extractor,
+            team: .enemy,
+            position: resource.position,
+            hitPoints: extractorDefinition.hitPoints,
+            maxHitPoints: extractorDefinition.hitPoints,
+            rally: state.map.enemyRally,
+            nodeID: resource.id
+        )
+    )
+
+    if let factoryIndex = state.buildings.firstIndex(where: { $0.team == .enemy && $0.type == .landFactory }) {
+        state.buildings[factoryIndex].productionQueue = [
+            ProductionQueueItem(id: "busy-initial-enemy-factory", unitType: .scout, buildTime: 99)
+        ]
+    }
+    state.metal[.enemy] = 1_500
+    return state
 }
 
 private func clearBuildPoint(for buildingType: BuildingType, in state: GameState) -> WorldPoint {
