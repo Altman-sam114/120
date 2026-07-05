@@ -2662,7 +2662,7 @@ import Testing
 
     let producingFactory = try #require(productionEngine.state.buildings.first { $0.id == newFactory.id })
     #expect(producingFactory.productionQueue.count == 1)
-    #expect(producingFactory.productionQueue.first?.unitType == .scout)
+    #expect(producingFactory.productionQueue.first?.unitType == .hover)
 }
 
 @Test func enemyLandFactoryAIWaitsForMetalIdleBuilderLimitAndLegalPoint() throws {
