@@ -3173,7 +3173,9 @@ import Testing
 
     let commandTarget = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
     let target = try #require(commandTarget)
-    engine.state.metal[.player] = 1_000
+    var state = engine.state
+    state.metal[.player] = 1_000
+    engine = GameEngine(state: state, enemyAIEnabled: false)
     #expect(engine.setRepeatProduction(.builder) == .updated(repeatUnitType: .builder))
     #expect(engine.queueUnit(.builder) == .queued)
 
