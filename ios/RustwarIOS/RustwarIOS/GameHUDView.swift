@@ -82,6 +82,19 @@ struct GameHUDView: View {
                     .accessibilityLabel("Load game")
             }
 
+            HStack(spacing: 8) {
+                Button(
+                    controller.enemyAIButtonTitle,
+                    systemImage: controller.enemyAIButtonSystemImage,
+                    action: controller.toggleEnemyAI
+                )
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .frame(minHeight: 44)
+                .accessibilityLabel("Enemy AI")
+                .accessibilityValue(controller.enemyAIAccessibilityValue)
+            }
+
             Picker("Speed", selection: $controller.simulationSpeed) {
                 ForEach(GameController.simulationSpeedOptions, id: \.self) { speed in
                     Text(GameController.simulationSpeedLabel(for: speed))

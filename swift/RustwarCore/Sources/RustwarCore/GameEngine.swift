@@ -26,6 +26,10 @@ public struct GameEngine: Sendable {
         self.enemyAIEnabled = enemyAIEnabled
     }
 
+    public mutating func setEnemyAIEnabled(_ isEnabled: Bool) {
+        enemyAIEnabled = isEnabled
+    }
+
     public mutating func update(deltaTime: Double) {
         guard deltaTime > 0 else {
             return

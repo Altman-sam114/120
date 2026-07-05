@@ -71,6 +71,18 @@ final class GameController {
         isPaused ? "play.fill" : "pause.fill"
     }
 
+    var enemyAIButtonTitle: String {
+        engine.enemyAIEnabled ? "Enemy AI On" : "Enemy AI Off"
+    }
+
+    var enemyAIButtonSystemImage: String {
+        engine.enemyAIEnabled ? "bolt.fill" : "bolt.slash"
+    }
+
+    var enemyAIAccessibilityValue: String {
+        engine.enemyAIEnabled ? "On" : "Off"
+    }
+
     var selectedSummary: String {
         engine.state.selectionSummary()
     }
@@ -400,6 +412,12 @@ final class GameController {
         if !isAwaitingTargetCommand {
             commandStatus = isPaused ? "Paused" : "Running"
         }
+        renderRevision += 1
+    }
+
+    func toggleEnemyAI() {
+        engine.setEnemyAIEnabled(!engine.enemyAIEnabled)
+        commandStatus = engine.enemyAIEnabled ? "Enemy AI enabled" : "Enemy AI disabled"
         renderRevision += 1
     }
 

@@ -148,6 +148,34 @@ import Testing
     #expect(enabledAIEngine.enemyAIEnabled == true)
 }
 
+@Test func enemyAISetterTogglesFlagWithoutResettingState() throws {
+    var state = GameState(mapID: .coast)
+    let selectedUnit = try #require(state.units.first { $0.team == .player })
+    state.selectedEntityID = selectedUnit.id
+    state.elapsed = 42
+    var engine = GameEngine(state: state)
+    let startingUnitCount = engine.state.units.count
+    let startingBuildingCount = engine.state.buildings.count
+    let startingMetal = engine.state.metal
+
+    #expect(engine.enemyAIEnabled)
+
+    engine.setEnemyAIEnabled(false)
+
+    #expect(engine.enemyAIEnabled == false)
+    #expect(engine.state.selectedEntityID == selectedUnit.id)
+    #expect(engine.state.elapsed == 42)
+    #expect(engine.state.units.count == startingUnitCount)
+    #expect(engine.state.buildings.count == startingBuildingCount)
+    #expect(engine.state.metal == startingMetal)
+
+    engine.setEnemyAIEnabled(true)
+
+    #expect(engine.enemyAIEnabled)
+    #expect(engine.state.selectedEntityID == selectedUnit.id)
+    #expect(engine.state.elapsed == 42)
+}
+
 @Test func guardOrderJSONRoundTripPreservesTargetAndOffset() throws {
     var state = GameState(mapID: .coast)
     let guarder = try #require(state.units.first { $0.team == .player })
@@ -2956,6 +2984,22 @@ import Testing
     let targetsPlayerUnit = engine.state.units.contains { $0.id == issuedTargetID && $0.team == .player }
     let targetsPlayerBuilding = engine.state.buildings.contains { $0.id == issuedTargetID && $0.team == .player }
     #expect(targetsPlayerUnit || targetsPlayerBuilding)
+}
+
+@Test func enemyAISetterPausesAndResumesAttackOrders() throws {
+    let state = enemyTargetPriorityState(attackerType: .tank, includePlayerBuilding: true)
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    engine.update(deltaTime: 0.1)
+
+    var attacker = try #require(engine.state.units.first { $0.id == "enemy-attacker" })
+    #expect(attackTargetID(for: attacker) == nil)
+
+    engine.setEnemyAIEnabled(true)
+    engine.update(deltaTime: 0.1)
+
+    attacker = try #require(engine.state.units.first { $0.id == "enemy-attacker" })
+    #expect(attackTargetID(for: attacker) == "player-priority-building")
 }
 
 @Test func enemyAIArtilleryPrioritizesPlayerBuildingOverNearerUnit() throws {

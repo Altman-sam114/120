@@ -52,8 +52,8 @@ flowchart TD
 ```mermaid
 flowchart TD
   P["RustwarCore MapPreset<br/>中文注释：三张地图的基础坐标、资源和初始单位建筑"] --> S["GameState<br/>中文注释：Swift 原生状态快照，包含资源、单位、建筑、残骸、金属和选择"]
-  S --> E["GameEngine.update / select / issueMove / issueAttackMove / issuePatrol / issueGuard / issueRepair / issueReclaim / issueBuildExtractor / issueBuildTurret / issueBuildLandFactory / issueStop / issueAttack / queueUnit / cancelLastProduction / setRepeatProduction / setRally / init(state)<br/>中文注释：推进收入 tick、点选、单单位移动、攻击移动、巡逻、护航、维修、回收、建造 Extractor、建造 Turret、建造 Land Factory、停止、基础攻击、炮塔防御开火、死亡残骸、生产建筑队列、生产取消、重复生产、集结点、红方资源扩张/维修/回收/建造 Land Factory/建造 Turret/生产/进攻 AI 和存档状态恢复"]
-  E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、移动命令、攻击移动、护航、维修、回收、建造、生产、生产取消、重复生产、集结点和 Save/Load 入口"]
+  S --> E["GameEngine.update / select / issueMove / issueAttackMove / issuePatrol / issueGuard / issueRepair / issueReclaim / issueBuildExtractor / issueBuildTurret / issueBuildLandFactory / issueStop / issueAttack / queueUnit / cancelLastProduction / setRepeatProduction / setRally / setEnemyAIEnabled / init(state)<br/>中文注释：推进收入 tick、点选、单单位移动、攻击移动、巡逻、护航、维修、回收、建造 Extractor、建造 Turret、建造 Land Factory、停止、基础攻击、炮塔防御开火、死亡残骸、生产建筑队列、生产取消、重复生产、集结点、红方 AI 开关、红方资源扩张/维修/回收/建造 Land Factory/建造 Turret/生产/进攻 AI 和存档状态恢复"]
+  E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、Enemy AI 开关、移动命令、攻击移动、护航、维修、回收、建造、生产、生产取消、重复生产、集结点和 Save/Load 入口"]
   C --> H["SwiftUI RootGameView / GameHUDView<br/>中文注释：显示资源、收入、人口和选择反馈"]
   C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、残骸、双方单位建筑、相机中心和等待命令反馈，并复用点位、Builder 目标和实体目标命令"]
   C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、双方初始建筑、单位和移动目标"]
@@ -91,6 +91,8 @@ flowchart TD
   RP --> E
   C --> PS["Pause / Speed Gate<br/>中文注释：暂停时不调用 update，运行时按 0.5x / 1x / 2x 缩放 deltaTime"]
   PS --> E
+  C --> EA["Enemy AI On/Off<br/>中文注释：HUD 按钮调用 setEnemyAIEnabled，仅切换红方新 AI 决策，Save/Load 保存恢复该 flag"]
+  EA --> E
   C --> MP["Map Switch / Restart<br/>中文注释：重建 GameEngine、重置相机、清空待选命令并刷新地图渲染层"]
   MP --> E
   C --> SL["UserDefaults Save / Load<br/>中文注释：JSON 保存 GameState、CameraState、地图、暂停、速度和 AI 开关，读取后刷新原生状态"]
