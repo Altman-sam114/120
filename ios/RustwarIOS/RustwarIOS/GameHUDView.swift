@@ -235,7 +235,7 @@ struct GameHUDView: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .accessibilityLabel("Repeat production")
                     .accessibilityValue(controller.repeatProductionAccessibilityValue)
-                    .accessibilityHint("Cycles the selected factory repeat production target.")
+                    .accessibilityHint("Cycles the selected producer repeat production target.")
                 }
             }
 

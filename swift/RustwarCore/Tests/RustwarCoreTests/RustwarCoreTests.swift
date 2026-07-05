@@ -1996,6 +1996,26 @@ import Testing
     #expect(engine.state.selectedEntityID == playerSelection.id)
 }
 
+@Test func enemyAIQueuesBuilderAtCommandCenterWithoutChangingPlayerSelection() throws {
+    var state = GameState(mapID: .coast)
+    let selectedPlayerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let enemyCommand = try #require(state.buildings.first { $0.team == .enemy && $0.type == .command })
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    let enemyBuilderIndex = try #require(state.units.firstIndex { $0.id == enemyBuilder.id })
+    state.selectedEntityID = selectedPlayerBuilding.id
+    state.metal[.enemy] = 220
+    state.units[enemyBuilderIndex].order = .move(destination: WorldPoint(3_640, 820))
+    keepEnemyFactoriesBusy(in: &state)
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let queuedCommand = try #require(engine.state.buildings.first { $0.id == enemyCommand.id })
+    #expect(queuedCommand.productionQueue.count == 1)
+    #expect(queuedCommand.productionQueue.first?.unitType == .builder)
+    #expect(engine.state.selectedEntityID == selectedPlayerBuilding.id)
+}
+
 @Test func enemyAIUsesFullT1RosterWhenChoosingProduction() throws {
     var aaState = GameState(mapID: .coast)
     aaState.metal[.enemy] = 1_000
@@ -2029,6 +2049,7 @@ import Testing
     let enemyFactory = try #require(state.buildings.first { $0.team == .enemy && $0.type == .landFactory })
     state.metal[.enemy] = 100
     claimRemainingResourcesForEnemy(in: &state)
+    keepEnemyCommandsBusy(in: &state)
 
     var engine = GameEngine(state: state)
     engine.update(deltaTime: 1)
@@ -2228,7 +2249,7 @@ import Testing
     let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
     state.selectedEntityID = selectedPlayerBuilding.id
     state.metal[.enemy] = 0
-    keepEnemyFactoriesBusy(in: &state)
+    keepEnemyProducersBusy(in: &state)
     claimRemainingResourcesForEnemy(in: &state)
     state.wrecks = [
         WreckSnapshot(
@@ -2262,7 +2283,7 @@ import Testing
     var state = GameState(mapID: .coast)
     let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
     state.metal[.enemy] = 0
-    keepEnemyFactoriesBusy(in: &state)
+    keepEnemyProducersBusy(in: &state)
     claimRemainingResourcesForEnemy(in: &state)
     state.wrecks = [
         WreckSnapshot(
@@ -2293,7 +2314,7 @@ import Testing
 
     var invalidState = baseState
     invalidState.metal[.enemy] = 0
-    keepEnemyFactoriesBusy(in: &invalidState)
+    keepEnemyProducersBusy(in: &invalidState)
     claimRemainingResourcesForEnemy(in: &invalidState)
     invalidState.wrecks = [
         WreckSnapshot(id: "empty-wreck", position: enemyBuilder.position, size: 24, team: .player, metal: 0, maxMetal: 40, ttl: 58),
@@ -2307,7 +2328,7 @@ import Testing
 
     var busyState = baseState
     busyState.metal[.enemy] = 0
-    keepEnemyFactoriesBusy(in: &busyState)
+    keepEnemyProducersBusy(in: &busyState)
     claimRemainingResourcesForEnemy(in: &busyState)
     busyState.units[enemyBuilderIndex].order = .move(destination: WorldPoint(3_900, 1_100))
     busyState.wrecks = [
@@ -2329,7 +2350,7 @@ import Testing
 
     var nearestState = baseState
     nearestState.metal[.enemy] = 0
-    keepEnemyFactoriesBusy(in: &nearestState)
+    keepEnemyProducersBusy(in: &nearestState)
     claimRemainingResourcesForEnemy(in: &nearestState)
     nearestState.wrecks = [
         WreckSnapshot(id: "near-wreck", position: WorldPoint(enemyBuilder.position.x + 100, enemyBuilder.position.y), size: 24, team: .player, metal: 80, maxMetal: 80, ttl: 30),
@@ -2346,7 +2367,7 @@ import Testing
 
     var metalState = baseState
     metalState.metal[.enemy] = 0
-    keepEnemyFactoriesBusy(in: &metalState)
+    keepEnemyProducersBusy(in: &metalState)
     claimRemainingResourcesForEnemy(in: &metalState)
     metalState.wrecks = [
         WreckSnapshot(id: "same-distance-poor-wreck", position: WorldPoint(enemyBuilder.position.x + 100, enemyBuilder.position.y), size: 24, team: .player, metal: 40, maxMetal: 40, ttl: 58),
@@ -2363,7 +2384,7 @@ import Testing
 
     var ttlState = baseState
     ttlState.metal[.enemy] = 0
-    keepEnemyFactoriesBusy(in: &ttlState)
+    keepEnemyProducersBusy(in: &ttlState)
     claimRemainingResourcesForEnemy(in: &ttlState)
     ttlState.wrecks = [
         WreckSnapshot(id: "same-score-short-ttl-wreck", position: WorldPoint(enemyBuilder.position.x + 100, enemyBuilder.position.y), size: 24, team: .player, metal: 80, maxMetal: 80, ttl: 20),
@@ -2385,7 +2406,7 @@ import Testing
     let enemyCommand = try #require(state.buildings.first { $0.team == .enemy && $0.type == .command })
     let enemyCommandIndex = try #require(state.buildings.firstIndex { $0.id == enemyCommand.id })
     state.metal[.enemy] = 0
-    keepEnemyFactoriesBusy(in: &state)
+    keepEnemyProducersBusy(in: &state)
     claimRemainingResourcesForEnemy(in: &state)
     state.buildings[enemyCommandIndex].hitPoints = enemyCommand.maxHitPoints - 100
     state.wrecks = [
@@ -2409,7 +2430,7 @@ import Testing
     var state = GameState(mapID: .coast)
     let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
     state.buildings.removeAll { $0.team == .enemy && $0.type == .landFactory }
-    keepEnemyFactoriesBusy(in: &state)
+    keepEnemyCommandsBusy(in: &state)
     let initialBuildingIDs = Set(state.buildings.map(\.id))
     state.metal[.enemy] = 1_000
     state.wrecks = [
@@ -2437,7 +2458,7 @@ import Testing
     let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
     let initialBuildingIDs = Set(state.buildings.map(\.id))
     state.metal[.enemy] = GameDefinitions.building(.extractor).metalCost
-    keepEnemyFactoriesBusy(in: &state)
+    keepEnemyProducersBusy(in: &state)
     state.wrecks = [
         WreckSnapshot(id: "expansion-priority-wreck", position: enemyBuilder.position, size: 24, team: .player, metal: 80, maxMetal: 80, ttl: 58)
     ]
@@ -2544,6 +2565,7 @@ import Testing
 @Test func enemyAIRebuildsMissingLandFactoryBeforeExtractorExpansion() throws {
     var state = GameState(mapID: .coast)
     state.buildings.removeAll { $0.team == .enemy && $0.type == .landFactory }
+    keepEnemyCommandsBusy(in: &state)
     let selectedPlayerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
     state.selectedEntityID = selectedPlayerBuilding.id
     let initialBuildingIDs = Set(state.buildings.map(\.id))
@@ -2574,6 +2596,7 @@ import Testing
 
 @Test func enemyAIBuildsSecondLandFactoryAfterExtractorFoothold() throws {
     var state = enemyFactoryConstructionReadyState(mapID: .coast)
+    keepEnemyProducersBusy(in: &state)
     let selectedPlayerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
     state.selectedEntityID = selectedPlayerBuilding.id
     let initialBuildingIDs = Set(state.buildings.map(\.id))
@@ -2724,6 +2747,7 @@ import Testing
 
 @Test func enemyAIBuildsTurretAfterFactoryAndExtractorFoothold() throws {
     var state = enemyTurretConstructionReadyState(mapID: .coast)
+    keepEnemyProducersBusy(in: &state)
     let selectedPlayerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
     state.selectedEntityID = selectedPlayerBuilding.id
     let initialBuildingIDs = Set(state.buildings.map(\.id))
@@ -2950,6 +2974,10 @@ import Testing
     #expect(GameDefinitions.building(.landFactory).produces == [.scout, .tank, .hover, .artillery, .aaTank])
 }
 
+@Test func commandCenterProductionListMatchesWebBuilder() {
+    #expect(GameDefinitions.building(.command).produces == [.builder])
+}
+
 @Test func queueUnitDeductsMetalAndSpawnsAtFactoryRally() throws {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
@@ -2981,6 +3009,39 @@ import Testing
     #expect(spawnedUnit.team == .player)
     #expect(spawnedUnit.position == completedFactory.rally)
     #expect(spawnedUnit.position == newRally)
+}
+
+@Test func queueUnitBuildsBuilderAtCommandCenterRally() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let commandTarget = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    let target = try #require(commandTarget)
+    let newRally = WorldPoint(820, 2_260)
+    let startingMetal = engine.state.metal[.player, default: 0]
+    let startingUnitCount = engine.state.units.count
+    let startingSupply = engine.state.supply(for: .player).used
+
+    #expect(engine.setRally(to: newRally) == .issued)
+    #expect(engine.queueUnit(.builder) == .queued)
+    #expect(engine.state.metal[.player, default: 0] == startingMetal - GameDefinitions.unit(.builder).metalCost)
+
+    let queuedCommand = try #require(engine.state.buildings.first { $0.id == target.id })
+    #expect(queuedCommand.productionQueue.count == 1)
+    #expect(queuedCommand.productionQueue.first?.unitType == .builder)
+
+    for _ in 0..<Int(GameDefinitions.unit(.builder).buildTime) {
+        engine.update(deltaTime: 1)
+    }
+
+    let completedCommand = try #require(engine.state.buildings.first { $0.id == target.id })
+    let spawnedUnit = try #require(engine.state.units.last)
+    #expect(completedCommand.productionQueue.isEmpty)
+    #expect(engine.state.units.count == startingUnitCount + 1)
+    #expect(spawnedUnit.type == .builder)
+    #expect(spawnedUnit.team == .player)
+    #expect(spawnedUnit.position == completedCommand.rally)
+    #expect(spawnedUnit.position == newRally)
+    #expect(engine.state.supply(for: .player).used == startingSupply + GameDefinitions.unit(.builder).supply)
 }
 
 @Test func queueUnitSupportsExpandedLandFactoryRoster() throws {
@@ -3038,6 +3099,13 @@ import Testing
     #expect(unaffordable == .insufficientMetal)
 }
 
+@Test func commandCenterRejectsUnsupportedProduction() {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    _ = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    #expect(engine.queueUnit(.scout) == .unsupportedUnit)
+}
+
 @Test func repeatProductionRejectsMissingOrInvalidSelection() {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
@@ -3046,7 +3114,7 @@ import Testing
     _ = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
     #expect(engine.setRepeatProduction(.scout) == .selectedBuildingCannotRepeatProduction)
 
-    _ = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    _ = engine.select(at: WorldPoint(700, 1_900), includeEnemies: false)
     #expect(engine.setRepeatProduction(.scout) == .selectedBuildingCannotRepeatProduction)
 
     _ = engine.select(at: WorldPoint(3_300, 735), includeEnemies: true)
@@ -3098,6 +3166,28 @@ import Testing
     #expect(repeatedItem.progress == 0)
     #expect(engine.state.units.count == unitCountBeforeCompletion + 1)
     #expect(engine.state.metal[.player, default: 0] == metalBeforeCompletion + income - GameDefinitions.unit(.scout).metalCost)
+}
+
+@Test func repeatProductionQueuesBuilderFromCommandCenterWhenQueueDrains() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let commandTarget = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    let target = try #require(commandTarget)
+    engine.state.metal[.player] = 1_000
+    #expect(engine.setRepeatProduction(.builder) == .updated(repeatUnitType: .builder))
+    #expect(engine.queueUnit(.builder) == .queued)
+
+    for _ in 0..<Int(GameDefinitions.unit(.builder).buildTime) {
+        engine.update(deltaTime: 1)
+    }
+
+    let commandAfterCompletion = try #require(engine.state.buildings.first { $0.id == target.id })
+    let repeatedItem = try #require(commandAfterCompletion.productionQueue.first)
+    #expect(commandAfterCompletion.productionQueue.count == 1)
+    #expect(commandAfterCompletion.repeatUnitType == .builder)
+    #expect(repeatedItem.unitType == .builder)
+    #expect(repeatedItem.progress == 0)
+    #expect(engine.state.units.last?.type == .builder)
 }
 
 @Test func repeatProductionSupportsExpandedLandFactoryRoster() throws {
@@ -3237,7 +3327,7 @@ import Testing
     _ = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
     #expect(engine.cancelLastProduction() == .selectedBuildingCannotCancelProduction)
 
-    _ = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    _ = engine.select(at: WorldPoint(700, 1_900), includeEnemies: false)
     #expect(engine.cancelLastProduction() == .selectedBuildingCannotCancelProduction)
 
     _ = engine.select(at: WorldPoint(3_300, 735), includeEnemies: true)
@@ -3345,7 +3435,7 @@ import Testing
     _ = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
     #expect(engine.setRally(to: WorldPoint(1_200, 2_000)) == .selectedBuildingCannotSetRally)
 
-    _ = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    _ = engine.select(at: WorldPoint(700, 1_900), includeEnemies: false)
     #expect(engine.setRally(to: WorldPoint(1_200, 2_000)) == .selectedBuildingCannotSetRally)
 
     _ = engine.select(at: WorldPoint(3_300, 735), includeEnemies: true)
@@ -3397,6 +3487,40 @@ private func keepEnemyFactoriesBusy(in state: inout GameState) {
             )
         ]
     }
+}
+
+private func keepEnemyCommandsBusy(in state: inout GameState) {
+    for buildingIndex in state.buildings.indices {
+        guard state.buildings[buildingIndex].team == .enemy,
+              state.buildings[buildingIndex].type == .command else {
+            continue
+        }
+        keepProducerBusy(at: buildingIndex, in: &state)
+    }
+}
+
+private func keepEnemyProducersBusy(in state: inout GameState) {
+    for buildingIndex in state.buildings.indices {
+        guard state.buildings[buildingIndex].team == .enemy else {
+            continue
+        }
+        keepProducerBusy(at: buildingIndex, in: &state)
+    }
+}
+
+private func keepProducerBusy(at buildingIndex: Int, in state: inout GameState) {
+    let produces = GameDefinitions.building(state.buildings[buildingIndex].type).produces
+    guard let unitType = produces.first,
+          state.buildings[buildingIndex].productionQueue.isEmpty else {
+        return
+    }
+    state.buildings[buildingIndex].productionQueue = [
+        ProductionQueueItem(
+            id: "busy-\(state.buildings[buildingIndex].id)",
+            unitType: unitType,
+            buildTime: 99
+        )
+    ]
 }
 
 private func appendEnemyUnits(_ unitTypes: [UnitType], to state: inout GameState) {

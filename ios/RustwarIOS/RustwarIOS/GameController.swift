@@ -353,7 +353,7 @@ final class GameController {
             return "Tap the tactical map to set the patrol endpoint."
         }
         if isAwaitingRallyTarget {
-            return "Tap the tactical map to set the factory rally point."
+            return "Tap the tactical map to set the producer rally point."
         }
         if isAwaitingReclaimTarget {
             return "Tap a wreck marker on the tactical map to issue reclaim."
@@ -1035,9 +1035,9 @@ final class GameController {
         case .issued:
             return "Rally point set"
         case .noSelection:
-            return "No factory selected"
+            return "No producer selected"
         case .selectedBuildingCannotSetRally:
-            return "Factory required"
+            return "Producer required"
         }
     }
 
@@ -1047,9 +1047,9 @@ final class GameController {
         case .queued:
             return "\(unitName) queued"
         case .noSelection:
-            return "No factory selected"
+            return "No producer selected"
         case .selectedBuildingCannotProduce:
-            return "Factory required"
+            return "Producer required"
         case .unsupportedUnit:
             return "Unsupported unit"
         case .insufficientMetal:
@@ -1065,9 +1065,9 @@ final class GameController {
             let refund = refundedMetal.formatted(.number.precision(.fractionLength(0...1)))
             return "Production cancelled (+\(refund) metal)"
         case .noSelection:
-            return "No factory selected"
+            return "No producer selected"
         case .selectedBuildingCannotCancelProduction:
-            return "Factory required"
+            return "Producer required"
         case .emptyQueue:
             return "No production queued"
         }
@@ -1081,9 +1081,9 @@ final class GameController {
             }
             return "Repeat: \(GameDefinitions.unit(repeatUnitType).name)"
         case .noSelection:
-            return "No factory selected"
+            return "No producer selected"
         case .selectedBuildingCannotRepeatProduction:
-            return "Factory required"
+            return "Producer required"
         case .unsupportedUnit:
             return "Unsupported unit"
         }

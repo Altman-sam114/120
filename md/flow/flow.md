@@ -19,7 +19,7 @@
 
 v0.5 起，文档体系支持未来 Agent X 主控循环。Agent X 不直接替代 A/B/C，而是在人工用 `agentx:` / `x:` / `X:` 给出总目标后，把总目标拆成多个小轮次，每轮仍必须走 Agent A -> Agent B -> Agent C，并在 Agent C artifact 验收后判断继续、退回、暂停或完成。本轮只建立文档基线，不自动启动真实 Agent X 循环。
 
-v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制、v1.6 新增的原生三地图切换和当前地图重开、v1.7 新增的原生战术小地图点按居中、v1.8 新增的原生 Stop 命令、v1.9 新增的原生工厂集结点命令、v1.10 新增的原生生产取消/退款命令、v1.11 新增的原生单槽 Save/Load MVP、v1.12 新增的原生单单位 Attack-Move 命令地基、v1.13 新增的原生单单位 Patrol 命令地基、v1.14 新增的原生单单位 Guard 命令地基、v1.15 新增的原生单 Builder Repair 命令地基、v1.16 新增的原生单 Builder Reclaim 残骸回收地基、v1.17 新增的原生单 Builder 在资源点建造 Extractor 地基、v1.18 新增的红方 Builder 自动扩张建造 Extractor MVP、v1.19 新增的原生 Turret 自动防御开火 MVP、v1.20 新增的战术小地图点位命令入口、v1.21 新增的战术小地图 Builder 目标命令入口、v1.22 新增的战术小地图实体目标命令入口、v1.23 新增的战术小地图等待命令反馈、v1.24 新增的 Turret 攻击建筑目标、v1.25 新增的工厂重复生产开关、v1.26 新增的 Builder 建造 Turret 地基、v1.27 新增的 Builder 建造 Land Factory 地基、v1.28 新增的 Land Factory T1 生产列表扩展、v1.29 新增的红方 Builder 建造 Land Factory AI MVP、v1.30 新增的红方 Builder 建造 Turret AI MVP、v1.31 新增的红方 Builder 自动维修 AI MVP、v1.32 新增的红方 Builder 自动回收残骸 AI MVP，以及 v1.33 新增的红方完整 T1 混合生产 AI。
+v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制、v1.6 新增的原生三地图切换和当前地图重开、v1.7 新增的原生战术小地图点按居中、v1.8 新增的原生 Stop 命令、v1.9 新增的原生生产建筑集结点命令、v1.10 新增的原生生产取消/退款命令、v1.11 新增的原生单槽 Save/Load MVP、v1.12 新增的原生单单位 Attack-Move 命令地基、v1.13 新增的原生单单位 Patrol 命令地基、v1.14 新增的原生单单位 Guard 命令地基、v1.15 新增的原生单 Builder Repair 命令地基、v1.16 新增的原生单 Builder Reclaim 残骸回收地基、v1.17 新增的原生单 Builder 在资源点建造 Extractor 地基、v1.18 新增的红方 Builder 自动扩张建造 Extractor MVP、v1.19 新增的原生 Turret 自动防御开火 MVP、v1.20 新增的战术小地图点位命令入口、v1.21 新增的战术小地图 Builder 目标命令入口、v1.22 新增的战术小地图实体目标命令入口、v1.23 新增的战术小地图等待命令反馈、v1.24 新增的 Turret 攻击建筑目标、v1.25 新增的生产建筑重复生产开关、v1.26 新增的 Builder 建造 Turret 地基、v1.27 新增的 Builder 建造 Land Factory 地基、v1.28 新增的 Land Factory T1 生产列表扩展、v1.29 新增的红方 Builder 建造 Land Factory AI MVP、v1.30 新增的红方 Builder 建造 Turret AI MVP、v1.31 新增的红方 Builder 自动维修 AI MVP、v1.32 新增的红方 Builder 自动回收残骸 AI MVP、v1.33 新增的红方完整 T1 混合生产 AI，以及 v1.34 新增的 Command Center Builder 生产。
 
 ```text
 RustwarCore MapPreset / GameState / GameEngine
@@ -344,7 +344,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 保存 iOS 迁移使用的共享 Swift 数据模型和小步确定性逻辑。
 - 定义 `MapPreset`、`TerrainGrid`、`ResourceNode`、`UnitSnapshot`、`UnitOrder`、`BuildingSnapshot`、`WreckSnapshot`、`ProductionQueueItem`、`ProductionRepeatResult`、`GameState`、`GameEngine`。
 - 初始化三张 Web 地图对应的基础首屏布局。
-- 计算收入、人口、简单 tick、实体/残骸/资源点命中选择、己方单单位移动、己方单单位 Attack-Move、己方单单位 Patrol、己方单单位 Guard、己方单 Builder Repair、己方单 Builder Reclaim、己方单 Builder 建造 Extractor、己方单 Builder 建造 Turret、己方单 Builder 建造 Land Factory、己方 Stop、己方单单位攻击、炮塔自动防御开火、基础伤害/死亡残骸清理、陆军工厂生产队列、生产取消/退款、重复生产、己方工厂集结点设置、红方最小生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI，以及从已保存 `GameState` 恢复 `GameEngine`。
+- 计算收入、人口、简单 tick、实体/残骸/资源点命中选择、己方单单位移动、己方单单位 Attack-Move、己方单单位 Patrol、己方单单位 Guard、己方单 Builder Repair、己方单 Builder Reclaim、己方单 Builder 建造 Extractor、己方单 Builder 建造 Turret、己方单 Builder 建造 Land Factory、己方 Stop、己方单单位攻击、炮塔自动防御开火、基础伤害/死亡残骸清理、Command Center Builder 生产、Land Factory T1 生产队列、生产取消/退款、重复生产、己方生产建筑集结点设置、红方最小生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI，以及从已保存 `GameState` 恢复 `GameEngine`。
 
 输入：
 
@@ -377,7 +377,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v1.6 起，`GameController.currentMapID` 由 HUD Map picker 绑定，切换地图或 Restart 会重建 `GameEngine(mapID:)`、重置 `CameraState`、清除待选 Move/Attack/Attack Move/Patrol 模式，并推进 `mapRenderRevision` 让 `BattlefieldScene` 在同图重开时也刷新地形和资源层。
 - v1.7 起，`RootGameView` 叠加原生 `TacticalMapView`；小地图用 SwiftUI `Canvas` 从 `GameState.resources`、`units`、`buildings` 和 `CameraState.center` 绘制资源、双方实体和相机中心，点按/拖放小地图会调用 `GameController.centerCamera(on:)`，再由 `CameraState.center(on:)` 夹到地图边界。
 - v1.8 起，选中己方单位时 HUD 显示 Stop 命令；点按 Stop 会调用 `GameEngine.issueStop()` 清除当前选中玩家单位的 `UnitSnapshot.order`，并由 `GameController` 取消待选 Move/Attack Move/Patrol/Guard/Repair/Reclaim/Build Extractor/Attack 目标模式。SpriteKit 订单线会随 `order == nil` 自然消失。
-- v1.9 起，选中己方生产建筑时 HUD 显示 Rally 命令；Rally 模式下一次主战场 tap 会调用 `GameEngine.setRally(to:)` 更新 `BuildingSnapshot.rally`，后续生产完成的单位在新集结点生成。SpriteKit 在选中己方生产建筑时显示工厂到集结点的线和标记。
+- v1.9 起，选中己方生产建筑时 HUD 显示 Rally 命令；Rally 模式下一次主战场 tap 会调用 `GameEngine.setRally(to:)` 更新 `BuildingSnapshot.rally`，后续生产完成的单位在新集结点生成。SpriteKit 在选中己方生产建筑时显示建筑到集结点的线和标记。
 - v1.10 起，选中己方生产建筑且队列不为空时 HUD 显示 Cancel Production 命令；点按会调用 `GameEngine.cancelLastProduction()` 取消队尾生产项，并按 `unit.metalCost * (1 - progressFraction)` 返还金属。取消只改变选中建筑队列和玩家金属，不影响当前选择、集结点或其它工厂。
 - v1.11 起，HUD 显示 Save / Load 按钮；`GameController.saveGame()` 用 `JSONEncoder` 把 app-private save payload 写入 `UserDefaults` 单槽，payload 包含 schema version、`GameState`、`CameraState`、当前 `MapID`、暂停状态、速度和 AI 开关；`loadGame()` 解码后用 `GameEngine(state:enemyAIEnabled:)` 恢复 core 状态，恢复相机、地图、暂停和速度，清空待选 Move/Attack Move/Patrol/Guard/Repair/Reclaim/Build Extractor/Attack/Rally 模式，并递增 `mapRenderRevision` / `renderRevision` 让 SpriteKit 和 SwiftUI 刷新。
 - v1.12 起，选中己方单位时 HUD 显示 Attack Move 命令；Attack Move 模式下一次 tap 会调用 `GameEngine.issueAttackMove(to:)` 写入 `UnitOrder.attackMove(destination:)`。`RustwarCore` 每 tick 只在单位 `vision` 范围内临时获取最近敌方单位或建筑并复用攻击推进，未获取目标时继续向目的地移动，到达目的地后清除订单。SpriteKit 显示独立 Attack-Move 目的地线和 `A` 标记。
@@ -401,6 +401,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v1.31 起，`GameEngine.updateEnemyAI()` 会让空闲红方 Builder 自动维修受损红方单位或建筑：缺少 Land Factory 时仍先尝试补建，然后才选择维修目标；维修目标必须存活、同队伍、非 Builder 自身且未满血。目标选择确定性地优先受损建筑，再按生命比例和距离选择单位，执行仍复用 `UnitOrder.repair`、125 范围和 18 HP/s 维修速率，不新增玩家 UI 或维修光环。
 - v1.32 起，`GameEngine.updateEnemyAI()` 会让仍空闲的红方 Builder 自动回收附近有效残骸：顺序在缺厂补建、维修、资源扩张、第二工厂和炮塔建造之后，生产和进攻之前。候选残骸必须 `metal > 0`、`ttl > 0` 且距离 Builder 不超过 560，选择规则先取最近，距离近似相同再取金属更多、TTL 更高；执行复用 `UnitOrder.reclaim`、92 范围和 `builderReclaimRate`，不新增玩家 UI，也不改变玩家当前选择。
 - v1.33 起，红方完成状态 Land Factory 的生产 AI 使用完整 T1 列表 Scout / Light Tank / Hover Tank / Artillery / AA Tank。`enemyProductionChoice(for:)` 只在当前建筑 `produces` 且 `canEnqueueUnit` 允许的候选中选择，按红方现有单位加所有红方工厂队列中的同类数量取最少者，平局按 Land Factory 生产列表顺序打平；入队仍复用 `enqueueUnit` 的金属、人口、完成度和队列校验。
+- v1.34 起，Command Center 的 `BuildingDefinition.produces` 增加 Builder，完成状态己方 Command Center 会通过现有 iOS 生产按钮显示 Builder，并复用 `queueUnit`、Cancel Production、Repeat 和 Rally。红方完成状态 Command Center 在资源/人口允许且队列为空时也会走同一 `enemyProductionChoice(for:)` / `enqueueUnit` 通用生产路径排队 Builder；本轮不新增 Builder 数量上限或专用红方建造策略。
 
 输入：
 
@@ -458,7 +459,7 @@ RustwarCore MapPreset / GameState / GameEngine
 ### 2.5 生产与经济流程
 
 1. `incomeFor(team)` 根据采集器、制造器和难度产生收入。
-2. 工厂/建筑按钮调用入队函数并扣资源、检查人口。
+2. 生产建筑按钮调用入队函数并扣资源、检查人口。
 3. `updateProduction()` 推进队列。
 4. 队列完成后生成单位、升级建筑、补充核弹或反核弹。
 5. 重复生产在队列清空后自动尝试续造。
