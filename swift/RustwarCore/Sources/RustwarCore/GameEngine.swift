@@ -511,19 +511,30 @@ public struct GameEngine: Sendable {
             return nil
         }
 
-        let enemyScouts = state.units.filter { $0.team == .enemy && $0.type == .scout }.count
-        let enemyTanks = state.units.filter { $0.team == .enemy && $0.type == .tank }.count
-        let preferredOptions: [UnitType]
-        if options.contains(.tank), enemyTanks <= enemyScouts {
-            preferredOptions = [.tank, .scout]
-        } else {
-            preferredOptions = [.scout, .tank]
+        let availableOptions = options.enumerated().filter { _, unitType in
+            canEnqueueUnit(unitType, for: building.team)
         }
+        return availableOptions.min { lhs, rhs in
+            let lhsCount = enemyProductionCount(for: lhs.element, team: building.team)
+            let rhsCount = enemyProductionCount(for: rhs.element, team: building.team)
+            if lhsCount != rhsCount {
+                return lhsCount < rhsCount
+            }
+            return lhs.offset < rhs.offset
+        }?.element
+    }
 
-        for unitType in preferredOptions where options.contains(unitType) && canEnqueueUnit(unitType, for: building.team) {
-            return unitType
+    private func enemyProductionCount(for unitType: UnitType, team: Team) -> Int {
+        let activeUnits = state.units.filter {
+            $0.team == team && $0.type == unitType && $0.hitPoints > 0
+        }.count
+        let queuedUnits = state.buildings.reduce(0) { partial, building in
+            guard building.team == team else {
+                return partial
+            }
+            return partial + building.productionQueue.filter { $0.unitType == unitType }.count
         }
-        return options.first { canEnqueueUnit($0, for: building.team) }
+        return activeUnits + queuedUnits
     }
 
     private mutating func updateEnemyAttackOrders() {
