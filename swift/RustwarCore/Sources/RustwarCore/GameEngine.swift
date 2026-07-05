@@ -9,6 +9,7 @@ public struct GameEngine: Sendable {
     private static let wreckTTL = 58.0
     private static let activeReclaimWreckMinimumTTL = 8.0
     private static let enemyLandFactoryLimit = 2
+    private static let enemyTurretLimit = 2
     private static let enemyExtractorCountBeforeAdditionalFactory = 3
 
     public private(set) var state: GameState
@@ -354,6 +355,7 @@ public struct GameEngine: Sendable {
         updateEnemyFactoryConstruction(rebuildMissingFactoryOnly: true)
         updateEnemyExpansion()
         updateEnemyFactoryConstruction(rebuildMissingFactoryOnly: false)
+        updateEnemyTurretConstruction()
         updateEnemyProduction()
         updateEnemyAttackOrders()
     }
@@ -382,9 +384,8 @@ public struct GameEngine: Sendable {
 
     private mutating func updateEnemyExpansion() {
         let enemyFactoryCount = livingEnemyBuildingCount(type: .landFactory)
-        if enemyFactoryCount > 0,
-           enemyFactoryCount < Self.enemyLandFactoryLimit,
-           livingEnemyBuildingCount(type: .extractor) >= Self.enemyExtractorCountBeforeAdditionalFactory {
+        if shouldPrioritizeEnemyFactoryConstruction(enemyFactoryCount: enemyFactoryCount)
+            || shouldPrioritizeEnemyTurretConstruction() {
             return
         }
 
@@ -409,9 +410,7 @@ public struct GameEngine: Sendable {
                 return
             }
         } else {
-            guard enemyFactoryCount > 0,
-                  enemyFactoryCount < Self.enemyLandFactoryLimit,
-                  livingEnemyBuildingCount(type: .extractor) >= Self.enemyExtractorCountBeforeAdditionalFactory else {
+            guard shouldPrioritizeEnemyFactoryConstruction(enemyFactoryCount: enemyFactoryCount) else {
                 return
             }
         }
@@ -431,6 +430,30 @@ public struct GameEngine: Sendable {
             }
 
             startPointBuildingBuild(.landFactory, builderIndex: unitIndex, position: position)
+            return
+        }
+    }
+
+    private mutating func updateEnemyTurretConstruction() {
+        guard shouldPrioritizeEnemyTurretConstruction() else {
+            return
+        }
+
+        let definition = GameDefinitions.building(.turret)
+        guard state.metal[.enemy, default: 0] >= definition.metalCost else {
+            return
+        }
+
+        for unitIndex in state.units.indices {
+            guard state.units[unitIndex].team == .enemy,
+                  state.units[unitIndex].type == .builder,
+                  state.units[unitIndex].hitPoints > 0,
+                  state.units[unitIndex].order == nil,
+                  let position = enemyTurretBuildPosition(for: state.units[unitIndex]) else {
+                continue
+            }
+
+            startPointBuildingBuild(.turret, builderIndex: unitIndex, position: position)
             return
         }
     }
@@ -1349,6 +1372,18 @@ public struct GameEngine: Sendable {
         }.count
     }
 
+    private func shouldPrioritizeEnemyFactoryConstruction(enemyFactoryCount: Int) -> Bool {
+        enemyFactoryCount > 0
+            && enemyFactoryCount < Self.enemyLandFactoryLimit
+            && livingEnemyBuildingCount(type: .extractor) >= Self.enemyExtractorCountBeforeAdditionalFactory
+    }
+
+    private func shouldPrioritizeEnemyTurretConstruction() -> Bool {
+        livingEnemyBuildingCount(type: .landFactory) > 0
+            && livingEnemyBuildingCount(type: .turret) < Self.enemyTurretLimit
+            && livingEnemyBuildingCount(type: .extractor) >= Self.enemyExtractorCountBeforeAdditionalFactory
+    }
+
     private func enemyLandFactoryBuildPosition(for builder: UnitSnapshot) -> WorldPoint? {
         let anchors = enemyFactoryBuildAnchors(for: builder)
         let offsets = [
@@ -1386,6 +1421,48 @@ public struct GameEngine: Sendable {
         }
         anchors.append(state.map.enemyBase)
         anchors.append(state.map.enemyFactory)
+        anchors.append(builder.position)
+        return anchors
+    }
+
+    private func enemyTurretBuildPosition(for builder: UnitSnapshot) -> WorldPoint? {
+        let anchors = enemyTurretBuildAnchors(for: builder)
+        let offsets = [
+            WorldPoint(-220, 150),
+            WorldPoint(-120, 260),
+            WorldPoint(80, 240),
+            WorldPoint(220, 80),
+            WorldPoint(-320, -40),
+            WorldPoint(280, -120),
+            WorldPoint(-420, 180),
+            WorldPoint(0, 360),
+            WorldPoint(360, 180),
+            WorldPoint(-180, -300),
+            WorldPoint(160, -340),
+            WorldPoint(-520, 20)
+        ]
+
+        for anchor in anchors {
+            for offset in offsets {
+                let position = WorldPoint(anchor.x + offset.x, anchor.y + offset.y).clampedToMap()
+                if canPlaceBuilding(.turret, at: position) {
+                    return position
+                }
+            }
+        }
+        return nil
+    }
+
+    private func enemyTurretBuildAnchors(for builder: UnitSnapshot) -> [WorldPoint] {
+        var anchors: [WorldPoint] = []
+        anchors.append(state.map.enemyFrontTurret)
+        if let command = state.buildings.first(where: {
+            $0.team == .enemy && $0.type == .command && $0.hitPoints > 0
+        }) {
+            anchors.append(command.position)
+        }
+        anchors.append(state.map.enemyBase)
+        anchors.append(state.map.enemyRally)
         anchors.append(builder.position)
         return anchors
     }

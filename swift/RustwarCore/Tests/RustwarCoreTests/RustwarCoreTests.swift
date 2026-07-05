@@ -2217,7 +2217,7 @@ import Testing
     let enemyBuilderIndex = try #require(baseState.units.firstIndex { $0.id == enemyBuilder.id })
 
     var poorState = baseState
-    poorState.metal[.enemy] = max(0, GameDefinitions.building(.landFactory).metalCost - poorState.income(for: .enemy) - 1)
+    poorState.metal[.enemy] = max(0, GameDefinitions.building(.turret).metalCost - poorState.income(for: .enemy) - 1)
     var poorEngine = GameEngine(state: poorState)
     poorEngine.update(deltaTime: 1)
     #expect(poorEngine.state.buildings.filter { $0.team == .enemy && $0.type == .landFactory }.count == startingLandFactoryCount)
@@ -2264,6 +2264,136 @@ import Testing
     var blockedEngine = GameEngine(state: blockedState)
     blockedEngine.update(deltaTime: 1)
     #expect(blockedEngine.state.buildings.filter { $0.team == .enemy && $0.type == .landFactory }.count == startingLandFactoryCount)
+    #expect(blockedEngine.state.units.first { $0.id == enemyBuilder.id }?.order == nil)
+}
+
+@Test func enemyAIBuildsTurretAfterFactoryAndExtractorFoothold() throws {
+    var state = enemyTurretConstructionReadyState(mapID: .coast)
+    let selectedPlayerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    state.selectedEntityID = selectedPlayerBuilding.id
+    let initialBuildingIDs = Set(state.buildings.map(\.id))
+    let startingEnemyMetal = state.metal[.enemy, default: 0]
+    let startingEnemyIncome = state.income(for: .enemy)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let newTurret = try #require(engine.state.buildings.first {
+        !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .turret
+    })
+    let builderAfterUpdate = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+
+    #expect(newTurret.buildProgress == 0)
+    #expect(newTurret.hitPoints == newTurret.maxHitPoints * 0.1)
+    #expect(newTurret.nodeID == nil)
+    #expect(newTurret.rally == newTurret.position)
+    #expect(engine.state.selectedEntityID == selectedPlayerBuilding.id)
+    #expect(engine.state.metal[.enemy, default: 0] == startingEnemyMetal + startingEnemyIncome - GameDefinitions.building(.turret).metalCost)
+    if case let .build(targetID)? = builderAfterUpdate.order {
+        #expect(targetID == newTurret.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func enemyTurretAIFindsBuildPointOnEveryNativeMap() throws {
+    for mapID in MapID.allCases {
+        let state = enemyTurretConstructionReadyState(mapID: mapID)
+        let initialBuildingIDs = Set(state.buildings.map(\.id))
+
+        var engine = GameEngine(state: state)
+        engine.update(deltaTime: 1)
+
+        #expect(engine.state.buildings.contains {
+            !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .turret
+        })
+    }
+}
+
+@Test func enemyAITurretDoesNotFireUntilCompleted() throws {
+    var state = enemyTurretConstructionReadyState(mapID: .coast)
+    state.buildings.removeAll { $0.team == .enemy && $0.type == .turret }
+    let playerTarget = try #require(state.units.first { $0.team == .player && $0.type == .tank })
+    let playerTargetIndex = try #require(state.units.firstIndex { $0.id == playerTarget.id })
+    state.units[playerTargetIndex].position = WorldPoint(3_040, 1_080)
+    let initialBuildingIDs = Set(state.buildings.map(\.id))
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let newTurret = try #require(engine.state.buildings.first {
+        !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .turret
+    })
+    let targetBeforeCompletion = try #require(engine.state.units.first { $0.id == playerTarget.id })
+    #expect(targetBeforeCompletion.hitPoints == playerTarget.hitPoints)
+
+    var buildOnlyEngine = GameEngine(state: engine.state, enemyAIEnabled: false)
+    for _ in 0..<20 {
+        buildOnlyEngine.update(deltaTime: 1)
+    }
+
+    let completedTurret = try #require(buildOnlyEngine.state.buildings.first { $0.id == newTurret.id })
+    #expect(completedTurret.buildProgress == 1)
+    #expect(completedTurret.hitPoints == completedTurret.maxHitPoints)
+
+    buildOnlyEngine.update(deltaTime: 1)
+
+    let targetAfterFire = try #require(buildOnlyEngine.state.units.first { $0.id == playerTarget.id })
+    #expect(targetAfterFire.hitPoints == playerTarget.hitPoints - GameDefinitions.building(.turret).damage)
+}
+
+@Test func enemyTurretAIWaitsForMetalIdleBuilderLimitAndLegalPoint() throws {
+    let baseState = enemyTurretConstructionReadyState(mapID: .coast)
+    let startingTurretCount = baseState.buildings.filter { $0.team == .enemy && $0.type == .turret }.count
+    let enemyBuilder = try #require(baseState.units.first { $0.team == .enemy && $0.type == .builder })
+    let enemyBuilderIndex = try #require(baseState.units.firstIndex { $0.id == enemyBuilder.id })
+
+    var poorState = baseState
+    poorState.metal[.enemy] = max(0, GameDefinitions.building(.turret).metalCost - poorState.income(for: .enemy) - 1)
+    var poorEngine = GameEngine(state: poorState)
+    poorEngine.update(deltaTime: 1)
+    #expect(poorEngine.state.buildings.filter { $0.team == .enemy && $0.type == .turret }.count == startingTurretCount)
+    #expect(poorEngine.state.units.first { $0.id == enemyBuilder.id }?.order == nil)
+
+    var busyState = baseState
+    busyState.units[enemyBuilderIndex].order = .move(destination: WorldPoint(3_800, 1_120))
+    var busyEngine = GameEngine(state: busyState)
+    busyEngine.update(deltaTime: 1)
+    #expect(busyEngine.state.buildings.filter { $0.team == .enemy && $0.type == .turret }.count == startingTurretCount)
+    let busyBuilder = try #require(busyEngine.state.units.first { $0.id == enemyBuilder.id })
+    if case .some(.move) = busyBuilder.order {
+        #expect(Bool(true))
+    } else {
+        #expect(Bool(false))
+    }
+
+    var cappedState = baseState
+    let turretDefinition = GameDefinitions.building(.turret)
+    cappedState.buildings.append(
+        BuildingSnapshot(
+            id: "enemy-extra-turret",
+            type: .turret,
+            team: .enemy,
+            position: WorldPoint(2_920, 1_120),
+            hitPoints: turretDefinition.hitPoints,
+            maxHitPoints: turretDefinition.hitPoints,
+            rally: WorldPoint(2_920, 1_120)
+        )
+    )
+    var cappedEngine = GameEngine(state: cappedState)
+    cappedEngine.update(deltaTime: 1)
+    #expect(cappedEngine.state.buildings.filter { $0.team == .enemy && $0.type == .turret }.count == 2)
+
+    var blockedState = baseState
+    blockedState.terrain = TerrainGrid(
+        columns: blockedState.terrain.columns,
+        rows: blockedState.terrain.rows,
+        tiles: Array(repeating: .water, count: blockedState.terrain.tiles.count)
+    )
+    var blockedEngine = GameEngine(state: blockedState)
+    blockedEngine.update(deltaTime: 1)
+    #expect(blockedEngine.state.buildings.filter { $0.team == .enemy && $0.type == .turret }.count == startingTurretCount)
     #expect(blockedEngine.state.units.first { $0.id == enemyBuilder.id }?.order == nil)
 }
 
@@ -2812,6 +2942,32 @@ private func enemyFactoryConstructionReadyState(mapID: MapID) -> GameState {
         ]
     }
     state.metal[.enemy] = 1_500
+    return state
+}
+
+private func enemyTurretConstructionReadyState(mapID: MapID) -> GameState {
+    var state = enemyFactoryConstructionReadyState(mapID: mapID)
+    for resourceIndex in state.resources.indices {
+        state.resources[resourceIndex].claimedBy = state.resources[resourceIndex].claimedBy ?? .enemy
+    }
+
+    let factoryDefinition = GameDefinitions.building(.landFactory)
+    let extraFactoryPosition = clearBuildPoint(for: .landFactory, in: state)
+    state.buildings.append(
+        BuildingSnapshot(
+            id: "enemy-extra-land-factory",
+            type: .landFactory,
+            team: .enemy,
+            position: extraFactoryPosition,
+            hitPoints: factoryDefinition.hitPoints,
+            maxHitPoints: factoryDefinition.hitPoints,
+            rally: extraFactoryPosition,
+            productionQueue: [
+                ProductionQueueItem(id: "busy-extra-enemy-factory", unitType: .scout, buildTime: 99)
+            ]
+        )
+    )
+    state.metal[.enemy] = 1_000
     return state
 }
 
