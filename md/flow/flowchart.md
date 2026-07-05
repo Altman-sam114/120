@@ -58,7 +58,7 @@ flowchart TD
   C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、残骸、双方单位建筑和相机中心，并复用点位命令"]
   C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、双方初始建筑、单位和移动目标"]
   T["SpatialTap / Drag / Magnify<br/>中文注释：iOS 触摸选择、移动落点、拖拽平移和捏合缩放"] --> C
-  TT["TacticalMap DragTap<br/>中文注释：点按小地图换算世界坐标；等待 Move / Attack Move / Patrol / Rally 时下点位命令，等待 Reclaim / Build Extractor 时命中残骸或资源点，否则居中相机"] --> C
+  TT["TacticalMap DragTap<br/>中文注释：点按小地图换算世界坐标；等待点位、Builder 目标或实体目标命令时下令，否则居中相机"] --> C
   C --> M["UnitOrder.move<br/>中文注释：选中己方单位后写入移动目标"]
   M --> E
   C --> AM["UnitOrder.attackMove<br/>中文注释：选中己方单位后写入攻击移动目的地，core 在视野内临时索敌"]

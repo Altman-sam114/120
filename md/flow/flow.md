@@ -19,7 +19,7 @@
 
 v0.5 起，文档体系支持未来 Agent X 主控循环。Agent X 不直接替代 A/B/C，而是在人工用 `agentx:` / `x:` / `X:` 给出总目标后，把总目标拆成多个小轮次，每轮仍必须走 Agent A -> Agent B -> Agent C，并在 Agent C artifact 验收后判断继续、退回、暂停或完成。本轮只建立文档基线，不自动启动真实 Agent X 循环。
 
-v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制、v1.6 新增的原生三地图切换和当前地图重开、v1.7 新增的原生战术小地图点按居中、v1.8 新增的原生 Stop 命令、v1.9 新增的原生工厂集结点命令、v1.10 新增的原生生产取消/退款命令、v1.11 新增的原生单槽 Save/Load MVP、v1.12 新增的原生单单位 Attack-Move 命令地基、v1.13 新增的原生单单位 Patrol 命令地基、v1.14 新增的原生单单位 Guard 命令地基、v1.15 新增的原生单 Builder Repair 命令地基、v1.16 新增的原生单 Builder Reclaim 残骸回收地基、v1.17 新增的原生单 Builder 在资源点建造 Extractor 地基、v1.18 新增的红方 Builder 自动扩张建造 Extractor MVP、v1.19 新增的原生 Turret 自动防御开火 MVP、v1.20 新增的战术小地图点位命令入口，以及 v1.21 新增的战术小地图 Builder 目标命令入口。
+v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制、v1.6 新增的原生三地图切换和当前地图重开、v1.7 新增的原生战术小地图点按居中、v1.8 新增的原生 Stop 命令、v1.9 新增的原生工厂集结点命令、v1.10 新增的原生生产取消/退款命令、v1.11 新增的原生单槽 Save/Load MVP、v1.12 新增的原生单单位 Attack-Move 命令地基、v1.13 新增的原生单单位 Patrol 命令地基、v1.14 新增的原生单单位 Guard 命令地基、v1.15 新增的原生单 Builder Repair 命令地基、v1.16 新增的原生单 Builder Reclaim 残骸回收地基、v1.17 新增的原生单 Builder 在资源点建造 Extractor 地基、v1.18 新增的红方 Builder 自动扩张建造 Extractor MVP、v1.19 新增的原生 Turret 自动防御开火 MVP、v1.20 新增的战术小地图点位命令入口、v1.21 新增的战术小地图 Builder 目标命令入口，以及 v1.22 新增的战术小地图实体目标命令入口。
 
 ```text
 RustwarCore MapPreset / GameState / GameEngine
@@ -390,6 +390,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v1.19 起，`BuildingDefinition` 保存最小建筑武器参数，`BuildingSnapshot.weaponCooldown` 保存建筑开火冷却并兼容旧 JSON 默认 0。`GameEngine.update` 会推进完成状态 Turret 的自动防御开火：炮塔在射程内选择最近敌方单位、按冷却造成伤害，死亡清理和残骸生成仍复用统一实体清理。SpriteKit 在炮塔冷却期间绘制淡红火力线。
 - v1.20 起，`GameController.handleTacticalMapTap(at:)` 复用主战场点位命令派发：若当前等待 Move / Attack Move / Patrol / Rally 落点，小地图点按会直接下达对应命令并清除等待态；若没有可消费的点位命令，仍保持旧行为居中相机。
 - v1.21 起，战术小地图在 Reclaim / Build Extractor 等待态下会调用现有 `GameState.wreckTarget(at:)` / `resourceTarget(at:)` 命中残骸或资源点，并复用 `issueReclaim` / `issueBuildExtractor` 下达 Builder 命令；Attack / Guard / Repair 这类需要精确单位或建筑实体命中的命令仍不由小地图处理。
+- v1.22 起，战术小地图在 Attack / Guard / Repair 等待态下会调用现有 `GameState.selectionTarget(at:includeEnemies:)` 命中单位或建筑，并复用 `issueAttack` / `issueGuard` / `issueRepair` 的目标合法性校验；未命中或目标非法时沿用主战场相同状态文案。
 
 输入：
 

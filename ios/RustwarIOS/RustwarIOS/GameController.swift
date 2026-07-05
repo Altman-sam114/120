@@ -219,56 +219,11 @@ final class GameController {
             return
         }
 
-        if isAwaitingGuardTarget {
-            let target = engine.state.selectionTarget(at: point, includeEnemies: true)
-            let result: UnitCommandResult
-            if let target {
-                result = engine.issueGuard(targetID: target.id)
-            } else {
-                result = .invalidGuardTarget
-            }
-            isAwaitingGuardTarget = false
-            commandStatus = statusText(forGuard: result)
-        } else if isAwaitingRepairTarget {
-            let target = engine.state.selectionTarget(at: point, includeEnemies: true)
-            let result: UnitCommandResult
-            if let target {
-                result = engine.issueRepair(targetID: target.id)
-            } else {
-                result = .invalidRepairTarget
-            }
-            isAwaitingRepairTarget = false
-            commandStatus = statusText(forRepair: result)
-        } else if isAwaitingReclaimTarget {
-            let wreck = engine.state.wreckTarget(at: point)
-            let result: UnitCommandResult
-            if let wreck {
-                result = engine.issueReclaim(wreckID: wreck.id)
-            } else {
-                result = .invalidReclaimTarget
-            }
-            isAwaitingReclaimTarget = false
-            commandStatus = statusText(forReclaim: result)
-        } else if isAwaitingBuildExtractorTarget {
-            let resource = engine.state.resourceTarget(at: point)
-            let result: UnitCommandResult
-            if let resource {
-                result = engine.issueBuildExtractor(on: resource.id)
-            } else {
-                result = .invalidBuildTarget
-            }
-            isAwaitingBuildExtractorTarget = false
-            commandStatus = statusText(forBuildExtractor: result)
-        } else if isAwaitingAttackTarget {
-            let target = engine.state.selectionTarget(at: point, includeEnemies: true)
-            let result: UnitCommandResult
-            if let target {
-                result = engine.issueAttack(targetID: target.id)
-            } else {
-                result = .invalidAttackTarget
-            }
-            isAwaitingAttackTarget = false
-            commandStatus = statusText(forAttack: result)
+        if handleSelectionTargetCommand(at: point) {
+            return
+        }
+        if handleBuilderTargetCommand(at: point) {
+            return
         } else {
             engine.select(at: point, includeEnemies: true)
             commandStatus = nil
@@ -280,7 +235,10 @@ final class GameController {
         if handlePointCommand(at: point) {
             return
         }
-        if handleTacticalMapTargetCommand(at: point) {
+        if handleBuilderTargetCommand(at: point) {
+            return
+        }
+        if handleSelectionTargetCommand(at: point) {
             return
         }
         centerCamera(on: point)
@@ -539,7 +497,7 @@ final class GameController {
         return true
     }
 
-    private func handleTacticalMapTargetCommand(at point: WorldPoint) -> Bool {
+    private func handleBuilderTargetCommand(at point: WorldPoint) -> Bool {
         if isAwaitingReclaimTarget {
             let wreck = engine.state.wreckTarget(at: point)
             let result: UnitCommandResult
@@ -560,6 +518,44 @@ final class GameController {
             }
             isAwaitingBuildExtractorTarget = false
             commandStatus = statusText(forBuildExtractor: result)
+        } else {
+            return false
+        }
+        renderRevision += 1
+        return true
+    }
+
+    private func handleSelectionTargetCommand(at point: WorldPoint) -> Bool {
+        if isAwaitingGuardTarget {
+            let target = engine.state.selectionTarget(at: point, includeEnemies: true)
+            let result: UnitCommandResult
+            if let target {
+                result = engine.issueGuard(targetID: target.id)
+            } else {
+                result = .invalidGuardTarget
+            }
+            isAwaitingGuardTarget = false
+            commandStatus = statusText(forGuard: result)
+        } else if isAwaitingRepairTarget {
+            let target = engine.state.selectionTarget(at: point, includeEnemies: true)
+            let result: UnitCommandResult
+            if let target {
+                result = engine.issueRepair(targetID: target.id)
+            } else {
+                result = .invalidRepairTarget
+            }
+            isAwaitingRepairTarget = false
+            commandStatus = statusText(forRepair: result)
+        } else if isAwaitingAttackTarget {
+            let target = engine.state.selectionTarget(at: point, includeEnemies: true)
+            let result: UnitCommandResult
+            if let target {
+                result = engine.issueAttack(targetID: target.id)
+            } else {
+                result = .invalidAttackTarget
+            }
+            isAwaitingAttackTarget = false
+            commandStatus = statusText(forAttack: result)
         } else {
             return false
         }

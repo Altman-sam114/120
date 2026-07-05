@@ -15,7 +15,7 @@
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
 - Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、资源点命中、残骸模型、单单位移动命令、Attack-Move 命令、Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Stop 命令、陆军工厂生产队列 MVP、生产取消/退款、工厂集结点设置、基础攻击、炮塔自动防御开火、伤害/死亡残骸清理、红方生产/扩张/进攻 AI MVP，以及从已保存 `GameState` 恢复原生模拟的入口。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Repair 按钮、Reclaim 按钮、Build Extractor 按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中或下达点位/Builder 目标命令，以及 Save/Load 单槽本地存档。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、单单位移动命令 MVP、Attack Move 按钮、Patrol 按钮、Guard 按钮、Repair 按钮、Reclaim 按钮、Build Extractor 按钮、Stop 命令、工厂生产按钮、Cancel Production 生产取消/退款按钮、Rally 集结点按钮、Attack 命令、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、战术小地图点按居中或下达点位/Builder/实体目标命令，以及 Save/Load 单槽本地存档。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -928,3 +928,34 @@
 遗留事项：
 
 - v1.21 仍不让小地图处理 Attack / Guard / Repair 这类需要精确单位或建筑实体命中的命令；尚无小地图目标吸附提示、二次确认、多单位 Builder 协作、队形命令或完整 Web 迷你地图上下文命令 parity。
+
+### v1.22 / iOS tactical map entity targets
+
+日期：2026-07-05
+
+核心变更：
+
+- `GameController` 抽出实体目标命令派发，让主战场 tap 和战术小地图 tap 共享 Attack / Guard / Repair 的单位/建筑命中处理。
+- Attack 等待态下，小地图点按会用现有 `GameState.selectionTarget(at:includeEnemies:)` 命中单位或建筑，并复用 `engine.issueAttack(targetID:)` 的敌方目标校验。
+- Guard 等待态下，小地图点按会命中单位或建筑，并复用 `engine.issueGuard(targetID:)` 的友方目标校验。
+- Repair 等待态下，小地图点按会命中单位或建筑，并复用 `engine.issueRepair(targetID:)` 的受损友方目标校验。
+- 小地图命令优先级保持点位命令、Builder 目标命令、实体目标命令、无 pending 居中相机；本轮不修改 core 命中半径或目标合法性规则。
+- README、flow、flowchart、测试基线和 Agent A prompt 已同步小地图实体目标命令能力与边界。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.22-ios-tactical-map-entity-targets.md`
+- `update_log.md`
+
+验证结果：
+
+- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+
+遗留事项：
+
+- v1.22 仍无小地图放大镜、目标吸附提示、二次确认、多单位命令、队形命令或完整 Web 迷你地图上下文命令 parity；在手机尺寸下实体图标较小，误点会按主战场同样规则消耗等待态并给出状态文案。
