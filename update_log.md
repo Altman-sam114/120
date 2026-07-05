@@ -1355,7 +1355,11 @@
 
 验证结果：
 
-- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+- Agent C 先下载并核对失败 run `28744795684`，attempt `1`，artifact `rustwar-ci-v1.0-main-f56d02a-run28744795684-attempt1`，commit `f56d02a0d0657229e47686610d9130be26e6a585`；manifest / JUnit / build.log 确认失败原因是新测试直接写入 `engine.state.metal[.player]`，触发 `GameEngine.state` setter 不可访问的 Swift 编译错误。
+- Agent B 随后追加修复 commit `cb6b82bb36a5b4ac5bcd3f22cc393b7c273364ec`，改为复制 `GameState` 设置金属后重建 `GameEngine`，保留 Command Center 选择状态。
+- Agent C 已下载并核对最新 GitHub Actions artifact：run `28744916397`，attempt `1`，artifact `rustwar-ci-v1.0-main-cb6b82b-run28744916397-attempt1`，commit `cb6b82bb36a5b4ac5bcd3f22cc393b7c273364ec`。
+- manifest 确认 `branch=main`、`commitSha=cb6b82bb36a5b4ac5bcd3f22cc393b7c273364ec`、`runId=28744916397`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke。
+- build.log 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0；Swift Testing 136 tests passed。
 
 遗留事项：
 
