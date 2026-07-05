@@ -9,6 +9,21 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
     public var rally: WorldPoint
     public var nodeID: String?
     public var productionQueue: [ProductionQueueItem]
+    public var weaponCooldown: Double
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case type
+        case team
+        case position
+        case hitPoints
+        case maxHitPoints
+        case buildProgress
+        case rally
+        case nodeID
+        case productionQueue
+        case weaponCooldown
+    }
 
     public init(
         id: String,
@@ -20,7 +35,8 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
         buildProgress: Double = 1,
         rally: WorldPoint,
         nodeID: String? = nil,
-        productionQueue: [ProductionQueueItem] = []
+        productionQueue: [ProductionQueueItem] = [],
+        weaponCooldown: Double = 0
     ) {
         self.id = id
         self.type = type
@@ -32,5 +48,21 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
         self.rally = rally
         self.nodeID = nodeID
         self.productionQueue = productionQueue
+        self.weaponCooldown = weaponCooldown
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.type = try container.decode(BuildingType.self, forKey: .type)
+        self.team = try container.decode(Team.self, forKey: .team)
+        self.position = try container.decode(WorldPoint.self, forKey: .position)
+        self.hitPoints = try container.decode(Double.self, forKey: .hitPoints)
+        self.maxHitPoints = try container.decode(Double.self, forKey: .maxHitPoints)
+        self.buildProgress = try container.decodeIfPresent(Double.self, forKey: .buildProgress) ?? 1
+        self.rally = try container.decode(WorldPoint.self, forKey: .rally)
+        self.nodeID = try container.decodeIfPresent(String.self, forKey: .nodeID)
+        self.productionQueue = try container.decodeIfPresent([ProductionQueueItem].self, forKey: .productionQueue) ?? []
+        self.weaponCooldown = try container.decodeIfPresent(Double.self, forKey: .weaponCooldown) ?? 0
     }
 }

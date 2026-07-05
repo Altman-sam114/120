@@ -104,17 +104,23 @@ final class BattlefieldScene: SKScene {
             drawWreck(wreck)
         }
         for building in state.buildings {
-            drawBuilding(building, selectedID: state.selectedEntityID)
+            drawBuilding(building, selectedID: state.selectedEntityID, state: state)
         }
         for unit in state.units {
             drawUnit(unit, selectedID: state.selectedEntityID, state: state)
         }
     }
 
-    private func drawBuilding(_ building: BuildingSnapshot, selectedID: String?) {
+    private func drawBuilding(_ building: BuildingSnapshot, selectedID: String?, state: GameState) {
         let definition = GameDefinitions.building(building.type)
         if building.id == selectedID, building.team == .player, !definition.produces.isEmpty {
             drawRally(from: building.position, to: building.rally)
+        }
+        if definition.damage > 0,
+           building.buildProgress >= 1,
+           building.weaponCooldown > 0,
+           let targetPosition = nearestBuildingWeaponTargetPosition(for: building, definition: definition, in: state) {
+            drawTurretFire(from: building.position, to: targetPosition, reloadFraction: building.weaponCooldown / definition.reloadTime)
         }
 
         let rect = CGRect(x: -definition.size / 2, y: -definition.size / 2, width: definition.size, height: definition.size)
@@ -430,6 +436,19 @@ final class BattlefieldScene: SKScene {
         entityNode.addChild(marker)
     }
 
+    private func drawTurretFire(from start: WorldPoint, to destination: WorldPoint, reloadFraction: Double) {
+        let alpha = CGFloat(Swift.max(0.18, Swift.min(0.72, reloadFraction)))
+        let path = CGMutablePath()
+        path.move(to: spritePoint(for: start))
+        path.addLine(to: spritePoint(for: destination))
+
+        let line = SKShapeNode(path: path)
+        line.strokeColor = SKColor.systemRed.withAlphaComponent(alpha)
+        line.lineWidth = 2.5
+        line.lineCap = .round
+        entityNode.addChild(line)
+    }
+
     private func drawRally(from start: WorldPoint, to destination: WorldPoint) {
         let color = SKColor.systemCyan
         let path = CGMutablePath()
@@ -503,6 +522,33 @@ final class BattlefieldScene: SKScene {
             return wreck.position
         }
         return nil
+    }
+
+    private func nearestBuildingWeaponTargetPosition(
+        for building: BuildingSnapshot,
+        definition: BuildingDefinition,
+        in state: GameState
+    ) -> WorldPoint? {
+        var bestPosition: WorldPoint?
+        var bestDistance = Double.infinity
+
+        for unit in state.units {
+            guard unit.team != building.team, unit.hitPoints > 0 else {
+                continue
+            }
+            let unitDefinition = GameDefinitions.unit(unit.type)
+            let effectiveRange = definition.attackRange + unitDefinition.radius
+            let distance = building.position.distanceSquared(to: unit.position)
+            guard distance <= effectiveRange * effectiveRange else {
+                continue
+            }
+            if distance < bestDistance {
+                bestPosition = unit.position
+                bestDistance = distance
+            }
+        }
+
+        return bestPosition
     }
 
     private func spritePoint(for point: WorldPoint) -> CGPoint {

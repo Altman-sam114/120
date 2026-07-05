@@ -33,6 +33,7 @@ public struct GameEngine: Sendable {
             state.metal[team, default: 0] += state.income(for: team) * step
         }
         updateProduction(deltaTime: step)
+        updateBuildingWeapons(deltaTime: step)
         if enemyAIEnabled {
             updateEnemyAI()
         }
@@ -273,6 +274,28 @@ public struct GameEngine: Sendable {
         updateEnemyAttackOrders()
     }
 
+    private mutating func updateBuildingWeapons(deltaTime: Double) {
+        for buildingIndex in state.buildings.indices {
+            let building = state.buildings[buildingIndex]
+            let definition = GameDefinitions.building(building.type)
+            guard building.hitPoints > 0,
+                  building.buildProgress >= 1,
+                  definition.damage > 0,
+                  definition.attackRange > 0 else {
+                continue
+            }
+
+            state.buildings[buildingIndex].weaponCooldown = max(0, building.weaponCooldown - deltaTime)
+            guard state.buildings[buildingIndex].weaponCooldown <= 0,
+                  let target = nearestBuildingWeaponTarget(for: building, definition: definition) else {
+                continue
+            }
+
+            applyDamage(definition.damage, to: target.id)
+            state.buildings[buildingIndex].weaponCooldown = definition.reloadTime
+        }
+    }
+
     private mutating func updateEnemyExpansion() {
         for unitIndex in state.units.indices {
             guard state.units[unitIndex].team == .enemy,
@@ -428,6 +451,38 @@ public struct GameEngine: Sendable {
             }
             let definition = GameDefinitions.building(building.type)
             consider(CombatTarget(id: building.id, team: building.team, position: building.position, radius: definition.size / 2))
+        }
+
+        return bestTarget
+    }
+
+    private func nearestBuildingWeaponTarget(
+        for building: BuildingSnapshot,
+        definition: BuildingDefinition
+    ) -> CombatTarget? {
+        var bestTarget: CombatTarget?
+        var bestDistance = Double.infinity
+
+        for targetUnit in state.units {
+            guard targetUnit.team != building.team, targetUnit.hitPoints > 0 else {
+                continue
+            }
+            let unitDefinition = GameDefinitions.unit(targetUnit.type)
+            let target = CombatTarget(
+                id: targetUnit.id,
+                team: targetUnit.team,
+                position: targetUnit.position,
+                radius: unitDefinition.radius
+            )
+            let distance = building.position.distanceSquared(to: target.position)
+            let effectiveRange = definition.attackRange + target.radius
+            guard distance <= effectiveRange * effectiveRange else {
+                continue
+            }
+            if distance < bestDistance {
+                bestTarget = target
+                bestDistance = distance
+            }
         }
 
         return bestTarget

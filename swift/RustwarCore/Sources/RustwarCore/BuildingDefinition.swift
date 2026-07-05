@@ -10,6 +10,9 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
     public let supply: Int
     public let vision: Double
     public let produces: [UnitType]
+    public let attackRange: Double
+    public let damage: Double
+    public let reloadTime: Double
 
     public init(
         type: BuildingType,
@@ -22,7 +25,10 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
         income: Double,
         supply: Int,
         vision: Double,
-        produces: [UnitType] = []
+        produces: [UnitType] = [],
+        attackRange: Double = 0,
+        damage: Double = 0,
+        reloadTime: Double = 1
     ) {
         self.type = type
         self.name = name
@@ -35,5 +41,8 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
         self.supply = supply
         self.vision = vision
         self.produces = produces
+        self.attackRange = attackRange
+        self.damage = damage
+        self.reloadTime = reloadTime
     }
 }

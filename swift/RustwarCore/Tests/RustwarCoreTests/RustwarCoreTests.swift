@@ -1431,6 +1431,122 @@ import Testing
     #expect(engine.state.units.first { $0.id == attacker.id }?.order == nil)
 }
 
+@Test func turretDamagesEnemyUnitInRangeAndUsesCooldown() throws {
+    let turretPosition = WorldPoint(1_200, 1_200)
+    var state = isolatedTurretState(turretPosition: turretPosition, targetPosition: WorldPoint(1_330, 1_200))
+    let targetID = try #require(state.units.first?.id)
+    let startingHitPoints = try #require(state.units.first?.hitPoints)
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    engine.update(deltaTime: 1)
+
+    let targetAfterFirstShot = try #require(engine.state.units.first { $0.id == targetID })
+    #expect(targetAfterFirstShot.hitPoints == startingHitPoints - GameDefinitions.building(.turret).damage)
+
+    engine.update(deltaTime: 1)
+    let targetDuringCooldown = try #require(engine.state.units.first { $0.id == targetID })
+    #expect(targetDuringCooldown.hitPoints == targetAfterFirstShot.hitPoints)
+
+    engine.update(deltaTime: 1)
+    let targetAfterReload = try #require(engine.state.units.first { $0.id == targetID })
+    #expect(targetAfterReload.hitPoints == startingHitPoints - GameDefinitions.building(.turret).damage * 2)
+    state = engine.state
+    #expect(state.buildings.first?.weaponCooldown == GameDefinitions.building(.turret).reloadTime)
+}
+
+@Test func turretDoesNotDamageUnitsOutsideRange() throws {
+    var engine = GameEngine(
+        state: isolatedTurretState(turretPosition: WorldPoint(1_200, 1_200), targetPosition: WorldPoint(1_620, 1_200)),
+        enemyAIEnabled: false
+    )
+    let target = try #require(engine.state.units.first)
+
+    engine.update(deltaTime: 1)
+
+    #expect(engine.state.units.first { $0.id == target.id }?.hitPoints == target.hitPoints)
+    #expect(engine.state.buildings.first?.weaponCooldown == 0)
+}
+
+@Test func incompleteDestroyedAndNonCombatBuildingsDoNotFire() throws {
+    let turretPosition = WorldPoint(1_200, 1_200)
+    let targetPosition = WorldPoint(1_330, 1_200)
+
+    var incompleteState = isolatedTurretState(turretPosition: turretPosition, targetPosition: targetPosition)
+    incompleteState.buildings[0].buildProgress = 0.5
+    var incompleteEngine = GameEngine(state: incompleteState, enemyAIEnabled: false)
+    let incompleteTarget = try #require(incompleteEngine.state.units.first)
+    incompleteEngine.update(deltaTime: 1)
+    #expect(incompleteEngine.state.units.first { $0.id == incompleteTarget.id }?.hitPoints == incompleteTarget.hitPoints)
+
+    var destroyedState = isolatedTurretState(turretPosition: turretPosition, targetPosition: targetPosition)
+    destroyedState.buildings[0].hitPoints = 0
+    var destroyedEngine = GameEngine(state: destroyedState, enemyAIEnabled: false)
+    let destroyedTarget = try #require(destroyedEngine.state.units.first)
+    destroyedEngine.update(deltaTime: 1)
+    #expect(destroyedEngine.state.units.first { $0.id == destroyedTarget.id }?.hitPoints == destroyedTarget.hitPoints)
+    #expect(destroyedEngine.state.buildings.isEmpty)
+
+    var nonCombatState = isolatedTurretState(turretPosition: turretPosition, targetPosition: targetPosition)
+    let commandDefinition = GameDefinitions.building(.command)
+    nonCombatState.buildings[0] = BuildingSnapshot(
+        id: "building-command",
+        type: .command,
+        team: .enemy,
+        position: turretPosition,
+        hitPoints: commandDefinition.hitPoints,
+        maxHitPoints: commandDefinition.hitPoints,
+        rally: turretPosition
+    )
+    var nonCombatEngine = GameEngine(state: nonCombatState, enemyAIEnabled: false)
+    let nonCombatTarget = try #require(nonCombatEngine.state.units.first)
+    nonCombatEngine.update(deltaTime: 1)
+    #expect(nonCombatEngine.state.units.first { $0.id == nonCombatTarget.id }?.hitPoints == nonCombatTarget.hitPoints)
+}
+
+@Test func turretDestroysUnitAndCreatesWreck() throws {
+    var state = isolatedTurretState(turretPosition: WorldPoint(1_200, 1_200), targetPosition: WorldPoint(1_330, 1_200))
+    let targetID = try #require(state.units.first?.id)
+    state.units[0].hitPoints = 12
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    engine.update(deltaTime: 1)
+
+    #expect(!engine.state.units.contains { $0.id == targetID })
+    let wreck = try #require(engine.state.wrecks.first)
+    #expect(wreck.team == .player)
+    #expect(wreck.position == WorldPoint(1_330, 1_200))
+}
+
+@Test func gameStateJSONRoundTripPreservesBuildingWeaponCooldown() throws {
+    var state = GameState(mapID: .coast)
+    let turretIndex = try #require(state.buildings.firstIndex { $0.type == .turret })
+    state.buildings[turretIndex].weaponCooldown = 0.75
+
+    let encoded = try JSONEncoder().encode(state)
+    let decoded = try JSONDecoder().decode(GameState.self, from: encoded)
+
+    #expect(decoded == state)
+    #expect(decoded.buildings.first { $0.id == state.buildings[turretIndex].id }?.weaponCooldown == 0.75)
+}
+
+@Test func gameStateDecodesOldJSONWithoutBuildingWeaponCooldownAsZero() throws {
+    let state = GameState(mapID: .coast)
+    let encoded = try JSONEncoder().encode(state)
+    var json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    var buildings = try #require(json["buildings"] as? [[String: Any]])
+    for index in buildings.indices {
+        buildings[index].removeValue(forKey: "weaponCooldown")
+    }
+    json["buildings"] = buildings
+    let legacyEncoded = try JSONSerialization.data(withJSONObject: json)
+
+    let decoded = try JSONDecoder().decode(GameState.self, from: legacyEncoded)
+
+    #expect(decoded.buildings.allSatisfy { $0.weaponCooldown == 0 })
+    #expect(decoded.units.count == state.units.count)
+    #expect(decoded.buildings.count == state.buildings.count)
+}
+
 @Test func enemyAIQueuesProductionWithoutChangingPlayerSelection() throws {
     var engine = GameEngine(mapID: .coast)
 
@@ -1798,6 +1914,36 @@ private func totalHitPoints(in state: GameState, for team: Team) -> Double {
         building.team == team ? partial + building.hitPoints : partial
     }
     return unitHitPoints + buildingHitPoints
+}
+
+private func isolatedTurretState(turretPosition: WorldPoint, targetPosition: WorldPoint) -> GameState {
+    var state = GameState(mapID: .coast)
+    let turretDefinition = GameDefinitions.building(.turret)
+    let scoutDefinition = GameDefinitions.unit(.scout)
+    state.buildings = [
+        BuildingSnapshot(
+            id: "building-turret",
+            type: .turret,
+            team: .enemy,
+            position: turretPosition,
+            hitPoints: turretDefinition.hitPoints,
+            maxHitPoints: turretDefinition.hitPoints,
+            rally: turretPosition
+        )
+    ]
+    state.units = [
+        UnitSnapshot(
+            id: "unit-target",
+            type: .scout,
+            team: .player,
+            position: targetPosition,
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        )
+    ]
+    state.wrecks = []
+    state.selectedEntityID = nil
+    return state
 }
 
 private func guardPosition(for order: UnitOrder?, targetID: String, in state: GameState) -> WorldPoint? {

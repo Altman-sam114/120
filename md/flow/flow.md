@@ -19,7 +19,7 @@
 
 v0.5 起，文档体系支持未来 Agent X 主控循环。Agent X 不直接替代 A/B/C，而是在人工用 `agentx:` / `x:` / `X:` 给出总目标后，把总目标拆成多个小轮次，每轮仍必须走 Agent A -> Agent B -> Agent C，并在 Agent C artifact 验收后判断继续、退回、暂停或完成。本轮只建立文档基线，不自动启动真实 Agent X 循环。
 
-v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制、v1.6 新增的原生三地图切换和当前地图重开、v1.7 新增的原生战术小地图点按居中、v1.8 新增的原生 Stop 命令、v1.9 新增的原生工厂集结点命令、v1.10 新增的原生生产取消/退款命令、v1.11 新增的原生单槽 Save/Load MVP、v1.12 新增的原生单单位 Attack-Move 命令地基、v1.13 新增的原生单单位 Patrol 命令地基、v1.14 新增的原生单单位 Guard 命令地基、v1.15 新增的原生单 Builder Repair 命令地基、v1.16 新增的原生单 Builder Reclaim 残骸回收地基、v1.17 新增的原生单 Builder 在资源点建造 Extractor 地基，以及 v1.18 新增的红方 Builder 自动扩张建造 Extractor MVP。
+v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆盖共享 Swift core、原生战场首屏、基础 HUD、触摸选择、相机平移/缩放、经济 tick、己方单单位移动命令、v1.2 新增的陆军工厂生产队列 MVP、v1.3 新增的基础攻击/伤害/死亡清理/血条显示、v1.4 新增的红方生产和进攻 AI MVP、v1.5 新增的原生暂停和模拟速度控制、v1.6 新增的原生三地图切换和当前地图重开、v1.7 新增的原生战术小地图点按居中、v1.8 新增的原生 Stop 命令、v1.9 新增的原生工厂集结点命令、v1.10 新增的原生生产取消/退款命令、v1.11 新增的原生单槽 Save/Load MVP、v1.12 新增的原生单单位 Attack-Move 命令地基、v1.13 新增的原生单单位 Patrol 命令地基、v1.14 新增的原生单单位 Guard 命令地基、v1.15 新增的原生单 Builder Repair 命令地基、v1.16 新增的原生单 Builder Reclaim 残骸回收地基、v1.17 新增的原生单 Builder 在资源点建造 Extractor 地基、v1.18 新增的红方 Builder 自动扩张建造 Extractor MVP，以及 v1.19 新增的原生 Turret 自动防御开火 MVP。
 
 ```text
 RustwarCore MapPreset / GameState / GameEngine
@@ -28,7 +28,7 @@ RustwarCore MapPreset / GameState / GameEngine
   -> SpriteKit BattlefieldScene 渲染地形、资源、单位和建筑
   -> SpatialTapGesture / DragGesture / MagnifyGesture / TacticalMap drag-tap
   -> CameraState / UserDefaults save payload / pause-speed gate / GameEngine.select / GameEngine.issueMove / GameEngine.issueAttackMove / GameEngine.issuePatrol / GameEngine.issueGuard / GameEngine.issueRepair / GameEngine.issueReclaim / GameEngine.issueBuildExtractor / GameEngine.issueStop / GameEngine.issueAttack / GameEngine.queueUnit / GameEngine.cancelLastProduction / GameEngine.setRally / GameEngine.update / GameEngine(state:)
-  -> GameEngine enemy AI expands resource nodes, queues production and attack orders
+  -> GameEngine turret defensive fire and enemy AI expands resource nodes, queues production and attack orders
 ```
 
 ```text
@@ -344,7 +344,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 保存 iOS 迁移使用的共享 Swift 数据模型和小步确定性逻辑。
 - 定义 `MapPreset`、`TerrainGrid`、`ResourceNode`、`UnitSnapshot`、`UnitOrder`、`BuildingSnapshot`、`WreckSnapshot`、`ProductionQueueItem`、`GameState`、`GameEngine`。
 - 初始化三张 Web 地图对应的基础首屏布局。
-- 计算收入、人口、简单 tick、实体/残骸/资源点命中选择、己方单单位移动、己方单单位 Attack-Move、己方单单位 Patrol、己方单单位 Guard、己方单 Builder Repair、己方单 Builder Reclaim、己方单 Builder 建造 Extractor、己方 Stop、己方单单位攻击、基础伤害/死亡残骸清理、陆军工厂生产队列、生产取消/退款、己方工厂集结点设置、红方最小生产/扩张/进攻 AI，以及从已保存 `GameState` 恢复 `GameEngine`。
+- 计算收入、人口、简单 tick、实体/残骸/资源点命中选择、己方单单位移动、己方单单位 Attack-Move、己方单单位 Patrol、己方单单位 Guard、己方单 Builder Repair、己方单 Builder Reclaim、己方单 Builder 建造 Extractor、己方 Stop、己方单单位攻击、炮塔自动防御开火、基础伤害/死亡残骸清理、陆军工厂生产队列、生产取消/退款、己方工厂集结点设置、红方最小生产/扩张/进攻 AI，以及从已保存 `GameState` 恢复 `GameEngine`。
 
 输入：
 
@@ -387,6 +387,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v1.16 起，`GameState.wrecks` 保存原生战斗残骸；单位或建筑被 `removeDestroyedEntities()` 清理前会生成带剩余金属和 TTL 的 `WreckSnapshot`，`updateWrecks` 会移除过期或空残骸。选中己方 Builder 时 HUD 显示 Reclaim 命令；Reclaim 模式下一次 tap 会通过 `GameState.wreckTarget(at:)` 命中残骸并调用 `GameEngine.issueReclaim(wreckID:)` 写入 `UnitOrder.reclaim(wreckID:)`。`RustwarCore` 只允许 Builder 回收仍有金属的残骸，距离超过 92 时靠近，进入范围后约按 19.72 metal/s 把残骸金属转入 Builder 所属队伍，残骸耗尽、过期或消失后清除订单。SpriteKit 显示残骸、金属条、独立 Reclaim 线和 `$` 标记；战术小地图显示残骸小标记。
 - v1.17 起，`BuildingDefinition` 保存建筑 `buildTime`，`GameState.resourceTarget(at:)` 可命中资源点。选中己方 Builder 时 HUD 显示 Build Extractor 命令；Build Extractor 模式下一次 tap 空闲资源点会调用 `GameEngine.issueBuildExtractor(on:)` 扣除 260 金属、创建 `buildProgress = 0` 的己方 Extractor、立即认领资源点防止重复下令，并写入 `UnitOrder.build(targetID:)`。`RustwarCore` 推进 Build 时让 Builder 靠近到 125 范围内，按 `deltaTime / buildTime` 推进建造；未完成 Extractor 不产生收入，完成后 HP 回满并开始提供收入。SpriteKit 显示未完成建筑进度条、独立 Build 线和 `B` 标记。
 - v1.18 起，`GameEngine.updateEnemyAI()` 会先尝试红方经济扩张：空闲 enemy Builder 在红方金属足够时选择最近的空闲资源点，复用 Extractor 建造 helper 扣除 260 金属、创建未完成 enemy Extractor、认领资源点并写入 `.build(targetID:)`；未完成 enemy Extractor 仍不提供收入，完成后才增加红方收入。该 AI 步骤不改变玩家当前选择。
+- v1.19 起，`BuildingDefinition` 保存最小建筑武器参数，`BuildingSnapshot.weaponCooldown` 保存建筑开火冷却并兼容旧 JSON 默认 0。`GameEngine.update` 会推进完成状态 Turret 的自动防御开火：炮塔在射程内选择最近敌方单位、按冷却造成伤害，死亡清理和残骸生成仍复用统一实体清理。SpriteKit 在炮塔冷却期间绘制淡红火力线。
 
 输入：
 
@@ -489,7 +490,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 文档-only：本地至少 `git diff --check`，再通过 `main` push 触发 CI artifact。
 - 改 `.github/workflows/ci-results.yml`：本地 YAML 解析检查 + `git diff --check`，再通过云端 workflow 自检 artifact。
 - 改 `app.js` 语法或逻辑：本地至少 `node --check app.js` 和 `git diff --check`，CI 重跑同类检查。
-- 改 `swift/RustwarCore/`：本地尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 阻塞，至少尝试 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 并记录工具链错误；当前 Swift tests 覆盖初始化、经济 tick、选择、移动、Attack-Move、Patrol、Guard、Repair、Reclaim、Build Extractor、Stop、生产、生产取消/退款、工厂集结点、基础攻击/死亡残骸清理、红方生产/扩张/进攻 AI、`GameState` JSON 往返和恢复后继续模拟。
+- 改 `swift/RustwarCore/`：本地尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 阻塞，至少尝试 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 并记录工具链错误；当前 Swift tests 覆盖初始化、经济 tick、选择、移动、Attack-Move、Patrol、Guard、Repair、Reclaim、Build Extractor、Stop、生产、生产取消/退款、工厂集结点、基础攻击/炮塔防御开火/死亡残骸清理、红方生产/扩张/进攻 AI、`GameState` JSON 往返和恢复后继续模拟。
 - 改 `ios/RustwarIOS/`：本地尽量跑 `xcodebuild -list` 和 iOS build；若只有 Command Line Tools 或 Swift/SDK 不匹配，记录阻塞并由云端 macOS artifact 复验；涉及战术小地图时还要确认新 Swift 文件已加入 Xcode target。
 - 改 HTML id 或 UI 引用：云端轻量检查之外，若人工要求则做 Smoke 浏览器验证。
 - 改输入/命令：人工要求本机回归时验证主地图、迷你地图、Shift 追加、Esc 取消。
