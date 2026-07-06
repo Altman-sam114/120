@@ -1914,7 +1914,9 @@
 - 本地 `git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v149 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`、`swiftc -parse ios/RustwarIOS/RustwarIOS/GameController.swift ios/RustwarIOS/RustwarIOS/BattlefieldView.swift ios/RustwarIOS/RustwarIOS/GameHUDView.swift ios/RustwarIOS/RustwarIOS/SelectionBoxOverlay.swift` 均通过。
 - 本地 `swift test --package-path swift/RustwarCore` 已尝试；沙箱内先遇到用户 clang module cache 写入限制，提权重跑后仍因当前 CommandLineTools 的 SwiftPM manifest 链接阶段 `PackageDescription.Package.__allocating_init` 符号缺失阻塞，未进入源码测试执行。
 - 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 已尝试；当前 active developer directory 是 CommandLineTools，不是完整 Xcode，命令被本机工具链阻塞。
-- 云端 GitHub Actions artifact 待本轮 push 后由 Agent C 下载复判。
+- 云端 run `28778919866`（attempt `1`，commit `e879164406ed94fb5cbf94082516785ecb01017e`，artifact `rustwar-ci-v1.0-main-e879164-run28778919866-attempt1`）由 Agent C 下载到 `/private/tmp/rustwar-c-review-28778919866/` 并核对，目录大小 `276K`。
+- manifest 确认 `branch=main`、`commitSha=e879164406ed94fb5cbf94082516785ecb01017e`、`runId=28778919866`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke。
+- build.log 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0；Swift Testing 203 tests passed，iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
