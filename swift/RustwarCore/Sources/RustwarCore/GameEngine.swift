@@ -131,6 +131,15 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func setAttackStance(_ stance: UnitAttackStance) -> [String] {
+        let unitIndices = selectedPlayerCombatUnitIndices()
+        for unitIndex in unitIndices {
+            state.units[unitIndex].attackStance = stance
+        }
+        return unitIndices.map { state.units[$0].id }
+    }
+
+    @discardableResult
     public mutating func storeControlGroup(_ slot: Int) -> [String] {
         guard Self.isValidControlGroupSlot(slot) else {
             return []
@@ -1013,7 +1022,7 @@ public struct GameEngine: Sendable {
     private mutating func updateAttackMoveOrder(unitIndex: Int, destination: WorldPoint, deltaTime: Double) {
         let unit = state.units[unitIndex]
         let definition = GameDefinitions.unit(unit.type)
-        if let target = nearestCombatTarget(for: unit, maximumDistance: definition.vision) {
+        if let target = automaticCombatTarget(for: unit, vision: definition.vision) {
             updateTemporaryAttackTarget(unitIndex: unitIndex, targetID: target.id, deltaTime: deltaTime)
         } else {
             updateMoveOrder(unitIndex: unitIndex, destination: destination, deltaTime: deltaTime)
@@ -1029,7 +1038,7 @@ public struct GameEngine: Sendable {
     ) {
         let unit = state.units[unitIndex]
         let definition = GameDefinitions.unit(unit.type)
-        if let target = nearestCombatTarget(for: unit, maximumDistance: definition.vision) {
+        if let target = automaticCombatTarget(for: unit, vision: definition.vision) {
             updateTemporaryAttackTarget(unitIndex: unitIndex, targetID: target.id, deltaTime: deltaTime)
             return
         }
@@ -1057,7 +1066,12 @@ public struct GameEngine: Sendable {
 
         let unit = state.units[unitIndex]
         let definition = GameDefinitions.unit(unit.type)
-        if let target = nearestGuardCombatTarget(for: unit, guardedTarget: guardedTarget, maximumDistance: definition.vision) {
+        if let maximumDistance = automaticEngagementDistance(for: unit, vision: definition.vision),
+           let target = nearestGuardCombatTarget(
+            for: unit,
+            guardedTarget: guardedTarget,
+            maximumDistance: maximumDistance
+           ) {
             updateTemporaryAttackTarget(unitIndex: unitIndex, targetID: target.id, deltaTime: deltaTime)
             return
         }
@@ -1921,6 +1935,28 @@ public struct GameEngine: Sendable {
         selectedPlayerUnitIndices().filter { index in
             state.units[index].type == .builder
         }
+    }
+
+    private func selectedPlayerCombatUnitIndices() -> [Array<UnitSnapshot>.Index] {
+        selectedPlayerUnitIndices().filter { index in
+            let unit = state.units[index]
+            return unit.hitPoints > 0 && GameDefinitions.unit(unit.type).attackRange > 0
+        }
+    }
+
+    private func automaticEngagementDistance(for unit: UnitSnapshot, vision: Double) -> Double? {
+        let multiplier = unit.attackStance.autoEngagementRangeMultiplier
+        guard multiplier > 0 else {
+            return nil
+        }
+        return vision * multiplier
+    }
+
+    private func automaticCombatTarget(for unit: UnitSnapshot, vision: Double) -> CombatTarget? {
+        guard let maximumDistance = automaticEngagementDistance(for: unit, vision: vision) else {
+            return nil
+        }
+        return nearestCombatTarget(for: unit, maximumDistance: maximumDistance)
     }
 
     private func guardOffset(for unit: UnitSnapshot, around target: CombatTarget) -> WorldPoint {

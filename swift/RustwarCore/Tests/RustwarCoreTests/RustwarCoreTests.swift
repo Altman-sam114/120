@@ -289,6 +289,33 @@ import Testing
     #expect(decoded.selectedEntityIDs == [selectedUnit.id])
 }
 
+@Test func gameStateDecodesOldJSONWithoutAttackStanceAsAggressive() throws {
+    let state = GameState(mapID: .coast)
+    let encoded = try JSONEncoder().encode(state)
+    var json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    var units = try #require(json["units"] as? [[String: Any]])
+    for unitIndex in units.indices {
+        units[unitIndex].removeValue(forKey: "attackStance")
+    }
+    json["units"] = units
+    let legacyEncoded = try JSONSerialization.data(withJSONObject: json)
+
+    let decoded = try JSONDecoder().decode(GameState.self, from: legacyEncoded)
+
+    #expect(decoded.units.count == state.units.count)
+    #expect(decoded.units.allSatisfy { $0.attackStance == .aggressive })
+}
+
+@Test func gameStateJSONRoundTripPreservesAttackStance() throws {
+    let state = attackStanceTestState(attackerStance: .holdFire)
+
+    let encoded = try JSONEncoder().encode(state)
+    let decoded = try JSONDecoder().decode(GameState.self, from: encoded)
+
+    #expect(decoded.units.first { $0.id == "stance-attacker" }?.attackStance == .holdFire)
+    #expect(decoded.units.first { $0.id == "stance-enemy" }?.attackStance == .aggressive)
+}
+
 @Test func selectionFindsInitialPlayerCommand() {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
@@ -362,6 +389,64 @@ import Testing
     #expect(engine.state.units.contains { $0.team == .enemy && !selectedIDs.contains($0.id) })
     #expect(engine.state.selectedEntityID == selectedIDs.first)
     #expect(engine.state.selectionSummary() == "\(selectedIDs.count) combat units selected")
+}
+
+@Test func setAttackStanceAppliesOnlyToSelectedAlivePlayerWeaponUnits() throws {
+    var state = attackStanceTestState(attackerStance: .aggressive)
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let playerCommand = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    state.units.append(contentsOf: [
+        UnitSnapshot(
+            id: "stance-builder",
+            type: .builder,
+            team: .player,
+            position: WorldPoint(940, 1_000),
+            hitPoints: builderDefinition.hitPoints,
+            maxHitPoints: builderDefinition.hitPoints
+        ),
+        UnitSnapshot(
+            id: "stance-dead-tank",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(960, 1_000),
+            hitPoints: 0,
+            maxHitPoints: GameDefinitions.unit(.tank).hitPoints
+        )
+    ])
+    state.selectedEntityID = playerCommand.id
+    state.selectedEntityIDs = [
+        playerCommand.id,
+        "stance-attacker",
+        "stance-builder",
+        "stance-dead-tank",
+        "stance-enemy",
+        "missing-id"
+    ]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let changedIDs = engine.setAttackStance(.defensive)
+
+    #expect(changedIDs == ["stance-attacker", "stance-builder"])
+    #expect(engine.state.units.first { $0.id == "stance-attacker" }?.attackStance == .defensive)
+    #expect(engine.state.units.first { $0.id == "stance-builder" }?.attackStance == .defensive)
+    #expect(engine.state.units.first { $0.id == "stance-dead-tank" }?.attackStance == .aggressive)
+    #expect(engine.state.units.first { $0.id == "stance-enemy" }?.attackStance == .aggressive)
+}
+
+@Test func setAttackStanceNoOpsWhenSelectionHasNoAlivePlayerWeaponUnits() throws {
+    var state = attackStanceTestState(attackerStance: .aggressive)
+    let playerCommand = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let attackerIndex = try #require(state.units.firstIndex { $0.id == "stance-attacker" })
+    state.units[attackerIndex].hitPoints = 0
+    state.selectedEntityID = playerCommand.id
+    state.selectedEntityIDs = [playerCommand.id, "stance-attacker", "stance-enemy", "missing-id"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let changedIDs = engine.setAttackStance(.holdFire)
+
+    #expect(changedIDs.isEmpty)
+    #expect(engine.state.units.first { $0.id == "stance-attacker" }?.attackStance == .aggressive)
+    #expect(engine.state.units.first { $0.id == "stance-enemy" }?.attackStance == .aggressive)
 }
 
 @Test func selectPlayerCombatUnitsInWorldRectSelectsOnlyVisiblePlayerCombatUnits() throws {
@@ -1550,6 +1635,93 @@ import Testing
     #expect(activeDestination == destination)
 }
 
+@Test func attackMoveStanceControlsAutomaticAcquisitionDistance() throws {
+    let startingPosition = WorldPoint(1_000, 1_000)
+    let destination = WorldPoint(700, 1_000)
+
+    var aggressiveEngine = GameEngine(
+        state: attackStanceTestState(attackerStance: .aggressive, enemyPosition: WorldPoint(1_260, 1_000)),
+        enemyAIEnabled: false
+    )
+    #expect(aggressiveEngine.issueAttackMove(to: destination) == .issued)
+    aggressiveEngine.update(deltaTime: 1)
+    let aggressiveAttacker = try #require(aggressiveEngine.state.units.first { $0.id == "stance-attacker" })
+
+    var defensiveEngine = GameEngine(
+        state: attackStanceTestState(attackerStance: .defensive, enemyPosition: WorldPoint(1_260, 1_000)),
+        enemyAIEnabled: false
+    )
+    #expect(defensiveEngine.issueAttackMove(to: destination) == .issued)
+    defensiveEngine.update(deltaTime: 1)
+    let defensiveAttacker = try #require(defensiveEngine.state.units.first { $0.id == "stance-attacker" })
+
+    #expect(aggressiveAttacker.position.x > startingPosition.x)
+    #expect(defensiveAttacker.position.x < startingPosition.x)
+}
+
+@Test func holdFireAttackMoveDoesNotAutomaticallyAcquireNearbyEnemy() throws {
+    var engine = GameEngine(
+        state: attackStanceTestState(attackerStance: .holdFire, enemyPosition: WorldPoint(1_120, 1_000)),
+        enemyAIEnabled: false
+    )
+    let startingHitPoints = try #require(engine.state.units.first { $0.id == "stance-enemy" }?.hitPoints)
+
+    #expect(engine.issueAttackMove(to: WorldPoint(700, 1_000)) == .issued)
+    engine.update(deltaTime: 1)
+
+    let attacker = try #require(engine.state.units.first { $0.id == "stance-attacker" })
+    let enemy = try #require(engine.state.units.first { $0.id == "stance-enemy" })
+    #expect(attacker.position.x < 1_000)
+    #expect(enemy.hitPoints == startingHitPoints)
+}
+
+@Test func holdFirePatrolDoesNotAutomaticallyAcquireNearbyEnemy() throws {
+    var engine = GameEngine(
+        state: attackStanceTestState(attackerStance: .holdFire, enemyPosition: WorldPoint(1_120, 1_000)),
+        enemyAIEnabled: false
+    )
+    let startingHitPoints = try #require(engine.state.units.first { $0.id == "stance-enemy" }?.hitPoints)
+
+    #expect(engine.issuePatrol(to: WorldPoint(700, 1_000)) == .issued)
+    engine.update(deltaTime: 1)
+
+    let attacker = try #require(engine.state.units.first { $0.id == "stance-attacker" })
+    let enemy = try #require(engine.state.units.first { $0.id == "stance-enemy" })
+    #expect(attacker.position.x < 1_000)
+    #expect(enemy.hitPoints == startingHitPoints)
+    if case let .patrol(origin, destination, returning)? = attacker.order {
+        #expect(origin == WorldPoint(1_000, 1_000))
+        #expect(destination == WorldPoint(700, 1_000))
+        #expect(returning == false)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func patrolStanceControlsAutomaticAcquisitionDistance() throws {
+    let startingPosition = WorldPoint(1_000, 1_000)
+    let destination = WorldPoint(700, 1_000)
+
+    var aggressiveEngine = GameEngine(
+        state: attackStanceTestState(attackerStance: .aggressive, enemyPosition: WorldPoint(1_260, 1_000)),
+        enemyAIEnabled: false
+    )
+    #expect(aggressiveEngine.issuePatrol(to: destination) == .issued)
+    aggressiveEngine.update(deltaTime: 1)
+    let aggressivePatroller = try #require(aggressiveEngine.state.units.first { $0.id == "stance-attacker" })
+
+    var defensiveEngine = GameEngine(
+        state: attackStanceTestState(attackerStance: .defensive, enemyPosition: WorldPoint(1_260, 1_000)),
+        enemyAIEnabled: false
+    )
+    #expect(defensiveEngine.issuePatrol(to: destination) == .issued)
+    defensiveEngine.update(deltaTime: 1)
+    let defensivePatroller = try #require(defensiveEngine.state.units.first { $0.id == "stance-attacker" })
+
+    #expect(aggressivePatroller.position.x > startingPosition.x)
+    #expect(defensivePatroller.position.x < startingPosition.x)
+}
+
 @Test func patrolCommandRejectsMissingOrInvalidSelectionAndClampsDestination() throws {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
@@ -1946,6 +2118,47 @@ import Testing
     } else {
         #expect(Bool(false))
     }
+}
+
+@Test func holdFireGuardDoesNotAutomaticallyAcquireNearbyEnemy() throws {
+    var engine = GameEngine(
+        state: attackStanceTestState(attackerStance: .holdFire, enemyPosition: WorldPoint(1_120, 1_000)),
+        enemyAIEnabled: false
+    )
+    let startingHitPoints = try #require(engine.state.units.first { $0.id == "stance-enemy" }?.hitPoints)
+
+    #expect(engine.issueGuard(targetID: "stance-command") == .issued)
+    engine.update(deltaTime: 1)
+
+    let guarder = try #require(engine.state.units.first { $0.id == "stance-attacker" })
+    let enemy = try #require(engine.state.units.first { $0.id == "stance-enemy" })
+    #expect(enemy.hitPoints == startingHitPoints)
+    if case let .guardTarget(targetID, _)? = guarder.order {
+        #expect(targetID == "stance-command")
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func guardStanceControlsAutomaticAcquisitionDistance() throws {
+    var aggressiveEngine = GameEngine(
+        state: attackStanceTestState(attackerStance: .aggressive, enemyPosition: WorldPoint(1_260, 1_000)),
+        enemyAIEnabled: false
+    )
+    #expect(aggressiveEngine.issueGuard(targetID: "stance-command") == .issued)
+    aggressiveEngine.update(deltaTime: 1)
+    let aggressiveGuarder = try #require(aggressiveEngine.state.units.first { $0.id == "stance-attacker" })
+
+    var defensiveEngine = GameEngine(
+        state: attackStanceTestState(attackerStance: .defensive, enemyPosition: WorldPoint(1_260, 1_000)),
+        enemyAIEnabled: false
+    )
+    #expect(defensiveEngine.issueGuard(targetID: "stance-command") == .issued)
+    defensiveEngine.update(deltaTime: 1)
+    let defensiveGuarder = try #require(defensiveEngine.state.units.first { $0.id == "stance-attacker" })
+
+    #expect(aggressiveGuarder.position.x > 1_000)
+    #expect(defensiveGuarder.position.x < 1_000)
 }
 
 @Test func guardClearsWhenFriendlyTargetIsDestroyed() throws {
@@ -4139,6 +4352,38 @@ import Testing
     let damagedTank = try #require(engine.state.units.first { $0.id == enemyTank.id })
     #expect(damagedTank.hitPoints < startingHitPoints)
     #expect(damagedTank.hitPoints > 0)
+}
+
+@Test func holdFireStillAllowsManualAttackCommand() throws {
+    var engine = GameEngine(
+        state: attackStanceTestState(attackerStance: .holdFire, enemyPosition: WorldPoint(1_120, 1_000)),
+        enemyAIEnabled: false
+    )
+    let startingHitPoints = try #require(engine.state.units.first { $0.id == "stance-enemy" }?.hitPoints)
+
+    #expect(engine.issueAttack(targetID: "stance-enemy") == .issued)
+    engine.update(deltaTime: 1)
+
+    let enemy = try #require(engine.state.units.first { $0.id == "stance-enemy" })
+    #expect(enemy.hitPoints < startingHitPoints)
+}
+
+@Test func holdFireManualAttackStillChasesTargetsOutsideRange() throws {
+    var engine = GameEngine(
+        state: attackStanceTestState(attackerStance: .holdFire, enemyPosition: WorldPoint(1_420, 1_000)),
+        enemyAIEnabled: false
+    )
+    let startingPosition = try #require(engine.state.units.first { $0.id == "stance-attacker" }?.position)
+    let startingHitPoints = try #require(engine.state.units.first { $0.id == "stance-enemy" }?.hitPoints)
+
+    #expect(engine.issueAttack(targetID: "stance-enemy") == .issued)
+    engine.update(deltaTime: 1)
+
+    let attacker = try #require(engine.state.units.first { $0.id == "stance-attacker" })
+    let enemy = try #require(engine.state.units.first { $0.id == "stance-enemy" })
+    #expect(attacker.position.x > startingPosition.x)
+    #expect(enemy.hitPoints == startingHitPoints)
+    #expect(attackTargetID(for: attacker) == "stance-enemy")
 }
 
 @Test func attackCommandGroupDamagesSameTargetAndClearsOrdersOnDestroy() throws {
@@ -6351,6 +6596,52 @@ private func isolatedTurretState(turretPosition: WorldPoint, targetPosition: Wor
     ]
     state.wrecks = []
     state.selectedEntityID = nil
+    return state
+}
+
+private func attackStanceTestState(
+    attackerStance: UnitAttackStance,
+    enemyPosition: WorldPoint = WorldPoint(1_120, 1_000)
+) -> GameState {
+    var state = GameState(mapID: .coast)
+    let tankDefinition = GameDefinitions.unit(.tank)
+    let commandDefinition = GameDefinitions.building(.command)
+    state.units = [
+        UnitSnapshot(
+            id: "stance-attacker",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(1_000, 1_000),
+            hitPoints: tankDefinition.hitPoints,
+            maxHitPoints: tankDefinition.hitPoints,
+            attackStance: attackerStance
+        ),
+        UnitSnapshot(
+            id: "stance-enemy",
+            type: .tank,
+            team: .enemy,
+            position: enemyPosition,
+            hitPoints: tankDefinition.hitPoints,
+            maxHitPoints: tankDefinition.hitPoints
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "stance-command",
+            type: .command,
+            team: .player,
+            position: WorldPoint(800, 1_000),
+            hitPoints: commandDefinition.hitPoints,
+            maxHitPoints: commandDefinition.hitPoints,
+            rally: WorldPoint(800, 1_000)
+        )
+    ]
+    state.resources = []
+    state.wrecks = []
+    state.metal[.player] = 0
+    state.metal[.enemy] = 0
+    state.selectedEntityID = "stance-attacker"
+    state.selectedEntityIDs = ["stance-attacker"]
     return state
 }
 

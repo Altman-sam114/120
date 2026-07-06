@@ -273,6 +273,11 @@ struct GameHUDView: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .keyboardShortcut(commandKey("h"), modifiers: [])
                 }
+                if controller.canSetAttackStance {
+                    attackStanceButton(.aggressive, systemImage: "scope", key: "z")
+                    attackStanceButton(.defensive, systemImage: "shield", key: "x")
+                    attackStanceButton(.holdFire, systemImage: "pause.circle", key: "v")
+                }
                 if controller.canIssueRepair || controller.isAwaitingRepairTarget {
                     Button(
                         controller.repairCommandButtonTitle,
@@ -385,6 +390,13 @@ struct GameHUDView: View {
                 .lineLimit(2)
                 .foregroundStyle(.primary)
 
+            if let selectedAttackStanceSummary = controller.selectedAttackStanceSummary {
+                Text(selectedAttackStanceSummary)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
             if let commandStatus = controller.commandStatus {
                 Text(commandStatus)
                     .font(.footnote)
@@ -432,6 +444,33 @@ struct GameHUDView: View {
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder
+    private func attackStanceButton(_ stance: UnitAttackStance, systemImage: String, key: String) -> some View {
+        if controller.isAttackStanceActive(stance) {
+            Button(stance.label, systemImage: systemImage) {
+                controller.setAttackStance(stance)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.regular)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .keyboardShortcut(commandKey(key), modifiers: [])
+            .accessibilityLabel("\(stance.label) attack stance")
+            .accessibilityValue("Active")
+            .accessibilityHint("Sets selected combat units to \(stance.label) stance.")
+        } else {
+            Button(stance.label, systemImage: systemImage) {
+                controller.setAttackStance(stance)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.regular)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .keyboardShortcut(commandKey(key), modifiers: [])
+            .accessibilityLabel("\(stance.label) attack stance")
+            .accessibilityValue("Inactive")
+            .accessibilityHint("Sets selected combat units to \(stance.label) stance.")
+        }
     }
 
     private func controlGroupKey(for slot: Int) -> KeyEquivalent {

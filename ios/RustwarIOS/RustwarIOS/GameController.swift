@@ -223,6 +223,21 @@ final class GameController {
         !selectedPlayerUnits.isEmpty
     }
 
+    var canSetAttackStance: Bool {
+        !selectedPlayerCombatUnits.isEmpty
+    }
+
+    var selectedAttackStanceSummary: String? {
+        let stances = Set(selectedPlayerCombatUnits.map(\.attackStance))
+        guard !stances.isEmpty else {
+            return nil
+        }
+        if stances.count == 1, let stance = stances.first {
+            return "Stance \(stance.label)"
+        }
+        return "Stance Mixed"
+    }
+
     var canIssueAttackMove: Bool {
         !selectedPlayerUnits.isEmpty
     }
@@ -689,6 +704,21 @@ final class GameController {
             commandStatus = selectedPlayerUnits.count > 1 ? "Attack target for \(selectedPlayerUnits.count) units" : "Attack target"
         }
         renderRevision += 1
+    }
+
+    func setAttackStance(_ stance: UnitAttackStance) {
+        clearPendingTargetCommands()
+        let changedIDs = engine.setAttackStance(stance)
+        commandStatus = changedIDs.isEmpty ? "No combat units selected" : "\(stance.label) stance set"
+        renderRevision += 1
+    }
+
+    func isAttackStanceActive(_ stance: UnitAttackStance) -> Bool {
+        let combatUnits = selectedPlayerCombatUnits
+        guard !combatUnits.isEmpty else {
+            return false
+        }
+        return combatUnits.allSatisfy { $0.attackStance == stance }
     }
 
     func toggleAttackMoveCommand() {
@@ -1249,6 +1279,10 @@ final class GameController {
 
     private var selectedPlayerBuilders: [UnitSnapshot] {
         selectedPlayerUnits.filter { $0.type == .builder }
+    }
+
+    private var selectedPlayerCombatUnits: [UnitSnapshot] {
+        selectedPlayerUnits.filter { GameDefinitions.unit($0.type).attackRange > 0 }
     }
 
     private var selectedPlayerProducer: BuildingSnapshot? {
