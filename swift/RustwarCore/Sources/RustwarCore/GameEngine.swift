@@ -210,19 +210,20 @@ public struct GameEngine: Sendable {
 
     @discardableResult
     public mutating func issueReclaim(wreckID: String) -> UnitCommandResult {
-        guard let selectedEntityID = state.selectedEntityID else {
+        guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
         }
-        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
-              state.units[unitIndex].team == .player,
-              state.units[unitIndex].type == .builder else {
+        let builderIndices = selectedPlayerBuilderIndices()
+        guard !builderIndices.isEmpty else {
             return .selectedEntityCannotReclaim
         }
         guard activeWreck(id: wreckID) != nil else {
             return .invalidReclaimTarget
         }
 
-        state.units[unitIndex].order = .reclaim(wreckID: wreckID)
+        for unitIndex in builderIndices {
+            state.units[unitIndex].order = .reclaim(wreckID: wreckID)
+        }
         return .issued
     }
 

@@ -1941,6 +1941,101 @@ import Testing
     #expect(inactiveWreckEngine.issueReclaim(wreckID: "expired") == .invalidReclaimTarget)
 }
 
+@Test func reclaimCommandAppliesToSelectedPlayerBuilderGroup() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let extraBuilder = UnitSnapshot(
+        id: "reclaim-extra-builder",
+        type: .builder,
+        team: .player,
+        position: WorldPoint(builder.position.x + 80, builder.position.y),
+        hitPoints: builderDefinition.hitPoints,
+        maxHitPoints: builderDefinition.hitPoints
+    )
+    let wreck = WreckSnapshot(
+        id: "wreck-builder-group",
+        position: WorldPoint(1_080, 1_000),
+        size: 28,
+        team: .enemy,
+        metal: 80,
+        maxMetal: 80,
+        ttl: 58
+    )
+    state.units.append(extraBuilder)
+    state.wrecks = [wreck]
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = [builder.id, extraBuilder.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueReclaim(wreckID: wreck.id) == .issued)
+
+    for builderID in [builder.id, extraBuilder.id] {
+        let reclaimer = try #require(engine.state.units.first { $0.id == builderID })
+        if case let .reclaim(wreckID)? = reclaimer.order {
+            #expect(wreckID == wreck.id)
+        } else {
+            #expect(Bool(false))
+        }
+    }
+}
+
+@Test func reclaimCommandIgnoresInvalidSelectedIDsWhenAnyPlayerBuilderIsSelected() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    let playerTank = try #require(state.units.first { $0.team == .player && $0.type != .builder })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let wreck = WreckSnapshot(
+        id: "wreck-mixed-reclaim",
+        position: WorldPoint(1_080, 1_000),
+        size: 28,
+        team: .enemy,
+        metal: 80,
+        maxMetal: 80,
+        ttl: 58
+    )
+    state.wrecks = [wreck]
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyBuilder.id, "missing-id", playerTank.id, builder.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueReclaim(wreckID: wreck.id) == .issued)
+
+    let reclaimer = try #require(engine.state.units.first { $0.id == builder.id })
+    let untouchedTank = try #require(engine.state.units.first { $0.id == playerTank.id })
+    let untouchedEnemyBuilder = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+    if case let .reclaim(wreckID)? = reclaimer.order {
+        #expect(wreckID == wreck.id)
+    } else {
+        #expect(Bool(false))
+    }
+    #expect(untouchedTank.order == nil)
+    #expect(untouchedEnemyBuilder.order == nil)
+}
+
+@Test func reclaimRejectsSelectionWithoutPlayerBuilders() throws {
+    var state = GameState(mapID: .coast)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    let playerTank = try #require(state.units.first { $0.team == .player && $0.type != .builder })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let wreck = WreckSnapshot(
+        id: "wreck-no-builder-reclaim",
+        position: WorldPoint(1_080, 1_000),
+        size: 28,
+        team: .enemy,
+        metal: 80,
+        maxMetal: 80,
+        ttl: 58
+    )
+    state.wrecks = [wreck]
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyBuilder.id, "missing-id", playerTank.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueReclaim(wreckID: wreck.id) == .selectedEntityCannotReclaim)
+}
+
 @Test func reclaimCommandMovesBuilderIntoRangeAndKeepsOrder() throws {
     var state = GameState(mapID: .coast)
     let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
@@ -2008,6 +2103,48 @@ import Testing
     } else {
         #expect(Bool(false))
     }
+}
+
+@Test func reclaimCommandTransfersMetalFromSelectedBuilderGroupAndClearsEmptyWreck() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let extraBuilder = UnitSnapshot(
+        id: "reclaim-empty-extra-builder",
+        type: .builder,
+        team: .player,
+        position: WorldPoint(1_060, 1_000),
+        hitPoints: builderDefinition.hitPoints,
+        maxHitPoints: builderDefinition.hitPoints
+    )
+    let wreck = WreckSnapshot(
+        id: "wreck-small-group",
+        position: WorldPoint(1_080, 1_000),
+        size: 28,
+        team: .enemy,
+        metal: 25,
+        maxMetal: 25,
+        ttl: 58
+    )
+    state.units[builderIndex].position = WorldPoint(1_000, 1_000)
+    state.units.append(extraBuilder)
+    state.wrecks = [wreck]
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = [builder.id, extraBuilder.id]
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    let startingMetal = engine.state.metal[.player, default: 0]
+    #expect(engine.issueReclaim(wreckID: wreck.id) == .issued)
+    engine.update(deltaTime: 1)
+
+    let firstBuilder = try #require(engine.state.units.first { $0.id == builder.id })
+    let secondBuilder = try #require(engine.state.units.first { $0.id == extraBuilder.id })
+    let expectedMetal = startingMetal + engine.state.income(for: .player) + 25
+    #expect(abs(engine.state.metal[.player, default: 0] - expectedMetal) < 0.0001)
+    #expect(engine.state.wrecks.isEmpty)
+    #expect(firstBuilder.order == nil)
+    #expect(secondBuilder.order == nil)
 }
 
 @Test func reclaimCommandRemovesEmptyWreckAndClearsOrder() throws {
@@ -2289,6 +2426,60 @@ import Testing
     let stoppedUnit = try #require(engine.state.units.first { $0.id == builder.id })
     #expect(stoppedUnit.order == nil)
     #expect(engine.state.selectedEntityID == builder.id)
+}
+
+@Test func stopCommandClearsSelectedReclaimGroupOnly() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let secondBuilder = UnitSnapshot(
+        id: "reclaim-stop-second-builder",
+        type: .builder,
+        team: .player,
+        position: WorldPoint(builder.position.x + 80, builder.position.y),
+        hitPoints: builderDefinition.hitPoints,
+        maxHitPoints: builderDefinition.hitPoints
+    )
+    let unselectedBuilder = UnitSnapshot(
+        id: "reclaim-stop-unselected-builder",
+        type: .builder,
+        team: .player,
+        position: WorldPoint(builder.position.x + 160, builder.position.y),
+        hitPoints: builderDefinition.hitPoints,
+        maxHitPoints: builderDefinition.hitPoints
+    )
+    state.units.append(secondBuilder)
+    state.units.append(unselectedBuilder)
+    state.wrecks = [
+        WreckSnapshot(
+            id: "wreck-stop-group",
+            position: WorldPoint(1_080, 1_000),
+            size: 28,
+            team: .enemy,
+            metal: 80,
+            maxMetal: 80,
+            ttl: 58
+        )
+    ]
+
+    let firstIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    let secondIndex = try #require(state.units.firstIndex { $0.id == secondBuilder.id })
+    let unselectedIndex = try #require(state.units.firstIndex { $0.id == unselectedBuilder.id })
+    state.units[firstIndex].order = .reclaim(wreckID: "wreck-stop-group")
+    state.units[secondIndex].order = .reclaim(wreckID: "wreck-stop-group")
+    state.units[unselectedIndex].order = .reclaim(wreckID: "wreck-stop-group")
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = [builder.id, secondBuilder.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueStop() == .issued)
+
+    let stoppedFirst = try #require(engine.state.units.first { $0.id == builder.id })
+    let stoppedSecond = try #require(engine.state.units.first { $0.id == secondBuilder.id })
+    let untouchedBuilder = try #require(engine.state.units.first { $0.id == unselectedBuilder.id })
+    #expect(stoppedFirst.order == nil)
+    #expect(stoppedSecond.order == nil)
+    #expect(untouchedBuilder.order != nil)
 }
 
 @Test func attackCommandRejectsMissingInvalidAndFriendlyTargets() throws {

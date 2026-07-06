@@ -180,7 +180,7 @@ final class GameController {
     }
 
     var canIssueReclaim: Bool {
-        selectedPlayerBuilder != nil
+        !selectedPlayerBuilders.isEmpty
     }
 
     var canIssueBuildExtractor: Bool {
@@ -572,7 +572,7 @@ final class GameController {
         } else if canIssueReclaim {
             clearPendingTargetCommands()
             isAwaitingReclaimTarget = true
-            commandStatus = "Reclaim target"
+            commandStatus = selectedPlayerBuilders.count > 1 ? "Reclaim target for \(selectedPlayerBuilders.count) builders" : "Reclaim target"
         }
         renderRevision += 1
     }
@@ -806,13 +806,16 @@ final class GameController {
         if isAwaitingReclaimTarget {
             let wreck = engine.state.wreckTarget(at: point)
             let result: UnitCommandResult
+            let wreckID: String?
             if let wreck {
+                wreckID = wreck.id
                 result = engine.issueReclaim(wreckID: wreck.id)
             } else {
+                wreckID = nil
                 result = .invalidReclaimTarget
             }
             isAwaitingReclaimTarget = false
-            commandStatus = statusText(forReclaim: result)
+            commandStatus = statusText(forReclaim: result, wreckID: wreckID)
         } else if isAwaitingBuildExtractorTarget {
             let resource = engine.state.resourceTarget(at: point)
             let result: UnitCommandResult
@@ -1035,16 +1038,29 @@ final class GameController {
         }
     }
 
-    private func statusText(forReclaim result: UnitCommandResult) -> String? {
+    private func statusText(forReclaim result: UnitCommandResult, wreckID: String?) -> String? {
         switch result {
         case .issued:
-            return "Reclaim order issued"
+            let count = reclaimOrderIssuedCount(wreckID: wreckID)
+            return count > 1 ? "Reclaim order issued to \(count) builders" : "Reclaim order issued"
         case .noSelection:
             return "No builder selected"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
             return "Builder required"
         case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
             return "Wreck target required"
+        }
+    }
+
+    private func reclaimOrderIssuedCount(wreckID: String?) -> Int {
+        guard let wreckID else {
+            return selectedPlayerBuilders.count
+        }
+        return selectedPlayerBuilders.count { builder in
+            if case let .reclaim(activeWreckID)? = builder.order {
+                return activeWreckID == wreckID
+            }
+            return false
         }
     }
 
