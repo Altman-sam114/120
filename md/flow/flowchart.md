@@ -59,7 +59,7 @@ flowchart TD
   C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、双方初始建筑、单位、多选高亮和移动目标"]
   T["SpatialTap / Drag / Magnify<br/>中文注释：iOS 触摸选择、移动落点、拖拽平移和捏合缩放"] --> C
   TT["TacticalMap DragTap<br/>中文注释：点按小地图换算世界坐标；等待点位、Builder 目标或实体目标命令时显示反馈并下令，否则居中相机"] --> C
-  C --> M["UnitOrder.move<br/>中文注释：选中己方单位后写入移动目标"]
+  C --> M["UnitOrder.move<br/>中文注释：选中己方单位后写入移动目标；多选时所有选中己方单位获得同一目的地"]
   M --> E
   C --> AM["UnitOrder.attackMove<br/>中文注释：选中己方单位后写入攻击移动目的地，core 在视野内临时索敌"]
   AM --> E
@@ -77,7 +77,7 @@ flowchart TD
   TBT --> E
   C --> BFT["UnitOrder.build / Land Factory<br/>中文注释：选中己方 Builder 后点选清晰陆地点，core 扣金属、创建未完成 Land Factory 并推进建造，完成后接入生产体系"]
   BFT --> E
-  C --> STP["issueStop<br/>中文注释：选中己方单位后清除当前移动、攻击移动、巡逻、护航、维修、回收、建造或攻击订单"]
+  C --> STP["issueStop<br/>中文注释：选中己方单位后清除当前订单；多选时清除所有选中己方单位的移动、攻击移动、巡逻、护航、维修、回收、建造或攻击订单"]
   STP --> E
   C --> A["UnitOrder.attack<br/>中文注释：选中己方单位后点选敌方目标，core 推进靠近、伤害和死亡清理"]
   A --> E

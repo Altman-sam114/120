@@ -138,7 +138,7 @@ final class GameController {
     }
 
     var canIssueMove: Bool {
-        selectedPlayerUnit != nil
+        !selectedPlayerUnits.isEmpty
     }
 
     var canSelectIdleBuilders: Bool {
@@ -196,7 +196,7 @@ final class GameController {
     }
 
     var canIssueStop: Bool {
-        selectedPlayerUnit != nil
+        !selectedPlayerUnits.isEmpty
     }
 
     var canIssueRally: Bool {
@@ -500,7 +500,7 @@ final class GameController {
         } else if canIssueMove {
             clearPendingTargetCommands()
             isAwaitingMoveTarget = true
-            commandStatus = "Move target"
+            commandStatus = selectedPlayerUnits.count > 1 ? "Move target for \(selectedPlayerUnits.count) units" : "Move target"
         }
         renderRevision += 1
     }
@@ -875,6 +875,14 @@ final class GameController {
         return engine.state.units.first { $0.id == selectedEntityID && $0.team == .player }
     }
 
+    private var selectedPlayerUnits: [UnitSnapshot] {
+        let selectedIDs = engine.state.selectedEntityIDs.isEmpty
+            ? engine.state.selectedEntityID.map { [$0] } ?? []
+            : engine.state.selectedEntityIDs
+        let selectedIDSet = Set(selectedIDs)
+        return engine.state.units.filter { selectedIDSet.contains($0.id) && $0.team == .player }
+    }
+
     private var selectedPlayerBuilder: UnitSnapshot? {
         guard let unit = selectedPlayerUnit, unit.type == .builder else {
             return nil
@@ -898,7 +906,8 @@ final class GameController {
     private func statusText(for result: UnitCommandResult) -> String? {
         switch result {
         case .issued:
-            return "Move order issued"
+            let count = selectedPlayerUnits.count
+            return count > 1 ? "Move order issued to \(count) units" : "Move order issued"
         case .noSelection:
             return "No unit selected"
         case .selectedEntityCannotMove:
@@ -1066,7 +1075,8 @@ final class GameController {
     private func statusText(forStop result: UnitCommandResult) -> String? {
         switch result {
         case .issued:
-            return "Stop order issued"
+            let count = selectedPlayerUnits.count
+            return count > 1 ? "Stopped \(count) units" : "Stop order cleared"
         case .noSelection:
             return "No unit selected"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:

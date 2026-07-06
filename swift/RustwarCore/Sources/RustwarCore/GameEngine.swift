@@ -83,15 +83,18 @@ public struct GameEngine: Sendable {
 
     @discardableResult
     public mutating func issueMove(to destination: WorldPoint) -> UnitCommandResult {
-        guard let selectedEntityID = state.selectedEntityID else {
+        guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
         }
-        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
-              state.units[unitIndex].team == .player else {
+        let unitIndices = selectedPlayerUnitIndices()
+        guard !unitIndices.isEmpty else {
             return .selectedEntityCannotMove
         }
 
-        state.units[unitIndex].order = .move(destination: destination.clampedToMap())
+        let clampedDestination = destination.clampedToMap()
+        for unitIndex in unitIndices {
+            state.units[unitIndex].order = .move(destination: clampedDestination)
+        }
         return .issued
     }
 
@@ -288,15 +291,17 @@ public struct GameEngine: Sendable {
 
     @discardableResult
     public mutating func issueStop() -> UnitCommandResult {
-        guard let selectedEntityID = state.selectedEntityID else {
+        guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
         }
-        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
-              state.units[unitIndex].team == .player else {
+        let unitIndices = selectedPlayerUnitIndices()
+        guard !unitIndices.isEmpty else {
             return .selectedEntityCannotStop
         }
 
-        state.units[unitIndex].order = nil
+        for unitIndex in unitIndices {
+            state.units[unitIndex].order = nil
+        }
         return .issued
     }
 
@@ -1737,6 +1742,23 @@ public struct GameEngine: Sendable {
         anchors.append(state.map.enemyRally)
         anchors.append(builder.position)
         return anchors
+    }
+
+    private func selectedCommandEntityIDs() -> [String] {
+        if !state.selectedEntityIDs.isEmpty {
+            return state.selectedEntityIDs
+        }
+        return state.selectedEntityID.map { [$0] } ?? []
+    }
+
+    private func selectedPlayerUnitIndices() -> [Array<UnitSnapshot>.Index] {
+        let selectedIDs = Set(selectedCommandEntityIDs())
+        guard !selectedIDs.isEmpty else {
+            return []
+        }
+        return state.units.indices.filter { index in
+            selectedIDs.contains(state.units[index].id) && state.units[index].team == .player
+        }
     }
 
     private func guardOffset(for unit: UnitSnapshot, around target: CombatTarget) -> WorldPoint {

@@ -414,6 +414,57 @@ import Testing
     }
 }
 
+@Test func moveCommandAppliesToSelectedPlayerCombatGroup() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+    let destination = WorldPoint(1_420, 2_160)
+
+    #expect(selectedIDs.count > 1)
+    #expect(engine.issueMove(to: destination) == .issued)
+
+    for id in selectedIDs {
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        if case let .move(activeDestination)? = unit.order {
+            #expect(activeDestination == destination)
+        } else {
+            #expect(Bool(false))
+        }
+    }
+}
+
+@Test func moveCommandIgnoresInvalidSelectedIDsWhenAnyPlayerUnitIsSelected() throws {
+    var state = GameState(mapID: .coast)
+    let playerUnit = try #require(state.units.first { $0.team == .player && $0.type != .builder })
+    let enemyUnit = try #require(state.units.first { $0.team == .enemy })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player })
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyUnit.id, "missing-id", playerUnit.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueMove(to: WorldPoint(1_500, 2_100)) == .issued)
+
+    let movedUnit = try #require(engine.state.units.first { $0.id == playerUnit.id })
+    let untouchedEnemy = try #require(engine.state.units.first { $0.id == enemyUnit.id })
+    if case .move(destination: _)? = movedUnit.order {
+        #expect(Bool(true))
+    } else {
+        #expect(Bool(false))
+    }
+    #expect(untouchedEnemy.order == nil)
+}
+
+@Test func moveAndStopRejectSelectionWithoutPlayerUnits() throws {
+    var state = GameState(mapID: .coast)
+    let enemyUnit = try #require(state.units.first { $0.team == .enemy })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player })
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyUnit.id, "missing-id"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueMove(to: WorldPoint(1_500, 2_100)) == .selectedEntityCannotMove)
+    #expect(engine.issueStop() == .selectedEntityCannotStop)
+}
+
 @Test func destroyedSelectedEntityIsRemovedFromSelectionGroup() throws {
     var state = GameState(mapID: .coast)
     let selectedUnits = state.units.filter { $0.team == .player && $0.type != .builder }
@@ -1725,6 +1776,35 @@ import Testing
     #expect(stoppedUnit.order == nil)
     #expect(engine.state.selectedEntityID == selectedUnit.id)
     #expect(otherUnitAfterStop == otherUnitBeforeStop)
+}
+
+@Test func stopCommandAppliesToSelectedPlayerUnitGroupOnly() throws {
+    var state = GameState(mapID: .coast)
+    let selectedUnits = Array(state.units.filter { $0.team == .player && $0.type != .builder }.prefix(2))
+    let first = try #require(selectedUnits.first)
+    let second = try #require(selectedUnits.dropFirst().first)
+    let unselected = try #require(state.units.first {
+        $0.team == .player && $0.type != .builder && $0.id != first.id && $0.id != second.id
+    })
+    let firstIndex = try #require(state.units.firstIndex { $0.id == first.id })
+    let secondIndex = try #require(state.units.firstIndex { $0.id == second.id })
+    let unselectedIndex = try #require(state.units.firstIndex { $0.id == unselected.id })
+    state.units[firstIndex].order = .move(destination: WorldPoint(1_400, 2_100))
+    state.units[secondIndex].order = .attackMove(destination: WorldPoint(1_500, 2_200))
+    state.units[unselectedIndex].order = .move(destination: WorldPoint(1_600, 2_300))
+    state.selectedEntityID = first.id
+    state.selectedEntityIDs = [first.id, second.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueStop() == .issued)
+
+    let stoppedFirst = try #require(engine.state.units.first { $0.id == first.id })
+    let stoppedSecond = try #require(engine.state.units.first { $0.id == second.id })
+    let untouchedUnit = try #require(engine.state.units.first { $0.id == unselected.id })
+    #expect(stoppedFirst.order == nil)
+    #expect(stoppedSecond.order == nil)
+    #expect(untouchedUnit.order != nil)
+    #expect(engine.state.selectedEntityIDs == [first.id, second.id])
 }
 
 @Test func stopCommandClearsAttackOrderAndPreventsFollowUpDamage() throws {
