@@ -4,6 +4,7 @@ import RustwarCore
 struct GameHUDView: View {
     @Bindable var controller: GameController
     private let commandColumns = [GridItem(.adaptive(minimum: 112), spacing: 8)]
+    private let controlGroupColumns = [GridItem(.adaptive(minimum: 116), spacing: 8)]
     private let productionColumns = [GridItem(.adaptive(minimum: 132), spacing: 8)]
 
     var body: some View {
@@ -123,6 +124,49 @@ struct GameHUDView: View {
                     .accessibilityLabel("Select combat units")
                     .accessibilityHint("Selects all player combat units.")
             }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Groups")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                LazyVGrid(columns: controlGroupColumns, alignment: .leading, spacing: 8) {
+                    ForEach(GameController.visibleControlGroupSlots, id: \.self) { slot in
+                        HStack(spacing: 4) {
+                            Text("\(slot)")
+                                .font(.headline)
+                                .monospacedDigit()
+                                .frame(width: 22, minHeight: 44)
+
+                            Button(
+                                "Save control group \(slot)",
+                                systemImage: "tray.and.arrow.down",
+                                action: { controller.storeControlGroup(slot) }
+                            )
+                            .labelStyle(.iconOnly)
+                            .buttonStyle(.bordered)
+                            .controlSize(.regular)
+                            .frame(width: 44, minHeight: 44)
+                            .disabled(!controller.canStoreControlGroup)
+                            .accessibilityHint("Stores the current player selection in control group \(slot).")
+
+                            Button(
+                                "Recall control group \(slot)",
+                                systemImage: "tray.and.arrow.up",
+                                action: { controller.recallControlGroup(slot) }
+                            )
+                            .labelStyle(.iconOnly)
+                            .buttonStyle(.bordered)
+                            .controlSize(.regular)
+                            .frame(width: 44, minHeight: 44)
+                            .disabled(!controller.canRecallControlGroup(slot))
+                            .accessibilityValue(controller.controlGroupAccessibilityValue(for: slot))
+                            .accessibilityHint("Selects the saved player units or buildings in control group \(slot).")
+                        }
+                    }
+                }
+            }
+            .accessibilityElement(children: .contain)
 
             LazyVGrid(columns: commandColumns, alignment: .leading, spacing: 8) {
                 if controller.canIssueAreaSelection || controller.isAwaitingAreaSelection {

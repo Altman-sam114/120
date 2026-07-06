@@ -122,6 +122,31 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func storeControlGroup(_ slot: Int) -> [String] {
+        guard Self.isValidControlGroupSlot(slot) else {
+            return []
+        }
+
+        let ids = selectedCommandEntityIDs().filter { isValidPlayerSelectableEntity(id: $0) }
+        state.controlGroups[slot] = ids
+        return ids
+    }
+
+    @discardableResult
+    public mutating func recallControlGroup(_ slot: Int) -> [String] {
+        guard Self.isValidControlGroupSlot(slot) else {
+            state.selectedEntityIDs = []
+            state.selectedEntityID = nil
+            return []
+        }
+
+        let ids = (state.controlGroups[slot] ?? []).filter { isValidPlayerSelectableEntity(id: $0) }
+        state.selectedEntityIDs = ids
+        state.selectedEntityID = ids.first
+        return ids
+    }
+
+    @discardableResult
     public mutating func issueMove(to destination: WorldPoint) -> UnitCommandResult {
         guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
@@ -1829,6 +1854,15 @@ public struct GameEngine: Sendable {
             return state.selectedEntityIDs
         }
         return state.selectedEntityID.map { [$0] } ?? []
+    }
+
+    private static func isValidControlGroupSlot(_ slot: Int) -> Bool {
+        (1...9).contains(slot)
+    }
+
+    private func isValidPlayerSelectableEntity(id: String) -> Bool {
+        state.units.contains { $0.id == id && $0.team == .player && $0.hitPoints > 0 } ||
+            state.buildings.contains { $0.id == id && $0.team == .player && $0.hitPoints > 0 }
     }
 
     private func selectedPlayerUnitTypeForSameTypeSelection() -> UnitType? {

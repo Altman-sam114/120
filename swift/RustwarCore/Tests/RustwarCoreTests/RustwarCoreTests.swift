@@ -3503,6 +3503,99 @@ import Testing
     }
 }
 
+@Test func controlGroupStoresAndRecallsCurrentPlayerSelection() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+    let firstSelectedID = try #require(selectedIDs.first)
+
+    #expect(engine.storeControlGroup(1) == selectedIDs)
+    _ = engine.select(at: WorldPoint(20, 20), includeEnemies: true)
+    #expect(engine.state.selectedEntityIDs.isEmpty)
+
+    let recalledIDs = engine.recallControlGroup(1)
+
+    #expect(recalledIDs == selectedIDs)
+    #expect(engine.state.selectedEntityIDs == selectedIDs)
+    #expect(engine.state.selectedEntityID == firstSelectedID)
+}
+
+@Test func controlGroupRecallFiltersMissingEnemyAndDestroyedEntities() throws {
+    var state = GameState(mapID: .coast)
+    let playerUnit = try #require(state.units.first { $0.team == .player })
+    let enemyUnit = try #require(state.units.first { $0.team == .enemy })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player })
+    let destroyedBuilding = try #require(state.buildings.first { $0.team == .enemy })
+    state.controlGroups[2] = [
+        playerUnit.id,
+        enemyUnit.id,
+        playerBuilding.id,
+        destroyedBuilding.id,
+        "missing-id"
+    ]
+    let destroyedBuildingIndex = try #require(state.buildings.firstIndex { $0.id == destroyedBuilding.id })
+    state.buildings[destroyedBuildingIndex].team = .player
+    state.buildings[destroyedBuildingIndex].hitPoints = 0
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let recalledIDs = engine.recallControlGroup(2)
+
+    #expect(recalledIDs == [playerUnit.id, playerBuilding.id])
+    #expect(engine.state.selectedEntityIDs == recalledIDs)
+    #expect(engine.state.selectedEntityID == playerUnit.id)
+    #expect(engine.state.controlGroups[2]?.contains(enemyUnit.id) == true)
+    #expect(engine.state.controlGroups[2]?.contains("missing-id") == true)
+}
+
+@Test func controlGroupEmptyOrInvalidSlotClearsSelectionOnRecall() throws {
+    var state = GameState(mapID: .coast)
+    let playerUnit = try #require(state.units.first { $0.team == .player })
+    state.selectedEntityID = playerUnit.id
+    state.selectedEntityIDs = [playerUnit.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.recallControlGroup(3).isEmpty)
+    #expect(engine.state.selectedEntityID == nil)
+    #expect(engine.state.selectedEntityIDs.isEmpty)
+
+    _ = engine.select(at: playerUnit.position, includeEnemies: false)
+    #expect(engine.recallControlGroup(10).isEmpty)
+    #expect(engine.state.selectedEntityID == nil)
+    #expect(engine.state.selectedEntityIDs.isEmpty)
+}
+
+@Test func controlGroupStoreEmptySelectionClearsGroup() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+
+    #expect(!selectedIDs.isEmpty)
+    #expect(engine.storeControlGroup(1) == selectedIDs)
+
+    _ = engine.select(at: WorldPoint(20, 20), includeEnemies: true)
+    #expect(engine.storeControlGroup(1).isEmpty)
+    #expect(engine.state.controlGroups[1]?.isEmpty == true)
+}
+
+@Test func controlGroupRecallSelectionReceivesExistingMultiUnitMoveCommand() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+    let destination = WorldPoint(320, 360)
+
+    #expect(!selectedIDs.isEmpty)
+    #expect(engine.storeControlGroup(1) == selectedIDs)
+    _ = engine.select(at: WorldPoint(20, 20), includeEnemies: true)
+    #expect(engine.recallControlGroup(1) == selectedIDs)
+    #expect(engine.issueMove(to: destination) == .issued)
+
+    for id in selectedIDs {
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        if case let .move(activeDestination)? = unit.order {
+            #expect(activeDestination == destination)
+        } else {
+            #expect(Bool(false))
+        }
+    }
+}
+
 @Test func attackCommandIgnoresInvalidSelectedIDsWhenAnyPlayerUnitIsSelected() throws {
     var state = GameState(mapID: .coast)
     let playerUnit = try #require(state.units.first { $0.team == .player && $0.type != .builder })
@@ -3846,6 +3939,23 @@ import Testing
     #expect(decoded.buildings.first { $0.id == state.buildings[factoryIndex].id }?.repeatUnitType == .scout)
 }
 
+@Test func gameStateJSONRoundTripPreservesControlGroups() throws {
+    var state = GameState(mapID: .coast)
+    let playerUnit = try #require(state.units.first { $0.team == .player })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player })
+    state.controlGroups = [
+        1: [playerUnit.id, playerBuilding.id],
+        3: []
+    ]
+
+    let encoded = try JSONEncoder().encode(state)
+    let decoded = try JSONDecoder().decode(GameState.self, from: encoded)
+
+    #expect(decoded == state)
+    #expect(decoded.controlGroups[1] == [playerUnit.id, playerBuilding.id])
+    #expect(decoded.controlGroups[3]?.isEmpty == true)
+}
+
 @Test func gameStateDecodesOldJSONWithoutBuildingRepeatProductionAsNil() throws {
     let state = GameState(mapID: .coast)
     let encoded = try JSONEncoder().encode(state)
@@ -3860,6 +3970,20 @@ import Testing
     let decoded = try JSONDecoder().decode(GameState.self, from: legacyEncoded)
 
     #expect(decoded.buildings.allSatisfy { $0.repeatUnitType == nil })
+    #expect(decoded.units.count == state.units.count)
+    #expect(decoded.buildings.count == state.buildings.count)
+}
+
+@Test func gameStateDecodesOldJSONWithoutControlGroupsAsEmpty() throws {
+    let state = GameState(mapID: .coast)
+    let encoded = try JSONEncoder().encode(state)
+    var json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    json.removeValue(forKey: "controlGroups")
+    let legacyEncoded = try JSONSerialization.data(withJSONObject: json)
+
+    let decoded = try JSONDecoder().decode(GameState.self, from: legacyEncoded)
+
+    #expect(decoded.controlGroups.isEmpty)
     #expect(decoded.units.count == state.units.count)
     #expect(decoded.buildings.count == state.buildings.count)
 }

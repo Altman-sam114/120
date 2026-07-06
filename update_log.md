@@ -14,8 +14,8 @@
 - 项目形态：完整可玩的 Web Canvas RTS 原型 + v1.0 起新增的原生 Swift/iOS 迁移地基。
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
-- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、世界矩形框选、全图同类型选择、附近同类型选择、多选集合、空闲 Builder / 战斗单位批量选择、资源点命中、残骸模型、单单位和多单位 Move 命令、单单位和多单位 Attack 命令、单单位和多单位 Attack-Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、单 Builder 和多 Builder Repair 命令、单 Builder 和多 Builder Reclaim 命令、单 Builder 和多 Builder Build Extractor 命令、单 Builder 和多 Builder Build Turret 命令、单 Builder 和多 Builder Build Land Factory 命令、单单位和多单位 Stop 命令、Command Center Builder 生产、Land Factory T1 生产列表、生产建筑队列 MVP、生产取消/退款、重复生产开关、集结点设置、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方 Command Center Builder 生产、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI MVP、红方 AI Web-lite 目标评分、红方 AI On/Off 开关 API，以及从已保存 `GameState` 恢复原生模拟的入口。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、Idle Builders / Combat Units 批量选择入口、Select Area 显式框选己方单位、Same Type 全图同类型选择入口、双击附近同类型选择入口、单单位和多单位 Move 命令、单单位和多单位 Attack 命令、单单位和多单位 Attack Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、单 Builder 和多 Builder Repair 按钮语义、单 Builder 和多 Builder Reclaim 按钮语义、单 Builder 和多 Builder Build Extractor 按钮语义、单 Builder 和多 Builder Build Turret 按钮语义、单 Builder 和多 Builder Build Land Factory 按钮语义、单单位和多单位 Stop 命令、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张、维修受损友军、回收附近残骸、Land Factory / Turret 建造、Command Center Builder 生产、完整 T1 编成生产、红方 AI Web-lite 目标评分和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off HUD 开关、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图多选高亮、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
+- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、世界矩形框选、全图同类型选择、附近同类型选择、控制编队、多选集合、空闲 Builder / 战斗单位批量选择、资源点命中、残骸模型、单单位和多单位 Move 命令、单单位和多单位 Attack 命令、单单位和多单位 Attack-Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、单 Builder 和多 Builder Repair 命令、单 Builder 和多 Builder Reclaim 命令、单 Builder 和多 Builder Build Extractor 命令、单 Builder 和多 Builder Build Turret 命令、单 Builder 和多 Builder Build Land Factory 命令、单单位和多单位 Stop 命令、Command Center Builder 生产、Land Factory T1 生产列表、生产建筑队列 MVP、生产取消/退款、重复生产开关、集结点设置、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方 Command Center Builder 生产、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI MVP、红方 AI Web-lite 目标评分、红方 AI On/Off 开关 API，以及从已保存 `GameState` 恢复原生模拟的入口。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、Idle Builders / Combat Units 批量选择入口、Select Area 显式框选己方单位、Same Type 全图同类型选择入口、双击附近同类型选择入口、1-3 号控制编队保存/召回入口、单单位和多单位 Move 命令、单单位和多单位 Attack 命令、单单位和多单位 Attack Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、单 Builder 和多 Builder Repair 按钮语义、单 Builder 和多 Builder Reclaim 按钮语义、单 Builder 和多 Builder Build Extractor 按钮语义、单 Builder 和多 Builder Build Turret 按钮语义、单 Builder 和多 Builder Build Land Factory 按钮语义、单单位和多单位 Stop 命令、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张、维修受损友军、回收附近残骸、Land Factory / Turret 建造、Command Center Builder 生产、完整 T1 编成生产、红方 AI Web-lite 目标评分和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off HUD 开关、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图多选高亮、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -2005,3 +2005,45 @@
 遗留事项：
 
 - v1.51 只新增双击附近同类型选择；尚无 Shift 追加/反选、控制编队、队形保持、框选建筑/混编选择、攻击姿态切换或完整 Web 多单位控制 parity。
+
+### v1.52 / iOS native control groups MVP
+
+日期：2026-07-06
+
+核心变更：
+
+- `GameState` 新增 `controlGroups: [Int: [String]]`，旧 JSON 缺失该字段时解码为空字典，原生 Save/Load 会随 `GameState` 保存和恢复编队。
+- `GameEngine.storeControlGroup(_:)` 支持 1-9 号编队保存当前有效己方单位或建筑选择；空选择会保存空数组，等价于清空该组。
+- `GameEngine.recallControlGroup(_:)` 支持 1-9 号编队召回，按保存顺序惰性过滤缺失、死亡、敌方或非己方实体，再写回 `selectedEntityIDs` / `selectedEntityID`；召回不改变单位订单。
+- iOS `GameController` 暴露 1-3 号可见控制编队入口、保存/召回能力判断、VoiceOver value 和状态文案；Save / Recall 会先清除 Move / Attack / Build / Rally / Select Area 等等待命令。
+- iOS HUD 在批量选择入口附近新增紧凑 `Groups` 区域，每个 slot 使用带可访问文本标签的 Save / Recall 系统图标按钮，Recall 空组禁用，Save 无有效己方选择时禁用。
+- Swift tests 增加控制编队保存/召回、过滤死亡/敌方/missing、空组和非法 slot 清空召回选择、空选择清组、召回后复用多单位 Move、JSON roundtrip 和旧 JSON 兼容覆盖。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/GameState.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.52-ios-control-groups.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地 `git diff --check` 通过。
+- 本地 `node --check app.js` 通过。
+- 本地 `swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v152 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 通过。
+- 本地 `swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift` 通过。
+- 本地 `swiftc -parse ios/RustwarIOS/RustwarIOS/GameController.swift ios/RustwarIOS/RustwarIOS/GameHUDView.swift` 通过。
+- 本地 `swift test --package-path swift/RustwarCore` 已尝试；沙箱内先遇到 SwiftPM 用户 cache 和 clang module cache 权限问题，提权重跑后仍因当前 CommandLineTools / SwiftPM manifest 链接阶段 `PackageDescription.Package.__allocating_init` 符号缺失阻塞，未进入源码测试执行。
+- 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 已尝试；当前 active developer directory 是 CommandLineTools，不是完整 Xcode，命令被本机工具链阻塞。
+- 云端 GitHub Actions artifact 待本轮 implementation commit push 后由 Agent C 下载复判。
+
+遗留事项：
+
+- v1.52 只新增原生控制编队 MVP：core 支持 1-9，iOS HUD 暴露 1-3；尚无外接键盘快捷键、4-9 号 HUD、Shift 追加/反选、队形保持、框选建筑/混编选择、攻击姿态切换或完整 Web 多单位控制 parity。

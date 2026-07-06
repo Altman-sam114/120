@@ -7,6 +7,7 @@ import RustwarCore
 @Observable
 final class GameController {
     static let simulationSpeedOptions = [0.5, 1.0, 2.0]
+    static let visibleControlGroupSlots = [1, 2, 3]
     private static let saveKey = "rustwar.ios.save.v1"
     private static let currentSaveVersion = 1
     private static let doubleTapSameTypeInterval: TimeInterval = 0.32
@@ -146,6 +147,10 @@ final class GameController {
 
     var canIssueMove: Bool {
         !selectedPlayerUnits.isEmpty
+    }
+
+    var canStoreControlGroup: Bool {
+        hasPlayerSelectableSelection
     }
 
     var canIssueAreaSelection: Bool {
@@ -505,6 +510,34 @@ final class GameController {
         } else {
             commandStatus = "No same-type units"
         }
+        renderRevision += 1
+    }
+
+    func controlGroupSummary(for slot: Int) -> String {
+        let count = engine.state.controlGroups[slot]?.count ?? 0
+        return count > 0 ? "Group \(slot) (\(count))" : "Group \(slot)"
+    }
+
+    func controlGroupAccessibilityValue(for slot: Int) -> String {
+        let count = engine.state.controlGroups[slot]?.count ?? 0
+        return count > 0 ? "\(count) saved" : "Empty"
+    }
+
+    func canRecallControlGroup(_ slot: Int) -> Bool {
+        engine.state.controlGroups[slot]?.isEmpty == false
+    }
+
+    func storeControlGroup(_ slot: Int) {
+        clearPendingTargetCommands()
+        let storedIDs = engine.storeControlGroup(slot)
+        commandStatus = storedIDs.isEmpty ? "Group \(slot) cleared" : "Group \(slot) saved (\(storedIDs.count))"
+        renderRevision += 1
+    }
+
+    func recallControlGroup(_ slot: Int) {
+        clearPendingTargetCommands()
+        let recalledIDs = engine.recallControlGroup(slot)
+        commandStatus = recalledIDs.isEmpty ? "Group \(slot) empty" : "Group \(slot) recalled (\(recalledIDs.count))"
         renderRevision += 1
     }
 
@@ -1043,6 +1076,19 @@ final class GameController {
             : engine.state.selectedEntityIDs
         let selectedIDSet = Set(selectedIDs)
         return engine.state.units.filter { selectedIDSet.contains($0.id) && $0.team == .player && $0.hitPoints > 0 }
+    }
+
+    private var hasPlayerSelectableSelection: Bool {
+        let selectedIDs = engine.state.selectedEntityIDs.isEmpty
+            ? engine.state.selectedEntityID.map { [$0] } ?? []
+            : engine.state.selectedEntityIDs
+        guard !selectedIDs.isEmpty else {
+            return false
+        }
+        return selectedIDs.contains { selectedID in
+            engine.state.units.contains { $0.id == selectedID && $0.team == .player && $0.hitPoints > 0 } ||
+                engine.state.buildings.contains { $0.id == selectedID && $0.team == .player && $0.hitPoints > 0 }
+        }
     }
 
     private var sameTypeSelectionSourceUnit: UnitSnapshot? {

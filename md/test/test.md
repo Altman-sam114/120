@@ -84,7 +84,7 @@ git diff --check
 
 当前基线：
 
-- `RustwarCore` tests 应通过，并覆盖地图/状态初始化、收入/人口计算、基础 tick、选择命中、世界矩形框选、全图同类型选择、附近同类型选择、多选集合、空闲 Builder / 战斗单位批量选择、己方单单位和多单位 Move 命令、单单位和多单位 Attack 命令、单单位和多单位 Attack-Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、单 Builder 和多 Builder Repair 命令、单 Builder 和多 Builder Reclaim 命令、单 Builder 和多 Builder Build Extractor 命令、单 Builder 和多 Builder Build Turret 命令、单 Builder 和多 Builder Build Land Factory 命令、单单位和多单位 Stop 命令、Command Center Builder 生产、Land Factory T1 生产列表、生产建筑队列、生产取消/退款、重复生产、生产建筑集结点设置、炮塔对单位/建筑防御开火、伤害推进、死亡目标清理与残骸生成、红方 Command Center Builder 生产、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI、红方 AI Web-lite 目标评分、红方 AI On/Off 开关、`GameState` JSON 往返和恢复后继续模拟。
+- `RustwarCore` tests 应通过，并覆盖地图/状态初始化、收入/人口计算、基础 tick、选择命中、世界矩形框选、全图同类型选择、附近同类型选择、控制编队保存/召回/过滤/JSON 兼容、多选集合、空闲 Builder / 战斗单位批量选择、己方单单位和多单位 Move 命令、单单位和多单位 Attack 命令、单单位和多单位 Attack-Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、单 Builder 和多 Builder Repair 命令、单 Builder 和多 Builder Reclaim 命令、单 Builder 和多 Builder Build Extractor 命令、单 Builder 和多 Builder Build Turret 命令、单 Builder 和多 Builder Build Land Factory 命令、单单位和多单位 Stop 命令、Command Center Builder 生产、Land Factory T1 生产列表、生产建筑队列、生产取消/退款、重复生产、生产建筑集结点设置、炮塔对单位/建筑防御开火、伤害推进、死亡目标清理与残骸生成、红方 Command Center Builder 生产、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI、红方 AI Web-lite 目标评分、红方 AI On/Off 开关、`GameState` JSON 往返和恢复后继续模拟。
 - 若本机 SwiftPM、PackageDescription、Swift/SDK 版本或权限导致 `swift test` 无法进入源码编译，必须记录原始错误；可额外执行 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 区分源码错误和工具链错误。
 
 ### 5. iOS App 检查
@@ -105,7 +105,7 @@ git diff --check
 
 - `xcodebuild -list` 应能发现 `RustwarIOS` scheme。
 - iOS build 应使用原生 SwiftUI/SpriteKit target，并通过本地 Swift package 引入 `RustwarCore`。
-- iOS 原生 HUD 当前覆盖三地图切换、当前地图重开、选择、Idle Builders / Combat Units 批量选择入口、Select Area 显式框选己方单位、Same Type 全图同类型选择、双击附近同类型选择、单单位和多单位 Move、单单位和多单位 Attack、单单位和多单位 Attack Move、单单位和多单位 Patrol、单单位和多单位 Guard、单 Builder 和多 Builder Repair、单 Builder 和多 Builder Reclaim、单 Builder 和多 Builder Build Extractor、单 Builder 和多 Builder Build Turret、单 Builder 和多 Builder Build Land Factory、单单位和多单位 Stop、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款、Repeat 生产建筑重复生产、Rally 集结点、Save/Load 单槽本地存档、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off 开关、Reset 相机，以及战术小地图点按居中、Move / Attack Move / Patrol / Rally / Turret / Factory 点位命令、Reclaim / Build Extractor Builder 目标命令、Attack / Guard / Repair 实体目标命令和等待命令反馈等基础控制；若修改这些控制，应至少跑 iOS build 或记录本机 Xcode 阻塞。
+- iOS 原生 HUD 当前覆盖三地图切换、当前地图重开、选择、Idle Builders / Combat Units 批量选择入口、Select Area 显式框选己方单位、Same Type 全图同类型选择、双击附近同类型选择、1-3 号控制编队保存/召回、单单位和多单位 Move、单单位和多单位 Attack、单单位和多单位 Attack Move、单单位和多单位 Patrol、单单位和多单位 Guard、单 Builder 和多 Builder Repair、单 Builder 和多 Builder Reclaim、单 Builder 和多 Builder Build Extractor、单 Builder 和多 Builder Build Turret、单 Builder 和多 Builder Build Land Factory、单单位和多单位 Stop、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款、Repeat 生产建筑重复生产、Rally 集结点、Save/Load 单槽本地存档、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off 开关、Reset 相机，以及战术小地图点按居中、Move / Attack Move / Patrol / Rally / Turret / Factory 点位命令、Reclaim / Build Extractor Builder 目标命令、Attack / Guard / Repair 实体目标命令和等待命令反馈等基础控制；若修改这些控制，应至少跑 iOS build 或记录本机 Xcode 阻塞。
 - 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
 
 ## 云端重验证
