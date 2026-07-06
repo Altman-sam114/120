@@ -1784,7 +1784,7 @@ import Testing
     let first = try #require(selectedUnits.first)
     let second = try #require(selectedUnits.dropFirst().first)
     let unselected = try #require(state.units.first {
-        $0.team == .player && $0.type != .builder && $0.id != first.id && $0.id != second.id
+        $0.team == .player && $0.id != first.id && $0.id != second.id
     })
     let firstIndex = try #require(state.units.firstIndex { $0.id == first.id })
     let secondIndex = try #require(state.units.firstIndex { $0.id == second.id })
