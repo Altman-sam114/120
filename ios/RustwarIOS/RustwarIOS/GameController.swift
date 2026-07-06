@@ -160,7 +160,7 @@ final class GameController {
     }
 
     var canIssueAttack: Bool {
-        selectedPlayerUnit != nil
+        !selectedPlayerUnits.isEmpty
     }
 
     var canIssueAttackMove: Bool {
@@ -512,7 +512,7 @@ final class GameController {
         } else if canIssueAttack {
             clearPendingTargetCommands()
             isAwaitingAttackTarget = true
-            commandStatus = "Attack target"
+            commandStatus = selectedPlayerUnits.count > 1 ? "Attack target for \(selectedPlayerUnits.count) units" : "Attack target"
         }
         renderRevision += 1
     }
@@ -955,7 +955,8 @@ final class GameController {
     private func statusText(forAttack result: UnitCommandResult) -> String? {
         switch result {
         case .issued:
-            return "Attack order issued"
+            let count = selectedPlayerUnits.count
+            return count > 1 ? "Attack order issued to \(count) units" : "Attack order issued"
         case .noSelection:
             return "No unit selected"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:

@@ -100,19 +100,21 @@ public struct GameEngine: Sendable {
 
     @discardableResult
     public mutating func issueAttack(targetID: String) -> UnitCommandResult {
-        guard let selectedEntityID = state.selectedEntityID else {
+        guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
         }
-        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
-              state.units[unitIndex].team == .player else {
+        let unitIndices = selectedPlayerUnitIndices()
+        guard !unitIndices.isEmpty else {
             return .selectedEntityCannotAttack
         }
         guard let target = combatTarget(id: targetID),
-              target.team != state.units[unitIndex].team else {
+              target.team != .player else {
             return .invalidAttackTarget
         }
 
-        state.units[unitIndex].order = .attack(targetID: target.id)
+        for unitIndex in unitIndices {
+            state.units[unitIndex].order = .attack(targetID: target.id)
+        }
         return .issued
     }
 
