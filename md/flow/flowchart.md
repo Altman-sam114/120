@@ -69,7 +69,8 @@ flowchart TD
   STS --> E
   C --> DTS["Double-tap nearby same type<br/>中文注释：普通选择状态下连续点按同一个存活己方单位，选择半径内同类型己方单位；等待命令时不触发"]
   DTS --> E
-  C --> CG["Control Groups 1-9 HUD<br/>中文注释：Save 保存当前有效己方选择，Recall 召回并过滤仍有效己方单位或建筑，结果写入多选集合"]
+  KBD["External Keyboard 1-9<br/>中文注释：Control+数字触发 Save，裸数字触发 Recall，复用 HUD 按钮 action 和 disabled 条件"] --> C
+  C --> CG["Control Groups 1-9 HUD + Keyboard<br/>中文注释：Save 保存当前有效己方选择，Recall 召回并过滤仍有效己方单位或建筑，结果写入多选集合"]
   CG --> E
   C --> AM["UnitOrder.attackMove<br/>中文注释：选中己方单位后写入攻击移动目的地；多选时所有选中己方单位获得同一目的地，core 在视野内临时索敌"]
   AM --> E

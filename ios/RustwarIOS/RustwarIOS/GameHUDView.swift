@@ -160,6 +160,7 @@ struct GameHUDView: View {
                             .buttonStyle(.bordered)
                             .controlSize(.regular)
                             .frame(width: 44, height: 44)
+                            .keyboardShortcut(controlGroupKey(for: slot), modifiers: .control)
                             .disabled(!controller.canStoreControlGroup)
                             .accessibilityHint("Stores the current player selection in control group \(slot).")
 
@@ -172,6 +173,7 @@ struct GameHUDView: View {
                             .buttonStyle(.bordered)
                             .controlSize(.regular)
                             .frame(width: 44, height: 44)
+                            .keyboardShortcut(controlGroupKey(for: slot), modifiers: [])
                             .disabled(!controller.canRecallControlGroup(slot))
                             .accessibilityValue(controller.controlGroupAccessibilityValue(for: slot))
                             .accessibilityHint("Selects the saved player units or buildings in control group \(slot).")
@@ -404,6 +406,10 @@ struct GameHUDView: View {
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
+    }
+
+    private func controlGroupKey(for slot: Int) -> KeyEquivalent {
+        KeyEquivalent(Character(String(slot)))
     }
 }
 
