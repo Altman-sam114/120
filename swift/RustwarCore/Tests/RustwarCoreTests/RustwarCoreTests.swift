@@ -656,7 +656,7 @@ import Testing
     #expect(!selectedIDs.contains("entity-area-outside-building"))
     #expect(!selectedIDs.contains("entity-area-outside-unit"))
     #expect(engine.state.selectedEntityID == "entity-area-command")
-    #expect(engine.state.selectionSummary() == "Player Command Center")
+    #expect(engine.state.selectionSummary() == "Green Command Center")
 }
 
 @Test func areaSelectionBuildingFallbackUsesBuildingBoundsIntersection() {
@@ -675,7 +675,7 @@ import Testing
     ]
     var engine = GameEngine(state: state, enemyAIEnabled: false)
 
-    let selectedIDs = engine.selectPlayerEntities(in: WorldRect(WorldPoint(60, 150), WorldPoint(70, 170)))
+    let selectedIDs = engine.selectPlayerEntities(in: WorldRect(WorldPoint(116, 150), WorldPoint(120, 170)))
 
     #expect(selectedIDs == ["entity-area-edge-command"])
 }
