@@ -2367,7 +2367,10 @@
 - 本地 `swiftc -parse ios/RustwarIOS/RustwarIOS/GameController.swift` 通过。
 - 本地 `swift test --package-path swift/RustwarCore` 已尝试；沙箱内先遇到 SwiftPM 用户 cache / clang module cache 权限和 Swift/SDK mismatch，提权重跑后仍因当前 CommandLineTools / SwiftPM manifest 链接阶段 `PackageDescription.Package.__allocating_init` 符号缺失阻塞，未进入源码测试执行。
 - 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 已尝试；当前 active developer directory 是 CommandLineTools，不是完整 Xcode，命令被本机工具链阻塞。
-- 云端 GitHub Actions artifact 复判待 push 后补充。
+- 云端首次 run `28800587468`（attempt `1`，commit `78b2b50ab22e98a6a3a0dbd688b65ebd459ee1b8`，artifact `rustwar-ci-v1.0-main-78b2b50-run28800587468-attempt1`）由 Agent C 下载到 `/private/tmp/rustwar-c-review-28800587468/` 并核对，目录大小 `284K`；manifest / JUnit / build.log 确认 `git diff --check`、`node --check app.js`、`xcodebuild -list` 和 iOS build 均通过，失败只来自 Swift tests 中两个新增测试断言不匹配。
+- 追加修复 commit `3ee14eb72925236efbdfaf522b83e0367ae8ff52` 后，云端 run `28801139981`（attempt `1`，artifact `rustwar-ci-v1.0-main-3ee14eb-run28801139981-attempt1`）由 Agent C 下载到 `/private/tmp/rustwar-c-review-28801139981/` 并核对，目录大小 `284K`。
+- manifest 确认 `branch=main`、`commitSha=3ee14eb72925236efbdfaf522b83e0367ae8ff52`、`runId=28801139981`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke。
+- build.log 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0；Swift Testing 231 tests passed，包含 v1.60 新增 area selection building fallback 测试；iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
