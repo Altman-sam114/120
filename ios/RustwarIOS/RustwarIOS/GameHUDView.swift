@@ -44,6 +44,7 @@ struct GameHUDView: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.regular)
                     .frame(minHeight: 44)
+                    .keyboardShortcut(commandKey("p"), modifiers: [])
                 Button("Reset", systemImage: "scope", action: controller.resetCamera)
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
@@ -66,6 +67,7 @@ struct GameHUDView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(minHeight: 44)
+                    .keyboardShortcut(commandKey("r"), modifiers: [])
             }
 
             HStack(spacing: 8) {
@@ -112,6 +114,7 @@ struct GameHUDView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(minHeight: 44)
+                    .keyboardShortcut(commandKey("e"), modifiers: [])
                     .disabled(!controller.canSelectIdleBuilders)
                     .accessibilityLabel("Select idle Builders")
                     .accessibilityHint("Selects all idle player Builder units.")
@@ -120,6 +123,7 @@ struct GameHUDView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(minHeight: 44)
+                    .keyboardShortcut(commandKey("a"), modifiers: .control)
                     .disabled(!controller.canSelectCombatUnits)
                     .accessibilityLabel("Select combat units")
                     .accessibilityHint("Selects all player combat units.")
@@ -205,6 +209,7 @@ struct GameHUDView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
+                    .keyboardShortcut(commandKey("a"), modifiers: .option)
                     .accessibilityLabel("Select same type")
                     .accessibilityHint("Selects all player units matching the current selected unit type.")
                 }
@@ -227,6 +232,7 @@ struct GameHUDView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
+                    .keyboardShortcut(commandKey("a"), modifiers: [])
                     .accessibilityLabel("Attack move")
                 }
                 if controller.canIssuePatrol || controller.isAwaitingPatrolTarget {
@@ -238,6 +244,7 @@ struct GameHUDView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
+                    .keyboardShortcut(commandKey("g"), modifiers: [])
                 }
                 if controller.canIssueGuard || controller.isAwaitingGuardTarget {
                     Button(
@@ -248,6 +255,7 @@ struct GameHUDView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
+                    .keyboardShortcut(commandKey("h"), modifiers: [])
                 }
                 if controller.canIssueRepair || controller.isAwaitingRepairTarget {
                     Button(
@@ -268,6 +276,7 @@ struct GameHUDView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
+                    .keyboardShortcut(commandKey("c"), modifiers: [])
                 }
                 if controller.canIssueBuildExtractor || controller.isAwaitingBuildExtractorTarget {
                     Button(
@@ -328,6 +337,7 @@ struct GameHUDView: View {
                         .buttonStyle(.bordered)
                         .controlSize(.regular)
                         .frame(maxWidth: .infinity, minHeight: 44)
+                        .keyboardShortcut(commandKey("s"), modifiers: [])
                 }
                 if controller.canIssueRally || controller.isAwaitingRallyTarget {
                     Button(
@@ -410,6 +420,10 @@ struct GameHUDView: View {
 
     private func controlGroupKey(for slot: Int) -> KeyEquivalent {
         KeyEquivalent(Character(String(slot)))
+    }
+
+    private func commandKey(_ value: String) -> KeyEquivalent {
+        KeyEquivalent(Character(value))
     }
 }
 
