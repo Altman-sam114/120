@@ -1160,11 +1160,13 @@ public struct GameEngine: Sendable {
         let definition = GameDefinitions.unit(state.units[unitIndex].type)
         let distance = state.units[unitIndex].position.distance(to: target.position)
         if distance > Self.builderRepairRange {
+            let approachPoint = repairApproachPoint(for: unitIndex, target: target)
+            let stoppingDistance = approachPoint == target.position ? Self.builderRepairRange * 0.92 : 0
             moveUnit(
                 at: unitIndex,
-                toward: target.position,
+                toward: approachPoint,
                 speed: definition.speed,
-                stoppingDistance: Self.builderRepairRange * 0.92,
+                stoppingDistance: stoppingDistance,
                 deltaTime: deltaTime,
                 clearsOrderOnArrival: false
             )
@@ -2025,6 +2027,49 @@ public struct GameEngine: Sendable {
             let offset = WorldPoint(dx / distance * offsetDistance, dy / distance * offsetDistance)
             return (unitIndex: formationTarget.unitIndex, offset: offset)
         }
+    }
+
+    private func repairApproachPoint(for unitIndex: Array<UnitSnapshot>.Index, target: RepairTarget) -> WorldPoint {
+        let repairerIndices = state.units.indices.filter { index in
+            let unit = state.units[index]
+            guard unit.hitPoints > 0,
+                  unit.team == target.team,
+                  unit.type == .builder,
+                  unit.id != target.id else {
+                return false
+            }
+            if case let .repair(activeTargetID)? = unit.order {
+                return activeTargetID == target.id
+            }
+            return false
+        }
+        guard repairerIndices.count > 1 else {
+            return target.position
+        }
+
+        guard let formationTarget = formationTargets(for: repairerIndices, around: target.position)
+            .first(where: { $0.unitIndex == unitIndex }) else {
+            return target.position
+        }
+
+        let unit = state.units[unitIndex]
+        let unitDefinition = GameDefinitions.unit(unit.type)
+        var dx = formationTarget.destination.x - target.position.x
+        var dy = formationTarget.destination.y - target.position.y
+        var distance = (dx * dx + dy * dy).squareRoot()
+        if distance <= 1 {
+            dx = unit.position.x - target.position.x
+            dy = unit.position.y - target.position.y
+            distance = max(1, (dx * dx + dy * dy).squareRoot())
+        }
+
+        let minimumDistance = target.radius + unitDefinition.radius + 28
+        let maximumDistance = Self.builderRepairRange * 0.82
+        let offsetDistance = min(maximumDistance, max(minimumDistance, distance))
+        return WorldPoint(
+            target.position.x + dx / distance * offsetDistance,
+            target.position.y + dy / distance * offsetDistance
+        ).clampedToMap()
     }
 }
 

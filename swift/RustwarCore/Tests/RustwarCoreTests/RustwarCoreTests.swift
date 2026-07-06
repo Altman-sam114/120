@@ -2581,6 +2581,80 @@ import Testing
     }
 }
 
+@Test func repairCommandSpreadsSelectedBuilderGroupAroundBuildingTarget() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let sharedStart = WorldPoint(1_000, 1_000)
+    let builderIDs = [builder.id, "repair-formation-builder-a", "repair-formation-builder-b", "repair-formation-builder-c"]
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    state.units[builderIndex].position = sharedStart
+    for id in builderIDs.dropFirst() {
+        state.units.append(UnitSnapshot(
+            id: id,
+            type: .builder,
+            team: .player,
+            position: sharedStart,
+            hitPoints: builderDefinition.hitPoints,
+            maxHitPoints: builderDefinition.hitPoints
+        ))
+    }
+
+    let friendlyBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let buildingIndex = try #require(state.buildings.firstIndex { $0.id == friendlyBuilding.id })
+    state.buildings[buildingIndex].position = WorldPoint(1_520, 1_000)
+    state.buildings[buildingIndex].hitPoints -= 180
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = builderIDs
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueRepair(targetID: friendlyBuilding.id) == .issued)
+    engine.update(deltaTime: 1)
+
+    let positions = try builderIDs.map { id in
+        try #require(engine.state.units.first { $0.id == id }?.position)
+    }
+    #expect(positions.allSatisfy { $0 != sharedStart })
+    #expect(positions.dropFirst().contains { $0 != positions[0] })
+}
+
+@Test func repairCommandSpreadsSelectedBuilderGroupAroundUnitTarget() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let sharedStart = WorldPoint(1_000, 1_000)
+    let builderIDs = [builder.id, "repair-unit-formation-builder-a", "repair-unit-formation-builder-b", "repair-unit-formation-builder-c"]
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    state.units[builderIndex].position = sharedStart
+    for id in builderIDs.dropFirst() {
+        state.units.append(UnitSnapshot(
+            id: id,
+            type: .builder,
+            team: .player,
+            position: sharedStart,
+            hitPoints: builderDefinition.hitPoints,
+            maxHitPoints: builderDefinition.hitPoints
+        ))
+    }
+
+    let friendlyUnit = try #require(state.units.first { $0.team == .player && $0.type != .builder })
+    let unitIndex = try #require(state.units.firstIndex { $0.id == friendlyUnit.id })
+    state.units[unitIndex].position = WorldPoint(1_520, 1_000)
+    state.units[unitIndex].hitPoints -= 80
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = builderIDs
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueRepair(targetID: friendlyUnit.id) == .issued)
+    engine.update(deltaTime: 1)
+
+    let positions = try builderIDs.map { id in
+        try #require(engine.state.units.first { $0.id == id }?.position)
+    }
+    #expect(positions.allSatisfy { $0 != sharedStart })
+    #expect(positions.dropFirst().contains { $0 != positions[0] })
+}
+
 @Test func repairCommandRestoresFriendlyUnitHitPointsAndCapsAtMax() throws {
     var state = GameState(mapID: .coast)
     let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
