@@ -1190,11 +1190,13 @@ public struct GameEngine: Sendable {
         let definition = GameDefinitions.unit(state.units[unitIndex].type)
         let distance = state.units[unitIndex].position.distance(to: wreck.position)
         if distance > Self.builderReclaimRange {
+            let approachPoint = reclaimApproachPoint(for: unitIndex, wreck: wreck)
+            let stoppingDistance = approachPoint == wreck.position ? Self.builderReclaimRange * 0.92 : 0
             moveUnit(
                 at: unitIndex,
-                toward: wreck.position,
+                toward: approachPoint,
                 speed: definition.speed,
-                stoppingDistance: Self.builderReclaimRange * 0.92,
+                stoppingDistance: stoppingDistance,
                 deltaTime: deltaTime,
                 clearsOrderOnArrival: false
             )
@@ -2069,6 +2071,49 @@ public struct GameEngine: Sendable {
         return WorldPoint(
             target.position.x + dx / distance * offsetDistance,
             target.position.y + dy / distance * offsetDistance
+        ).clampedToMap()
+    }
+
+    private func reclaimApproachPoint(for unitIndex: Array<UnitSnapshot>.Index, wreck: WreckSnapshot) -> WorldPoint {
+        let reclaimerTeam = state.units[unitIndex].team
+        let reclaimerIndices = state.units.indices.filter { index in
+            let unit = state.units[index]
+            guard unit.hitPoints > 0,
+                  unit.team == reclaimerTeam,
+                  unit.type == .builder else {
+                return false
+            }
+            if case let .reclaim(activeWreckID)? = unit.order {
+                return activeWreckID == wreck.id
+            }
+            return false
+        }
+        guard reclaimerIndices.count > 1 else {
+            return wreck.position
+        }
+
+        guard let formationTarget = formationTargets(for: reclaimerIndices, around: wreck.position)
+            .first(where: { $0.unitIndex == unitIndex }) else {
+            return wreck.position
+        }
+
+        let unit = state.units[unitIndex]
+        let unitDefinition = GameDefinitions.unit(unit.type)
+        var dx = formationTarget.destination.x - wreck.position.x
+        var dy = formationTarget.destination.y - wreck.position.y
+        var distance = (dx * dx + dy * dy).squareRoot()
+        if distance <= 1 {
+            dx = unit.position.x - wreck.position.x
+            dy = unit.position.y - wreck.position.y
+            distance = max(1, (dx * dx + dy * dy).squareRoot())
+        }
+
+        let minimumDistance = wreck.size / 2 + unitDefinition.radius + 28
+        let maximumDistance = Self.builderReclaimRange * 0.82
+        let offsetDistance = min(maximumDistance, max(minimumDistance, distance))
+        return WorldPoint(
+            wreck.position.x + dx / distance * offsetDistance,
+            wreck.position.y + dy / distance * offsetDistance
         ).clampedToMap()
     }
 }

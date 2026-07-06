@@ -3976,6 +3976,49 @@ import Testing
     }
 }
 
+@Test func reclaimCommandSpreadsSelectedBuilderGroupAroundWreck() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let sharedStart = WorldPoint(1_000, 1_000)
+    let builderIDs = [builder.id, "reclaim-formation-builder-a", "reclaim-formation-builder-b", "reclaim-formation-builder-c"]
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    state.units[builderIndex].position = sharedStart
+    for id in builderIDs.dropFirst() {
+        state.units.append(UnitSnapshot(
+            id: id,
+            type: .builder,
+            team: .player,
+            position: sharedStart,
+            hitPoints: builderDefinition.hitPoints,
+            maxHitPoints: builderDefinition.hitPoints
+        ))
+    }
+
+    let wreck = WreckSnapshot(
+        id: "wreck-reclaim-formation",
+        position: WorldPoint(1_520, 1_000),
+        size: 28,
+        team: .enemy,
+        metal: 120,
+        maxMetal: 120,
+        ttl: 58
+    )
+    state.wrecks = [wreck]
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = builderIDs
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueReclaim(wreckID: wreck.id) == .issued)
+    engine.update(deltaTime: 1)
+
+    let positions = try builderIDs.map { id in
+        try #require(engine.state.units.first { $0.id == id }?.position)
+    }
+    #expect(positions.allSatisfy { $0 != sharedStart })
+    #expect(positions.dropFirst().contains { $0 != positions[0] })
+}
+
 @Test func reclaimCommandTransfersMetalAndKeepsPartiallyReclaimedWreck() throws {
     var state = GameState(mapID: .coast)
     let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
