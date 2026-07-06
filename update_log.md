@@ -1873,7 +1873,7 @@
 - 本地 `git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v148 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`、`swiftc -parse ios/RustwarIOS/RustwarIOS/GameController.swift` 均通过。
 - 本地 `swift test --package-path swift/RustwarCore` 已尝试；当前 CommandLineTools 的 SwiftPM manifest 链接阶段仍因 `PackageDescription.Package.__allocating_init` 符号不匹配阻塞，未进入源码测试执行。
 - 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 已尝试；当前 active developer directory 是 CommandLineTools，不是完整 Xcode，命令被本机工具链阻塞。
-- 云端 GitHub Actions artifact 待 push 后由 Agent C 下载并核对。
+- 云端 run `28777682335`（attempt `1`，commit `635511b11ef04601dd4055c355479eafb8588979`，artifact `rustwar-ci-v1.0-main-635511b-run28777682335-attempt1`）由 Agent C 下载到 `/private/tmp/rustwar-c-review-28777682335/` 并核对；manifest 的 branch / commitSha / runId / runAttempt 与 `origin/main` 最新 commit 完全一致，JUnit 6 项 0 失败 1 skipped，`build.log` 显示 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 iOS build 均 exit 0，其中 Swift Testing 198 tests passed。
 
 遗留事项：
 
