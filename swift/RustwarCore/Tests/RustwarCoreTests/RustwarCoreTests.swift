@@ -364,6 +364,157 @@ import Testing
     #expect(engine.state.selectionSummary() == "\(selectedIDs.count) combat units selected")
 }
 
+@Test func worldRectNormalizesCornersAndContainsBoundaryPoints() {
+    let rect = WorldRect(WorldPoint(120, 220), WorldPoint(40, 60))
+
+    #expect(rect.minX == 40)
+    #expect(rect.minY == 60)
+    #expect(rect.maxX == 120)
+    #expect(rect.maxY == 220)
+    #expect(rect.contains(WorldPoint(40, 60)))
+    #expect(rect.contains(WorldPoint(120, 220)))
+    #expect(rect.contains(WorldPoint(80, 140)))
+    #expect(!rect.contains(WorldPoint(39.9, 140)))
+}
+
+@Test func selectPlayerUnitsInWorldRectSelectsOnlyFriendlyUnits() throws {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "area-builder",
+            type: .builder,
+            team: .player,
+            position: WorldPoint(100, 100),
+            hitPoints: 170,
+            maxHitPoints: 170
+        ),
+        UnitSnapshot(
+            id: "area-tank",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(160, 120),
+            hitPoints: 245,
+            maxHitPoints: 245
+        ),
+        UnitSnapshot(
+            id: "area-enemy",
+            type: .tank,
+            team: .enemy,
+            position: WorldPoint(130, 130),
+            hitPoints: 245,
+            maxHitPoints: 245
+        ),
+        UnitSnapshot(
+            id: "area-outside",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(260, 260),
+            hitPoints: 95,
+            maxHitPoints: 95
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "area-building",
+            type: .command,
+            team: .player,
+            position: WorldPoint(140, 140),
+            hitPoints: 1_850,
+            maxHitPoints: 1_850,
+            rally: WorldPoint(180, 180)
+        )
+    ]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerUnits(in: WorldRect(WorldPoint(90, 90), WorldPoint(180, 180)))
+
+    #expect(selectedIDs == ["area-builder", "area-tank"])
+    #expect(!selectedIDs.contains("area-enemy"))
+    #expect(!selectedIDs.contains("area-building"))
+    #expect(!selectedIDs.contains("area-outside"))
+    #expect(engine.state.selectedEntityID == selectedIDs.first)
+    #expect(engine.state.selectedEntityIDs == selectedIDs)
+    #expect(engine.state.selectionSummary() == "\(selectedIDs.count) entities selected")
+}
+
+@Test func selectPlayerUnitsInWorldRectClearsSelectionWhenEmpty() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+
+    #expect(!selectedIDs.isEmpty)
+
+    let emptySelection = engine.selectPlayerUnits(in: WorldRect(WorldPoint(10, 10), WorldPoint(20, 20)))
+
+    #expect(emptySelection.isEmpty)
+    #expect(engine.state.selectedEntityID == nil)
+    #expect(engine.state.selectedEntityIDs.isEmpty)
+    #expect(engine.state.selectionSummary() == "No selection")
+}
+
+@Test func areaSelectedUnitsReceiveExistingMultiUnitMoveCommand() throws {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "area-move-a",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(100, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "area-move-b",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(140, 120),
+            hitPoints: 245,
+            maxHitPoints: 245
+        )
+    ]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerUnits(in: WorldRect(WorldPoint(80, 80), WorldPoint(160, 160)))
+    let destination = WorldPoint(220, 240)
+
+    #expect(selectedIDs == ["area-move-a", "area-move-b"])
+    #expect(engine.issueMove(to: destination) == .issued)
+
+    for id in selectedIDs {
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        if case let .move(activeDestination)? = unit.order {
+            #expect(activeDestination == destination)
+        } else {
+            #expect(Bool(false))
+        }
+    }
+}
+
+@Test func selectPlayerUnitsInWorldRectUsesUnitCenters() {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "center-inside",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(120, 120),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "center-outside",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(120.1, 120),
+            hitPoints: 245,
+            maxHitPoints: 245
+        )
+    ]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerUnits(in: WorldRect(WorldPoint(80, 80), WorldPoint(120, 120)))
+
+    #expect(selectedIDs == ["center-inside"])
+}
+
 @Test func moveCommandRejectsMissingOrInvalidSelection() {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 

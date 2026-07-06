@@ -125,6 +125,18 @@ struct GameHUDView: View {
             }
 
             LazyVGrid(columns: commandColumns, alignment: .leading, spacing: 8) {
+                if controller.canIssueAreaSelection || controller.isAwaitingAreaSelection {
+                    Button(
+                        controller.areaSelectionCommandButtonTitle,
+                        systemImage: controller.isAwaitingAreaSelection ? "xmark.circle" : "rectangle.dashed",
+                        action: controller.toggleAreaSelectionCommand
+                    )
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .accessibilityLabel("Select area")
+                    .accessibilityHint("Drag on the battlefield to select player units in an area.")
+                }
                 if controller.canIssueMove || controller.isAwaitingMoveTarget {
                     Button(
                         controller.moveCommandButtonTitle,
@@ -239,7 +251,8 @@ struct GameHUDView: View {
                     controller.isAwaitingReclaimTarget ||
                     controller.isAwaitingBuildExtractorTarget ||
                     controller.isAwaitingBuildTurretTarget ||
-                    controller.isAwaitingBuildFactoryTarget {
+                    controller.isAwaitingBuildFactoryTarget ||
+                    controller.isAwaitingAreaSelection {
                     Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
                         .buttonStyle(.bordered)
                         .controlSize(.regular)

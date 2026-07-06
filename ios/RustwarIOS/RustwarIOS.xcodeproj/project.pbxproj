@@ -17,6 +17,7 @@
 		A00100000000000000000008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000008 /* Assets.xcassets */; };
 		A00100000000000000000009 /* RustwarCore in Frameworks */ = {isa = PBXBuildFile; productRef = A00D00000000000000000002 /* RustwarCore */; };
 		A00100000000000000000010 /* TacticalMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000010 /* TacticalMapView.swift */; };
+		A00100000000000000000011 /* SelectionBoxOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000011 /* SelectionBoxOverlay.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 		A00200000000000000000008 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A00200000000000000000009 /* RustwarIOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RustwarIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00200000000000000000010 /* TacticalMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalMapView.swift; sourceTree = "<group>"; };
+		A00200000000000000000011 /* SelectionBoxOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionBoxOverlay.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +65,7 @@
 				A00200000000000000000006 /* BattlefieldView.swift */,
 				A00200000000000000000007 /* BattlefieldScene.swift */,
 				A00200000000000000000010 /* TacticalMapView.swift */,
+				A00200000000000000000011 /* SelectionBoxOverlay.swift */,
 				A00200000000000000000008 /* Assets.xcassets */,
 			);
 			path = RustwarIOS;
@@ -159,6 +162,7 @@
 				A00100000000000000000006 /* BattlefieldView.swift in Sources */,
 				A00100000000000000000007 /* BattlefieldScene.swift in Sources */,
 				A00100000000000000000010 /* TacticalMapView.swift in Sources */,
+				A00100000000000000000011 /* SelectionBoxOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

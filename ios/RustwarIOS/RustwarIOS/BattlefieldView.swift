@@ -6,27 +6,35 @@ struct BattlefieldView: View {
     @State private var scene = BattlefieldScene()
     @State private var lastDragTranslation = CGSize.zero
     @State private var lastMagnification = 1.0
+    @State private var selectionDragStart: CGPoint?
+    @State private var selectionDragCurrent: CGPoint?
 
     var body: some View {
         GeometryReader { proxy in
-            SpriteView(scene: scene, options: [.allowsTransparency])
-                .accessibilityLabel("Rustwar battlefield")
-                .task {
-                    scene.controller = controller
-                    scene.scaleMode = .resizeFill
-                    scene.size = proxy.size
-                    scene.renderNow()
+            ZStack {
+                SpriteView(scene: scene, options: [.allowsTransparency])
+                    .accessibilityLabel("Rustwar battlefield")
+                    .task {
+                        scene.controller = controller
+                        scene.scaleMode = .resizeFill
+                        scene.size = proxy.size
+                        scene.renderNow()
+                    }
+                    .onChange(of: proxy.size) { _, newSize in
+                        scene.size = newSize
+                        scene.renderNow()
+                    }
+                    .onChange(of: controller.renderRevision) { _, _ in
+                        scene.renderNow()
+                    }
+                    .simultaneousGesture(tapGesture(in: proxy.size))
+                    .simultaneousGesture(dragGesture(in: proxy.size))
+                    .simultaneousGesture(magnifyGesture())
+
+                if let selectionDragStart, let selectionDragCurrent {
+                    SelectionBoxOverlay(start: selectionDragStart, current: selectionDragCurrent)
                 }
-                .onChange(of: proxy.size) { _, newSize in
-                    scene.size = newSize
-                    scene.renderNow()
-                }
-                .onChange(of: controller.renderRevision) { _, _ in
-                    scene.renderNow()
-                }
-                .simultaneousGesture(tapGesture(in: proxy.size))
-                .simultaneousGesture(dragGesture())
-                .simultaneousGesture(magnifyGesture())
+            }
         }
     }
 
@@ -38,9 +46,17 @@ struct BattlefieldView: View {
             }
     }
 
-    private func dragGesture() -> some Gesture {
+    private func dragGesture(in viewportSize: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 8)
             .onChanged { value in
+                if controller.isAwaitingAreaSelection {
+                    if selectionDragStart == nil {
+                        selectionDragStart = value.startLocation
+                    }
+                    selectionDragCurrent = value.location
+                    return
+                }
+
                 let delta = CGSize(
                     width: value.translation.width - lastDragTranslation.width,
                     height: value.translation.height - lastDragTranslation.height
@@ -49,7 +65,18 @@ struct BattlefieldView: View {
                 lastDragTranslation = value.translation
                 scene.renderNow()
             }
-            .onEnded { _ in
+            .onEnded { value in
+                if controller.isAwaitingAreaSelection {
+                    let startPoint = selectionDragStart ?? value.startLocation
+                    controller.handleBattlefieldAreaSelection(
+                        from: startPoint,
+                        to: value.location,
+                        viewportSize: viewportSize
+                    )
+                    selectionDragStart = nil
+                    selectionDragCurrent = nil
+                    scene.renderNow()
+                }
                 lastDragTranslation = .zero
             }
     }

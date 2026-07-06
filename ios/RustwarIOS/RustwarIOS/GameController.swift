@@ -33,6 +33,7 @@ final class GameController {
     var isAwaitingBuildTurretTarget = false
     var isAwaitingBuildFactoryTarget = false
     var isAwaitingRallyTarget = false
+    var isAwaitingAreaSelection = false
     var isPaused = false
     var simulationSpeed = 1.0 {
         didSet {
@@ -141,6 +142,10 @@ final class GameController {
         !selectedPlayerUnits.isEmpty
     }
 
+    var canIssueAreaSelection: Bool {
+        engine.state.units.contains { $0.team == .player && $0.hitPoints > 0 }
+    }
+
     var canSelectIdleBuilders: Bool {
         engine.state.units.contains { $0.team == .player && $0.type == .builder && $0.order == nil }
     }
@@ -207,6 +212,10 @@ final class GameController {
         isAwaitingMoveTarget ? "Cancel" : "Move"
     }
 
+    var areaSelectionCommandButtonTitle: String {
+        isAwaitingAreaSelection ? "Cancel" : "Select Area"
+    }
+
     var attackCommandButtonTitle: String {
         isAwaitingAttackTarget ? "Cancel" : "Attack"
     }
@@ -258,7 +267,8 @@ final class GameController {
             isAwaitingBuildExtractorTarget ||
             isAwaitingBuildTurretTarget ||
             isAwaitingBuildFactoryTarget ||
-            isAwaitingRallyTarget
+            isAwaitingRallyTarget ||
+            isAwaitingAreaSelection
     }
 
     var tacticalMapPendingCommandLabel: String? {
@@ -294,6 +304,9 @@ final class GameController {
         }
         if isAwaitingRepairTarget {
             return "Repair"
+        }
+        if isAwaitingAreaSelection {
+            return "Select Area"
         }
         return nil
     }
@@ -332,6 +345,9 @@ final class GameController {
         if isAwaitingRepairTarget {
             return "+"
         }
+        if isAwaitingAreaSelection {
+            return "SA"
+        }
         return nil
     }
 
@@ -369,6 +385,9 @@ final class GameController {
         if isAwaitingRepairTarget {
             return "wrench.and.screwdriver"
         }
+        if isAwaitingAreaSelection {
+            return "rectangle.dashed"
+        }
         return "map"
     }
 
@@ -405,6 +424,9 @@ final class GameController {
         }
         if isAwaitingRepairTarget {
             return "Tap a damaged friendly unit or building marker on the tactical map to issue repair."
+        }
+        if isAwaitingAreaSelection {
+            return "Drag on the battlefield to select player units in an area."
         }
         return "Tap the tactical map to center the battlefield camera."
     }
@@ -463,6 +485,12 @@ final class GameController {
     }
 
     func handleBattlefieldTap(screenPoint: CGPoint, viewportSize: CGSize) {
+        if isAwaitingAreaSelection {
+            commandStatus = "Drag area to select units"
+            renderRevision += 1
+            return
+        }
+
         let point = camera.worldPoint(for: screenPoint, viewportSize: viewportSize)
         if handlePointCommand(at: point) {
             return
@@ -481,6 +509,12 @@ final class GameController {
     }
 
     func handleTacticalMapTap(at point: WorldPoint) {
+        if isAwaitingAreaSelection {
+            commandStatus = "Drag on battlefield to select units"
+            renderRevision += 1
+            return
+        }
+
         if handlePointCommand(at: point) {
             return
         }
@@ -501,6 +535,18 @@ final class GameController {
             clearPendingTargetCommands()
             isAwaitingMoveTarget = true
             commandStatus = selectedPlayerUnits.count > 1 ? "Move target for \(selectedPlayerUnits.count) units" : "Move target"
+        }
+        renderRevision += 1
+    }
+
+    func toggleAreaSelectionCommand() {
+        if isAwaitingAreaSelection {
+            isAwaitingAreaSelection = false
+            commandStatus = nil
+        } else if canIssueAreaSelection {
+            clearPendingTargetCommands()
+            isAwaitingAreaSelection = true
+            commandStatus = "Drag area to select units"
         }
         renderRevision += 1
     }
@@ -738,6 +784,19 @@ final class GameController {
         renderRevision += 1
     }
 
+    func handleBattlefieldAreaSelection(from startPoint: CGPoint, to endPoint: CGPoint, viewportSize: CGSize) {
+        guard isAwaitingAreaSelection else {
+            return
+        }
+
+        let start = camera.worldPoint(for: startPoint, viewportSize: viewportSize)
+        let end = camera.worldPoint(for: endPoint, viewportSize: viewportSize)
+        let selectedIDs = engine.selectPlayerUnits(in: WorldRect(start, end))
+        isAwaitingAreaSelection = false
+        commandStatus = selectedIDs.isEmpty ? "No units in area" : "\(selectedIDs.count) units selected"
+        renderRevision += 1
+    }
+
     private func resetBattle(on mapID: MapID, status: String) {
         let preset = MapPreset.preset(for: mapID)
         engine = GameEngine(mapID: mapID)
@@ -768,6 +827,7 @@ final class GameController {
         isAwaitingBuildTurretTarget = false
         isAwaitingBuildFactoryTarget = false
         isAwaitingRallyTarget = false
+        isAwaitingAreaSelection = false
     }
 
     private func handlePointCommand(at point: WorldPoint) -> Bool {

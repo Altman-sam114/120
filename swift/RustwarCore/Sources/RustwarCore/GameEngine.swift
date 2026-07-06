@@ -82,6 +82,14 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func selectPlayerUnits(in rect: WorldRect) -> [String] {
+        let ids = state.playerUnitSelectionTargets(in: rect).map(\.id)
+        state.selectedEntityIDs = ids
+        state.selectedEntityID = ids.first
+        return ids
+    }
+
+    @discardableResult
     public mutating func issueMove(to destination: WorldPoint) -> UnitCommandResult {
         guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
