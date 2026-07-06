@@ -829,14 +829,16 @@ import Testing
     #expect(selectedIDs == ["area-move-a", "area-move-b"])
     #expect(engine.issueMove(to: destination) == .issued)
 
-    for id in selectedIDs {
+    let destinations = try selectedIDs.map { id in
         let unit = try #require(engine.state.units.first { $0.id == id })
         if case let .move(activeDestination)? = unit.order {
-            #expect(activeDestination == destination)
+            return activeDestination
         } else {
             #expect(Bool(false))
+            return destination
         }
     }
+    #expect(destinations.dropFirst().contains { $0 != destinations[0] })
 }
 
 @Test func selectPlayerUnitsInWorldRectUsesUnitCenters() {
@@ -1035,14 +1037,16 @@ import Testing
 
     #expect(selectedIDs == ["near-add-tank", "near-add-scout-a", "near-add-scout-b"])
     #expect(engine.issueMove(to: destination) == .issued)
-    for id in selectedIDs {
+    let destinations = try selectedIDs.map { id in
         let unit = try #require(engine.state.units.first { $0.id == id })
         if case let .move(activeDestination)? = unit.order {
-            #expect(activeDestination == destination)
+            return activeDestination
         } else {
             #expect(Bool(false))
+            return destination
         }
     }
+    #expect(destinations.dropFirst().contains { $0 != destinations[0] })
 }
 
 @Test func selectPlayerUnitsMatchingPrimarySelectionSelectsOnlyFriendlySameTypeUnits() throws {
@@ -1201,14 +1205,16 @@ import Testing
     #expect(selectedIDs == ["same-move-a", "same-move-b"])
     #expect(engine.issueMove(to: destination) == .issued)
 
-    for id in selectedIDs {
+    let destinations = try selectedIDs.map { id in
         let unit = try #require(engine.state.units.first { $0.id == id })
         if case let .move(activeDestination)? = unit.order {
-            #expect(activeDestination == destination)
+            return activeDestination
         } else {
             #expect(Bool(false))
+            return destination
         }
     }
+    #expect(destinations.dropFirst().contains { $0 != destinations[0] })
 }
 
 @Test func selectPlayerUnitsMatchingUnitWithinRadiusUsesAnchorTypeAndRange() throws {
@@ -1354,14 +1360,16 @@ import Testing
     #expect(selectedIDs == ["near-move-a", "near-move-b"])
     #expect(engine.issueMove(to: destination) == .issued)
 
-    for id in selectedIDs {
+    let destinations = try selectedIDs.map { id in
         let unit = try #require(engine.state.units.first { $0.id == id })
         if case let .move(activeDestination)? = unit.order {
-            #expect(activeDestination == destination)
+            return activeDestination
         } else {
             #expect(Bool(false))
+            return destination
         }
     }
+    #expect(destinations.dropFirst().contains { $0 != destinations[0] })
 }
 
 @Test func moveCommandRejectsMissingOrInvalidSelection() {
