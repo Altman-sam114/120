@@ -1756,7 +1756,10 @@
 
 - 本地轻量检查：`git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v145 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`、`swiftc -parse ios/RustwarIOS/RustwarIOS/GameController.swift` 通过。
 - 本机 `swift test --package-path swift/RustwarCore` 首次受沙箱缓存写入限制和 Swift/SDK mismatch 影响；升级权限重跑后仍未进入源码测试，Command Line Tools / SwiftPM manifest 链接阶段报 `PackageDescription.Package.__allocating_init` symbol 缺失。`xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 未通过：本机 active developer directory 是 Command Line Tools，不是完整 Xcode。
-- Agent C 云端 artifact 复判：待 push 后下载并核对最新 `origin/main` run。
+- Agent C 先下载并核对失败 run `28771288183`，attempt `1`，artifact `rustwar-ci-v1.0-main-3800615-run28771288183-attempt1`，commit `38006151cead8fc34617e85e0cc41f1ace25e2d0`；manifest / JUnit / build.log 确认失败原因是新增 Swift package test `buildExtractorCommandProgressesFasterWithSelectedBuilderGroup` 暴露多 Builder 同 tick 完成建筑时较早处理过的 Builder build order 未同步清理。
+- Agent C 已下载并核对修复提交 GitHub Actions artifact：run `28771497080`，attempt `1`，artifact `rustwar-ci-v1.0-main-87d30c0-run28771497080-attempt1`，commit `87d30c07662ad45a40c009318ca5da05c4047c5d`，缓存路径 `/private/tmp/rustwar-c-review-28771497080/`，目录大小 `272K`。
+- manifest 确认 `branch=main`、`commitSha=87d30c07662ad45a40c009318ca5da05c4047c5d`、`runId=28771497080`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke。
+- build.log 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0；Swift Testing 181 tests passed。
 
 遗留事项：
 
