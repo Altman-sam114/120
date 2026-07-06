@@ -495,6 +495,56 @@ import Testing
     #expect(engine.issueAttackMove(to: WorldPoint(1_200, 2_000)) == .selectedEntityCannotAttack)
 }
 
+@Test func attackMoveCommandAppliesToSelectedPlayerCombatGroup() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+    let destination = WorldPoint(1_420, 2_160)
+
+    #expect(selectedIDs.count > 1)
+    #expect(engine.issueAttackMove(to: destination) == .issued)
+
+    for id in selectedIDs {
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        if case let .attackMove(activeDestination)? = unit.order {
+            #expect(activeDestination == destination)
+        } else {
+            #expect(Bool(false))
+        }
+    }
+}
+
+@Test func attackMoveCommandIgnoresInvalidSelectedIDsWhenAnyPlayerUnitIsSelected() throws {
+    var state = GameState(mapID: .coast)
+    let playerUnit = try #require(state.units.first { $0.team == .player && $0.type != .builder })
+    let enemyUnit = try #require(state.units.first { $0.team == .enemy })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player })
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyUnit.id, "missing-id", playerUnit.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueAttackMove(to: WorldPoint(1_500, 2_100)) == .issued)
+
+    let attackMovingUnit = try #require(engine.state.units.first { $0.id == playerUnit.id })
+    let untouchedEnemy = try #require(engine.state.units.first { $0.id == enemyUnit.id })
+    if case .attackMove(destination: _)? = attackMovingUnit.order {
+        #expect(Bool(true))
+    } else {
+        #expect(Bool(false))
+    }
+    #expect(untouchedEnemy.order == nil)
+}
+
+@Test func attackMoveRejectsSelectionWithoutPlayerUnits() throws {
+    var state = GameState(mapID: .coast)
+    let enemyUnit = try #require(state.units.first { $0.team == .enemy })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player })
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyUnit.id, "missing-id"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueAttackMove(to: WorldPoint(1_500, 2_100)) == .selectedEntityCannotAttack)
+}
+
 @Test func attackMoveMovesTowardDestinationWhenNoEnemyInRangeAndClearsOnArrival() throws {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 

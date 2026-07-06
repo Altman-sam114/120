@@ -118,15 +118,18 @@ public struct GameEngine: Sendable {
 
     @discardableResult
     public mutating func issueAttackMove(to destination: WorldPoint) -> UnitCommandResult {
-        guard let selectedEntityID = state.selectedEntityID else {
+        guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
         }
-        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
-              state.units[unitIndex].team == .player else {
+        let unitIndices = selectedPlayerUnitIndices()
+        guard !unitIndices.isEmpty else {
             return .selectedEntityCannotAttack
         }
 
-        state.units[unitIndex].order = .attackMove(destination: destination.clampedToMap())
+        let clampedDestination = destination.clampedToMap()
+        for unitIndex in unitIndices {
+            state.units[unitIndex].order = .attackMove(destination: clampedDestination)
+        }
         return .issued
     }
 
