@@ -1533,21 +1533,74 @@ import Testing
 }
 
 @Test func attackMoveCommandAppliesToSelectedPlayerCombatGroup() throws {
-    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
-    let selectedIDs = engine.selectPlayerCombatUnits()
+    let initialState = GameState(mapID: .coast)
+    var moveEngine = GameEngine(state: initialState, enemyAIEnabled: false)
+    let selectedIDs = moveEngine.selectPlayerCombatUnits()
     let destination = WorldPoint(1_420, 2_160)
 
     #expect(selectedIDs.count > 1)
+    #expect(moveEngine.issueMove(to: destination) == .issued)
+    let expectedDestinations = try Dictionary(uniqueKeysWithValues: selectedIDs.map { id in
+        let unit = try #require(moveEngine.state.units.first { $0.id == id })
+        if case let .move(activeDestination)? = unit.order {
+            return (id, activeDestination)
+        }
+        #expect(Bool(false))
+        return (id, destination)
+    })
+
+    var engine = GameEngine(state: initialState, enemyAIEnabled: false)
+    #expect(engine.selectPlayerCombatUnits() == selectedIDs)
     #expect(engine.issueAttackMove(to: destination) == .issued)
 
-    for id in selectedIDs {
+    let destinations = try selectedIDs.map { id in
         let unit = try #require(engine.state.units.first { $0.id == id })
+        let expectedDestination = try #require(expectedDestinations[id])
         if case let .attackMove(activeDestination)? = unit.order {
-            #expect(activeDestination == destination)
-        } else {
-            #expect(Bool(false))
+            #expect(activeDestination == expectedDestination)
+            return activeDestination
         }
+        #expect(Bool(false))
+        return destination
     }
+
+    #expect(destinations.dropFirst().contains { $0 != destinations[0] })
+}
+
+@Test func attackMoveCommandFormationTargetsClampToMapBounds() throws {
+    let initialState = GameState(mapID: .coast)
+    var moveEngine = GameEngine(state: initialState, enemyAIEnabled: false)
+    let selectedIDs = moveEngine.selectPlayerCombatUnits()
+    let destination = WorldPoint(5, 5)
+
+    #expect(selectedIDs.count > 1)
+    #expect(moveEngine.issueMove(to: destination) == .issued)
+    let expectedDestinations = try Dictionary(uniqueKeysWithValues: selectedIDs.map { id in
+        let unit = try #require(moveEngine.state.units.first { $0.id == id })
+        if case let .move(activeDestination)? = unit.order {
+            return (id, activeDestination)
+        }
+        #expect(Bool(false))
+        return (id, destination)
+    })
+
+    var engine = GameEngine(state: initialState, enemyAIEnabled: false)
+    #expect(engine.selectPlayerCombatUnits() == selectedIDs)
+    #expect(engine.issueAttackMove(to: destination) == .issued)
+
+    let destinations = try selectedIDs.map { id in
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        let expectedDestination = try #require(expectedDestinations[id])
+        if case let .attackMove(activeDestination)? = unit.order {
+            #expect(activeDestination == expectedDestination)
+            return activeDestination
+        }
+        #expect(Bool(false))
+        return destination
+    }
+
+    #expect(destinations.allSatisfy { $0.x >= 0 && $0.x <= GameConstants.mapWidth })
+    #expect(destinations.allSatisfy { $0.y >= 0 && $0.y <= GameConstants.mapHeight })
 }
 
 @Test func attackMoveCommandIgnoresInvalidSelectedIDsWhenAnyPlayerUnitIsSelected() throws {
@@ -1785,27 +1838,86 @@ import Testing
 }
 
 @Test func patrolCommandAppliesToSelectedPlayerCombatGroup() throws {
-    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
-    let selectedIDs = engine.selectPlayerCombatUnits()
+    let initialState = GameState(mapID: .coast)
+    var moveEngine = GameEngine(state: initialState, enemyAIEnabled: false)
+    let selectedIDs = moveEngine.selectPlayerCombatUnits()
     let destination = WorldPoint(1_420, 2_160)
-    let originsByID = Dictionary(uniqueKeysWithValues: engine.state.units
+    let originsByID = Dictionary(uniqueKeysWithValues: moveEngine.state.units
         .filter { selectedIDs.contains($0.id) }
         .map { ($0.id, $0.position) })
 
     #expect(selectedIDs.count > 1)
+    #expect(moveEngine.issueMove(to: destination) == .issued)
+    let expectedDestinations = try Dictionary(uniqueKeysWithValues: selectedIDs.map { id in
+        let unit = try #require(moveEngine.state.units.first { $0.id == id })
+        if case let .move(activeDestination)? = unit.order {
+            return (id, activeDestination)
+        }
+        #expect(Bool(false))
+        return (id, destination)
+    })
+
+    var engine = GameEngine(state: initialState, enemyAIEnabled: false)
+    #expect(engine.selectPlayerCombatUnits() == selectedIDs)
     #expect(engine.issuePatrol(to: destination) == .issued)
 
-    for id in selectedIDs {
+    let destinations = try selectedIDs.map { id in
         let unit = try #require(engine.state.units.first { $0.id == id })
         let origin = try #require(originsByID[id])
+        let expectedDestination = try #require(expectedDestinations[id])
         if case let .patrol(activeOrigin, activeDestination, returning)? = unit.order {
             #expect(activeOrigin == origin)
-            #expect(activeDestination == destination)
+            #expect(activeDestination == expectedDestination)
             #expect(returning == false)
-        } else {
-            #expect(Bool(false))
+            return activeDestination
         }
+        #expect(Bool(false))
+        return destination
     }
+
+    #expect(destinations.dropFirst().contains { $0 != destinations[0] })
+}
+
+@Test func patrolCommandFormationTargetsClampToMapBounds() throws {
+    let initialState = GameState(mapID: .coast)
+    var moveEngine = GameEngine(state: initialState, enemyAIEnabled: false)
+    let selectedIDs = moveEngine.selectPlayerCombatUnits()
+    let destination = WorldPoint(5, 5)
+    let originsByID = Dictionary(uniqueKeysWithValues: moveEngine.state.units
+        .filter { selectedIDs.contains($0.id) }
+        .map { ($0.id, $0.position) })
+
+    #expect(selectedIDs.count > 1)
+    #expect(moveEngine.issueMove(to: destination) == .issued)
+    let expectedDestinations = try Dictionary(uniqueKeysWithValues: selectedIDs.map { id in
+        let unit = try #require(moveEngine.state.units.first { $0.id == id })
+        if case let .move(activeDestination)? = unit.order {
+            return (id, activeDestination)
+        }
+        #expect(Bool(false))
+        return (id, destination)
+    })
+
+    var engine = GameEngine(state: initialState, enemyAIEnabled: false)
+    #expect(engine.selectPlayerCombatUnits() == selectedIDs)
+    #expect(engine.issuePatrol(to: destination) == .issued)
+
+    let destinations = try selectedIDs.map { id in
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        let origin = try #require(originsByID[id])
+        let expectedDestination = try #require(expectedDestinations[id])
+        if case let .patrol(activeOrigin, activeDestination, returning)? = unit.order {
+            #expect(activeOrigin == origin)
+            #expect(activeDestination == expectedDestination)
+            #expect(returning == false)
+            return activeDestination
+        }
+        #expect(Bool(false))
+        return destination
+    }
+
+    #expect(destinations.allSatisfy { $0.x >= 0 && $0.x <= GameConstants.mapWidth })
+    #expect(destinations.allSatisfy { $0.y >= 0 && $0.y <= GameConstants.mapHeight })
 }
 
 @Test func patrolCommandIgnoresInvalidSelectedIDsWhenAnyPlayerUnitIsSelected() throws {

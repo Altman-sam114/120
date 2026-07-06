@@ -174,7 +174,7 @@ public struct GameEngine: Sendable {
             return .selectedEntityCannotMove
         }
 
-        for target in moveFormationTargets(for: unitIndices, around: destination) {
+        for target in formationTargets(for: unitIndices, around: destination) {
             state.units[target.unitIndex].order = .move(destination: target.destination)
         }
         return .issued
@@ -210,9 +210,8 @@ public struct GameEngine: Sendable {
             return .selectedEntityCannotAttack
         }
 
-        let clampedDestination = destination.clampedToMap()
-        for unitIndex in unitIndices {
-            state.units[unitIndex].order = .attackMove(destination: clampedDestination)
+        for target in formationTargets(for: unitIndices, around: destination) {
+            state.units[target.unitIndex].order = .attackMove(destination: target.destination)
         }
         return .issued
     }
@@ -227,11 +226,10 @@ public struct GameEngine: Sendable {
             return .selectedEntityCannotMove
         }
 
-        let clampedDestination = destination.clampedToMap()
-        for unitIndex in unitIndices {
-            state.units[unitIndex].order = .patrol(
-                origin: state.units[unitIndex].position.clampedToMap(),
-                destination: clampedDestination,
+        for target in formationTargets(for: unitIndices, around: destination) {
+            state.units[target.unitIndex].order = .patrol(
+                origin: state.units[target.unitIndex].position,
+                destination: target.destination,
                 returning: false
             )
         }
@@ -1943,7 +1941,7 @@ public struct GameEngine: Sendable {
         }
     }
 
-    private func moveFormationTargets(
+    private func formationTargets(
         for unitIndices: [Array<UnitSnapshot>.Index],
         around destination: WorldPoint
     ) -> [(unitIndex: Array<UnitSnapshot>.Index, destination: WorldPoint)] {
