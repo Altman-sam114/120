@@ -1089,6 +1089,123 @@ import Testing
     #expect(builderSelectedEngine.issueRepair(targetID: playerTank.id) == .invalidRepairTarget)
 }
 
+@Test func repairCommandAppliesToSelectedPlayerBuilderGroup() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let extraBuilder = UnitSnapshot(
+        id: "repair-extra-builder",
+        type: .builder,
+        team: .player,
+        position: WorldPoint(builder.position.x + 80, builder.position.y),
+        hitPoints: builderDefinition.hitPoints,
+        maxHitPoints: builderDefinition.hitPoints
+    )
+    state.units.append(extraBuilder)
+
+    let friendlyBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let buildingIndex = try #require(state.buildings.firstIndex { $0.id == friendlyBuilding.id })
+    state.buildings[buildingIndex].hitPoints -= 120
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = [builder.id, extraBuilder.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueRepair(targetID: friendlyBuilding.id) == .issued)
+
+    for builderID in [builder.id, extraBuilder.id] {
+        let repairer = try #require(engine.state.units.first { $0.id == builderID })
+        if case let .repair(targetID)? = repairer.order {
+            #expect(targetID == friendlyBuilding.id)
+        } else {
+            #expect(Bool(false))
+        }
+    }
+}
+
+@Test func repairCommandIgnoresInvalidSelectedIDsWhenAnyPlayerBuilderIsSelected() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    let playerTank = try #require(state.units.first { $0.team == .player && $0.type != .builder })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let buildingIndex = try #require(state.buildings.firstIndex { $0.id == playerBuilding.id })
+    state.buildings[buildingIndex].hitPoints -= 90
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyBuilder.id, "missing-id", playerTank.id, builder.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueRepair(targetID: playerBuilding.id) == .issued)
+
+    let repairer = try #require(engine.state.units.first { $0.id == builder.id })
+    let untouchedTank = try #require(engine.state.units.first { $0.id == playerTank.id })
+    let untouchedEnemyBuilder = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+    if case let .repair(targetID)? = repairer.order {
+        #expect(targetID == playerBuilding.id)
+    } else {
+        #expect(Bool(false))
+    }
+    #expect(untouchedTank.order == nil)
+    #expect(untouchedEnemyBuilder.order == nil)
+}
+
+@Test func repairRejectsSelectionWithoutPlayerBuilders() throws {
+    var state = GameState(mapID: .coast)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    let playerTank = try #require(state.units.first { $0.team == .player && $0.type != .builder })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let buildingIndex = try #require(state.buildings.firstIndex { $0.id == playerBuilding.id })
+    state.buildings[buildingIndex].hitPoints -= 90
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyBuilder.id, "missing-id", playerTank.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueRepair(targetID: playerBuilding.id) == .selectedEntityCannotRepair)
+}
+
+@Test func repairCommandSkipsRepairedBuilderWhenItIsSelected() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let extraBuilder = UnitSnapshot(
+        id: "repair-escort-builder",
+        type: .builder,
+        team: .player,
+        position: WorldPoint(builder.position.x + 80, builder.position.y),
+        hitPoints: builderDefinition.hitPoints,
+        maxHitPoints: builderDefinition.hitPoints
+    )
+    state.units.append(extraBuilder)
+
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    state.units[builderIndex].hitPoints -= 20
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = [builder.id, extraBuilder.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueRepair(targetID: builder.id) == .issued)
+
+    let repairedBuilder = try #require(engine.state.units.first { $0.id == builder.id })
+    let helperBuilder = try #require(engine.state.units.first { $0.id == extraBuilder.id })
+    #expect(repairedBuilder.order == nil)
+    if case let .repair(targetID)? = helperBuilder.order {
+        #expect(targetID == builder.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func repairRejectsSelfTargetWhenNoOtherSelectedPlayerBuilderCanRepair() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    state.units[builderIndex].hitPoints -= 20
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = [builder.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueRepair(targetID: builder.id) == .invalidRepairTarget)
+}
+
 @Test func repairCommandAcceptsDamagedFriendlyUnitAndBuildingTargets() throws {
     var state = GameState(mapID: .coast)
     let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
@@ -2103,6 +2220,50 @@ import Testing
     let stoppedUnit = try #require(engine.state.units.first { $0.id == builder.id })
     #expect(stoppedUnit.order == nil)
     #expect(engine.state.selectedEntityID == builder.id)
+}
+
+@Test func stopCommandClearsSelectedRepairGroupOnly() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let secondBuilder = UnitSnapshot(
+        id: "repair-stop-second-builder",
+        type: .builder,
+        team: .player,
+        position: WorldPoint(builder.position.x + 80, builder.position.y),
+        hitPoints: builderDefinition.hitPoints,
+        maxHitPoints: builderDefinition.hitPoints
+    )
+    let unselectedBuilder = UnitSnapshot(
+        id: "repair-stop-unselected-builder",
+        type: .builder,
+        team: .player,
+        position: WorldPoint(builder.position.x + 160, builder.position.y),
+        hitPoints: builderDefinition.hitPoints,
+        maxHitPoints: builderDefinition.hitPoints
+    )
+    state.units.append(secondBuilder)
+    state.units.append(unselectedBuilder)
+
+    let friendlyBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let firstIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    let secondIndex = try #require(state.units.firstIndex { $0.id == secondBuilder.id })
+    let unselectedIndex = try #require(state.units.firstIndex { $0.id == unselectedBuilder.id })
+    state.units[firstIndex].order = .repair(targetID: friendlyBuilding.id)
+    state.units[secondIndex].order = .repair(targetID: friendlyBuilding.id)
+    state.units[unselectedIndex].order = .repair(targetID: friendlyBuilding.id)
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = [builder.id, secondBuilder.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueStop() == .issued)
+
+    let stoppedFirst = try #require(engine.state.units.first { $0.id == builder.id })
+    let stoppedSecond = try #require(engine.state.units.first { $0.id == secondBuilder.id })
+    let untouchedBuilder = try #require(engine.state.units.first { $0.id == unselectedBuilder.id })
+    #expect(stoppedFirst.order == nil)
+    #expect(stoppedSecond.order == nil)
+    #expect(untouchedBuilder.order != nil)
 }
 
 @Test func stopCommandClearsReclaimOrder() throws {

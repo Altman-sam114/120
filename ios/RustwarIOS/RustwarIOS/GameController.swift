@@ -176,7 +176,7 @@ final class GameController {
     }
 
     var canIssueRepair: Bool {
-        selectedPlayerBuilder != nil
+        !selectedPlayerBuilders.isEmpty
     }
 
     var canIssueReclaim: Bool {
@@ -560,7 +560,7 @@ final class GameController {
         } else if canIssueRepair {
             clearPendingTargetCommands()
             isAwaitingRepairTarget = true
-            commandStatus = "Repair target"
+            commandStatus = selectedPlayerBuilders.count > 1 ? "Repair target for \(selectedPlayerBuilders.count) builders" : "Repair target"
         }
         renderRevision += 1
     }
@@ -890,6 +890,10 @@ final class GameController {
         return unit
     }
 
+    private var selectedPlayerBuilders: [UnitSnapshot] {
+        selectedPlayerUnits.filter { $0.type == .builder }
+    }
+
     private var selectedPlayerProducer: BuildingSnapshot? {
         guard let selectedEntityID = engine.state.selectedEntityID else {
             return nil
@@ -1005,7 +1009,8 @@ final class GameController {
     private func statusText(forRepair result: UnitCommandResult) -> String? {
         switch result {
         case .issued:
-            return "Repair order issued"
+            let count = selectedPlayerBuilders.count
+            return count > 1 ? "Repair order issued to \(count) builders" : "Repair order issued"
         case .noSelection:
             return "No builder selected"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:

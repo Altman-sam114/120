@@ -184,22 +184,27 @@ public struct GameEngine: Sendable {
 
     @discardableResult
     public mutating func issueRepair(targetID: String) -> UnitCommandResult {
-        guard let selectedEntityID = state.selectedEntityID else {
+        guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
         }
-        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
-              state.units[unitIndex].team == .player,
-              state.units[unitIndex].type == .builder else {
+        let builderIndices = selectedPlayerBuilderIndices()
+        guard !builderIndices.isEmpty else {
             return .selectedEntityCannotRepair
         }
         guard let target = repairTarget(id: targetID),
-              target.team == state.units[unitIndex].team,
-              target.id != state.units[unitIndex].id,
+              target.team == .player,
               target.hitPoints < target.maxHitPoints else {
             return .invalidRepairTarget
         }
 
-        state.units[unitIndex].order = .repair(targetID: target.id)
+        var issued = false
+        for unitIndex in builderIndices where state.units[unitIndex].id != target.id {
+            state.units[unitIndex].order = .repair(targetID: target.id)
+            issued = true
+        }
+        guard issued else {
+            return .invalidRepairTarget
+        }
         return .issued
     }
 
@@ -1770,6 +1775,12 @@ public struct GameEngine: Sendable {
         }
         return state.units.indices.filter { index in
             selectedIDs.contains(state.units[index].id) && state.units[index].team == .player
+        }
+    }
+
+    private func selectedPlayerBuilderIndices() -> [Array<UnitSnapshot>.Index] {
+        selectedPlayerUnitIndices().filter { index in
+            state.units[index].type == .builder
         }
     }
 
