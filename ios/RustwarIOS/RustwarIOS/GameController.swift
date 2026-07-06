@@ -864,6 +864,23 @@ final class GameController {
         renderRevision += 1
     }
 
+    func focusPlayerCommandCenter() {
+        guard let commandCenter = engine.state.buildings.first(where: {
+            $0.team == .player && $0.type == .command && $0.hitPoints > 0
+        }) else {
+            if !isAwaitingTargetCommand {
+                commandStatus = "Command Center unavailable"
+                renderRevision += 1
+            }
+            return
+        }
+        let shouldReportStatus = !isAwaitingTargetCommand
+        centerCamera(on: commandCenter.position)
+        if shouldReportStatus {
+            commandStatus = "Command Center focused"
+        }
+    }
+
     func centerCamera(on point: WorldPoint) {
         camera.center(on: point)
         if !isAwaitingTargetCommand {

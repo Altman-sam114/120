@@ -49,6 +49,13 @@ struct GameHUDView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(minHeight: 44)
+                Button("Base", systemImage: "house.fill", action: controller.focusPlayerCommandCenter)
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(minHeight: 44)
+                    .keyboardShortcut(.space, modifiers: [])
+                    .accessibilityLabel("Focus Command Center")
+                    .accessibilityHint("Centers the battlefield camera on the player Command Center.")
             }
 
             HStack(spacing: 8) {
