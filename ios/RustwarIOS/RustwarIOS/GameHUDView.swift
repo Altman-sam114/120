@@ -136,7 +136,7 @@ struct GameHUDView: View {
                             Text("\(slot)")
                                 .font(.headline)
                                 .monospacedDigit()
-                                .frame(width: 22, minHeight: 44)
+                                .frame(width: 22, height: 44)
 
                             Button(
                                 "Save control group \(slot)",
@@ -146,7 +146,7 @@ struct GameHUDView: View {
                             .labelStyle(.iconOnly)
                             .buttonStyle(.bordered)
                             .controlSize(.regular)
-                            .frame(width: 44, minHeight: 44)
+                            .frame(width: 44, height: 44)
                             .disabled(!controller.canStoreControlGroup)
                             .accessibilityHint("Stores the current player selection in control group \(slot).")
 
@@ -158,7 +158,7 @@ struct GameHUDView: View {
                             .labelStyle(.iconOnly)
                             .buttonStyle(.bordered)
                             .controlSize(.regular)
-                            .frame(width: 44, minHeight: 44)
+                            .frame(width: 44, height: 44)
                             .disabled(!controller.canRecallControlGroup(slot))
                             .accessibilityValue(controller.controlGroupAccessibilityValue(for: slot))
                             .accessibilityHint("Selects the saved player units or buildings in control group \(slot).")
