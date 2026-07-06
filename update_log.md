@@ -2651,7 +2651,7 @@
 - 本地 `swift test --package-path swift/RustwarCore` 未运行成功：当前容器缺少 SwiftPM，返回 `/bin/bash: line 1: swift: command not found`。
 - 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 未运行成功：当前容器缺少 Xcode 命令行工具，返回 `/bin/bash: line 1: xcodebuild: command not found`。
 - 本地 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 未运行成功：当前容器缺少 Xcode 命令行工具，返回 `/bin/bash: line 1: xcodebuild: command not found`。
-- 云端 GitHub Actions run、artifact 和 Agent C 复判待本轮 commit push 后补充。
+- 实现提交 `ec81b7679fdc1cc0374f0c41b14cb34fabefdc04` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `28822027848`，attempt `1`，artifact `rustwar-ci-v1.0-main-ec81b76-run28822027848-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-28822027848/`，目录大小 `268K`。manifest 确认 `branch=main`、`commitSha=ec81b7679fdc1cc0374f0c41b14cb34fabefdc04`、`runId=28822027848`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke；`build.log` 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0，Swift Testing 250 tests passed，iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
