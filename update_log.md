@@ -1530,7 +1530,13 @@
 
 验证结果：
 
-- 以本轮 Agent B 最终记录和 Agent C 最新 artifact 复判为准。
+- 本地轻量检查：`git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v139-fix -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift` 通过。
+- 本机 `swift test --package-path swift/RustwarCore` 未进入源码测试：Command Line Tools / SwiftPM manifest 链接阶段报 `PackageDescription.Package.__allocating_init` symbol 缺失；`xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 未通过：本机 active developer directory 是 Command Line Tools，不是完整 Xcode。
+- Agent C 先下载并核对失败 run `28764330991`，attempt `1`，artifact `rustwar-ci-v1.0-main-0d9583f-run28764330991-attempt1`，commit `0d9583feb621b71b23a9354279b3f0b1b590d02b`；manifest / JUnit / build.log 确认失败原因是新增 Swift package test `stopCommandAppliesToSelectedPlayerUnitGroupOnly` 假设 Coast 初始玩家有第三个非 Builder 战斗单位。
+- Agent B 追加修复提交 `5d02f5eaca38ea6324de72da6b85014acbe8b53e`，将未选中对照改为任意未选中己方单位，不改变核心实现。
+- Agent C 已下载并核对最新 GitHub Actions artifact：run `28764640655`，attempt `1`，artifact `rustwar-ci-v1.0-main-5d02f5e-run28764640655-attempt1`，commit `5d02f5eaca38ea6324de72da6b85014acbe8b53e`，缓存路径 `/private/tmp/rustwar-c-review-28764640655/`，目录大小 `268K`。
+- manifest 确认 `branch=main`、`commitSha=5d02f5eaca38ea6324de72da6b85014acbe8b53e`、`runId=28764640655`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke。
+- build.log 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0；Swift Testing 153 tests passed。
 
 遗留事项：
 
