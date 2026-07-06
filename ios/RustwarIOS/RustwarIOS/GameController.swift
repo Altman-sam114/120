@@ -957,13 +957,14 @@ final class GameController {
         let start = camera.worldPoint(for: startPoint, viewportSize: viewportSize)
         let end = camera.worldPoint(for: endPoint, viewportSize: viewportSize)
         let rect = WorldRect(start, end)
-        let matchedCount = engine.state.playerUnitSelectionTargets(in: rect).count
-        let selectedIDs = engine.selectPlayerUnits(in: rect, mutation: selectionMutation)
+        let matchedTargets = engine.state.playerAreaSelectionTargets(in: rect)
+        let selectedIDs = engine.selectPlayerEntities(in: rect, mutation: selectionMutation)
         isAwaitingAreaSelection = false
+        let targetLabel = Self.areaSelectionTargetLabel(for: matchedTargets)
         if selectionMutation == .add {
-            commandStatus = matchedCount == 0 ? "No units added" : "\(selectedIDs.count) units selected total"
+            commandStatus = matchedTargets.isEmpty ? "No entities added" : "\(selectedIDs.count) \(targetLabel) selected total"
         } else {
-            commandStatus = selectedIDs.isEmpty ? "No units in area" : "\(selectedIDs.count) units selected"
+            commandStatus = selectedIDs.isEmpty ? "No entities in area" : "\(selectedIDs.count) \(targetLabel) selected"
         }
         renderRevision += 1
     }
@@ -984,6 +985,13 @@ final class GameController {
 
     private static func validatedSimulationSpeed(_ speed: Double, fallback: Double) -> Double {
         simulationSpeedOptions.contains(speed) ? speed : fallback
+    }
+
+    private static func areaSelectionTargetLabel(for targets: [SelectionTarget]) -> String {
+        if targets.allSatisfy({ $0.kind == .building }) {
+            return targets.count == 1 ? "building" : "buildings"
+        }
+        return targets.count == 1 ? "unit" : "units"
     }
 
     private func clearPendingTargetCommands() {

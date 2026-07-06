@@ -574,6 +574,149 @@ import Testing
     #expect(engine.state.selectionSummary() == "No selection")
 }
 
+@Test func areaSelectionEntitiesPreferUnitsOverBuildings() {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "entity-area-builder",
+            type: .builder,
+            team: .player,
+            position: WorldPoint(100, 100),
+            hitPoints: 170,
+            maxHitPoints: 170
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "entity-area-command",
+            type: .command,
+            team: .player,
+            position: WorldPoint(110, 110),
+            hitPoints: 1_850,
+            maxHitPoints: 1_850,
+            rally: WorldPoint(150, 150)
+        )
+    ]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerEntities(in: WorldRect(WorldPoint(80, 80), WorldPoint(140, 140)))
+
+    #expect(selectedIDs == ["entity-area-builder"])
+    #expect(engine.state.selectedEntityID == "entity-area-builder")
+    #expect(!selectedIDs.contains("entity-area-command"))
+}
+
+@Test func areaSelectionEntitiesFallbackToPlayerBuildingsWhenNoUnitsMatch() {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "entity-area-outside-unit",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(320, 320),
+            hitPoints: 245,
+            maxHitPoints: 245
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "entity-area-command",
+            type: .command,
+            team: .player,
+            position: WorldPoint(160, 160),
+            hitPoints: 1_850,
+            maxHitPoints: 1_850,
+            rally: WorldPoint(200, 180)
+        ),
+        BuildingSnapshot(
+            id: "entity-area-enemy-command",
+            type: .command,
+            team: .enemy,
+            position: WorldPoint(150, 150),
+            hitPoints: 1_850,
+            maxHitPoints: 1_850,
+            rally: WorldPoint(120, 120)
+        ),
+        BuildingSnapshot(
+            id: "entity-area-outside-building",
+            type: .turret,
+            team: .player,
+            position: WorldPoint(500, 500),
+            hitPoints: 420,
+            maxHitPoints: 420,
+            rally: WorldPoint(500, 500)
+        )
+    ]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerEntities(in: WorldRect(WorldPoint(120, 120), WorldPoint(190, 190)))
+
+    #expect(selectedIDs == ["entity-area-command"])
+    #expect(!selectedIDs.contains("entity-area-enemy-command"))
+    #expect(!selectedIDs.contains("entity-area-outside-building"))
+    #expect(!selectedIDs.contains("entity-area-outside-unit"))
+    #expect(engine.state.selectedEntityID == "entity-area-command")
+    #expect(engine.state.selectionSummary() == "Player Command Center")
+}
+
+@Test func areaSelectionBuildingFallbackUsesBuildingBoundsIntersection() {
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "entity-area-edge-command",
+            type: .command,
+            team: .player,
+            position: WorldPoint(160, 160),
+            hitPoints: 1_850,
+            maxHitPoints: 1_850,
+            rally: WorldPoint(200, 180)
+        )
+    ]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerEntities(in: WorldRect(WorldPoint(60, 150), WorldPoint(70, 170)))
+
+    #expect(selectedIDs == ["entity-area-edge-command"])
+}
+
+@Test func areaSelectionBuildingFallbackAddMutationMergesAndKeepsEmptySelection() {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "entity-area-existing",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(300, 300),
+            hitPoints: 245,
+            maxHitPoints: 245
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "entity-area-factory",
+            type: .landFactory,
+            team: .player,
+            position: WorldPoint(140, 140),
+            hitPoints: 1_150,
+            maxHitPoints: 1_150,
+            rally: WorldPoint(180, 160)
+        )
+    ]
+    state.selectedEntityID = "entity-area-existing"
+    state.selectedEntityIDs = ["entity-area-existing"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerEntities(
+        in: WorldRect(WorldPoint(100, 100), WorldPoint(180, 180)),
+        mutation: .add
+    )
+
+    #expect(selectedIDs == ["entity-area-existing", "entity-area-factory"])
+    #expect(engine.state.selectedEntityID == "entity-area-existing")
+    #expect(engine.selectPlayerEntities(in: WorldRect(WorldPoint(10, 10), WorldPoint(20, 20)), mutation: .add) == selectedIDs)
+}
+
 @Test func areaSelectedUnitsReceiveExistingMultiUnitMoveCommand() throws {
     var state = GameState(mapID: .coast)
     state.units = [

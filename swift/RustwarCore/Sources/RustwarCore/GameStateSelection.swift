@@ -34,6 +34,37 @@ public extension GameState {
         }
     }
 
+    func playerBuildingSelectionTargets(in rect: WorldRect) -> [SelectionTarget] {
+        buildings.compactMap { building in
+            guard building.team == .player, building.hitPoints > 0 else {
+                return nil
+            }
+            let definition = GameDefinitions.building(building.type)
+            let halfSize = definition.size / 2
+            guard building.position.x + halfSize >= rect.minX,
+                  building.position.x - halfSize <= rect.maxX,
+                  building.position.y + halfSize >= rect.minY,
+                  building.position.y - halfSize <= rect.maxY else {
+                return nil
+            }
+            return SelectionTarget(
+                id: building.id,
+                kind: .building,
+                team: building.team,
+                displayName: definition.name,
+                position: building.position
+            )
+        }
+    }
+
+    func playerAreaSelectionTargets(in rect: WorldRect) -> [SelectionTarget] {
+        let unitTargets = playerUnitSelectionTargets(in: rect)
+        if !unitTargets.isEmpty {
+            return unitTargets
+        }
+        return playerBuildingSelectionTargets(in: rect)
+    }
+
     func playerUnitSelectionTargets(matching type: UnitType) -> [SelectionTarget] {
         units.compactMap { unit in
             guard unit.team == .player, unit.hitPoints > 0, unit.type == type else {

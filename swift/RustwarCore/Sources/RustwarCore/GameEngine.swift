@@ -97,6 +97,12 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func selectPlayerEntities(in rect: WorldRect, mutation: SelectionMutation = .replace) -> [String] {
+        let ids = state.playerAreaSelectionTargets(in: rect).map(\.id)
+        return applySelection(ids, mutation: mutation)
+    }
+
+    @discardableResult
     public mutating func selectPlayerUnitsMatchingPrimarySelection(mutation: SelectionMutation = .replace) -> [String] {
         guard let type = selectedPlayerUnitTypeForSameTypeSelection() else {
             return applySelection([], mutation: mutation)
