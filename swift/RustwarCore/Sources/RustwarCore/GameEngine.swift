@@ -1043,7 +1043,16 @@ public struct GameEngine: Sendable {
                let resourceIndex = state.resources.firstIndex(where: { $0.id == nodeID }) {
                 state.resources[resourceIndex].claimedBy = state.buildings[buildingIndex].team
             }
-            state.units[unitIndex].order = nil
+            clearBuildOrders(targetID: targetID)
+        }
+    }
+
+    private mutating func clearBuildOrders(targetID: String) {
+        for unitIndex in state.units.indices {
+            if case let .build(activeTargetID)? = state.units[unitIndex].order,
+               activeTargetID == targetID {
+                state.units[unitIndex].order = nil
+            }
         }
     }
 
