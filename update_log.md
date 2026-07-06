@@ -2529,7 +2529,9 @@
 - 本地 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 已尝试；当前容器没有 `xcodebuild`，命令返回 `xcodebuild: command not found`。
 - 首次云端 run `28811993891`（attempt `1`，commit `0122cb380cb6d59da8826653304cee70ef324c3c`，artifact `rustwar-ci-v1.0-main-0122cb3-run28811993891-attempt1`）由 Agent C 下载到 `/private/tmp/rustwar-c-review-28811993891/` 并核对，目录大小 `292K`；manifest 匹配 `branch=main`、`commitSha=0122cb380cb6d59da8826653304cee70ef324c3c`、`runId=28811993891`、`runAttempt=1`，但 Swift tests 失败，原因是 4 个旧测试仍断言多单位 Move 共享同一目的地。
 - 追加修复更新这些旧测试为断言方阵落点分散，并重新运行本地 `git diff --check` 和 `node --check app.js` 通过。
-- 云端 artifact 结果以本轮最终 Agent C 记录为准。
+- 修复后云端 run `28812240825`（attempt `1`，commit `9b49e28499c02c50b6175b9cf14bd95c0306836a`，artifact `rustwar-ci-v1.0-main-9b49e28-run28812240825-attempt1`）由 Agent C 下载到 `/private/tmp/rustwar-c-review-28812240825/` 并核对，目录大小 `264K`。
+- manifest 确认 `branch=main`、`commitSha=9b49e28499c02c50b6175b9cf14bd95c0306836a`、`runId=28812240825`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke。
+- build.log 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0；Swift Testing 244 tests passed，包含 v1.64 新增 multi-unit move formation 和旧多选后 Move 队形断言；iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
