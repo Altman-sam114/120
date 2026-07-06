@@ -1680,7 +1680,7 @@
 
 验证结果：
 
-- 本地轻量检查：`git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v143 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift` 通过。
+- 本地轻量检查：`git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v143-fix -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`、`swiftc -parse ios/RustwarIOS/RustwarIOS/GameController.swift` 通过。
 - 本机 `swift test --package-path swift/RustwarCore` 首次受沙箱缓存写入限制和 Swift/SDK mismatch 影响；升级权限重跑后仍未进入源码测试，Command Line Tools / SwiftPM manifest 链接阶段报 `PackageDescription.Package.__allocating_init` symbol 缺失。`xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 未通过：本机 active developer directory 是 Command Line Tools，不是完整 Xcode。
 - GitHub Actions artifact 待本轮 push 后由 Agent C 下载复判并回填。
 

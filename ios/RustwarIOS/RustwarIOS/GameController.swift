@@ -844,13 +844,16 @@ final class GameController {
         } else if isAwaitingRepairTarget {
             let target = engine.state.selectionTarget(at: point, includeEnemies: true)
             let result: UnitCommandResult
+            let targetID: String?
             if let target {
+                targetID = target.id
                 result = engine.issueRepair(targetID: target.id)
             } else {
+                targetID = nil
                 result = .invalidRepairTarget
             }
             isAwaitingRepairTarget = false
-            commandStatus = statusText(forRepair: result)
+            commandStatus = statusText(forRepair: result, targetID: targetID)
         } else if isAwaitingAttackTarget {
             let target = engine.state.selectionTarget(at: point, includeEnemies: true)
             let result: UnitCommandResult
@@ -1006,10 +1009,10 @@ final class GameController {
         }
     }
 
-    private func statusText(forRepair result: UnitCommandResult) -> String? {
+    private func statusText(forRepair result: UnitCommandResult, targetID: String?) -> String? {
         switch result {
         case .issued:
-            let count = selectedPlayerBuilders.count
+            let count = repairOrderIssuedCount(targetID: targetID)
             return count > 1 ? "Repair order issued to \(count) builders" : "Repair order issued"
         case .noSelection:
             return "No builder selected"
@@ -1017,6 +1020,18 @@ final class GameController {
             return "Builder required"
         case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
             return "Damaged friendly target required"
+        }
+    }
+
+    private func repairOrderIssuedCount(targetID: String?) -> Int {
+        guard let targetID else {
+            return selectedPlayerBuilders.count
+        }
+        return selectedPlayerBuilders.count { builder in
+            if case let .repair(activeTargetID)? = builder.order {
+                return activeTargetID == targetID
+            }
+            return false
         }
     }
 
