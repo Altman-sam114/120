@@ -2966,6 +2966,46 @@ import Testing
     }
 }
 
+@Test func buildExtractorCommandSpreadsSelectedBuilderGroupAroundTarget() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let freeNode = try #require(state.resources.first { $0.claimedBy == nil })
+    let sharedStart = WorldPoint(max(80, freeNode.position.x - 520), freeNode.position.y)
+    let builderIDs = [
+        builder.id,
+        "extractor-formation-builder-a",
+        "extractor-formation-builder-b",
+        "extractor-formation-builder-c"
+    ]
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    state.units[builderIndex].position = sharedStart
+    for id in builderIDs.dropFirst() {
+        state.units.append(UnitSnapshot(
+            id: id,
+            type: .builder,
+            team: .player,
+            position: sharedStart,
+            hitPoints: builderDefinition.hitPoints,
+            maxHitPoints: builderDefinition.hitPoints
+        ))
+    }
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = builderIDs
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueBuildExtractor(on: freeNode.id) == .issued)
+    engine.update(deltaTime: 1)
+
+    let extractor = try #require(engine.state.buildings.first { $0.nodeID == freeNode.id && $0.team == .player })
+    let positions = try builderIDs.map { id in
+        try #require(engine.state.units.first { $0.id == id }?.position)
+    }
+    #expect(extractor.buildProgress == 0)
+    #expect(positions.allSatisfy { $0 != sharedStart })
+    #expect(positions.dropFirst().contains { $0 != positions[0] })
+}
+
 @Test func stopCommandClearsBuildOrder() throws {
     var state = GameState(mapID: .coast)
     let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
@@ -3240,6 +3280,46 @@ import Testing
     } else {
         #expect(Bool(false))
     }
+}
+
+@Test func buildTurretCommandSpreadsSelectedBuilderGroupAroundTarget() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let point = clearTurretBuildPoint(in: state)
+    let sharedStart = WorldPoint(point.x - 520, point.y)
+    let builderIDs = [
+        builder.id,
+        "turret-formation-builder-a",
+        "turret-formation-builder-b",
+        "turret-formation-builder-c"
+    ]
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    state.units[builderIndex].position = sharedStart
+    for id in builderIDs.dropFirst() {
+        state.units.append(UnitSnapshot(
+            id: id,
+            type: .builder,
+            team: .player,
+            position: sharedStart,
+            hitPoints: builderDefinition.hitPoints,
+            maxHitPoints: builderDefinition.hitPoints
+        ))
+    }
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = builderIDs
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueBuildTurret(at: point) == .issued)
+    engine.update(deltaTime: 1)
+
+    let turret = try #require(engine.state.buildings.first { $0.type == .turret && $0.team == .player })
+    let positions = try builderIDs.map { id in
+        try #require(engine.state.units.first { $0.id == id }?.position)
+    }
+    #expect(turret.buildProgress == 0)
+    #expect(positions.allSatisfy { $0 != sharedStart })
+    #expect(positions.dropFirst().contains { $0 != positions[0] })
 }
 
 @Test func buildTurretCommandProgressesFasterWithSelectedBuilderGroup() throws {
@@ -3579,6 +3659,48 @@ import Testing
     } else {
         #expect(Bool(false))
     }
+}
+
+@Test func buildLandFactoryCommandSpreadsSelectedBuilderGroupAroundTarget() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let point = clearLandFactoryBuildPoint(in: state)
+    let sharedStart = WorldPoint(point.x - 560, point.y)
+    let builderIDs = [
+        builder.id,
+        "factory-formation-builder-a",
+        "factory-formation-builder-b",
+        "factory-formation-builder-c"
+    ]
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    state.units[builderIndex].position = sharedStart
+    for id in builderIDs.dropFirst() {
+        state.units.append(UnitSnapshot(
+            id: id,
+            type: .builder,
+            team: .player,
+            position: sharedStart,
+            hitPoints: builderDefinition.hitPoints,
+            maxHitPoints: builderDefinition.hitPoints
+        ))
+    }
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = builderIDs
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueBuildLandFactory(at: point) == .issued)
+    engine.update(deltaTime: 1)
+
+    let factory = try #require(engine.state.buildings.first {
+        $0.type == .landFactory && $0.team == .player && $0.buildProgress < 1
+    })
+    let positions = try builderIDs.map { id in
+        try #require(engine.state.units.first { $0.id == id }?.position)
+    }
+    #expect(factory.buildProgress == 0)
+    #expect(positions.allSatisfy { $0 != sharedStart })
+    #expect(positions.dropFirst().contains { $0 != positions[0] })
 }
 
 @Test func buildLandFactoryCommandProgressesFasterWithSelectedBuilderGroup() throws {

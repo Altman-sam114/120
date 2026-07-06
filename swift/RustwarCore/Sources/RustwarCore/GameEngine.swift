@@ -1104,11 +1104,13 @@ public struct GameEngine: Sendable {
         let definition = GameDefinitions.unit(state.units[unitIndex].type)
         let distance = state.units[unitIndex].position.distance(to: building.position)
         if distance > Self.builderBuildRange {
+            let approachPoint = buildApproachPoint(for: unitIndex, building: building)
+            let stoppingDistance = approachPoint == building.position ? Self.builderBuildRange * 0.92 : 0
             moveUnit(
                 at: unitIndex,
-                toward: building.position,
+                toward: approachPoint,
                 speed: definition.speed,
-                stoppingDistance: Self.builderBuildRange * 0.92,
+                stoppingDistance: stoppingDistance,
                 deltaTime: deltaTime,
                 clearsOrderOnArrival: false
             )
@@ -2114,6 +2116,50 @@ public struct GameEngine: Sendable {
         return WorldPoint(
             wreck.position.x + dx / distance * offsetDistance,
             wreck.position.y + dy / distance * offsetDistance
+        ).clampedToMap()
+    }
+
+    private func buildApproachPoint(for unitIndex: Array<UnitSnapshot>.Index, building: BuildingSnapshot) -> WorldPoint {
+        let builderTeam = state.units[unitIndex].team
+        let builderIndices = state.units.indices.filter { index in
+            let unit = state.units[index]
+            guard unit.hitPoints > 0,
+                  unit.team == builderTeam,
+                  unit.type == .builder else {
+                return false
+            }
+            if case let .build(activeTargetID)? = unit.order {
+                return activeTargetID == building.id
+            }
+            return false
+        }
+        guard builderIndices.count > 1 else {
+            return building.position
+        }
+
+        guard let formationTarget = formationTargets(for: builderIndices, around: building.position)
+            .first(where: { $0.unitIndex == unitIndex }) else {
+            return building.position
+        }
+
+        let unit = state.units[unitIndex]
+        let unitDefinition = GameDefinitions.unit(unit.type)
+        let buildingDefinition = GameDefinitions.building(building.type)
+        var dx = formationTarget.destination.x - building.position.x
+        var dy = formationTarget.destination.y - building.position.y
+        var distance = (dx * dx + dy * dy).squareRoot()
+        if distance <= 1 {
+            dx = unit.position.x - building.position.x
+            dy = unit.position.y - building.position.y
+            distance = max(1, (dx * dx + dy * dy).squareRoot())
+        }
+
+        let minimumDistance = buildingDefinition.size / 2 + unitDefinition.radius + 28
+        let maximumDistance = Self.builderBuildRange * 0.82
+        let offsetDistance = min(maximumDistance, max(minimumDistance, distance))
+        return WorldPoint(
+            building.position.x + dx / distance * offsetDistance,
+            building.position.y + dy / distance * offsetDistance
         ).clampedToMap()
     }
 }
