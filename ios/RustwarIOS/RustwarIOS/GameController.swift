@@ -168,7 +168,7 @@ final class GameController {
     }
 
     var canIssuePatrol: Bool {
-        selectedPlayerUnit != nil
+        !selectedPlayerUnits.isEmpty
     }
 
     var canIssueGuard: Bool {
@@ -536,7 +536,7 @@ final class GameController {
         } else if canIssuePatrol {
             clearPendingTargetCommands()
             isAwaitingPatrolTarget = true
-            commandStatus = "Patrol target"
+            commandStatus = selectedPlayerUnits.count > 1 ? "Patrol target for \(selectedPlayerUnits.count) units" : "Patrol target"
         }
         renderRevision += 1
     }
@@ -973,7 +973,8 @@ final class GameController {
     private func statusText(forPatrol result: UnitCommandResult) -> String? {
         switch result {
         case .issued:
-            return "Patrol route set"
+            let count = selectedPlayerUnits.count
+            return count > 1 ? "Patrol route set for \(count) units" : "Patrol route set"
         case .noSelection:
             return "No unit selected"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:

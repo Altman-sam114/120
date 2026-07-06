@@ -660,6 +660,64 @@ import Testing
     }
 }
 
+@Test func patrolCommandAppliesToSelectedPlayerCombatGroup() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+    let destination = WorldPoint(1_420, 2_160)
+    let originsByID = Dictionary(uniqueKeysWithValues: engine.state.units
+        .filter { selectedIDs.contains($0.id) }
+        .map { ($0.id, $0.position) })
+
+    #expect(selectedIDs.count > 1)
+    #expect(engine.issuePatrol(to: destination) == .issued)
+
+    for id in selectedIDs {
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        let origin = try #require(originsByID[id])
+        if case let .patrol(activeOrigin, activeDestination, returning)? = unit.order {
+            #expect(activeOrigin == origin)
+            #expect(activeDestination == destination)
+            #expect(returning == false)
+        } else {
+            #expect(Bool(false))
+        }
+    }
+}
+
+@Test func patrolCommandIgnoresInvalidSelectedIDsWhenAnyPlayerUnitIsSelected() throws {
+    var state = GameState(mapID: .coast)
+    let playerUnit = try #require(state.units.first { $0.team == .player && $0.type != .builder })
+    let enemyUnit = try #require(state.units.first { $0.team == .enemy })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player })
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyUnit.id, "missing-id", playerUnit.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issuePatrol(to: WorldPoint(-80, GameConstants.mapHeight + 100)) == .issued)
+
+    let patrollingUnit = try #require(engine.state.units.first { $0.id == playerUnit.id })
+    let untouchedEnemy = try #require(engine.state.units.first { $0.id == enemyUnit.id })
+    if case let .patrol(origin, destination, returning)? = patrollingUnit.order {
+        #expect(origin == playerUnit.position)
+        #expect(destination == WorldPoint(0, GameConstants.mapHeight))
+        #expect(returning == false)
+    } else {
+        #expect(Bool(false))
+    }
+    #expect(untouchedEnemy.order == nil)
+}
+
+@Test func patrolRejectsSelectionWithoutPlayerUnits() throws {
+    var state = GameState(mapID: .coast)
+    let enemyUnit = try #require(state.units.first { $0.team == .enemy })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player })
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyUnit.id, "missing-id"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issuePatrol(to: WorldPoint(1_500, 2_100)) == .selectedEntityCannotMove)
+}
+
 @Test func patrolMovesTowardDestinationAndLoopsBetweenEndpoints() throws {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 

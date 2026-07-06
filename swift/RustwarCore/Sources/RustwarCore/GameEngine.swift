@@ -135,19 +135,22 @@ public struct GameEngine: Sendable {
 
     @discardableResult
     public mutating func issuePatrol(to destination: WorldPoint) -> UnitCommandResult {
-        guard let selectedEntityID = state.selectedEntityID else {
+        guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
         }
-        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
-              state.units[unitIndex].team == .player else {
+        let unitIndices = selectedPlayerUnitIndices()
+        guard !unitIndices.isEmpty else {
             return .selectedEntityCannotMove
         }
 
-        state.units[unitIndex].order = .patrol(
-            origin: state.units[unitIndex].position.clampedToMap(),
-            destination: destination.clampedToMap(),
-            returning: false
-        )
+        let clampedDestination = destination.clampedToMap()
+        for unitIndex in unitIndices {
+            state.units[unitIndex].order = .patrol(
+                origin: state.units[unitIndex].position.clampedToMap(),
+                destination: clampedDestination,
+                returning: false
+            )
+        }
         return .issued
     }
 
