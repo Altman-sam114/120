@@ -61,6 +61,7 @@ final class GameController {
         }
     }
     var commandStatus: String?
+    private var battlefieldViewportSize: CGSize = .zero
     @ObservationIgnored private var lastBattlefieldTapUnitID: String?
     @ObservationIgnored private var lastBattlefieldTapScreenPoint: CGPoint?
     @ObservationIgnored private var lastBattlefieldTapTime: TimeInterval?
@@ -184,6 +185,13 @@ final class GameController {
         engine.state.units.contains { $0.team == .player && $0.type != .builder }
     }
 
+    var canSelectScreenCombatUnits: Bool {
+        guard let rect = visibleBattlefieldWorldRect else {
+            return false
+        }
+        return !engine.state.playerCombatUnitSelectionTargets(in: rect).isEmpty
+    }
+
     var idleBuildersButtonTitle: String {
         let count = engine.state.units.count(where: { $0.team == .player && $0.type == .builder && $0.order == nil })
         return "Idle Builders (\(count))"
@@ -192,6 +200,14 @@ final class GameController {
     var combatUnitsButtonTitle: String {
         let count = engine.state.units.count(where: { $0.team == .player && $0.type != .builder })
         return "Combat Units (\(count))"
+    }
+
+    var screenCombatUnitsButtonTitle: String {
+        guard let rect = visibleBattlefieldWorldRect else {
+            return "Screen Combat (0)"
+        }
+        let count = engine.state.playerCombatUnitSelectionTargets(in: rect).count
+        return "Screen Combat (\(count))"
     }
 
     var sameTypeUnitsButtonTitle: String {
@@ -518,6 +534,23 @@ final class GameController {
     func selectCombatUnits() {
         let selectedIDs = engine.selectPlayerCombatUnits()
         commandStatus = selectedIDs.isEmpty ? "No combat units" : "\(selectedIDs.count) combat units selected"
+        renderRevision += 1
+    }
+
+    func selectScreenCombatUnits() {
+        clearPendingTargetCommands()
+        guard let rect = visibleBattlefieldWorldRect else {
+            commandStatus = "Battlefield view unavailable"
+            renderRevision += 1
+            return
+        }
+        let matchedCount = engine.state.playerCombatUnitSelectionTargets(in: rect).count
+        let selectedIDs = engine.selectPlayerCombatUnits(in: rect, mutation: selectionMutation)
+        if selectionMutation == .add {
+            commandStatus = matchedCount == 0 ? "No screen combat units added" : "\(selectedIDs.count) combat units selected total"
+        } else {
+            commandStatus = selectedIDs.isEmpty ? "No screen combat units" : "\(selectedIDs.count) screen combat units selected"
+        }
         renderRevision += 1
     }
 
@@ -861,6 +894,14 @@ final class GameController {
         renderRevision += 1
     }
 
+    func updateBattlefieldViewportSize(_ size: CGSize) {
+        guard size.width > 0, size.height > 0, size != battlefieldViewportSize else {
+            return
+        }
+        battlefieldViewportSize = size
+        renderRevision += 1
+    }
+
     func setKeyboardCameraDirection(_ direction: KeyboardCameraDirection, isPressed: Bool) {
         if isPressed {
             keyboardCameraDirections.insert(direction)
@@ -1160,6 +1201,10 @@ final class GameController {
         let worldDistance = Self.keyboardCameraScreenSpeed * deltaTime / camera.zoom
         camera.panByWorldDelta(x: dx / length * worldDistance, y: dy / length * worldDistance)
         return true
+    }
+
+    private var visibleBattlefieldWorldRect: WorldRect? {
+        camera.visibleWorldRect(for: battlefieldViewportSize)
     }
 
     private var selectedPlayerUnits: [UnitSnapshot] {

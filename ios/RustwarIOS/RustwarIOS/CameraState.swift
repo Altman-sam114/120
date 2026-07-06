@@ -51,6 +51,27 @@ struct CameraState: Codable, Equatable {
         )
     }
 
+    func visibleWorldRect(for viewportSize: CGSize) -> WorldRect? {
+        guard zoom > 0, viewportSize.width > 0, viewportSize.height > 0 else {
+            return nil
+        }
+        let topLeft = clampedMapPoint(worldPoint(for: CGPoint(x: 0, y: 0), viewportSize: viewportSize))
+        let bottomRight = clampedMapPoint(
+            worldPoint(
+                for: CGPoint(x: viewportSize.width, y: viewportSize.height),
+                viewportSize: viewportSize
+            )
+        )
+        return WorldRect(topLeft, bottomRight)
+    }
+
+    private func clampedMapPoint(_ point: WorldPoint) -> WorldPoint {
+        WorldPoint(
+            min(GameConstants.mapWidth, max(0, point.x)),
+            min(GameConstants.mapHeight, max(0, point.y))
+        )
+    }
+
     private mutating func clampToMap() {
         center.x = min(GameConstants.mapWidth, max(0, center.x))
         center.y = min(GameConstants.mapHeight, max(0, center.y))

@@ -15,6 +15,25 @@ public extension GameState {
         }
     }
 
+    func playerCombatUnitSelectionTargets(in rect: WorldRect) -> [SelectionTarget] {
+        units.compactMap { unit in
+            guard unit.team == .player,
+                  unit.hitPoints > 0,
+                  unit.type != .builder,
+                  rect.contains(unit.position) else {
+                return nil
+            }
+            let definition = GameDefinitions.unit(unit.type)
+            return SelectionTarget(
+                id: unit.id,
+                kind: .unit,
+                team: unit.team,
+                displayName: definition.name,
+                position: unit.position
+            )
+        }
+    }
+
     func playerUnitSelectionTargets(matching type: UnitType) -> [SelectionTarget] {
         units.compactMap { unit in
             guard unit.team == .player, unit.hitPoints > 0, unit.type == type else {

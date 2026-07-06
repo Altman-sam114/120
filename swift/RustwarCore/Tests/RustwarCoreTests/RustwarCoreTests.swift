@@ -364,6 +364,129 @@ import Testing
     #expect(engine.state.selectionSummary() == "\(selectedIDs.count) combat units selected")
 }
 
+@Test func selectPlayerCombatUnitsInWorldRectSelectsOnlyVisiblePlayerCombatUnits() throws {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "screen-builder",
+            type: .builder,
+            team: .player,
+            position: WorldPoint(100, 100),
+            hitPoints: 170,
+            maxHitPoints: 170
+        ),
+        UnitSnapshot(
+            id: "screen-scout",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(140, 120),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "screen-tank",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(180, 160),
+            hitPoints: 245,
+            maxHitPoints: 245
+        ),
+        UnitSnapshot(
+            id: "screen-enemy",
+            type: .tank,
+            team: .enemy,
+            position: WorldPoint(150, 130),
+            hitPoints: 245,
+            maxHitPoints: 245
+        ),
+        UnitSnapshot(
+            id: "screen-outside",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(320, 320),
+            hitPoints: 95,
+            maxHitPoints: 95
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "screen-command",
+            type: .command,
+            team: .player,
+            position: WorldPoint(160, 140),
+            hitPoints: 1_850,
+            maxHitPoints: 1_850,
+            rally: WorldPoint(200, 180)
+        )
+    ]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerCombatUnits(in: WorldRect(WorldPoint(90, 90), WorldPoint(210, 210)))
+
+    #expect(selectedIDs == ["screen-scout", "screen-tank"])
+    #expect(!selectedIDs.contains("screen-builder"))
+    #expect(!selectedIDs.contains("screen-enemy"))
+    #expect(!selectedIDs.contains("screen-command"))
+    #expect(!selectedIDs.contains("screen-outside"))
+    #expect(engine.state.selectedEntityID == "screen-scout")
+    #expect(engine.state.selectedEntityIDs == selectedIDs)
+}
+
+@Test func selectPlayerCombatUnitsInWorldRectClearsSelectionWhenEmpty() {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+
+    #expect(!selectedIDs.isEmpty)
+
+    let emptySelection = engine.selectPlayerCombatUnits(in: WorldRect(WorldPoint(10, 10), WorldPoint(20, 20)))
+
+    #expect(emptySelection.isEmpty)
+    #expect(engine.state.selectedEntityID == nil)
+    #expect(engine.state.selectedEntityIDs.isEmpty)
+}
+
+@Test func screenCombatAddMutationMergesAndKeepsExistingSelectionWhenEmpty() {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "screen-add-existing",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(100, 100),
+            hitPoints: 245,
+            maxHitPoints: 245
+        ),
+        UnitSnapshot(
+            id: "screen-add-new",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(180, 120),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "screen-add-builder",
+            type: .builder,
+            team: .player,
+            position: WorldPoint(190, 120),
+            hitPoints: 170,
+            maxHitPoints: 170
+        )
+    ]
+    state.selectedEntityID = "screen-add-existing"
+    state.selectedEntityIDs = ["screen-add-existing"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerCombatUnits(
+        in: WorldRect(WorldPoint(160, 90), WorldPoint(220, 150)),
+        mutation: .add
+    )
+
+    #expect(selectedIDs == ["screen-add-existing", "screen-add-new"])
+    #expect(engine.state.selectedEntityID == "screen-add-existing")
+    #expect(engine.selectPlayerCombatUnits(in: WorldRect(WorldPoint(10, 10), WorldPoint(20, 20)), mutation: .add) == selectedIDs)
+}
+
 @Test func worldRectNormalizesCornersAndContainsBoundaryPoints() {
     let rect = WorldRect(WorldPoint(120, 220), WorldPoint(40, 60))
 

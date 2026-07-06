@@ -116,11 +116,11 @@ struct GameHUDView: View {
             .frame(maxWidth: 220, minHeight: 44)
             .accessibilityLabel("Simulation speed")
 
-            HStack(spacing: 8) {
+            LazyVGrid(columns: commandColumns, alignment: .leading, spacing: 8) {
                 Button(controller.idleBuildersButtonTitle, systemImage: "hammer", action: controller.selectIdleBuilders)
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
-                    .frame(minHeight: 44)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                     .keyboardShortcut(commandKey("e"), modifiers: [])
                     .disabled(!controller.canSelectIdleBuilders)
                     .accessibilityLabel("Select idle Builders")
@@ -129,11 +129,20 @@ struct GameHUDView: View {
                 Button(controller.combatUnitsButtonTitle, systemImage: "scope", action: controller.selectCombatUnits)
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
-                    .frame(minHeight: 44)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                     .keyboardShortcut(commandKey("a"), modifiers: .control)
                     .disabled(!controller.canSelectCombatUnits)
                     .accessibilityLabel("Select combat units")
                     .accessibilityHint("Selects all player combat units.")
+
+                Button(controller.screenCombatUnitsButtonTitle, systemImage: "scope.viewfinder", action: controller.selectScreenCombatUnits)
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .keyboardShortcut(commandKey("f"), modifiers: [])
+                    .disabled(!controller.canSelectScreenCombatUnits)
+                    .accessibilityLabel("Select screen combat units")
+                    .accessibilityHint("Selects player combat units currently visible on the battlefield.")
             }
 
             Picker("Selection mode", selection: $controller.selectionMutation) {

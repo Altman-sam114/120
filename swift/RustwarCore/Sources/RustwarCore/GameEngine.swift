@@ -85,6 +85,12 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func selectPlayerCombatUnits(in rect: WorldRect, mutation: SelectionMutation = .replace) -> [String] {
+        let ids = state.playerCombatUnitSelectionTargets(in: rect).map(\.id)
+        return applySelection(ids, mutation: mutation)
+    }
+
+    @discardableResult
     public mutating func selectPlayerUnits(in rect: WorldRect, mutation: SelectionMutation = .replace) -> [String] {
         let ids = state.playerUnitSelectionTargets(in: rect).map(\.id)
         return applySelection(ids, mutation: mutation)

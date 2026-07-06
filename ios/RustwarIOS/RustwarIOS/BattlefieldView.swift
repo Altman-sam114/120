@@ -18,10 +18,12 @@ struct BattlefieldView: View {
                         scene.controller = controller
                         scene.scaleMode = .resizeFill
                         scene.size = proxy.size
+                        controller.updateBattlefieldViewportSize(proxy.size)
                         scene.renderNow()
                     }
                     .onChange(of: proxy.size) { _, newSize in
                         scene.size = newSize
+                        controller.updateBattlefieldViewportSize(newSize)
                         scene.renderNow()
                     }
                     .onChange(of: controller.renderRevision) { _, _ in
