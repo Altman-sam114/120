@@ -651,6 +651,19 @@ final class GameController {
         renderRevision += 1
     }
 
+    func handleBattlefieldContextCommand(screenPoint: CGPoint, viewportSize: CGSize) {
+        clearLastBattlefieldTap()
+        guard !isAwaitingTargetCommand else {
+            commandStatus = "Finish current command first"
+            renderRevision += 1
+            return
+        }
+
+        let point = camera.worldPoint(for: screenPoint, viewportSize: viewportSize)
+        issueContextCommand(at: point)
+        renderRevision += 1
+    }
+
     func handleTacticalMapTap(at point: WorldPoint) {
         if isAwaitingAreaSelection {
             commandStatus = "Drag on battlefield to select units"
@@ -1096,6 +1109,66 @@ final class GameController {
         lastBattlefieldTapUnitID = nil
         lastBattlefieldTapScreenPoint = nil
         lastBattlefieldTapTime = nil
+    }
+
+    private func issueContextCommand(at point: WorldPoint) {
+        if let target = engine.state.selectionTarget(at: point, includeEnemies: true) {
+            issueContextEntityCommand(target)
+            return
+        }
+
+        if !selectedPlayerBuilders.isEmpty, let wreck = engine.state.wreckTarget(at: point) {
+            let result = engine.issueReclaim(wreckID: wreck.id)
+            commandStatus = statusText(forReclaim: result, wreckID: wreck.id)
+            return
+        }
+
+        if !selectedPlayerBuilders.isEmpty, let resource = engine.state.resourceTarget(at: point) {
+            let result = engine.issueBuildExtractor(on: resource.id)
+            commandStatus = statusText(forBuildExtractor: result, nodeID: resource.id)
+            return
+        }
+
+        let rallyResult = engine.setRally(to: point)
+        if case .issued = rallyResult {
+            commandStatus = statusText(forRally: rallyResult)
+            return
+        }
+
+        let moveResult = engine.issueMove(to: point)
+        commandStatus = statusText(for: moveResult)
+    }
+
+    private func issueContextEntityCommand(_ target: SelectionTarget) {
+        if target.team != .player {
+            let result = engine.issueAttack(targetID: target.id)
+            commandStatus = statusText(forAttack: result)
+            return
+        }
+
+        if !selectedPlayerBuilders.isEmpty, isDamagedPlayerTarget(target) {
+            let result = engine.issueRepair(targetID: target.id)
+            commandStatus = statusText(forRepair: result, targetID: target.id)
+            return
+        }
+
+        let result = engine.issueGuard(targetID: target.id)
+        commandStatus = statusText(forGuard: result)
+    }
+
+    private func isDamagedPlayerTarget(_ target: SelectionTarget) -> Bool {
+        switch target.kind {
+        case .unit:
+            guard let unit = engine.state.units.first(where: { $0.id == target.id && $0.team == .player }) else {
+                return false
+            }
+            return unit.hitPoints < unit.maxHitPoints
+        case .building:
+            guard let building = engine.state.buildings.first(where: { $0.id == target.id && $0.team == .player }) else {
+                return false
+            }
+            return building.hitPoints < building.maxHitPoints
+        }
     }
 
     private func handlePointCommand(at point: WorldPoint) -> Bool {
