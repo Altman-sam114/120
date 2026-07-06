@@ -104,6 +104,24 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func selectPlayerUnitsMatching(unitID: String, within radius: Double) -> [String] {
+        guard let sourceUnit = state.units.first(where: { $0.id == unitID && $0.team == .player && $0.hitPoints > 0 }) else {
+            state.selectedEntityIDs = []
+            state.selectedEntityID = nil
+            return []
+        }
+
+        let ids = state.playerUnitSelectionTargets(
+            matching: sourceUnit.type,
+            near: sourceUnit.position,
+            radius: radius
+        ).map(\.id)
+        state.selectedEntityIDs = ids
+        state.selectedEntityID = ids.first
+        return ids
+    }
+
+    @discardableResult
     public mutating func issueMove(to destination: WorldPoint) -> UnitCommandResult {
         guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection

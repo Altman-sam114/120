@@ -9,6 +9,9 @@ final class GameController {
     static let simulationSpeedOptions = [0.5, 1.0, 2.0]
     private static let saveKey = "rustwar.ios.save.v1"
     private static let currentSaveVersion = 1
+    private static let doubleTapSameTypeInterval: TimeInterval = 0.32
+    private static let doubleTapSameTypeMaximumDistance: CGFloat = 44
+    private static let nearbySameTypeSelectionRadius = 760.0
 
     var engine: GameEngine
     var camera: CameraState
@@ -47,6 +50,9 @@ final class GameController {
         }
     }
     var commandStatus: String?
+    @ObservationIgnored private var lastBattlefieldTapUnitID: String?
+    @ObservationIgnored private var lastBattlefieldTapScreenPoint: CGPoint?
+    @ObservationIgnored private var lastBattlefieldTapTime: TimeInterval?
 
     init(mapID: MapID = .coast) {
         let preset = MapPreset.preset(for: mapID)
@@ -511,6 +517,7 @@ final class GameController {
 
     func handleBattlefieldTap(screenPoint: CGPoint, viewportSize: CGSize) {
         if isAwaitingAreaSelection {
+            clearLastBattlefieldTap()
             commandStatus = "Drag area to select units"
             renderRevision += 1
             return
@@ -518,17 +525,26 @@ final class GameController {
 
         let point = camera.worldPoint(for: screenPoint, viewportSize: viewportSize)
         if handlePointCommand(at: point) {
+            clearLastBattlefieldTap()
             return
         }
 
         if handleSelectionTargetCommand(at: point) {
+            clearLastBattlefieldTap()
             return
         }
         if handleBuilderTargetCommand(at: point) {
+            clearLastBattlefieldTap()
             return
         } else {
+            let target = engine.state.selectionTarget(at: point, includeEnemies: true)
+            if handleNearbySameTypeSelectionIfDoubleTap(target: target, screenPoint: screenPoint) {
+                renderRevision += 1
+                return
+            }
             engine.select(at: point, includeEnemies: true)
             commandStatus = nil
+            recordBattlefieldTap(target: target, screenPoint: screenPoint)
         }
         renderRevision += 1
     }
@@ -853,6 +869,58 @@ final class GameController {
         isAwaitingBuildFactoryTarget = false
         isAwaitingRallyTarget = false
         isAwaitingAreaSelection = false
+    }
+
+    private func handleNearbySameTypeSelectionIfDoubleTap(target: SelectionTarget?, screenPoint: CGPoint) -> Bool {
+        guard let target,
+              target.kind == .unit,
+              target.team == .player,
+              engine.state.units.contains(where: { $0.id == target.id && $0.team == .player && $0.hitPoints > 0 }) else {
+            clearLastBattlefieldTap()
+            return false
+        }
+
+        let now = ProcessInfo.processInfo.systemUptime
+        defer {
+            recordBattlefieldTap(target: target, screenPoint: screenPoint, time: now)
+        }
+
+        guard lastBattlefieldTapUnitID == target.id,
+              let lastBattlefieldTapScreenPoint,
+              let lastBattlefieldTapTime,
+              now - lastBattlefieldTapTime <= Self.doubleTapSameTypeInterval,
+              hypot(screenPoint.x - lastBattlefieldTapScreenPoint.x, screenPoint.y - lastBattlefieldTapScreenPoint.y) <= Self.doubleTapSameTypeMaximumDistance else {
+            return false
+        }
+
+        let sourceName = engine.state.units.first { $0.id == target.id }
+            .map { GameDefinitions.unit($0.type).name } ?? "units"
+        let selectedIDs = engine.selectPlayerUnitsMatching(
+            unitID: target.id,
+            within: Self.nearbySameTypeSelectionRadius
+        )
+        commandStatus = selectedIDs.isEmpty ? "No nearby \(sourceName)" : "\(selectedIDs.count) nearby \(sourceName) selected"
+        return true
+    }
+
+    private func recordBattlefieldTap(target: SelectionTarget?, screenPoint: CGPoint, time: TimeInterval = ProcessInfo.processInfo.systemUptime) {
+        guard let target,
+              target.kind == .unit,
+              target.team == .player,
+              engine.state.units.contains(where: { $0.id == target.id && $0.team == .player && $0.hitPoints > 0 }) else {
+            clearLastBattlefieldTap()
+            return
+        }
+
+        lastBattlefieldTapUnitID = target.id
+        lastBattlefieldTapScreenPoint = screenPoint
+        lastBattlefieldTapTime = time
+    }
+
+    private func clearLastBattlefieldTap() {
+        lastBattlefieldTapUnitID = nil
+        lastBattlefieldTapScreenPoint = nil
+        lastBattlefieldTapTime = nil
     }
 
     private func handlePointCommand(at point: WorldPoint) -> Bool {

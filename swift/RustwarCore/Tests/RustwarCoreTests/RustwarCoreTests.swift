@@ -681,6 +681,159 @@ import Testing
     }
 }
 
+@Test func selectPlayerUnitsMatchingUnitWithinRadiusUsesAnchorTypeAndRange() throws {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "near-scout-a",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(100, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "near-tank",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(130, 100),
+            hitPoints: 245,
+            maxHitPoints: 245
+        ),
+        UnitSnapshot(
+            id: "near-scout-b",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(250, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "far-scout",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(900, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "near-enemy-scout",
+            type: .scout,
+            team: .enemy,
+            position: WorldPoint(130, 130),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "near-dead-scout",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(140, 100),
+            hitPoints: 0,
+            maxHitPoints: 95
+        )
+    ]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerUnitsMatching(unitID: "near-scout-a", within: 180)
+
+    #expect(selectedIDs == ["near-scout-a", "near-scout-b"])
+    #expect(!selectedIDs.contains("near-tank"))
+    #expect(!selectedIDs.contains("far-scout"))
+    #expect(!selectedIDs.contains("near-enemy-scout"))
+    #expect(!selectedIDs.contains("near-dead-scout"))
+    #expect(engine.state.selectedEntityID == selectedIDs.first)
+    #expect(engine.state.selectedEntityIDs == selectedIDs)
+}
+
+@Test func selectPlayerUnitsMatchingUnitWithinRadiusClearsSelectionForInvalidAnchor() throws {
+    var state = GameState(mapID: .coast)
+    let playerScout = try #require(state.units.first { $0.team == .player && $0.type == .scout })
+    let enemyUnit = try #require(state.units.first { $0.team == .enemy })
+    state.selectedEntityID = playerScout.id
+    state.selectedEntityIDs = [playerScout.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerUnitsMatching(unitID: enemyUnit.id, within: 760)
+
+    #expect(selectedIDs.isEmpty)
+    #expect(engine.state.selectedEntityID == nil)
+    #expect(engine.state.selectedEntityIDs.isEmpty)
+    #expect(engine.state.selectionSummary() == "No selection")
+}
+
+@Test func selectPlayerUnitsMatchingUnitWithinRadiusIncludesBoundaryAndClampsNegativeRadius() {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "radius-anchor",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(100, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "radius-edge",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(200, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        )
+    ]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.selectPlayerUnitsMatching(unitID: "radius-anchor", within: 100) == ["radius-anchor", "radius-edge"])
+    #expect(engine.selectPlayerUnitsMatching(unitID: "radius-anchor", within: -1) == ["radius-anchor"])
+}
+
+@Test func nearbySameTypeSelectedUnitsReceiveExistingMultiUnitMoveCommand() throws {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "near-move-a",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(100, 100),
+            hitPoints: 245,
+            maxHitPoints: 245
+        ),
+        UnitSnapshot(
+            id: "near-move-b",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(140, 100),
+            hitPoints: 245,
+            maxHitPoints: 245
+        ),
+        UnitSnapshot(
+            id: "near-move-far",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(500, 100),
+            hitPoints: 245,
+            maxHitPoints: 245
+        )
+    ]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    let destination = WorldPoint(260, 260)
+
+    let selectedIDs = engine.selectPlayerUnitsMatching(unitID: "near-move-a", within: 80)
+
+    #expect(selectedIDs == ["near-move-a", "near-move-b"])
+    #expect(engine.issueMove(to: destination) == .issued)
+
+    for id in selectedIDs {
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        if case let .move(activeDestination)? = unit.order {
+            #expect(activeDestination == destination)
+        } else {
+            #expect(Bool(false))
+        }
+    }
+}
+
 @Test func moveCommandRejectsMissingOrInvalidSelection() {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
