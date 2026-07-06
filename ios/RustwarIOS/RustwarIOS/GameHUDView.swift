@@ -308,6 +308,7 @@ struct GameHUDView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
+                    .keyboardShortcut(commandKey("e"), modifiers: .shift)
                     .accessibilityLabel("Build extractor")
                 }
                 if controller.canIssueBuildTurret || controller.isAwaitingBuildTurretTarget {
@@ -319,6 +320,7 @@ struct GameHUDView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
+                    .keyboardShortcut(commandKey("t"), modifiers: .shift)
                     .accessibilityLabel("Build turret")
                 }
                 if controller.canIssueBuildFactory || controller.isAwaitingBuildFactoryTarget {
@@ -330,6 +332,7 @@ struct GameHUDView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
+                    .keyboardShortcut(commandKey("f"), modifiers: .shift)
                     .accessibilityLabel("Build factory")
                 }
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
@@ -369,6 +372,7 @@ struct GameHUDView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
+                    .keyboardShortcut(commandKey("r"), modifiers: .shift)
                 }
                 if controller.canCycleRepeatProduction {
                     Button(
@@ -379,6 +383,7 @@ struct GameHUDView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
+                    .keyboardShortcut(commandKey("p"), modifiers: .shift)
                     .accessibilityLabel("Repeat production")
                     .accessibilityValue(controller.repeatProductionAccessibilityValue)
                     .accessibilityHint("Cycles the selected producer repeat production target.")
@@ -406,19 +411,8 @@ struct GameHUDView: View {
 
             if !controller.productionOptions.isEmpty {
                 LazyVGrid(columns: productionColumns, alignment: .leading, spacing: 8) {
-                    ForEach(controller.productionOptions) { unitType in
-                        let definition = GameDefinitions.unit(unitType)
-                        Button {
-                            controller.queueUnit(unitType)
-                        } label: {
-                            Label(definition.name, systemImage: "plus")
-                                .lineLimit(2)
-                                .minimumScaleFactor(0.85)
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.regular)
-                        .frame(maxWidth: .infinity, minHeight: 44)
+                    ForEach(Array(controller.productionOptions.enumerated()), id: \.element) { index, unitType in
+                        productionButton(for: unitType, shortcutIndex: index)
                     }
                 }
             }
@@ -435,6 +429,7 @@ struct GameHUDView: View {
                             .buttonStyle(.bordered)
                             .controlSize(.regular)
                             .frame(minHeight: 44)
+                            .keyboardShortcut(commandKey("c"), modifiers: .shift)
                             .accessibilityLabel("Cancel production")
                     }
                 }
@@ -475,6 +470,44 @@ struct GameHUDView: View {
 
     private func controlGroupKey(for slot: Int) -> KeyEquivalent {
         KeyEquivalent(Character(String(slot)))
+    }
+
+    @ViewBuilder
+    private func productionButton(for unitType: UnitType, shortcutIndex: Int) -> some View {
+        let definition = GameDefinitions.unit(unitType)
+        if let shortcutKey = productionShortcutKey(for: shortcutIndex) {
+            Button {
+                controller.queueUnit(unitType)
+            } label: {
+                Label(definition.name, systemImage: "plus")
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.regular)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .keyboardShortcut(shortcutKey, modifiers: .shift)
+        } else {
+            Button {
+                controller.queueUnit(unitType)
+            } label: {
+                Label(definition.name, systemImage: "plus")
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.regular)
+            .frame(maxWidth: .infinity, minHeight: 44)
+        }
+    }
+
+    private func productionShortcutKey(for index: Int) -> KeyEquivalent? {
+        guard (0..<9).contains(index) else {
+            return nil
+        }
+        return KeyEquivalent(Character(String(index + 1)))
     }
 
     private func commandKey(_ value: String) -> KeyEquivalent {

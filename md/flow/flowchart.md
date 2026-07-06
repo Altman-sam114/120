@@ -74,6 +74,8 @@ flowchart TD
   KBD["External Keyboard 1-9<br/>中文注释：Control+数字触发 Save，裸数字触发 Recall，复用 HUD 按钮 action 和 disabled 条件"] --> C
   KBT["External Keyboard tactical shortcuts<br/>中文注释：P/R/E/F/Ctrl+A/Option+A/A/G/H/C/S/Z/X/V 复用现有 HUD 按钮 action、条件渲染和 disabled 状态"]
   KBT --> C
+  KBP["External Keyboard production/build shortcuts<br/>中文注释：Shift+1-9 按当前 productionOptions 顺序生产；Shift+E/T/F 进入建造等待态；Shift+C/P/R 复用取消生产、重复生产和集结点按钮"]
+  KBP --> C
   KBC["External Keyboard camera pan<br/>中文注释：RootGameView 捕捉 WASD / 方向键 down-repeat-up，GameController 每帧按方向集合推进 CameraState"]
   KBC --> C
   FB["Focus Base / Space<br/>中文注释：HUD Base 或外接键盘 Space 查找存活己方 Command Center 并复用相机居中 clamp"]

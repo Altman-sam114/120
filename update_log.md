@@ -15,7 +15,7 @@
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
 - Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、选择替换/追加 mutation、世界矩形框选、单位优先/建筑 fallback 区域选择、全图同类型选择、附近同类型选择、控制编队、多选集合、空闲 Builder / 战斗单位批量选择、资源点命中、残骸模型、单单位和多单位 Move 命令、单单位和多单位 Attack 命令、单单位和多单位 Attack-Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、单位攻击姿态 Aggressive / Defensive / Hold Fire、单 Builder 和多 Builder Repair 命令、单 Builder 和多 Builder Reclaim 命令、单 Builder 和多 Builder Build Extractor 命令、单 Builder 和多 Builder Build Turret 命令、单 Builder 和多 Builder Build Land Factory 命令、单单位和多单位 Stop 命令、Command Center Builder 生产、Land Factory T1 生产列表、生产建筑队列 MVP、生产取消/退款、重复生产开关、集结点设置、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方 Command Center Builder 生产、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI MVP、红方 AI Web-lite 目标评分、红方 AI On/Off 开关 API，以及从已保存 `GameState` 恢复原生模拟的入口。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、Replace / Add 选择模式、Idle Builders / Combat Units / Screen Combat 批量选择入口、Select Area 显式框选己方单位并在框内无己方单位时 fallback 选择己方建筑、Same Type 全图同类型选择入口、双击附近同类型选择入口、1-9 号控制编队保存/召回入口、外接键盘 Control+1-9 保存和 1-9 召回控制编队快捷键、外接键盘 WASD / 方向键连续移动视野、Base / Space 回到己方 Command Center、外接键盘 P / R / E / F / Control+A / Option+A / A / G / H / C / S / Z / X / V 触发已迁移的 Pause、Restart、批量选择、战术命令和攻击姿态切换、单单位和多单位 Move 命令、单单位和多单位 Attack 命令、单单位和多单位 Attack Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、Aggressive / Defensive / Hold Fire 姿态按钮、单 Builder 和多 Builder Repair 按钮语义、单 Builder 和多 Builder Reclaim 按钮语义、单 Builder 和多 Builder Build Extractor 按钮语义、单 Builder 和多 Builder Build Turret 按钮语义、单 Builder 和多 Builder Build Land Factory 按钮语义、单单位和多单位 Stop 命令、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张、维修受损友军、回收附近残骸、Land Factory / Turret 建造、Command Center Builder 生产、完整 T1 编成生产、红方 AI Web-lite 目标评分和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off HUD 开关、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图多选高亮、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、Replace / Add 选择模式、Idle Builders / Combat Units / Screen Combat 批量选择入口、Select Area 显式框选己方单位并在框内无己方单位时 fallback 选择己方建筑、Same Type 全图同类型选择入口、双击附近同类型选择入口、1-9 号控制编队保存/召回入口、外接键盘 Control+1-9 保存和 1-9 召回控制编队快捷键、外接键盘 WASD / 方向键连续移动视野、Base / Space 回到己方 Command Center、外接键盘 P / R / E / F / Control+A / Option+A / A / G / H / C / S / Z / X / V 触发已迁移的 Pause、Restart、批量选择、战术命令和攻击姿态切换、外接键盘 Shift+1-9 / Shift+E/T/F/C/P/R 触发生产、建造和生产建筑管理按钮、单单位和多单位 Move 命令、单单位和多单位 Attack 命令、单单位和多单位 Attack Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、Aggressive / Defensive / Hold Fire 姿态按钮、单 Builder 和多 Builder Repair 按钮语义、单 Builder 和多 Builder Reclaim 按钮语义、单 Builder 和多 Builder Build Extractor 按钮语义、单 Builder 和多 Builder Build Turret 按钮语义、单 Builder 和多 Builder Build Land Factory 按钮语义、单单位和多单位 Stop 命令、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张、维修受损友军、回收附近残骸、Land Factory / Turret 建造、Command Center Builder 生产、完整 T1 编成生产、红方 AI Web-lite 目标评分和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off HUD 开关、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图多选高亮、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -2421,3 +2421,37 @@
 遗留事项：
 
 - v1.61 只补齐原生 iOS 攻击姿态；尚无生产/建造热键、上下文右键、队形保持、战术小地图选择入口、完整雾/雷达、沙盒或完整 Web parity。
+
+### v1.62 / iOS native production and build shortcuts
+
+日期：2026-07-07
+
+核心变更：
+
+- iOS `GameHUDView` 为已有生产按钮声明 `Shift+1` 到 `Shift+9` 外接键盘快捷键，按当前 `productionOptions` HUD 顺序触发 `queueUnit(_:)`；Command Center 的 Builder 和 Land Factory 的五种 T1 生产自然复用现有生产队列语义。
+- Builder 建造按钮新增 `Shift+E` / `Shift+T` / `Shift+F`，分别复用 Build Extractor / Build Turret / Build Factory 按钮 action 和等待态。
+- 生产建筑管理按钮新增 `Shift+C` / `Shift+P` / `Shift+R`，分别复用 Cancel Production / Repeat / Rally 按钮 action。
+- 本轮不修改 Web `app.js`，不新增 Swift core 状态、生产规则、建造规则、队列规则、存档字段、Shift 队列、右键上下文命令或完整生产面板 parity。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.62-ios-production-build-shortcuts.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地 `git diff --check` 通过。
+- 本地 `node --check app.js` 通过。
+- 本地 `swiftc -parse ios/RustwarIOS/RustwarIOS/GameHUDView.swift ios/RustwarIOS/RustwarIOS/RootGameView.swift ios/RustwarIOS/RustwarIOS/GameController.swift` 通过。
+- 本地 `swift test --package-path swift/RustwarCore` 已尝试；沙箱内先遇到 SwiftPM 用户 cache / clang module cache 权限和 Swift/SDK mismatch，提权重跑后仍因当前 CommandLineTools / SwiftPM manifest 链接阶段 `PackageDescription.Package.__allocating_init` 符号缺失阻塞，未进入源码测试执行。
+- 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 已尝试；当前 active developer directory 是 CommandLineTools，不是完整 Xcode，命令被本机工具链阻塞。
+- 云端 GitHub Actions artifact 复判待本轮 push 后补记。
+
+遗留事项：
+
+- v1.62 只补齐原生 iOS 已有生产、建造和生产建筑管理按钮的外接键盘入口；尚无上下文右键、队形保持、战术小地图选择入口、完整雾/雷达、沙盒、Shift 队列、生产面板焦点切换或完整 Web parity。
