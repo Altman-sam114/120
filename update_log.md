@@ -2570,7 +2570,9 @@
 - 本地 `swift test --package-path swift/RustwarCore` 已尝试；当前容器没有 `swift`，命令返回 `swift: command not found`，未进入 SwiftPM 测试。
 - 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 已尝试；当前容器没有 `xcodebuild`，命令返回 `xcodebuild: command not found`。
 - 本地 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 已尝试；当前容器没有 `xcodebuild`，命令返回 `xcodebuild: command not found`。
-- 云端 GitHub Actions run、artifact 和 Agent C 复判待本轮 commit push 后补充。
+- 云端 run `28819247278`（attempt `1`，commit `904b1a794ecf1fec3086b93ed0a2d683a4786da8`，artifact `rustwar-ci-v1.0-main-904b1a7-run28819247278-attempt1`）由 Agent C 下载到 `/private/tmp/rustwar-c-review-28819247278/` 并核对，目录大小 `288K`。
+- manifest 确认 `branch=main`、`commitSha=904b1a794ecf1fec3086b93ed0a2d683a4786da8`、`runId=28819247278`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke。
+- build.log 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0；Swift Testing 246 tests passed，包含 v1.65 新增 multi-unit Attack-Move / Patrol formation 和 map clamp 覆盖；iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
