@@ -1866,10 +1866,10 @@ import Testing
         maxHitPoints: builderDefinition.hitPoints
     )
     let point = clearTurretBuildPoint(in: state)
-    state.units[builderIndex].position = WorldPoint(point.x - 20, point.y)
+    state.units[builderIndex].position = WorldPoint(point.x - 70, point.y)
     state.units.append(extraBuilder)
     let extraBuilderIndex = try #require(state.units.firstIndex { $0.id == extraBuilder.id })
-    state.units[extraBuilderIndex].position = WorldPoint(point.x + 20, point.y)
+    state.units[extraBuilderIndex].position = WorldPoint(point.x + 70, point.y)
     state.selectedEntityID = builder.id
     state.selectedEntityIDs = [builder.id, extraBuilder.id]
 
