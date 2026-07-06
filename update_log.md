@@ -1795,7 +1795,11 @@
 
 - 本地轻量检查：`git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v146 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`、`swiftc -parse ios/RustwarIOS/RustwarIOS/GameController.swift` 通过。
 - 本机 `swift test --package-path swift/RustwarCore` 首次受沙箱缓存写入限制和 Swift/SDK mismatch 影响；升级权限重跑后仍未进入源码测试，Command Line Tools / SwiftPM manifest 链接阶段报 `PackageDescription.Package.__allocating_init` symbol 缺失。`xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 未通过：本机 active developer directory 是 Command Line Tools，不是完整 Xcode。
-- 云端 GitHub Actions artifact 待 push 后由 Agent C 下载并核对。
+- Agent C 先下载并核对失败 run `28772512870`，attempt `1`，artifact `rustwar-ci-v1.0-main-cadf35a-run28772512870-attempt1`，commit `cadf35aa71e5c308633337b540c782e170e89359`；manifest / JUnit / build.log 确认失败原因是 iOS target 编译 `GameController.swift` 时访问了 `RustwarCore` 内 `fileprivate` 的 `WorldPoint.clampedToMap()`。
+- Agent C 随后下载并核对失败 run `28773545037`，attempt `1`，artifact `rustwar-ci-v1.0-main-5e9c621-run28773545037-attempt1`，commit `5e9c621dc452e8980abab4cd5ec7b5b8dae2e8ba`；manifest / JUnit / build.log 确认 iOS build 已修复通过，但 Swift package test `buildTurretCommandProgressesFasterWithSelectedBuilderGroup` 的测试布置让 Builder 过近重叠 Turret 放置点，导致 `.invalidBuildTarget`。
+- Agent C 已下载并核对修复提交 GitHub Actions artifact：run `28773891668`，attempt `1`，artifact `rustwar-ci-v1.0-main-75c2dfd-run28773891668-attempt1`，commit `75c2dfd966d339899994b1ecebc3aa7f0daee2a9`，缓存路径 `/private/tmp/rustwar-c-review-28773891668/`，目录大小 `272K`。
+- manifest 确认 `branch=main`、`commitSha=75c2dfd966d339899994b1ecebc3aa7f0daee2a9`、`runId=28773891668`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke。
+- build.log 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0；Swift Testing 187 tests passed。
 
 遗留事项：
 
