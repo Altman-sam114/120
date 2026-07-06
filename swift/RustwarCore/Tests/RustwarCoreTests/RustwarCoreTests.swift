@@ -3698,6 +3698,22 @@ import Testing
     #expect(engine.state.selectedEntityID == firstSelectedID)
 }
 
+@Test func controlGroupSlotNineStoresAndRecallsCurrentPlayerSelection() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+    let firstSelectedID = try #require(selectedIDs.first)
+
+    #expect(engine.storeControlGroup(9) == selectedIDs)
+    _ = engine.select(at: WorldPoint(20, 20), includeEnemies: true)
+    #expect(engine.state.selectedEntityIDs.isEmpty)
+
+    let recalledIDs = engine.recallControlGroup(9)
+
+    #expect(recalledIDs == selectedIDs)
+    #expect(engine.state.selectedEntityIDs == selectedIDs)
+    #expect(engine.state.selectedEntityID == firstSelectedID)
+}
+
 @Test func controlGroupRecallFiltersMissingEnemyAndDestroyedEntities() throws {
     var state = GameState(mapID: .coast)
     let playerUnit = try #require(state.units.first { $0.team == .player })

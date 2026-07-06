@@ -7,7 +7,7 @@ import RustwarCore
 @Observable
 final class GameController {
     static let simulationSpeedOptions = [0.5, 1.0, 2.0]
-    static let visibleControlGroupSlots = [1, 2, 3]
+    static let visibleControlGroupSlots = Array(1...9)
     private static let saveKey = "rustwar.ios.save.v1"
     private static let currentSaveVersion = 1
     private static let doubleTapSameTypeInterval: TimeInterval = 0.32
