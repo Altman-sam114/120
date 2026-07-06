@@ -2325,7 +2325,9 @@
 - 本地 `swiftc -parse ios/RustwarIOS/RustwarIOS/CameraState.swift ios/RustwarIOS/RustwarIOS/GameController.swift ios/RustwarIOS/RustwarIOS/BattlefieldView.swift ios/RustwarIOS/RustwarIOS/GameHUDView.swift ios/RustwarIOS/RustwarIOS/RootGameView.swift` 通过。
 - 本地 `swift test --package-path swift/RustwarCore` 已尝试；沙箱内先遇到 SwiftPM 用户 cache / clang module cache 权限和 SDK/toolchain mismatch，提权重跑后仍因当前 CommandLineTools / SwiftPM manifest 链接阶段 `PackageDescription.Package.__allocating_init` 符号缺失阻塞，未进入源码测试执行。
 - 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 已尝试；当前 active developer directory 是 CommandLineTools，不是完整 Xcode，命令被本机工具链阻塞。
-- 云端 GitHub Actions artifact 复判待本轮 push 后补充。
+- 云端 run `28796451447`（attempt `1`，commit `358b7b4e3ac993c0c54c2e22952ecf429eec7ec6`，artifact `rustwar-ci-v1.0-main-358b7b4-run28796451447-attempt1`）由 Agent C 下载到 `/private/tmp/rustwar-c-review-28796451447/` 并核对，目录大小 `280K`。
+- manifest 确认 `branch=main`、`commitSha=358b7b4e3ac993c0c54c2e22952ecf429eec7ec6`、`runId=28796451447`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke。
+- build.log 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0；Swift Testing 227 tests passed，包含 v1.59 新增 screen combat selection 测试；iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
