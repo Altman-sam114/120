@@ -146,6 +146,10 @@ final class GameController {
         engine.state.units.contains { $0.team == .player && $0.hitPoints > 0 }
     }
 
+    var canSelectSameTypeUnits: Bool {
+        sameTypeSelectionSourceUnit != nil
+    }
+
     var canSelectIdleBuilders: Bool {
         engine.state.units.contains { $0.team == .player && $0.type == .builder && $0.order == nil }
     }
@@ -162,6 +166,15 @@ final class GameController {
     var combatUnitsButtonTitle: String {
         let count = engine.state.units.count(where: { $0.team == .player && $0.type != .builder })
         return "Combat Units (\(count))"
+    }
+
+    var sameTypeUnitsButtonTitle: String {
+        guard let unit = sameTypeSelectionSourceUnit else {
+            return "Same Type"
+        }
+        let definition = GameDefinitions.unit(unit.type)
+        let count = engine.state.units.count(where: { $0.team == .player && $0.hitPoints > 0 && $0.type == unit.type })
+        return "Same \(definition.name) (\(count))"
     }
 
     var canIssueAttack: Bool {
@@ -474,6 +487,18 @@ final class GameController {
     func selectCombatUnits() {
         let selectedIDs = engine.selectPlayerCombatUnits()
         commandStatus = selectedIDs.isEmpty ? "No combat units" : "\(selectedIDs.count) combat units selected"
+        renderRevision += 1
+    }
+
+    func selectSameTypeUnits() {
+        let sourceName = sameTypeSelectionSourceUnit.map { GameDefinitions.unit($0.type).name }
+        clearPendingTargetCommands()
+        let selectedIDs = engine.selectPlayerUnitsMatchingPrimarySelection()
+        if let sourceName, !selectedIDs.isEmpty {
+            commandStatus = "\(selectedIDs.count) \(sourceName) selected"
+        } else {
+            commandStatus = "No same-type units"
+        }
         renderRevision += 1
     }
 
@@ -941,7 +966,7 @@ final class GameController {
         guard let selectedEntityID = engine.state.selectedEntityID else {
             return nil
         }
-        return engine.state.units.first { $0.id == selectedEntityID && $0.team == .player }
+        return engine.state.units.first { $0.id == selectedEntityID && $0.team == .player && $0.hitPoints > 0 }
     }
 
     private var selectedPlayerUnits: [UnitSnapshot] {
@@ -949,7 +974,11 @@ final class GameController {
             ? engine.state.selectedEntityID.map { [$0] } ?? []
             : engine.state.selectedEntityIDs
         let selectedIDSet = Set(selectedIDs)
-        return engine.state.units.filter { selectedIDSet.contains($0.id) && $0.team == .player }
+        return engine.state.units.filter { selectedIDSet.contains($0.id) && $0.team == .player && $0.hitPoints > 0 }
+    }
+
+    private var sameTypeSelectionSourceUnit: UnitSnapshot? {
+        selectedPlayerUnit ?? selectedPlayerUnits.first
     }
 
     private var selectedPlayerBuilder: UnitSnapshot? {

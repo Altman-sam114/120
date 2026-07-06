@@ -515,6 +515,172 @@ import Testing
     #expect(selectedIDs == ["center-inside"])
 }
 
+@Test func selectPlayerUnitsMatchingPrimarySelectionSelectsOnlyFriendlySameTypeUnits() throws {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "same-scout-a",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(100, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "same-tank",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(130, 100),
+            hitPoints: 245,
+            maxHitPoints: 245
+        ),
+        UnitSnapshot(
+            id: "same-scout-b",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(160, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "same-enemy-scout",
+            type: .scout,
+            team: .enemy,
+            position: WorldPoint(190, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "same-destroyed-scout",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(220, 100),
+            hitPoints: 0,
+            maxHitPoints: 95
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "same-building",
+            type: .command,
+            team: .player,
+            position: WorldPoint(140, 140),
+            hitPoints: 1_850,
+            maxHitPoints: 1_850,
+            rally: WorldPoint(180, 180)
+        )
+    ]
+    state.selectedEntityID = "same-scout-b"
+    state.selectedEntityIDs = ["same-scout-b"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerUnitsMatchingPrimarySelection()
+
+    #expect(selectedIDs == ["same-scout-a", "same-scout-b"])
+    #expect(!selectedIDs.contains("same-tank"))
+    #expect(!selectedIDs.contains("same-enemy-scout"))
+    #expect(!selectedIDs.contains("same-destroyed-scout"))
+    #expect(!selectedIDs.contains("same-building"))
+    #expect(engine.state.selectedEntityID == selectedIDs.first)
+    #expect(engine.state.selectedEntityIDs == selectedIDs)
+}
+
+@Test func sameTypeSelectionFallsBackToFirstSelectedPlayerUnitWhenPrimaryIsInvalid() throws {
+    var state = GameState(mapID: .coast)
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let enemyUnit = try #require(state.units.first { $0.team == .enemy })
+    let scout = try #require(state.units.first { $0.team == .player && $0.type == .scout })
+    let tank = try #require(state.units.first { $0.team == .player && $0.type == .tank })
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyUnit.id, scout.id, tank.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerUnitsMatchingPrimarySelection()
+
+    #expect(!selectedIDs.isEmpty)
+    for id in selectedIDs {
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        #expect(unit.team == .player)
+        #expect(unit.type == scout.type)
+    }
+    #expect(engine.state.selectedEntityID == selectedIDs.first)
+    #expect(engine.state.selectedEntityIDs == selectedIDs)
+}
+
+@Test func sameTypeSelectionClearsSelectionWhenNoPlayerUnitSourceExists() throws {
+    var state = GameState(mapID: .coast)
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let enemyUnit = try #require(state.units.first { $0.team == .enemy })
+    state.units.append(
+        UnitSnapshot(
+            id: "same-dead-player-source",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(140, 120),
+            hitPoints: 0,
+            maxHitPoints: 95
+        )
+    )
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyUnit.id, "same-dead-player-source", "missing-id"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerUnitsMatchingPrimarySelection()
+
+    #expect(selectedIDs.isEmpty)
+    #expect(engine.state.selectedEntityID == nil)
+    #expect(engine.state.selectedEntityIDs.isEmpty)
+    #expect(engine.state.selectionSummary() == "No selection")
+}
+
+@Test func sameTypeSelectedUnitsReceiveExistingMultiUnitMoveCommand() throws {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "same-move-a",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(100, 100),
+            hitPoints: 245,
+            maxHitPoints: 245
+        ),
+        UnitSnapshot(
+            id: "same-move-b",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(140, 100),
+            hitPoints: 245,
+            maxHitPoints: 245
+        ),
+        UnitSnapshot(
+            id: "same-move-scout",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(180, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        )
+    ]
+    state.selectedEntityID = "same-move-b"
+    state.selectedEntityIDs = ["same-move-b"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    let destination = WorldPoint(260, 260)
+
+    let selectedIDs = engine.selectPlayerUnitsMatchingPrimarySelection()
+
+    #expect(selectedIDs == ["same-move-a", "same-move-b"])
+    #expect(engine.issueMove(to: destination) == .issued)
+
+    for id in selectedIDs {
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        if case let .move(activeDestination)? = unit.order {
+            #expect(activeDestination == destination)
+        } else {
+            #expect(Bool(false))
+        }
+    }
+}
+
 @Test func moveCommandRejectsMissingOrInvalidSelection() {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 

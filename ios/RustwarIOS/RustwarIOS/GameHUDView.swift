@@ -137,6 +137,18 @@ struct GameHUDView: View {
                     .accessibilityLabel("Select area")
                     .accessibilityHint("Drag on the battlefield to select player units in an area.")
                 }
+                if controller.canSelectSameTypeUnits {
+                    Button(
+                        controller.sameTypeUnitsButtonTitle,
+                        systemImage: "square.on.square",
+                        action: controller.selectSameTypeUnits
+                    )
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .accessibilityLabel("Select same type")
+                    .accessibilityHint("Selects all player units matching the current selected unit type.")
+                }
                 if controller.canIssueMove || controller.isAwaitingMoveTarget {
                     Button(
                         controller.moveCommandButtonTitle,

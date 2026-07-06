@@ -15,6 +15,22 @@ public extension GameState {
         }
     }
 
+    func playerUnitSelectionTargets(matching type: UnitType) -> [SelectionTarget] {
+        units.compactMap { unit in
+            guard unit.team == .player, unit.hitPoints > 0, unit.type == type else {
+                return nil
+            }
+            let definition = GameDefinitions.unit(unit.type)
+            return SelectionTarget(
+                id: unit.id,
+                kind: .unit,
+                team: unit.team,
+                displayName: definition.name,
+                position: unit.position
+            )
+        }
+    }
+
     func selectionTarget(at point: WorldPoint, includeEnemies: Bool = true) -> SelectionTarget? {
         var best: SelectionTarget?
         var bestDistance = Double.infinity

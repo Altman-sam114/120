@@ -90,6 +90,20 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func selectPlayerUnitsMatchingPrimarySelection() -> [String] {
+        guard let type = selectedPlayerUnitTypeForSameTypeSelection() else {
+            state.selectedEntityIDs = []
+            state.selectedEntityID = nil
+            return []
+        }
+
+        let ids = state.playerUnitSelectionTargets(matching: type).map(\.id)
+        state.selectedEntityIDs = ids
+        state.selectedEntityID = ids.first
+        return ids
+    }
+
+    @discardableResult
     public mutating func issueMove(to destination: WorldPoint) -> UnitCommandResult {
         guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
@@ -1797,6 +1811,17 @@ public struct GameEngine: Sendable {
             return state.selectedEntityIDs
         }
         return state.selectedEntityID.map { [$0] } ?? []
+    }
+
+    private func selectedPlayerUnitTypeForSameTypeSelection() -> UnitType? {
+        if let selectedEntityID = state.selectedEntityID,
+           let selectedUnit = state.units.first(where: { $0.id == selectedEntityID && $0.team == .player && $0.hitPoints > 0 }) {
+            return selectedUnit.type
+        }
+
+        return selectedCommandEntityIDs().compactMap { selectedID in
+            state.units.first { $0.id == selectedID && $0.team == .player && $0.hitPoints > 0 }?.type
+        }.first
     }
 
     private func selectedPlayerUnitIndices() -> [Array<UnitSnapshot>.Index] {
