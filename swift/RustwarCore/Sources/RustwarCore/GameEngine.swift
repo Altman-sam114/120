@@ -229,12 +229,11 @@ public struct GameEngine: Sendable {
 
     @discardableResult
     public mutating func issueBuildExtractor(on nodeID: String) -> UnitCommandResult {
-        guard let selectedEntityID = state.selectedEntityID else {
+        guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
         }
-        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
-              state.units[unitIndex].team == .player,
-              state.units[unitIndex].type == .builder else {
+        let builderIndices = selectedPlayerBuilderIndices()
+        guard !builderIndices.isEmpty else {
             return .selectedEntityCannotBuild
         }
         guard let resourceIndex = state.resources.firstIndex(where: { $0.id == nodeID }) else {
@@ -246,12 +245,15 @@ public struct GameEngine: Sendable {
         }
 
         let definition = GameDefinitions.building(.extractor)
-        let team = state.units[unitIndex].team
+        let team = state.units[builderIndices[0]].team
         guard state.metal[team, default: 0] >= definition.metalCost else {
             return .insufficientMetal
         }
 
-        startExtractorBuild(builderIndex: unitIndex, resourceIndex: resourceIndex)
+        let buildingID = startExtractorBuild(builderIndex: builderIndices[0], resourceIndex: resourceIndex)
+        for builderIndex in builderIndices {
+            state.units[builderIndex].order = .build(targetID: buildingID)
+        }
         return .issued
     }
 
@@ -1428,7 +1430,8 @@ public struct GameEngine: Sendable {
         )
     }
 
-    private mutating func startExtractorBuild(builderIndex: Int, resourceIndex: Int) {
+    @discardableResult
+    private mutating func startExtractorBuild(builderIndex: Int, resourceIndex: Int) -> String {
         let definition = GameDefinitions.building(.extractor)
         let team = state.units[builderIndex].team
         let buildingID = nextID(prefix: "building")
@@ -1450,6 +1453,7 @@ public struct GameEngine: Sendable {
             )
         )
         state.units[builderIndex].order = .build(targetID: buildingID)
+        return buildingID
     }
 
     private mutating func startTurretBuild(builderIndex: Int, position: WorldPoint) {

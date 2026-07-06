@@ -184,7 +184,7 @@ final class GameController {
     }
 
     var canIssueBuildExtractor: Bool {
-        selectedPlayerBuilder != nil
+        !selectedPlayerBuilders.isEmpty
     }
 
     var canIssueBuildTurret: Bool {
@@ -584,7 +584,7 @@ final class GameController {
         } else if canIssueBuildExtractor {
             clearPendingTargetCommands()
             isAwaitingBuildExtractorTarget = true
-            commandStatus = "Extractor resource"
+            commandStatus = selectedPlayerBuilders.count > 1 ? "Extractor resource for \(selectedPlayerBuilders.count) builders" : "Extractor resource"
         }
         renderRevision += 1
     }
@@ -819,13 +819,16 @@ final class GameController {
         } else if isAwaitingBuildExtractorTarget {
             let resource = engine.state.resourceTarget(at: point)
             let result: UnitCommandResult
+            let nodeID: String?
             if let resource {
+                nodeID = resource.id
                 result = engine.issueBuildExtractor(on: resource.id)
             } else {
+                nodeID = nil
                 result = .invalidBuildTarget
             }
             isAwaitingBuildExtractorTarget = false
-            commandStatus = statusText(forBuildExtractor: result)
+            commandStatus = statusText(forBuildExtractor: result, nodeID: nodeID)
         } else {
             return false
         }
@@ -1064,10 +1067,11 @@ final class GameController {
         }
     }
 
-    private func statusText(forBuildExtractor result: UnitCommandResult) -> String? {
+    private func statusText(forBuildExtractor result: UnitCommandResult, nodeID: String?) -> String? {
         switch result {
         case .issued:
-            return "Extractor build started"
+            let count = buildExtractorOrderIssuedCount(nodeID: nodeID)
+            return count > 1 ? "Extractor build started by \(count) builders" : "Extractor build started"
         case .noSelection:
             return "No builder selected"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
@@ -1078,6 +1082,19 @@ final class GameController {
             return "Need more metal"
         case .occupiedResourceNode:
             return "Resource node occupied"
+        }
+    }
+
+    private func buildExtractorOrderIssuedCount(nodeID: String?) -> Int {
+        guard let nodeID else {
+            return selectedPlayerBuilders.count
+        }
+        return selectedPlayerBuilders.count { builder in
+            guard case let .build(targetID)? = builder.order,
+                  let building = engine.state.buildings.first(where: { $0.id == targetID }) else {
+                return false
+            }
+            return building.type == .extractor && building.nodeID == nodeID
         }
     }
 
