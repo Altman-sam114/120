@@ -18,6 +18,7 @@
 		A00100000000000000000009 /* RustwarCore in Frameworks */ = {isa = PBXBuildFile; productRef = A00D00000000000000000002 /* RustwarCore */; };
 		A00100000000000000000010 /* TacticalMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000010 /* TacticalMapView.swift */; };
 		A00100000000000000000011 /* SelectionBoxOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000011 /* SelectionBoxOverlay.swift */; };
+		A00100000000000000000012 /* KeyboardCameraDirection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000012 /* KeyboardCameraDirection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 		A00200000000000000000009 /* RustwarIOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RustwarIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00200000000000000000010 /* TacticalMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalMapView.swift; sourceTree = "<group>"; };
 		A00200000000000000000011 /* SelectionBoxOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionBoxOverlay.swift; sourceTree = "<group>"; };
+		A00200000000000000000012 /* KeyboardCameraDirection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardCameraDirection.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +62,7 @@
 				A00200000000000000000001 /* RustwarIOSApp.swift */,
 				A00200000000000000000002 /* CameraState.swift */,
 				A00200000000000000000003 /* GameController.swift */,
+				A00200000000000000000012 /* KeyboardCameraDirection.swift */,
 				A00200000000000000000004 /* RootGameView.swift */,
 				A00200000000000000000005 /* GameHUDView.swift */,
 				A00200000000000000000006 /* BattlefieldView.swift */,
@@ -157,6 +160,7 @@
 				A00100000000000000000001 /* RustwarIOSApp.swift in Sources */,
 				A00100000000000000000002 /* CameraState.swift in Sources */,
 				A00100000000000000000003 /* GameController.swift in Sources */,
+				A00100000000000000000012 /* KeyboardCameraDirection.swift in Sources */,
 				A00100000000000000000004 /* RootGameView.swift in Sources */,
 				A00100000000000000000005 /* GameHUDView.swift in Sources */,
 				A00100000000000000000006 /* BattlefieldView.swift in Sources */,

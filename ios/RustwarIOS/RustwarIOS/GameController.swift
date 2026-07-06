@@ -8,6 +8,7 @@ import RustwarCore
 final class GameController {
     static let simulationSpeedOptions = [0.5, 1.0, 2.0]
     static let visibleControlGroupSlots = Array(1...9)
+    private static let keyboardCameraScreenSpeed = 680.0
     private static let saveKey = "rustwar.ios.save.v1"
     private static let currentSaveVersion = 1
     private static let doubleTapSameTypeInterval: TimeInterval = 0.32
@@ -63,6 +64,7 @@ final class GameController {
     @ObservationIgnored private var lastBattlefieldTapUnitID: String?
     @ObservationIgnored private var lastBattlefieldTapScreenPoint: CGPoint?
     @ObservationIgnored private var lastBattlefieldTapTime: TimeInterval?
+    @ObservationIgnored private var keyboardCameraDirections: Set<KeyboardCameraDirection> = []
 
     init(mapID: MapID = .coast) {
         let preset = MapPreset.preset(for: mapID)
@@ -477,7 +479,12 @@ final class GameController {
 
     func advance(deltaTime: TimeInterval) {
         let clamped = min(0.25, max(0, deltaTime))
+        let cameraDeltaTime = isPaused ? clamped : clamped * simulationSpeed
+        let didPanCamera = updateKeyboardCameraPan(deltaTime: cameraDeltaTime)
         guard !isPaused else {
+            if didPanCamera {
+                renderRevision += 1
+            }
             return
         }
         engine.update(deltaTime: clamped * simulationSpeed)
@@ -854,6 +861,18 @@ final class GameController {
         renderRevision += 1
     }
 
+    func setKeyboardCameraDirection(_ direction: KeyboardCameraDirection, isPressed: Bool) {
+        if isPressed {
+            keyboardCameraDirections.insert(direction)
+        } else {
+            keyboardCameraDirections.remove(direction)
+        }
+    }
+
+    func clearKeyboardCameraDirections() {
+        keyboardCameraDirections.removeAll()
+    }
+
     func zoom(by magnification: Double) {
         camera.zoom(by: magnification)
         renderRevision += 1
@@ -1112,6 +1131,35 @@ final class GameController {
             return nil
         }
         return engine.state.units.first { $0.id == selectedEntityID && $0.team == .player && $0.hitPoints > 0 }
+    }
+
+    private func updateKeyboardCameraPan(deltaTime: TimeInterval) -> Bool {
+        guard deltaTime > 0, camera.zoom > 0, !keyboardCameraDirections.isEmpty else {
+            return false
+        }
+
+        var dx = 0.0
+        var dy = 0.0
+        if keyboardCameraDirections.contains(.up) {
+            dy -= 1
+        }
+        if keyboardCameraDirections.contains(.down) {
+            dy += 1
+        }
+        if keyboardCameraDirections.contains(.left) {
+            dx -= 1
+        }
+        if keyboardCameraDirections.contains(.right) {
+            dx += 1
+        }
+        guard dx != 0 || dy != 0 else {
+            return false
+        }
+
+        let length = sqrt(dx * dx + dy * dy)
+        let worldDistance = Self.keyboardCameraScreenSpeed * deltaTime / camera.zoom
+        camera.panByWorldDelta(x: dx / length * worldDistance, y: dy / length * worldDistance)
+        return true
     }
 
     private var selectedPlayerUnits: [UnitSnapshot] {

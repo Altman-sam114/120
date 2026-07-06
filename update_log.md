@@ -15,7 +15,7 @@
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
 - Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、选择替换/追加 mutation、世界矩形框选、全图同类型选择、附近同类型选择、控制编队、多选集合、空闲 Builder / 战斗单位批量选择、资源点命中、残骸模型、单单位和多单位 Move 命令、单单位和多单位 Attack 命令、单单位和多单位 Attack-Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、单 Builder 和多 Builder Repair 命令、单 Builder 和多 Builder Reclaim 命令、单 Builder 和多 Builder Build Extractor 命令、单 Builder 和多 Builder Build Turret 命令、单 Builder 和多 Builder Build Land Factory 命令、单单位和多单位 Stop 命令、Command Center Builder 生产、Land Factory T1 生产列表、生产建筑队列 MVP、生产取消/退款、重复生产开关、集结点设置、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方 Command Center Builder 生产、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI MVP、红方 AI Web-lite 目标评分、红方 AI On/Off 开关 API，以及从已保存 `GameState` 恢复原生模拟的入口。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、Replace / Add 选择模式、Idle Builders / Combat Units 批量选择入口、Select Area 显式框选己方单位、Same Type 全图同类型选择入口、双击附近同类型选择入口、1-9 号控制编队保存/召回入口、外接键盘 Control+1-9 保存和 1-9 召回控制编队快捷键、Base / Space 回到己方 Command Center、外接键盘 P / R / E / Control+A / Option+A / A / G / H / C / S 触发已迁移的 Pause、Restart、批量选择和战术命令、单单位和多单位 Move 命令、单单位和多单位 Attack 命令、单单位和多单位 Attack Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、单 Builder 和多 Builder Repair 按钮语义、单 Builder 和多 Builder Reclaim 按钮语义、单 Builder 和多 Builder Build Extractor 按钮语义、单 Builder 和多 Builder Build Turret 按钮语义、单 Builder 和多 Builder Build Land Factory 按钮语义、单单位和多单位 Stop 命令、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张、维修受损友军、回收附近残骸、Land Factory / Turret 建造、Command Center Builder 生产、完整 T1 编成生产、红方 AI Web-lite 目标评分和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off HUD 开关、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图多选高亮、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、Replace / Add 选择模式、Idle Builders / Combat Units 批量选择入口、Select Area 显式框选己方单位、Same Type 全图同类型选择入口、双击附近同类型选择入口、1-9 号控制编队保存/召回入口、外接键盘 Control+1-9 保存和 1-9 召回控制编队快捷键、外接键盘 WASD / 方向键连续移动视野、Base / Space 回到己方 Command Center、外接键盘 P / R / E / Control+A / Option+A / A / G / H / C / S 触发已迁移的 Pause、Restart、批量选择和战术命令、单单位和多单位 Move 命令、单单位和多单位 Attack 命令、单单位和多单位 Attack Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、单 Builder 和多 Builder Repair 按钮语义、单 Builder 和多 Builder Reclaim 按钮语义、单 Builder 和多 Builder Build Extractor 按钮语义、单 Builder 和多 Builder Build Turret 按钮语义、单 Builder 和多 Builder Build Land Factory 按钮语义、单单位和多单位 Stop 命令、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张、维修受损友军、回收附近残骸、Land Factory / Turret 建造、Command Center Builder 生产、完整 T1 编成生产、红方 AI Web-lite 目标评分和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off HUD 开关、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图多选高亮、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -2244,3 +2244,37 @@
 遗留事项：
 
 - v1.57 只新增 Focus Base / Space 相机入口；尚无键盘相机平移、屏幕范围选择、攻击姿态、生产/建造热键、队形保持、框选建筑 fallback、战术小地图选择入口或完整 Web 多单位控制 parity。
+
+### v1.58 / iOS native keyboard camera pan
+
+日期：2026-07-06
+
+核心变更：
+
+- iOS `RootGameView` 新增全屏 `focusable` / `FocusState` / `onKeyPress(phases: .all)` 键盘入口，捕捉 WASD 和方向键 down/repeat/up。
+- iOS `GameController` 新增键盘相机方向集合，每帧 `advance(deltaTime:)` 按当前方向推进相机，支持按住连续平移、斜向归一化、暂停时仍可移动，运行时随 simulation speed 缩放。
+- iOS `CameraState` 新增 `panByWorldDelta(x:y:)`，集中保留世界坐标相机平移和地图边界 clamp。
+- iOS 新增 `KeyboardCameraDirection.swift`，并加入 `RustwarIOS.xcodeproj` Sources。
+- 本轮不改变 `RustwarCore` 游戏状态、触屏拖拽、捏合缩放、战术小地图点按居中、Base / Reset、选择、等待态或单位命令。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/RootGameView.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/CameraState.swift`
+- `ios/RustwarIOS/RustwarIOS/KeyboardCameraDirection.swift`
+- `ios/RustwarIOS/RustwarIOS.xcodeproj/project.pbxproj`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.58-ios-keyboard-camera-pan.md`
+- `update_log.md`
+
+验证结果：
+
+- 待本轮本地轻量检查和 GitHub Actions artifact 复判后补充。
+
+遗留事项：
+
+- v1.58 只新增外接键盘相机平移；尚无屏幕范围作战单位选择、攻击姿态、生产/建造热键、队形保持、框选建筑 fallback、战术小地图选择入口或完整 Web 多单位控制 parity。

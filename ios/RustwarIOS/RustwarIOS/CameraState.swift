@@ -14,6 +14,15 @@ struct CameraState: Codable, Equatable {
         clampToMap()
     }
 
+    mutating func panByWorldDelta(x: Double, y: Double) {
+        guard x.isFinite, y.isFinite else {
+            return
+        }
+        center.x += x
+        center.y += y
+        clampToMap()
+    }
+
     mutating func zoom(by magnification: Double) {
         guard magnification.isFinite, magnification > 0 else {
             return
