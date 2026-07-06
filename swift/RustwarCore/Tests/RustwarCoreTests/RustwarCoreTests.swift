@@ -2216,7 +2216,7 @@ import Testing
     #expect(engine.issueBuildLandFactory(at: point) == .issued)
     engine.update(deltaTime: 1)
 
-    let factory = try #require(engine.state.buildings.first { $0.type == .landFactory && $0.team == .player })
+    let factory = try #require(engine.state.buildings.first { $0.type == .landFactory && $0.team == .player && $0.buildProgress < 1 })
     #expect(abs(factory.buildProgress - (2.0 / GameDefinitions.building(.landFactory).buildTime)) < 0.0001)
     for _ in 0..<10 {
         engine.update(deltaTime: 1)
