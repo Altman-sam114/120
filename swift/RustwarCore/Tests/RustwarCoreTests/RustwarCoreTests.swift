@@ -853,6 +853,94 @@ import Testing
     #expect(engine.state.selectedEntityID == selectedUnit.id)
 }
 
+@Test func guardCommandAppliesToSelectedPlayerCombatGroup() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+    let friendlyBuilding = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .command })
+    let target = try #require(combatTarget(for: friendlyBuilding.id, in: engine.state))
+    let originsByID = Dictionary(uniqueKeysWithValues: engine.state.units
+        .filter { selectedIDs.contains($0.id) }
+        .map { ($0.id, $0.position) })
+
+    #expect(selectedIDs.count > 1)
+    #expect(engine.issueGuard(targetID: friendlyBuilding.id) == .issued)
+
+    let observedOffsets = try selectedIDs.map { id in
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        let origin = try #require(originsByID[id])
+        let expectedOffset = expectedGuardOffset(from: origin, unitType: unit.type, around: target)
+        if case let .guardTarget(targetID, offset)? = unit.order {
+            #expect(targetID == friendlyBuilding.id)
+            #expect(offset == expectedOffset)
+            return offset
+        }
+        #expect(Bool(false))
+        return WorldPoint(0, 0)
+    }
+    #expect(observedOffsets.first != observedOffsets.dropFirst().first)
+}
+
+@Test func guardCommandIgnoresInvalidSelectedIDsWhenAnyPlayerUnitIsSelected() throws {
+    var state = GameState(mapID: .coast)
+    let playerUnit = try #require(state.units.first { $0.team == .player && $0.type != .builder })
+    let enemyUnit = try #require(state.units.first { $0.team == .enemy })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player })
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyUnit.id, "missing-id", playerUnit.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueGuard(targetID: playerBuilding.id) == .issued)
+
+    let guardingUnit = try #require(engine.state.units.first { $0.id == playerUnit.id })
+    let untouchedEnemy = try #require(engine.state.units.first { $0.id == enemyUnit.id })
+    if case let .guardTarget(targetID, _)? = guardingUnit.order {
+        #expect(targetID == playerBuilding.id)
+    } else {
+        #expect(Bool(false))
+    }
+    #expect(untouchedEnemy.order == nil)
+}
+
+@Test func guardRejectsSelectionWithoutPlayerUnits() throws {
+    var state = GameState(mapID: .coast)
+    let enemyUnit = try #require(state.units.first { $0.team == .enemy })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player })
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyUnit.id, "missing-id"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueGuard(targetID: playerBuilding.id) == .selectedEntityCannotMove)
+}
+
+@Test func guardCommandSkipsGuardedUnitWhenItIsSelected() throws {
+    var state = GameState(mapID: .coast)
+    let selectedUnits = state.units.filter { $0.team == .player && $0.type != .builder }
+    let guardedUnit = try #require(selectedUnits.first)
+    let escort = try #require(selectedUnits.dropFirst().first)
+    state.selectedEntityID = guardedUnit.id
+    state.selectedEntityIDs = [guardedUnit.id, escort.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueGuard(targetID: guardedUnit.id) == .issued)
+
+    let guardedUnitAfterCommand = try #require(engine.state.units.first { $0.id == guardedUnit.id })
+    let escortAfterCommand = try #require(engine.state.units.first { $0.id == escort.id })
+    #expect(guardedUnitAfterCommand.order == nil)
+    if case let .guardTarget(targetID, _)? = escortAfterCommand.order {
+        #expect(targetID == guardedUnit.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func guardRejectsSelfTargetWhenNoOtherSelectedPlayerUnitCanGuard() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let selectedUnit = try #require(selectedTarget)
+
+    #expect(engine.issueGuard(targetID: selectedUnit.id) == .invalidGuardTarget)
+}
+
 @Test func guardCommandMovesTowardFriendlyTargetOffsetAndStaysActive() throws {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
@@ -1969,6 +2057,35 @@ import Testing
 
     let stoppedUnit = try #require(engine.state.units.first { $0.id == selectedUnit.id })
     #expect(stoppedUnit.order == nil)
+}
+
+@Test func stopCommandClearsSelectedGuardGroupOnly() throws {
+    var state = GameState(mapID: .coast)
+    let selectedUnits = Array(state.units.filter { $0.team == .player && $0.type != .builder }.prefix(2))
+    let first = try #require(selectedUnits.first)
+    let second = try #require(selectedUnits.dropFirst().first)
+    let unselected = try #require(state.units.first {
+        $0.team == .player && $0.id != first.id && $0.id != second.id
+    })
+    let friendlyBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let firstIndex = try #require(state.units.firstIndex { $0.id == first.id })
+    let secondIndex = try #require(state.units.firstIndex { $0.id == second.id })
+    let unselectedIndex = try #require(state.units.firstIndex { $0.id == unselected.id })
+    state.units[firstIndex].order = .guardTarget(targetID: friendlyBuilding.id, offset: WorldPoint(12, 0))
+    state.units[secondIndex].order = .guardTarget(targetID: friendlyBuilding.id, offset: WorldPoint(-12, 0))
+    state.units[unselectedIndex].order = .guardTarget(targetID: friendlyBuilding.id, offset: WorldPoint(0, 12))
+    state.selectedEntityID = first.id
+    state.selectedEntityIDs = [first.id, second.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueStop() == .issued)
+
+    let stoppedFirst = try #require(engine.state.units.first { $0.id == first.id })
+    let stoppedSecond = try #require(engine.state.units.first { $0.id == second.id })
+    let untouchedUnit = try #require(engine.state.units.first { $0.id == unselected.id })
+    #expect(stoppedFirst.order == nil)
+    #expect(stoppedSecond.order == nil)
+    #expect(untouchedUnit.order != nil)
 }
 
 @Test func stopCommandClearsRepairOrder() throws {
@@ -4224,4 +4341,34 @@ private func guardPosition(for order: UnitOrder?, targetID: String, in state: Ga
         return WorldPoint(building.position.x + offset.x, building.position.y + offset.y)
     }
     return nil
+}
+
+private struct TestCombatTarget {
+    let position: WorldPoint
+    let radius: Double
+}
+
+private func combatTarget(for targetID: String, in state: GameState) -> TestCombatTarget? {
+    if let unit = state.units.first(where: { $0.id == targetID && $0.hitPoints > 0 }) {
+        return TestCombatTarget(
+            position: unit.position,
+            radius: GameDefinitions.unit(unit.type).radius
+        )
+    }
+    if let building = state.buildings.first(where: { $0.id == targetID && $0.hitPoints > 0 }) {
+        return TestCombatTarget(
+            position: building.position,
+            radius: GameDefinitions.building(building.type).size / 2
+        )
+    }
+    return nil
+}
+
+private func expectedGuardOffset(from position: WorldPoint, unitType: UnitType, around target: TestCombatTarget) -> WorldPoint {
+    let unitDefinition = GameDefinitions.unit(unitType)
+    let dx = position.x - target.position.x
+    let dy = position.y - target.position.y
+    let distance = max(1, (dx * dx + dy * dy).squareRoot())
+    let desiredDistance = unitDefinition.radius + target.radius + 58
+    return WorldPoint(dx / distance * desiredDistance, dy / distance * desiredDistance)
 }

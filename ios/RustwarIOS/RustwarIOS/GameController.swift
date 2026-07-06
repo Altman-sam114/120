@@ -172,7 +172,7 @@ final class GameController {
     }
 
     var canIssueGuard: Bool {
-        selectedPlayerUnit != nil
+        !selectedPlayerUnits.isEmpty
     }
 
     var canIssueRepair: Bool {
@@ -548,7 +548,7 @@ final class GameController {
         } else if canIssueGuard {
             clearPendingTargetCommands()
             isAwaitingGuardTarget = true
-            commandStatus = "Guard target"
+            commandStatus = selectedPlayerUnits.count > 1 ? "Guard target for \(selectedPlayerUnits.count) units" : "Guard target"
         }
         renderRevision += 1
     }
@@ -989,7 +989,8 @@ final class GameController {
     private func statusText(forGuard result: UnitCommandResult) -> String? {
         switch result {
         case .issued:
-            return "Guard order issued"
+            let count = selectedPlayerUnits.count
+            return count > 1 ? "Guard order issued to \(count) units" : "Guard order issued"
         case .noSelection:
             return "No unit selected"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:

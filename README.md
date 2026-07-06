@@ -14,8 +14,8 @@
 
 当前 iOS 版本是迁移地基，不是完整玩法 parity。它新增：
 
-- `swift/RustwarCore/`：无第三方依赖的 Swift core package，包含地图常量、三张地图初始布局、单位/建筑/资源/残骸模型、地形网格、初始状态、收入/人口计算、命中选择、多选集合地基、空闲 Builder / 战斗单位批量选择、多单位 Move / Stop / Attack-Move / Patrol 命令、Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Build Turret 命令、Build Land Factory 命令、基础攻击命令、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、生产建筑队列 MVP、Command Center Builder 生产、生产取消/退款、重复生产开关、集结点设置、红方生产/资源扩张/维修/陆军工厂建造/炮塔建造/回收/进攻 AI MVP、红方 AI Web-lite 目标评分和 Artillery 建筑偏好、红方 AI On/Off 开关 API，以及从已保存 `GameState` 恢复原生模拟的入口。
-- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位、战斗残骸和 HUD；支持 Coast / Islands / Lava 地图切换、重开当前地图、tap 选择、Idle Builders / Combat Units 批量选择、拖拽平移、捏合缩放、右下战术小地图点按居中，或在 Move / Attack Move / Patrol / Rally / Turret / Factory 等待状态下下达点位命令，在 Reclaim / Build Extractor 等待状态下点选残骸或资源点目标，以及在 Attack / Guard / Repair 等待状态下点选单位或建筑目标；战术小地图会在等待命令时显示当前命令角标、强化边框并提供对应 VoiceOver 提示，并会高亮当前多选集合。原生 iOS 版还支持 Pause/Play、0.5x / 1x / 2x 速度切换和 Enemy AI On/Off HUD 开关，选中己方单位后可用 Move 下达移动命令，多选时会给所有选中己方单位写入同一目的地；用 Attack Move 指定行军攻击目的地，多选时所有选中己方单位会获得同一攻击移动目的地；用 Patrol 设置当前位置和端点之间的往返巡逻，多选时所有选中己方单位会使用各自当前位置和同一端点建立巡逻路线；用 Guard 点选友方单位或建筑进行护航、选中己方 Builder 时可用 Repair 点选受损友方单位或建筑进行维修、用 Reclaim 点选残骸持续回收金属、用 Build Extractor 点选空闲资源点扣金属并建造未完成采集器、用 Turret 选择清晰陆地点扣金属并创建未完成炮塔、用 Factory 选择清晰陆地点扣金属并创建未完成陆军工厂、用 Attack 点选敌方单位或建筑并显示血条/攻击目标、用 Stop 清除当前选中己方单位的移动、攻击移动、巡逻、护航、维修、回收、建造或攻击命令，完成状态己方 Command Center 可生产 Builder，完成状态己方 Land Factory 可生产 Scout / Light Tank / Hover Tank / Artillery / AA Tank；生产建筑可取消队尾生产并按未完成进度退款、循环设置 Repeat 目标并在队列清空后自动尝试续造，还可用 Rally 改变后续出兵集结点；Save / Load 可用本机单槽存档保存和恢复当前原生对局、相机、地图、暂停、速度、AI 开关和多选集合；完成状态炮塔会自动攻击射程内敌方单位或建筑并显示轻量火力线；红方会用空闲 Builder 维修受损友军单位或建筑、扩张空闲资源点、在缺少工厂或基础经济成型后建造未完成陆军工厂、在基地周边建造未完成炮塔、回收附近战斗残骸、从完成状态 Command Center 排队生产 Builder、从完成状态 Land Factory 排队生产 Scout / Light Tank / Hover Tank / Artillery / AA Tank，并让空闲战斗单位按 Web-lite 目标评分主动攻击玩家目标，评分会偏向 Command Center、经济/生产/防御建筑和低血目标，Artillery 保持更强建筑偏好；简单 economy tick 会推进金属收入、建造、生产进度和基础战斗。
+- `swift/RustwarCore/`：无第三方依赖的 Swift core package，包含地图常量、三张地图初始布局、单位/建筑/资源/残骸模型、地形网格、初始状态、收入/人口计算、命中选择、多选集合地基、空闲 Builder / 战斗单位批量选择、多单位 Move / Stop / Attack-Move / Patrol / Guard 命令、Repair 命令、Reclaim 命令、Build Extractor 命令、Build Turret 命令、Build Land Factory 命令、基础攻击命令、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、生产建筑队列 MVP、Command Center Builder 生产、生产取消/退款、重复生产开关、集结点设置、红方生产/资源扩张/维修/陆军工厂建造/炮塔建造/回收/进攻 AI MVP、红方 AI Web-lite 目标评分和 Artillery 建筑偏好、红方 AI On/Off 开关 API，以及从已保存 `GameState` 恢复原生模拟的入口。
+- `ios/RustwarIOS/`：原生 SwiftUI + SpriteKit iOS App，启动后从 `RustwarCore` 状态显示战场地形、资源点、双方初始建筑/单位、战斗残骸和 HUD；支持 Coast / Islands / Lava 地图切换、重开当前地图、tap 选择、Idle Builders / Combat Units 批量选择、拖拽平移、捏合缩放、右下战术小地图点按居中，或在 Move / Attack Move / Patrol / Rally / Turret / Factory 等待状态下下达点位命令，在 Reclaim / Build Extractor 等待状态下点选残骸或资源点目标，以及在 Attack / Guard / Repair 等待状态下点选单位或建筑目标；战术小地图会在等待命令时显示当前命令角标、强化边框并提供对应 VoiceOver 提示，并会高亮当前多选集合。原生 iOS 版还支持 Pause/Play、0.5x / 1x / 2x 速度切换和 Enemy AI On/Off HUD 开关，选中己方单位后可用 Move 下达移动命令，多选时会给所有选中己方单位写入同一目的地；用 Attack Move 指定行军攻击目的地，多选时所有选中己方单位会获得同一攻击移动目的地；用 Patrol 设置当前位置和端点之间的往返巡逻，多选时所有选中己方单位会使用各自当前位置和同一端点建立巡逻路线；用 Guard 点选友方单位或建筑进行护航，多选时所有选中己方单位会护航同一友方目标并保持各自稳定偏移；选中己方 Builder 时可用 Repair 点选受损友方单位或建筑进行维修、用 Reclaim 点选残骸持续回收金属、用 Build Extractor 点选空闲资源点扣金属并建造未完成采集器、用 Turret 选择清晰陆地点扣金属并创建未完成炮塔、用 Factory 选择清晰陆地点扣金属并创建未完成陆军工厂、用 Attack 点选敌方单位或建筑并显示血条/攻击目标、用 Stop 清除当前选中己方单位的移动、攻击移动、巡逻、护航、维修、回收、建造或攻击命令，完成状态己方 Command Center 可生产 Builder，完成状态己方 Land Factory 可生产 Scout / Light Tank / Hover Tank / Artillery / AA Tank；生产建筑可取消队尾生产并按未完成进度退款、循环设置 Repeat 目标并在队列清空后自动尝试续造，还可用 Rally 改变后续出兵集结点；Save / Load 可用本机单槽存档保存和恢复当前原生对局、相机、地图、暂停、速度、AI 开关和多选集合；完成状态炮塔会自动攻击射程内敌方单位或建筑并显示轻量火力线；红方会用空闲 Builder 维修受损友军单位或建筑、扩张空闲资源点、在缺少工厂或基础经济成型后建造未完成陆军工厂、在基地周边建造未完成炮塔、回收附近战斗残骸、从完成状态 Command Center 排队生产 Builder、从完成状态 Land Factory 排队生产 Scout / Light Tank / Hover Tank / Artillery / AA Tank，并让空闲战斗单位按 Web-lite 目标评分主动攻击玩家目标，评分会偏向 Command Center、经济/生产/防御建筑和低血目标，Artillery 保持更强建筑偏好；简单 economy tick 会推进金属收入、建造、生产进度和基础战斗。
 
 本机验证命令：
 
@@ -88,14 +88,14 @@ xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -dest
 ### 原生 iOS 迁移地基
 
 - Tap：选择单位或建筑；Move、Attack Move 和 Patrol 模式下作为目的地；Guard 模式下作为友方护航目标点选；Repair 模式下作为受损友方维修目标点选；Reclaim 模式下作为残骸目标点选；Build Extractor 模式下作为资源点目标点选；Attack 模式下作为敌方目标点选。
-- Idle Builders：选择全部空闲己方 Builder，并在主战场和战术小地图高亮多选集合；Move、Attack Move、Patrol 和 Stop 会作用于所有选中己方单位，其它命令仍沿用 primary selection 单单位语义。
-- Combat Units：选择全部己方非 Builder 战斗单位，并在主战场和战术小地图高亮多选集合；Move、Attack Move、Patrol 和 Stop 会作用于所有选中己方单位，其它命令仍沿用 primary selection 单单位语义。
+- Idle Builders：选择全部空闲己方 Builder，并在主战场和战术小地图高亮多选集合；Move、Attack Move、Patrol、Guard 和 Stop 会作用于所有选中己方单位，其它命令仍沿用 primary selection 单单位语义。
+- Combat Units：选择全部己方非 Builder 战斗单位，并在主战场和战术小地图高亮多选集合；Move、Attack Move、Patrol、Guard 和 Stop 会作用于所有选中己方单位，其它命令仍沿用 primary selection 单单位语义。
 - 拖拽：平移战场视角。
 - 捏合：缩放战场视角。
 - Move：选中己方单位时显示；点按后进入移动落点模式，再 tap 战场下达移动命令；多选时所有选中己方单位会获得同一目的地。
 - Attack Move：选中己方单位时显示；点按后进入攻击移动目的地模式，再 tap 战场下达攻击移动命令；多选时所有选中己方单位会获得同一目的地，单位会向目的地移动，并只在自身视野范围内获取敌方单位或建筑作为临时攻击目标。
 - Patrol：选中己方单位时显示；点按后进入巡逻端点模式，再 tap 战场下达巡逻命令；多选时所有选中己方单位会以各自当前位置为起点、同一端点为终点建立巡逻路线，并在自身视野范围内临时攻击敌方单位或建筑后继续巡逻。
-- Guard：选中己方单位时显示；点按后进入护航目标模式，再 tap 友方单位或建筑下达单单位护航命令；单位会保持目标附近的稳定偏移，在自身视野或被护航目标附近发现敌人时临时攻击，然后继续护航。
+- Guard：选中己方单位时显示；点按后进入护航目标模式，再 tap 友方单位或建筑下达护航命令；多选时所有选中己方单位会护航同一友方目标并保持各自稳定偏移，在自身视野或被护航目标附近发现敌人时临时攻击，然后继续护航。
 - Repair：选中己方 Builder 时显示；点按后进入维修目标模式，再 tap 受损友方单位或建筑下达单单位维修命令；Builder 会靠近目标并每秒恢复 18 HP，不消耗金属，满血或目标消失后清除命令。
 - Reclaim：选中己方 Builder 时显示；点按后进入回收目标模式，再 tap 战场残骸下达单单位回收命令；Builder 会靠近残骸并把剩余残骸金属持续转入己方金属，残骸耗尽、过期或消失后清除命令。
 - Build Extractor：选中己方 Builder 时显示；点按后进入资源点目标模式，再 tap 空闲资源点扣除 260 金属并创建未完成 Extractor；Builder 会靠近并推进建造，完成后该资源点开始增加收入。

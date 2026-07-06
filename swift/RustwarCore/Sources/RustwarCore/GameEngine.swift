@@ -156,23 +156,29 @@ public struct GameEngine: Sendable {
 
     @discardableResult
     public mutating func issueGuard(targetID: String) -> UnitCommandResult {
-        guard let selectedEntityID = state.selectedEntityID else {
+        guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
         }
-        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
-              state.units[unitIndex].team == .player else {
+        let unitIndices = selectedPlayerUnitIndices()
+        guard !unitIndices.isEmpty else {
             return .selectedEntityCannotMove
         }
         guard let target = combatTarget(id: targetID),
-              target.team == state.units[unitIndex].team,
-              target.id != state.units[unitIndex].id else {
+              target.team == .player else {
             return .invalidGuardTarget
         }
 
-        state.units[unitIndex].order = .guardTarget(
-            targetID: target.id,
-            offset: guardOffset(for: state.units[unitIndex], around: target)
-        )
+        var issued = false
+        for unitIndex in unitIndices where state.units[unitIndex].id != target.id {
+            state.units[unitIndex].order = .guardTarget(
+                targetID: target.id,
+                offset: guardOffset(for: state.units[unitIndex], around: target)
+            )
+            issued = true
+        }
+        guard issued else {
+            return .invalidGuardTarget
+        }
         return .issued
     }
 
