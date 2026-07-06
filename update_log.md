@@ -14,8 +14,8 @@
 - 项目形态：完整可玩的 Web Canvas RTS 原型 + v1.0 起新增的原生 Swift/iOS 迁移地基。
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
-- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、选择替换/追加 mutation、世界矩形框选、单位优先/建筑 fallback 区域选择、全图同类型选择、附近同类型选择、控制编队、多选集合、空闲 Builder / 战斗单位批量选择、资源点命中、残骸模型、单单位和多单位 Move 命令、单单位和多单位 Attack 命令、单单位和多单位 Attack-Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、单位攻击姿态 Aggressive / Defensive / Hold Fire、单 Builder 和多 Builder Repair 命令、单 Builder 和多 Builder Reclaim 命令、单 Builder 和多 Builder Build Extractor 命令、单 Builder 和多 Builder Build Turret 命令、单 Builder 和多 Builder Build Land Factory 命令、单单位和多单位 Stop 命令、Command Center Builder 生产、Land Factory T1 生产列表、生产建筑队列 MVP、生产取消/退款、重复生产开关、集结点设置、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方 Command Center Builder 生产、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI MVP、红方 AI Web-lite 目标评分、红方 AI On/Off 开关 API，以及从已保存 `GameState` 恢复原生模拟的入口。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、Replace / Add 选择模式、Idle Builders / Combat Units / Screen Combat 批量选择入口、Select Area 显式框选己方单位并在框内无己方单位时 fallback 选择己方建筑、Same Type 全图同类型选择入口、双击附近同类型选择入口、主战场长按上下文 Move / Attack / Guard / Repair / Reclaim / Build Extractor / Rally 入口、1-9 号控制编队保存/召回入口、外接键盘 Control+1-9 保存和 1-9 召回控制编队快捷键、外接键盘 WASD / 方向键连续移动视野、Base / Space 回到己方 Command Center、外接键盘 P / R / E / F / Control+A / Option+A / A / G / H / C / S / Z / X / V 触发已迁移的 Pause、Restart、批量选择、战术命令和攻击姿态切换、外接键盘 Shift+1-9 / Shift+E/T/F/C/P/R 触发生产、建造和生产建筑管理按钮、单单位和多单位 Move 命令、单单位和多单位 Attack 命令、单单位和多单位 Attack Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、Aggressive / Defensive / Hold Fire 姿态按钮、单 Builder 和多 Builder Repair 按钮语义、单 Builder 和多 Builder Reclaim 按钮语义、单 Builder 和多 Builder Build Extractor 按钮语义、单 Builder 和多 Builder Build Turret 按钮语义、单 Builder 和多 Builder Build Land Factory 按钮语义、单单位和多单位 Stop 命令、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张、维修受损友军、回收附近残骸、Land Factory / Turret 建造、Command Center Builder 生产、完整 T1 编成生产、红方 AI Web-lite 目标评分和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off HUD 开关、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图多选高亮、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
+- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、选择替换/追加 mutation、世界矩形框选、单位优先/建筑 fallback 区域选择、全图同类型选择、附近同类型选择、控制编队、多选集合、空闲 Builder / 战斗单位批量选择、资源点命中、残骸模型、单单位 Move、多单位 Move 方阵落点、单单位和多单位 Attack 命令、单单位和多单位 Attack-Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、单位攻击姿态 Aggressive / Defensive / Hold Fire、单 Builder 和多 Builder Repair 命令、单 Builder 和多 Builder Reclaim 命令、单 Builder 和多 Builder Build Extractor 命令、单 Builder 和多 Builder Build Turret 命令、单 Builder 和多 Builder Build Land Factory 命令、单单位和多单位 Stop 命令、Command Center Builder 生产、Land Factory T1 生产列表、生产建筑队列 MVP、生产取消/退款、重复生产开关、集结点设置、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方 Command Center Builder 生产、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI MVP、红方 AI Web-lite 目标评分、红方 AI On/Off 开关 API，以及从已保存 `GameState` 恢复原生模拟的入口。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、Replace / Add 选择模式、Idle Builders / Combat Units / Screen Combat 批量选择入口、Select Area 显式框选己方单位并在框内无己方单位时 fallback 选择己方建筑、Same Type 全图同类型选择入口、双击附近同类型选择入口、主战场长按上下文 Move / Attack / Guard / Repair / Reclaim / Build Extractor / Rally 入口、1-9 号控制编队保存/召回入口、外接键盘 Control+1-9 保存和 1-9 召回控制编队快捷键、外接键盘 WASD / 方向键连续移动视野、Base / Space 回到己方 Command Center、外接键盘 P / R / E / F / Control+A / Option+A / A / G / H / C / S / Z / X / V 触发已迁移的 Pause、Restart、批量选择、战术命令和攻击姿态切换、外接键盘 Shift+1-9 / Shift+E/T/F/C/P/R 触发生产、建造和生产建筑管理按钮、单单位 Move、多单位 Move 方阵落点、单单位和多单位 Attack 命令、单单位和多单位 Attack Move 命令、单单位和多单位 Patrol 命令、单单位和多单位 Guard 命令、Aggressive / Defensive / Hold Fire 姿态按钮、单 Builder 和多 Builder Repair 按钮语义、单 Builder 和多 Builder Reclaim 按钮语义、单 Builder 和多 Builder Build Extractor 按钮语义、单 Builder 和多 Builder Build Turret 按钮语义、单 Builder 和多 Builder Build Land Factory 按钮语义、单单位和多单位 Stop 命令、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张、维修受损友军、回收附近残骸、Land Factory / Turret 建造、Command Center Builder 生产、完整 T1 编成生产、红方 AI Web-lite 目标评分和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off HUD 开关、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图多选高亮、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -2493,3 +2493,42 @@
 遗留事项：
 
 - v1.63 只新增触屏长按上下文命令入口；尚无 Web 完整右键语义、运输装载/接载、Shift 队列、上下文菜单、触觉反馈、队形保持、完整雾/雷达、沙盒或完整 Web parity。
+
+### v1.64 / iOS native multi-unit move formation
+
+日期：2026-07-06
+
+核心变更：
+
+- `RustwarCore` 的 `GameEngine.issueMove(to:)` 在多选己方单位时会生成稳定方阵落点，而不是给所有单位写入同一目的地。
+- 方阵落点按单位当前位置和 id 稳定排序，按选中单位最大半径计算间距，围绕玩家点选的目标点展开，并逐个 clamp 到地图边界。
+- 单选 Move、无选择、只选建筑/敌军或混入无效 id 的旧结果语义保持不变。
+- iOS Move 按钮、主战场长按空地 Move 和战术小地图 Move 均复用同一 core API，无需新增 UI。
+- Swift tests 调整多单位 Move 和控制编队召回后 Move 断言，并新增地图边缘队形落点 clamp 覆盖。
+- 本轮不修改 Web `app.js`，不改变 Attack-Move、Patrol、Guard、寻路、避让、Shift 队列、存档字段或 iOS UI。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.64-ios-multi-unit-move-formation.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地 `git diff --check` 通过。
+- 本地 `node --check app.js` 通过。
+- 本地 `swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v164 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 已尝试；当前容器没有 `swiftc`，命令返回 `swiftc: command not found`，未进入源码检查。
+- 本地 `swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift` 已尝试；当前容器没有 `swiftc`，命令返回 `swiftc: command not found`，未进入测试文件解析。
+- 本地 `swift test --package-path swift/RustwarCore` 已尝试；当前容器没有 `swift`，命令返回 `swift: command not found`，未进入 SwiftPM 测试。
+- 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 已尝试；当前容器没有 `xcodebuild`，命令返回 `xcodebuild: command not found`。
+- 本地 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 已尝试；当前容器没有 `xcodebuild`，命令返回 `xcodebuild: command not found`。
+- 云端 artifact 结果以本轮最终 Agent C 记录为准。
+
+遗留事项：
+
+- v1.64 只补齐多单位 Move 的方阵落点；Attack-Move / Patrol 仍使用同一目标点，尚无完整队形保持、碰撞避让、寻路、Shift 队列、运输语义、完整雾/雷达、沙盒或完整 Web parity。

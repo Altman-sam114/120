@@ -1422,14 +1422,43 @@ import Testing
     #expect(selectedIDs.count > 1)
     #expect(engine.issueMove(to: destination) == .issued)
 
-    for id in selectedIDs {
+    let destinations = try selectedIDs.map { id in
         let unit = try #require(engine.state.units.first { $0.id == id })
         if case let .move(activeDestination)? = unit.order {
-            #expect(activeDestination == destination)
+            return activeDestination
         } else {
             #expect(Bool(false))
+            return destination
         }
     }
+
+    let averageX = destinations.reduce(0) { $0 + $1.x } / Double(destinations.count)
+    let averageY = destinations.reduce(0) { $0 + $1.y } / Double(destinations.count)
+    #expect(destinations.dropFirst().contains { $0 != destinations[0] })
+    #expect(abs(averageX - destination.x) < 50)
+    #expect(abs(averageY - destination.y) < 50)
+}
+
+@Test func moveCommandFormationTargetsClampToMapBounds() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+
+    #expect(selectedIDs.count > 1)
+    #expect(engine.issueMove(to: WorldPoint(5, 5)) == .issued)
+
+    let destinations = try selectedIDs.map { id in
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        if case let .move(activeDestination)? = unit.order {
+            return activeDestination
+        } else {
+            #expect(Bool(false))
+            return WorldPoint(5, 5)
+        }
+    }
+
+    #expect(destinations.allSatisfy { $0.x >= 0 && $0.x <= GameConstants.mapWidth })
+    #expect(destinations.allSatisfy { $0.y >= 0 && $0.y <= GameConstants.mapHeight })
+    #expect(destinations.contains { $0.x == 0 || $0.y == 0 })
 }
 
 @Test func moveCommandIgnoresInvalidSelectedIDsWhenAnyPlayerUnitIsSelected() throws {
@@ -4260,14 +4289,17 @@ import Testing
     #expect(engine.recallControlGroup(1) == selectedIDs)
     #expect(engine.issueMove(to: destination) == .issued)
 
-    for id in selectedIDs {
+    let destinations = try selectedIDs.map { id in
         let unit = try #require(engine.state.units.first { $0.id == id })
         if case let .move(activeDestination)? = unit.order {
-            #expect(activeDestination == destination)
+            return activeDestination
         } else {
             #expect(Bool(false))
+            return destination
         }
     }
+
+    #expect(destinations.dropFirst().contains { $0 != destinations[0] })
 }
 
 @Test func attackCommandIgnoresInvalidSelectedIDsWhenAnyPlayerUnitIsSelected() throws {

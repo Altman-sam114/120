@@ -174,9 +174,8 @@ public struct GameEngine: Sendable {
             return .selectedEntityCannotMove
         }
 
-        let clampedDestination = destination.clampedToMap()
-        for unitIndex in unitIndices {
-            state.units[unitIndex].order = .move(destination: clampedDestination)
+        for target in moveFormationTargets(for: unitIndices, around: destination) {
+            state.units[target.unitIndex].order = .move(destination: target.destination)
         }
         return .issued
     }
@@ -1941,6 +1940,42 @@ public struct GameEngine: Sendable {
         selectedPlayerUnitIndices().filter { index in
             let unit = state.units[index]
             return unit.hitPoints > 0 && GameDefinitions.unit(unit.type).attackRange > 0
+        }
+    }
+
+    private func moveFormationTargets(
+        for unitIndices: [Array<UnitSnapshot>.Index],
+        around destination: WorldPoint
+    ) -> [(unitIndex: Array<UnitSnapshot>.Index, destination: WorldPoint)] {
+        guard unitIndices.count > 1 else {
+            return unitIndices.map { (unitIndex: $0, destination: destination.clampedToMap()) }
+        }
+
+        let sortedIndices = unitIndices.sorted { lhs, rhs in
+            let left = state.units[lhs]
+            let right = state.units[rhs]
+            if left.position.y != right.position.y {
+                return left.position.y < right.position.y
+            }
+            if left.position.x != right.position.x {
+                return left.position.x < right.position.x
+            }
+            return left.id < right.id
+        }
+        let maxRadius = sortedIndices.reduce(14.0) { best, index in
+            max(best, GameDefinitions.unit(state.units[index].type).radius)
+        }
+        let spacing = min(96.0, max(42.0, maxRadius * 2 + 18))
+        let columns = Int(Double(sortedIndices.count).squareRoot().rounded(.up))
+        let rows = (sortedIndices.count + columns - 1) / columns
+
+        return sortedIndices.enumerated().map { slot, unitIndex in
+            let row = slot / columns
+            let column = slot % columns
+            let offsetX = (Double(column) - (Double(columns) - 1) / 2) * spacing
+            let offsetY = (Double(row) - (Double(rows) - 1) / 2) * spacing
+            let target = WorldPoint(destination.x + offsetX, destination.y + offsetY).clampedToMap()
+            return (unitIndex: unitIndex, destination: target)
         }
     }
 
