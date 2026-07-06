@@ -250,16 +250,16 @@ public struct GameEngine: Sendable {
             return .invalidGuardTarget
         }
 
-        var issued = false
-        for unitIndex in unitIndices where state.units[unitIndex].id != target.id {
-            state.units[unitIndex].order = .guardTarget(
-                targetID: target.id,
-                offset: guardOffset(for: state.units[unitIndex], around: target)
-            )
-            issued = true
-        }
-        guard issued else {
+        let guardUnitIndices = unitIndices.filter { state.units[$0].id != target.id }
+        guard !guardUnitIndices.isEmpty else {
             return .invalidGuardTarget
+        }
+
+        for guardOffset in guardFormationOffsets(for: guardUnitIndices, around: target) {
+            state.units[guardOffset.unitIndex].order = .guardTarget(
+                targetID: target.id,
+                offset: guardOffset.offset
+            )
         }
         return .issued
     }
@@ -1999,6 +1999,32 @@ public struct GameEngine: Sendable {
         let distance = max(1, (dx * dx + dy * dy).squareRoot())
         let desiredDistance = unitDefinition.radius + target.radius + 58
         return WorldPoint(dx / distance * desiredDistance, dy / distance * desiredDistance)
+    }
+
+    private func guardFormationOffsets(
+        for unitIndices: [Array<UnitSnapshot>.Index],
+        around target: CombatTarget
+    ) -> [(unitIndex: Array<UnitSnapshot>.Index, offset: WorldPoint)] {
+        guard unitIndices.count > 1 else {
+            return unitIndices.map {
+                (unitIndex: $0, offset: guardOffset(for: state.units[$0], around: target))
+            }
+        }
+
+        return formationTargets(for: unitIndices, around: target.position).map { formationTarget in
+            let unit = state.units[formationTarget.unitIndex]
+            let unitDefinition = GameDefinitions.unit(unit.type)
+            let dx = formationTarget.destination.x - target.position.x
+            let dy = formationTarget.destination.y - target.position.y
+            let distance = (dx * dx + dy * dy).squareRoot()
+            guard distance > 1 else {
+                return (unitIndex: formationTarget.unitIndex, offset: guardOffset(for: unit, around: target))
+            }
+            let minimumDistance = unitDefinition.radius + target.radius + 58
+            let offsetDistance = max(distance, minimumDistance)
+            let offset = WorldPoint(dx / distance * offsetDistance, dy / distance * offsetDistance)
+            return (unitIndex: formationTarget.unitIndex, offset: offset)
+        }
     }
 }
 

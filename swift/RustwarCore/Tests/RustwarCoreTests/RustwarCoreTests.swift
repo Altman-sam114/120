@@ -2094,26 +2094,65 @@ import Testing
     let selectedIDs = engine.selectPlayerCombatUnits()
     let friendlyBuilding = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .command })
     let target = try #require(combatTarget(for: friendlyBuilding.id, in: engine.state))
-    let originsByID = Dictionary(uniqueKeysWithValues: engine.state.units
-        .filter { selectedIDs.contains($0.id) }
-        .map { ($0.id, $0.position) })
 
     #expect(selectedIDs.count > 1)
     #expect(engine.issueGuard(targetID: friendlyBuilding.id) == .issued)
 
     let observedOffsets = try selectedIDs.map { id in
         let unit = try #require(engine.state.units.first { $0.id == id })
-        let origin = try #require(originsByID[id])
-        let expectedOffset = expectedGuardOffset(from: origin, unitType: unit.type, around: target)
         if case let .guardTarget(targetID, offset)? = unit.order {
             #expect(targetID == friendlyBuilding.id)
-            #expect(offset == expectedOffset)
+            let minimumDistance = GameDefinitions.unit(unit.type).radius + target.radius + 58
+            #expect(offset.distanceSquared(to: WorldPoint(0, 0)) + 0.0001 >= minimumDistance * minimumDistance)
             return offset
         }
         #expect(Bool(false))
         return WorldPoint(0, 0)
     }
-    #expect(observedOffsets.first != observedOffsets.dropFirst().first)
+    #expect(observedOffsets.dropFirst().contains { $0 != observedOffsets[0] })
+}
+
+@Test func guardCommandAppliesFormationOffsetsAroundFriendlyUnitTarget() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+    let friendlyBuilder = try #require(engine.state.units.first { $0.team == .player && $0.type == .builder })
+    let target = try #require(combatTarget(for: friendlyBuilder.id, in: engine.state))
+
+    #expect(selectedIDs.count > 1)
+    #expect(engine.issueGuard(targetID: friendlyBuilder.id) == .issued)
+
+    let observedOffsets = try selectedIDs.map { id in
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        if case let .guardTarget(targetID, offset)? = unit.order {
+            #expect(targetID == friendlyBuilder.id)
+            let minimumDistance = GameDefinitions.unit(unit.type).radius + target.radius + 58
+            #expect(offset.distanceSquared(to: WorldPoint(0, 0)) + 0.0001 >= minimumDistance * minimumDistance)
+            return offset
+        }
+        #expect(Bool(false))
+        return WorldPoint(0, 0)
+    }
+    #expect(observedOffsets.dropFirst().contains { $0 != observedOffsets[0] })
+}
+
+@Test func guardCommandSingleUnitKeepsPositionBasedOffset() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let selectedUnit = try #require(selectedTarget)
+    let friendlyBuilding = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .command })
+    let target = try #require(combatTarget(for: friendlyBuilding.id, in: engine.state))
+    let origin = try #require(engine.state.units.first { $0.id == selectedUnit.id }?.position)
+
+    #expect(engine.issueGuard(targetID: friendlyBuilding.id) == .issued)
+
+    let unit = try #require(engine.state.units.first { $0.id == selectedUnit.id })
+    let expectedOffset = expectedGuardOffset(from: origin, unitType: unit.type, around: target)
+    if case let .guardTarget(targetID, offset)? = unit.order {
+        #expect(targetID == friendlyBuilding.id)
+        #expect(offset == expectedOffset)
+    } else {
+        #expect(Bool(false))
+    }
 }
 
 @Test func guardCommandIgnoresInvalidSelectedIDsWhenAnyPlayerUnitIsSelected() throws {
