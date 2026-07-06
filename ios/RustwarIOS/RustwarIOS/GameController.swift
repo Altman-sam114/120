@@ -790,7 +790,7 @@ final class GameController {
         } else if isAwaitingBuildTurretTarget {
             let result = engine.issueBuildTurret(at: point)
             isAwaitingBuildTurretTarget = false
-            commandStatus = statusText(forBuildTurret: result, position: point.clampedToMap())
+            commandStatus = statusText(forBuildTurret: result, position: clampedMapPoint(point))
         } else if isAwaitingBuildFactoryTarget {
             let result = engine.issueBuildLandFactory(at: point)
             isAwaitingBuildFactoryTarget = false
@@ -1122,6 +1122,13 @@ final class GameController {
             }
             return building.type == type && building.position == position
         }
+    }
+
+    private func clampedMapPoint(_ point: WorldPoint) -> WorldPoint {
+        WorldPoint(
+            min(GameConstants.mapWidth, max(0, point.x)),
+            min(GameConstants.mapHeight, max(0, point.y))
+        )
     }
 
     private func statusText(forBuildFactory result: UnitCommandResult) -> String? {
