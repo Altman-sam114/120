@@ -9,6 +9,7 @@ final class BattlefieldScene: SKScene {
     private let terrainNode = SKNode()
     private let resourceNode = SKNode()
     private let entityNode = SKNode()
+    private let fogNode = SKNode()
     private var lastUpdateTime: TimeInterval?
     private var renderedMapID: MapID?
     private var renderedMapRevision = -1
@@ -49,6 +50,7 @@ final class BattlefieldScene: SKScene {
         syncCamera(controller.camera)
         drawResources(state.resources)
         drawEntities(state)
+        drawFog(state.visibility(for: .player))
     }
 
     private func configureScene() {
@@ -58,6 +60,7 @@ final class BattlefieldScene: SKScene {
         worldNode.addChild(terrainNode)
         worldNode.addChild(resourceNode)
         worldNode.addChild(entityNode)
+        worldNode.addChild(fogNode)
     }
 
     private func syncCamera(_ camera: CameraState) {
@@ -110,6 +113,35 @@ final class BattlefieldScene: SKScene {
         for unit in state.units {
             drawUnit(unit, selectedIDs: selectedIDs, state: state)
         }
+    }
+
+    private func drawFog(_ visibility: VisibilitySnapshot) {
+        fogNode.removeAllChildren()
+
+        let path = CGMutablePath()
+        let tileSize = GameConstants.tileSize
+        var hasHiddenTiles = false
+        for row in 0..<visibility.rows {
+            for column in 0..<visibility.columns where !visibility.isVisible(column: column, row: row) {
+                hasHiddenTiles = true
+                path.addRect(CGRect(
+                    x: Double(column) * tileSize,
+                    y: -Double(row + 1) * tileSize,
+                    width: tileSize,
+                    height: tileSize
+                ))
+            }
+        }
+
+        guard hasHiddenTiles else {
+            return
+        }
+
+        let node = SKShapeNode(path: path)
+        node.fillColor = SKColor.black.withAlphaComponent(0.48)
+        node.strokeColor = .clear
+        node.lineWidth = 0
+        fogNode.addChild(node)
     }
 
     private func drawBuilding(_ building: BuildingSnapshot, selectedIDs: Set<String>, state: GameState) {

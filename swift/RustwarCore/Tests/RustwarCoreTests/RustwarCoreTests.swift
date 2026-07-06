@@ -26,6 +26,92 @@ import Testing
     #expect(enemyEconomy.supplyCap == 26)
 }
 
+@Test func playerVisibilityIncludesInitialBaseButNotEnemyBase() throws {
+    let state = GameState(mapID: .coast)
+    let playerCommand = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let enemyCommand = try #require(state.buildings.first { $0.team == .enemy && $0.type == .command })
+
+    let visibility = state.visibility(for: .player)
+
+    #expect(visibility.columns == state.terrain.columns)
+    #expect(visibility.rows == state.terrain.rows)
+    #expect(visibility.visibleTileCount > 0)
+    #expect(visibility.isVisible(at: playerCommand.position))
+    #expect(!visibility.isVisible(at: enemyCommand.position))
+}
+
+@Test func playerVisibilityFollowsMovedScout() throws {
+    var state = GameState(mapID: .coast)
+    let scout = try #require(state.units.first { $0.team == .player && $0.type == .scout })
+    let scoutIndex = try #require(state.units.firstIndex { $0.id == scout.id })
+    let newPosition = WorldPoint(2_260, 1_540)
+    state.units[scoutIndex].position = newPosition
+
+    let visibility = state.visibility(for: .player)
+
+    #expect(visibility.isVisible(at: newPosition))
+}
+
+@Test func playerVisibilityIgnoresIncompleteBuildingsUntilFinished() {
+    let turretDefinition = GameDefinitions.building(.turret)
+    let point = WorldPoint(2_650, 1_500)
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "unfinished-turret",
+            type: .turret,
+            team: .player,
+            position: point,
+            hitPoints: turretDefinition.hitPoints * 0.25,
+            maxHitPoints: turretDefinition.hitPoints,
+            buildProgress: 0.4,
+            rally: point
+        )
+    ]
+
+    #expect(!state.visibility(for: .player).isVisible(at: point))
+
+    state.buildings[0].buildProgress = 1
+    #expect(state.visibility(for: .player).isVisible(at: point))
+}
+
+@Test func playerVisibilityIgnoresEnemySourcesAndOutOfBoundsQueries() {
+    let tankDefinition = GameDefinitions.unit(.tank)
+    let commandDefinition = GameDefinitions.building(.command)
+    let point = WorldPoint(2_700, 1_400)
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "enemy-tank-vision",
+            type: .tank,
+            team: .enemy,
+            position: point,
+            hitPoints: tankDefinition.hitPoints,
+            maxHitPoints: tankDefinition.hitPoints
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "enemy-command-vision",
+            type: .command,
+            team: .enemy,
+            position: point,
+            hitPoints: commandDefinition.hitPoints,
+            maxHitPoints: commandDefinition.hitPoints,
+            rally: point
+        )
+    ]
+
+    let visibility = state.visibility(for: .player)
+
+    #expect(visibility.visibleTileCount == 0)
+    #expect(!visibility.isVisible(at: point))
+    #expect(!visibility.isVisible(column: -1, row: 0))
+    #expect(!visibility.isVisible(column: state.terrain.columns, row: 0))
+    #expect(!visibility.isVisible(at: WorldPoint(-1, -1)))
+}
+
 @Test func engineTickAccumulatesIncome() {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
