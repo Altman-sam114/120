@@ -53,11 +53,32 @@ public struct GameEngine: Sendable {
     public mutating func select(at point: WorldPoint, includeEnemies: Bool = true) -> SelectionTarget? {
         let target = state.selectionTarget(at: point, includeEnemies: includeEnemies)
         state.selectedEntityID = target?.id
+        state.selectedEntityIDs = target.map { [$0.id] } ?? []
         return target
     }
 
     public mutating func reset(mapID: MapID = .coast) {
         state = GameState(mapID: mapID)
+    }
+
+    @discardableResult
+    public mutating func selectIdlePlayerBuilders() -> [String] {
+        let ids = state.units
+            .filter { $0.team == .player && $0.type == .builder && $0.order == nil }
+            .map(\.id)
+        state.selectedEntityIDs = ids
+        state.selectedEntityID = ids.first
+        return ids
+    }
+
+    @discardableResult
+    public mutating func selectPlayerCombatUnits() -> [String] {
+        let ids = state.units
+            .filter { $0.team == .player && $0.type != .builder }
+            .map(\.id)
+        state.selectedEntityIDs = ids
+        state.selectedEntityID = ids.first
+        return ids
     }
 
     @discardableResult
@@ -1208,8 +1229,9 @@ public struct GameEngine: Sendable {
         state.buildings.removeAll { destroyedBuildingIDs.contains($0.id) }
 
         let destroyedIDs = destroyedUnitIDs.union(destroyedBuildingIDs)
+        state.selectedEntityIDs.removeAll { destroyedIDs.contains($0) }
         if let selectedEntityID = state.selectedEntityID, destroyedIDs.contains(selectedEntityID) {
-            state.selectedEntityID = nil
+            state.selectedEntityID = state.selectedEntityIDs.first
         }
         for unitIndex in state.units.indices {
             if case let .attack(targetID)? = state.units[unitIndex].order, destroyedIDs.contains(targetID) {

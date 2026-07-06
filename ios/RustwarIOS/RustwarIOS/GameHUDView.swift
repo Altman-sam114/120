@@ -106,6 +106,24 @@ struct GameHUDView: View {
             .frame(maxWidth: 220, minHeight: 44)
             .accessibilityLabel("Simulation speed")
 
+            HStack(spacing: 8) {
+                Button(controller.idleBuildersButtonTitle, systemImage: "hammer", action: controller.selectIdleBuilders)
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(minHeight: 44)
+                    .disabled(!controller.canSelectIdleBuilders)
+                    .accessibilityLabel("Select idle Builders")
+                    .accessibilityHint("Selects all idle player Builder units.")
+
+                Button(controller.combatUnitsButtonTitle, systemImage: "scope", action: controller.selectCombatUnits)
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(minHeight: 44)
+                    .disabled(!controller.canSelectCombatUnits)
+                    .accessibilityLabel("Select combat units")
+                    .accessibilityHint("Selects all player combat units.")
+            }
+
             LazyVGrid(columns: commandColumns, alignment: .leading, spacing: 8) {
                 if controller.canIssueMove || controller.isAwaitingMoveTarget {
                     Button(

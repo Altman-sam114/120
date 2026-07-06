@@ -274,14 +274,94 @@ import Testing
     #expect(decoded.buildings.count == state.buildings.count)
 }
 
+@Test func gameStateDecodesOldJSONWithoutSelectionIDsFromPrimarySelection() throws {
+    var state = GameState(mapID: .coast)
+    let selectedUnit = try #require(state.units.first { $0.team == .player })
+    state.selectedEntityID = selectedUnit.id
+    let encoded = try JSONEncoder().encode(state)
+    var json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    json.removeValue(forKey: "selectedEntityIDs")
+    let legacyEncoded = try JSONSerialization.data(withJSONObject: json)
+
+    let decoded = try JSONDecoder().decode(GameState.self, from: legacyEncoded)
+
+    #expect(decoded.selectedEntityID == selectedUnit.id)
+    #expect(decoded.selectedEntityIDs == [selectedUnit.id])
+}
+
 @Test func selectionFindsInitialPlayerCommand() {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
     let target = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
+    let targetID = target?.id
 
     #expect(target?.kind == .building)
     #expect(target?.displayName == "Command Center")
+    #expect(engine.state.selectedEntityIDs == targetID.map { [$0] } ?? [])
     #expect(engine.state.selectionSummary() == "Green Command Center")
+}
+
+@Test func selectionGroupsPersistThroughJSONRoundTrip() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+
+    let encoded = try JSONEncoder().encode(engine.state)
+    let decoded = try JSONDecoder().decode(GameState.self, from: encoded)
+
+    #expect(selectedIDs.count > 1)
+    #expect(decoded.selectedEntityID == selectedIDs.first)
+    #expect(decoded.selectedEntityIDs == selectedIDs)
+    #expect(decoded.selectionSummary() == "\(selectedIDs.count) combat units selected")
+}
+
+@Test func selectIdlePlayerBuildersOnlySelectsIdleFriendlyBuilders() throws {
+    var state = GameState(mapID: .coast)
+    let idleBuilder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let busyBuilder = UnitSnapshot(
+        id: "busy-builder",
+        type: .builder,
+        team: .player,
+        position: WorldPoint(idleBuilder.position.x + 28, idleBuilder.position.y),
+        hitPoints: idleBuilder.hitPoints,
+        maxHitPoints: idleBuilder.maxHitPoints,
+        order: .move(destination: WorldPoint(idleBuilder.position.x + 140, idleBuilder.position.y))
+    )
+    let enemyBuilder = UnitSnapshot(
+        id: "enemy-builder-test",
+        type: .builder,
+        team: .enemy,
+        position: WorldPoint(idleBuilder.position.x + 56, idleBuilder.position.y),
+        hitPoints: idleBuilder.hitPoints,
+        maxHitPoints: idleBuilder.maxHitPoints
+    )
+    state.units.append(contentsOf: [busyBuilder, enemyBuilder])
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectIdlePlayerBuilders()
+
+    #expect(selectedIDs.contains(idleBuilder.id))
+    #expect(!selectedIDs.contains(busyBuilder.id))
+    #expect(!selectedIDs.contains(enemyBuilder.id))
+    #expect(engine.state.selectedEntityID == selectedIDs.first)
+    #expect(engine.state.selectedEntityIDs == selectedIDs)
+    #expect(engine.state.selectionSummary() == "\(selectedIDs.count) idle Builders selected")
+}
+
+@Test func selectPlayerCombatUnitsExcludesBuildersAndEnemies() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerCombatUnits()
+
+    #expect(!selectedIDs.isEmpty)
+    for id in selectedIDs {
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        #expect(unit.team == .player)
+        #expect(unit.type != .builder)
+    }
+    #expect(engine.state.units.contains { $0.team == .player && $0.type == .builder && !selectedIDs.contains($0.id) })
+    #expect(engine.state.units.contains { $0.team == .enemy && !selectedIDs.contains($0.id) })
+    #expect(engine.state.selectedEntityID == selectedIDs.first)
+    #expect(engine.state.selectionSummary() == "\(selectedIDs.count) combat units selected")
 }
 
 @Test func moveCommandRejectsMissingOrInvalidSelection() {
@@ -317,6 +397,39 @@ import Testing
     #expect(abs(arrivedUnit.position.x - 1_130) < 0.001)
     #expect(abs(arrivedUnit.position.y - 2_020) < 0.001)
     #expect(arrivedUnit.order == nil)
+}
+
+@Test func primarySelectionStillReceivesMoveAfterCombatGroupSelection() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+    let primaryID = try #require(selectedIDs.first)
+
+    #expect(engine.issueMove(to: WorldPoint(1_260, 2_080)) == .issued)
+
+    let primaryUnit = try #require(engine.state.units.first { $0.id == primaryID })
+    if case .move(destination: _)? = primaryUnit.order {
+        #expect(Bool(true))
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func destroyedSelectedEntityIsRemovedFromSelectionGroup() throws {
+    var state = GameState(mapID: .coast)
+    let selectedUnits = state.units.filter { $0.team == .player && $0.type != .builder }
+    let destroyedUnit = try #require(selectedUnits.first)
+    let survivor = try #require(selectedUnits.dropFirst().first)
+    let destroyedIndex = try #require(state.units.firstIndex { $0.id == destroyedUnit.id })
+    state.units[destroyedIndex].hitPoints = 0
+    state.selectedEntityID = destroyedUnit.id
+    state.selectedEntityIDs = [destroyedUnit.id, survivor.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    engine.update(deltaTime: 0.1)
+
+    #expect(!engine.state.selectedEntityIDs.contains(destroyedUnit.id))
+    #expect(engine.state.selectedEntityIDs == [survivor.id])
+    #expect(engine.state.selectedEntityID == survivor.id)
 }
 
 @Test func attackMoveCommandRejectsMissingOrInvalidSelection() {

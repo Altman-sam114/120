@@ -141,6 +141,24 @@ final class GameController {
         selectedPlayerUnit != nil
     }
 
+    var canSelectIdleBuilders: Bool {
+        engine.state.units.contains { $0.team == .player && $0.type == .builder && $0.order == nil }
+    }
+
+    var canSelectCombatUnits: Bool {
+        engine.state.units.contains { $0.team == .player && $0.type != .builder }
+    }
+
+    var idleBuildersButtonTitle: String {
+        let count = engine.state.units.count(where: { $0.team == .player && $0.type == .builder && $0.order == nil })
+        return "Idle Builders (\(count))"
+    }
+
+    var combatUnitsButtonTitle: String {
+        let count = engine.state.units.count(where: { $0.team == .player && $0.type != .builder })
+        return "Combat Units (\(count))"
+    }
+
     var canIssueAttack: Bool {
         selectedPlayerUnit != nil
     }
@@ -423,6 +441,18 @@ final class GameController {
 
     func restartBattle() {
         resetBattle(on: currentMapID, status: "Restarted \(mapLabel(for: currentMapID))")
+    }
+
+    func selectIdleBuilders() {
+        let selectedIDs = engine.selectIdlePlayerBuilders()
+        commandStatus = selectedIDs.isEmpty ? "No idle Builders" : "\(selectedIDs.count) idle Builders selected"
+        renderRevision += 1
+    }
+
+    func selectCombatUnits() {
+        let selectedIDs = engine.selectPlayerCombatUnits()
+        commandStatus = selectedIDs.isEmpty ? "No combat units" : "\(selectedIDs.count) combat units selected"
+        renderRevision += 1
     }
 
     static func simulationSpeedLabel(for speed: Double) -> String {

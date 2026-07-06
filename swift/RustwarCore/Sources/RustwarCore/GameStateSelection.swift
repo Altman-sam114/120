@@ -33,13 +33,31 @@ public extension GameState {
     }
 
     func selectionSummary() -> String {
-        guard let selectedEntityID else {
+        let validSelectedEntityIDs = selectedEntityIDs.filter { id in
+            units.contains { $0.id == id } || buildings.contains { $0.id == id }
+        }
+        if validSelectedEntityIDs.count > 1 {
+            let selectedUnits = units.filter { validSelectedEntityIDs.contains($0.id) }
+            let selectedBuildings = buildings.filter { validSelectedEntityIDs.contains($0.id) }
+            if selectedBuildings.isEmpty,
+               selectedUnits.allSatisfy({ $0.team == .player && $0.type == .builder }) {
+                return "\(selectedUnits.count) idle Builders selected"
+            }
+            if selectedBuildings.isEmpty,
+               selectedUnits.allSatisfy({ $0.team == .player && $0.type != .builder }) {
+                return "\(selectedUnits.count) combat units selected"
+            }
+            return "\(validSelectedEntityIDs.count) entities selected"
+        }
+
+        let primarySelectedEntityID = validSelectedEntityIDs.first ?? selectedEntityID
+        guard let primarySelectedEntityID else {
             return "No selection"
         }
-        if let unit = units.first(where: { $0.id == selectedEntityID }) {
+        if let unit = units.first(where: { $0.id == primarySelectedEntityID }) {
             return "\(unit.team.displayName) \(GameDefinitions.unit(unit.type).name)"
         }
-        if let building = buildings.first(where: { $0.id == selectedEntityID }) {
+        if let building = buildings.first(where: { $0.id == primarySelectedEntityID }) {
             return "\(building.team.displayName) \(GameDefinitions.building(building.type).name)"
         }
         return "No selection"

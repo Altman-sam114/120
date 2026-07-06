@@ -12,7 +12,7 @@ struct TacticalMapView: View {
             let units = state.units
             let buildings = state.buildings
             let wrecks = state.wrecks
-            let selectedEntityID = state.selectedEntityID
+            let selectedEntityIDs = Set(state.selectedEntityIDs)
             let cameraCenter = controller.camera.center
             let shouldDifferentiateWithoutColor = differentiateWithoutColor
             let pendingCommandLabel = controller.tacticalMapPendingCommandLabel
@@ -26,7 +26,7 @@ struct TacticalMapView: View {
                     units: units,
                     buildings: buildings,
                     wrecks: wrecks,
-                    selectedEntityID: selectedEntityID,
+                    selectedEntityIDs: selectedEntityIDs,
                     cameraCenter: cameraCenter,
                     pendingCommandSymbol: pendingCommandSymbol,
                     differentiateWithoutColor: shouldDifferentiateWithoutColor
@@ -95,7 +95,7 @@ struct TacticalMapView: View {
         units: [UnitSnapshot],
         buildings: [BuildingSnapshot],
         wrecks: [WreckSnapshot],
-        selectedEntityID: String?,
+        selectedEntityIDs: Set<String>,
         cameraCenter: WorldPoint,
         pendingCommandSymbol: String?,
         differentiateWithoutColor: Bool
@@ -120,7 +120,7 @@ struct TacticalMapView: View {
                 building,
                 in: &context,
                 size: size,
-                isSelected: building.id == selectedEntityID,
+                isSelected: selectedEntityIDs.contains(building.id),
                 differentiateWithoutColor: differentiateWithoutColor
             )
         }
@@ -130,7 +130,7 @@ struct TacticalMapView: View {
                 unit,
                 in: &context,
                 size: size,
-                isSelected: unit.id == selectedEntityID,
+                isSelected: selectedEntityIDs.contains(unit.id),
                 differentiateWithoutColor: differentiateWithoutColor
             )
         }

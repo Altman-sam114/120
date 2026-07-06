@@ -100,20 +100,22 @@ final class BattlefieldScene: SKScene {
 
     private func drawEntities(_ state: GameState) {
         entityNode.removeAllChildren()
+        let selectedIDs = Set(state.selectedEntityIDs)
         for wreck in state.wrecks {
             drawWreck(wreck)
         }
         for building in state.buildings {
-            drawBuilding(building, selectedID: state.selectedEntityID, state: state)
+            drawBuilding(building, selectedIDs: selectedIDs, state: state)
         }
         for unit in state.units {
-            drawUnit(unit, selectedID: state.selectedEntityID, state: state)
+            drawUnit(unit, selectedIDs: selectedIDs, state: state)
         }
     }
 
-    private func drawBuilding(_ building: BuildingSnapshot, selectedID: String?, state: GameState) {
+    private func drawBuilding(_ building: BuildingSnapshot, selectedIDs: Set<String>, state: GameState) {
         let definition = GameDefinitions.building(building.type)
-        if building.id == selectedID, building.team == .player, !definition.produces.isEmpty {
+        let isSelected = selectedIDs.contains(building.id)
+        if isSelected, building.team == .player, !definition.produces.isEmpty {
             drawRally(from: building.position, to: building.rally)
         }
         if definition.damage > 0,
@@ -127,8 +129,8 @@ final class BattlefieldScene: SKScene {
         let node = SKShapeNode(rect: rect, cornerRadius: 6)
         node.position = spritePoint(for: building.position)
         node.fillColor = teamColor(building.team).withAlphaComponent(building.buildProgress < 1 ? 0.58 : 0.88)
-        node.strokeColor = building.id == selectedID ? .systemYellow : .black.withAlphaComponent(0.5)
-        node.lineWidth = building.id == selectedID ? 5 : 2
+        node.strokeColor = isSelected ? .systemYellow : .black.withAlphaComponent(0.5)
+        node.lineWidth = isSelected ? 5 : 2
 
         let label = SKLabelNode(text: definition.icon)
         label.fontName = "AvenirNext-Bold"
@@ -143,34 +145,35 @@ final class BattlefieldScene: SKScene {
         entityNode.addChild(node)
     }
 
-    private func drawUnit(_ unit: UnitSnapshot, selectedID: String?, state: GameState) {
+    private func drawUnit(_ unit: UnitSnapshot, selectedIDs: Set<String>, state: GameState) {
         let definition = GameDefinitions.unit(unit.type)
+        let isSelected = selectedIDs.contains(unit.id)
         switch unit.order {
         case let .move(destination)?:
-            drawMoveOrder(from: unit.position, to: destination, isSelected: unit.id == selectedID)
+            drawMoveOrder(from: unit.position, to: destination, isSelected: isSelected)
         case let .attack(targetID)?:
             if let targetPosition = targetPosition(for: targetID, in: state) {
-                drawAttackOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
+                drawAttackOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
             }
         case let .attackMove(destination)?:
-            drawAttackMoveOrder(from: unit.position, to: destination, isSelected: unit.id == selectedID)
+            drawAttackMoveOrder(from: unit.position, to: destination, isSelected: isSelected)
         case let .patrol(origin, destination, returning)?:
-            drawPatrolOrder(origin: origin, destination: destination, returning: returning, isSelected: unit.id == selectedID)
+            drawPatrolOrder(origin: origin, destination: destination, returning: returning, isSelected: isSelected)
         case let .guardTarget(targetID, _)?:
             if let targetPosition = targetPosition(for: targetID, in: state) {
-                drawGuardOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
+                drawGuardOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
             }
         case let .build(targetID)?:
             if let targetPosition = targetPosition(for: targetID, in: state) {
-                drawBuildOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
+                drawBuildOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
             }
         case let .repair(targetID)?:
             if let targetPosition = targetPosition(for: targetID, in: state) {
-                drawRepairOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
+                drawRepairOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
             }
         case let .reclaim(wreckID)?:
             if let targetPosition = targetPosition(for: wreckID, in: state) {
-                drawReclaimOrder(from: unit.position, to: targetPosition, isSelected: unit.id == selectedID)
+                drawReclaimOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
             }
         case nil:
             break
@@ -179,8 +182,8 @@ final class BattlefieldScene: SKScene {
         let node = SKShapeNode(circleOfRadius: definition.radius)
         node.position = spritePoint(for: unit.position)
         node.fillColor = teamColor(unit.team)
-        node.strokeColor = unit.id == selectedID ? .systemYellow : .white.withAlphaComponent(0.55)
-        node.lineWidth = unit.id == selectedID ? 4 : 1.5
+        node.strokeColor = isSelected ? .systemYellow : .white.withAlphaComponent(0.55)
+        node.lineWidth = isSelected ? 4 : 1.5
 
         let label = SKLabelNode(text: definition.icon)
         label.fontName = "AvenirNext-Bold"
