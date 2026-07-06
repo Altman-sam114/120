@@ -188,7 +188,7 @@ final class GameController {
     }
 
     var canIssueBuildTurret: Bool {
-        selectedPlayerBuilder != nil
+        !selectedPlayerBuilders.isEmpty
     }
 
     var canIssueBuildFactory: Bool {
@@ -596,7 +596,7 @@ final class GameController {
         } else if canIssueBuildTurret {
             clearPendingTargetCommands()
             isAwaitingBuildTurretTarget = true
-            commandStatus = "Turret position"
+            commandStatus = selectedPlayerBuilders.count > 1 ? "Turret position for \(selectedPlayerBuilders.count) builders" : "Turret position"
         }
         renderRevision += 1
     }
@@ -790,7 +790,7 @@ final class GameController {
         } else if isAwaitingBuildTurretTarget {
             let result = engine.issueBuildTurret(at: point)
             isAwaitingBuildTurretTarget = false
-            commandStatus = statusText(forBuildTurret: result)
+            commandStatus = statusText(forBuildTurret: result, position: point.clampedToMap())
         } else if isAwaitingBuildFactoryTarget {
             let result = engine.issueBuildLandFactory(at: point)
             isAwaitingBuildFactoryTarget = false
@@ -1098,10 +1098,11 @@ final class GameController {
         }
     }
 
-    private func statusText(forBuildTurret result: UnitCommandResult) -> String? {
+    private func statusText(forBuildTurret result: UnitCommandResult, position: WorldPoint) -> String? {
         switch result {
         case .issued:
-            return "Turret build started"
+            let count = pointBuildOrderIssuedCount(type: .turret, position: position)
+            return count > 1 ? "Turret build started by \(count) builders" : "Turret build started"
         case .noSelection:
             return "No builder selected"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
@@ -1110,6 +1111,16 @@ final class GameController {
             return "Clear land required"
         case .insufficientMetal:
             return "Need more metal"
+        }
+    }
+
+    private func pointBuildOrderIssuedCount(type: BuildingType, position: WorldPoint) -> Int {
+        selectedPlayerBuilders.count { builder in
+            guard case let .build(targetID)? = builder.order,
+                  let building = engine.state.buildings.first(where: { $0.id == targetID }) else {
+                return false
+            }
+            return building.type == type && building.position == position
         }
     }
 

@@ -259,12 +259,11 @@ public struct GameEngine: Sendable {
 
     @discardableResult
     public mutating func issueBuildTurret(at point: WorldPoint) -> UnitCommandResult {
-        guard let selectedEntityID = state.selectedEntityID else {
+        guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
         }
-        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
-              state.units[unitIndex].team == .player,
-              state.units[unitIndex].type == .builder else {
+        let builderIndices = selectedPlayerBuilderIndices()
+        guard !builderIndices.isEmpty else {
             return .selectedEntityCannotBuild
         }
 
@@ -274,12 +273,15 @@ public struct GameEngine: Sendable {
         }
 
         let definition = GameDefinitions.building(.turret)
-        let team = state.units[unitIndex].team
+        let team = state.units[builderIndices[0]].team
         guard state.metal[team, default: 0] >= definition.metalCost else {
             return .insufficientMetal
         }
 
-        startTurretBuild(builderIndex: unitIndex, position: position)
+        let buildingID = startTurretBuild(builderIndex: builderIndices[0], position: position)
+        for builderIndex in builderIndices {
+            state.units[builderIndex].order = .build(targetID: buildingID)
+        }
         return .issued
     }
 
@@ -1465,11 +1467,13 @@ public struct GameEngine: Sendable {
         return buildingID
     }
 
-    private mutating func startTurretBuild(builderIndex: Int, position: WorldPoint) {
+    @discardableResult
+    private mutating func startTurretBuild(builderIndex: Int, position: WorldPoint) -> String {
         startPointBuildingBuild(.turret, builderIndex: builderIndex, position: position)
     }
 
-    private mutating func startPointBuildingBuild(_ buildingType: BuildingType, builderIndex: Int, position: WorldPoint) {
+    @discardableResult
+    private mutating func startPointBuildingBuild(_ buildingType: BuildingType, builderIndex: Int, position: WorldPoint) -> String {
         let definition = GameDefinitions.building(buildingType)
         let team = state.units[builderIndex].team
         let buildingID = nextID(prefix: "building")
@@ -1488,6 +1492,7 @@ public struct GameEngine: Sendable {
             )
         )
         state.units[builderIndex].order = .build(targetID: buildingID)
+        return buildingID
     }
 
     private func canPlaceBuilding(_ buildingType: BuildingType, at position: WorldPoint) -> Bool {
