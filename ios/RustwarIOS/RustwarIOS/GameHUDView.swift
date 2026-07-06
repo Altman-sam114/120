@@ -125,6 +125,19 @@ struct GameHUDView: View {
                     .accessibilityHint("Selects all player combat units.")
             }
 
+            Picker("Selection mode", selection: $controller.selectionMutation) {
+                Text("Replace")
+                    .tag(SelectionMutation.replace)
+                Text("Add")
+                    .tag(SelectionMutation.add)
+            }
+            .pickerStyle(.segmented)
+            .controlSize(.regular)
+            .frame(maxWidth: 220, minHeight: 44)
+            .accessibilityLabel("Selection mode")
+            .accessibilityValue(controller.selectionMutationAccessibilityValue)
+            .accessibilityHint("Choose whether battlefield selection replaces or adds to the current selection.")
+
             VStack(alignment: .leading, spacing: 6) {
                 Text("Groups")
                     .font(.caption)

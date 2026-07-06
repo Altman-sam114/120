@@ -18,6 +18,15 @@ final class GameController {
     var camera: CameraState
     var renderRevision = 0
     var mapRenderRevision = 0
+    var selectionMutation: SelectionMutation = .replace {
+        didSet {
+            guard selectionMutation != oldValue else {
+                return
+            }
+            commandStatus = selectionMutation == .add ? "Add selection mode" : "Replace selection mode"
+            renderRevision += 1
+        }
+    }
     var currentMapID: MapID {
         didSet {
             guard currentMapID != oldValue else {
@@ -93,6 +102,10 @@ final class GameController {
 
     var selectedSummary: String {
         engine.state.selectionSummary()
+    }
+
+    var selectionMutationAccessibilityValue: String {
+        selectionMutation == .add ? "Add to current selection" : "Replace current selection"
     }
 
     var productionOptions: [UnitType] {
@@ -504,9 +517,10 @@ final class GameController {
     func selectSameTypeUnits() {
         let sourceName = sameTypeSelectionSourceUnit.map { GameDefinitions.unit($0.type).name }
         clearPendingTargetCommands()
-        let selectedIDs = engine.selectPlayerUnitsMatchingPrimarySelection()
+        let selectedIDs = engine.selectPlayerUnitsMatchingPrimarySelection(mutation: selectionMutation)
         if let sourceName, !selectedIDs.isEmpty {
-            commandStatus = "\(selectedIDs.count) \(sourceName) selected"
+            let action = selectionMutation == .add ? "selected total" : "selected"
+            commandStatus = "\(selectedIDs.count) \(sourceName) \(action)"
         } else {
             commandStatus = "No same-type units"
         }
@@ -575,7 +589,7 @@ final class GameController {
                 renderRevision += 1
                 return
             }
-            engine.select(at: point, includeEnemies: true)
+            engine.select(at: point, includeEnemies: true, mutation: selectionMutation)
             commandStatus = nil
             recordBattlefieldTap(target: target, screenPoint: screenPoint)
         }
@@ -865,9 +879,15 @@ final class GameController {
 
         let start = camera.worldPoint(for: startPoint, viewportSize: viewportSize)
         let end = camera.worldPoint(for: endPoint, viewportSize: viewportSize)
-        let selectedIDs = engine.selectPlayerUnits(in: WorldRect(start, end))
+        let rect = WorldRect(start, end)
+        let matchedCount = engine.state.playerUnitSelectionTargets(in: rect).count
+        let selectedIDs = engine.selectPlayerUnits(in: rect, mutation: selectionMutation)
         isAwaitingAreaSelection = false
-        commandStatus = selectedIDs.isEmpty ? "No units in area" : "\(selectedIDs.count) units selected"
+        if selectionMutation == .add {
+            commandStatus = matchedCount == 0 ? "No units added" : "\(selectedIDs.count) units selected total"
+        } else {
+            commandStatus = selectedIDs.isEmpty ? "No units in area" : "\(selectedIDs.count) units selected"
+        }
         renderRevision += 1
     }
 
@@ -930,9 +950,16 @@ final class GameController {
             .map { GameDefinitions.unit($0.type).name } ?? "units"
         let selectedIDs = engine.selectPlayerUnitsMatching(
             unitID: target.id,
-            within: Self.nearbySameTypeSelectionRadius
+            within: Self.nearbySameTypeSelectionRadius,
+            mutation: selectionMutation
         )
-        commandStatus = selectedIDs.isEmpty ? "No nearby \(sourceName)" : "\(selectedIDs.count) nearby \(sourceName) selected"
+        if selectedIDs.isEmpty {
+            commandStatus = "No nearby \(sourceName)"
+        } else if selectionMutation == .add {
+            commandStatus = "\(selectedIDs.count) \(sourceName) selected total"
+        } else {
+            commandStatus = "\(selectedIDs.count) nearby \(sourceName) selected"
+        }
         return true
     }
 

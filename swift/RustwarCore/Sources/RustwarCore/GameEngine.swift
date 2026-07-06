@@ -50,10 +50,13 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
-    public mutating func select(at point: WorldPoint, includeEnemies: Bool = true) -> SelectionTarget? {
+    public mutating func select(
+        at point: WorldPoint,
+        includeEnemies: Bool = true,
+        mutation: SelectionMutation = .replace
+    ) -> SelectionTarget? {
         let target = state.selectionTarget(at: point, includeEnemies: includeEnemies)
-        state.selectedEntityID = target?.id
-        state.selectedEntityIDs = target.map { [$0.id] } ?? []
+        applySelection(target.map { [$0.id] } ?? [], mutation: mutation)
         return target
     }
 
@@ -82,33 +85,29 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
-    public mutating func selectPlayerUnits(in rect: WorldRect) -> [String] {
+    public mutating func selectPlayerUnits(in rect: WorldRect, mutation: SelectionMutation = .replace) -> [String] {
         let ids = state.playerUnitSelectionTargets(in: rect).map(\.id)
-        state.selectedEntityIDs = ids
-        state.selectedEntityID = ids.first
-        return ids
+        return applySelection(ids, mutation: mutation)
     }
 
     @discardableResult
-    public mutating func selectPlayerUnitsMatchingPrimarySelection() -> [String] {
+    public mutating func selectPlayerUnitsMatchingPrimarySelection(mutation: SelectionMutation = .replace) -> [String] {
         guard let type = selectedPlayerUnitTypeForSameTypeSelection() else {
-            state.selectedEntityIDs = []
-            state.selectedEntityID = nil
-            return []
+            return applySelection([], mutation: mutation)
         }
 
         let ids = state.playerUnitSelectionTargets(matching: type).map(\.id)
-        state.selectedEntityIDs = ids
-        state.selectedEntityID = ids.first
-        return ids
+        return applySelection(ids, mutation: mutation)
     }
 
     @discardableResult
-    public mutating func selectPlayerUnitsMatching(unitID: String, within radius: Double) -> [String] {
+    public mutating func selectPlayerUnitsMatching(
+        unitID: String,
+        within radius: Double,
+        mutation: SelectionMutation = .replace
+    ) -> [String] {
         guard let sourceUnit = state.units.first(where: { $0.id == unitID && $0.team == .player && $0.hitPoints > 0 }) else {
-            state.selectedEntityIDs = []
-            state.selectedEntityID = nil
-            return []
+            return applySelection([], mutation: mutation)
         }
 
         let ids = state.playerUnitSelectionTargets(
@@ -116,9 +115,7 @@ public struct GameEngine: Sendable {
             near: sourceUnit.position,
             radius: radius
         ).map(\.id)
-        state.selectedEntityIDs = ids
-        state.selectedEntityID = ids.first
-        return ids
+        return applySelection(ids, mutation: mutation)
     }
 
     @discardableResult
@@ -1854,6 +1851,28 @@ public struct GameEngine: Sendable {
             return state.selectedEntityIDs
         }
         return state.selectedEntityID.map { [$0] } ?? []
+    }
+
+    @discardableResult
+    private mutating func applySelection(_ ids: [String], mutation: SelectionMutation) -> [String] {
+        switch mutation {
+        case .replace:
+            state.selectedEntityIDs = ids
+            state.selectedEntityID = ids.first
+            return ids
+        case .add:
+            let existingIDs = selectedCommandEntityIDs().filter { isValidPlayerSelectableEntity(id: $0) }
+            let newIDs = ids.filter { isValidPlayerSelectableEntity(id: $0) }
+            var seen = Set(existingIDs)
+            var mergedIDs = existingIDs
+            for id in newIDs where !seen.contains(id) {
+                mergedIDs.append(id)
+                seen.insert(id)
+            }
+            state.selectedEntityIDs = mergedIDs
+            state.selectedEntityID = mergedIDs.first
+            return mergedIDs
+        }
     }
 
     private static func isValidControlGroupSlot(_ slot: Int) -> Bool {

@@ -515,6 +515,185 @@ import Testing
     #expect(selectedIDs == ["center-inside"])
 }
 
+@Test func addSelectionMutationAppendsValidPlayerTargetsAndKeepsPrimary() throws {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "add-scout",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(100, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "add-enemy",
+            type: .tank,
+            team: .enemy,
+            position: WorldPoint(140, 100),
+            hitPoints: 245,
+            maxHitPoints: 245
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "add-command",
+            type: .command,
+            team: .player,
+            position: WorldPoint(180, 100),
+            hitPoints: 1_850,
+            maxHitPoints: 1_850,
+            rally: WorldPoint(210, 120)
+        )
+    ]
+    state.selectedEntityID = "add-scout"
+    state.selectedEntityIDs = ["add-scout"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    _ = engine.select(at: WorldPoint(180, 100), includeEnemies: true, mutation: .add)
+    #expect(engine.state.selectedEntityIDs == ["add-scout", "add-command"])
+    #expect(engine.state.selectedEntityID == "add-scout")
+
+    _ = engine.select(at: WorldPoint(140, 100), includeEnemies: true, mutation: .add)
+    #expect(engine.state.selectedEntityIDs == ["add-scout", "add-command"])
+    #expect(engine.state.selectedEntityID == "add-scout")
+}
+
+@Test func addSelectionMutationKeepsSelectionForEmptyArea() {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let selectedIDs = engine.selectPlayerCombatUnits()
+
+    #expect(!selectedIDs.isEmpty)
+    #expect(engine.selectPlayerUnits(in: WorldRect(WorldPoint(10, 10), WorldPoint(20, 20)), mutation: .add) == selectedIDs)
+    #expect(engine.state.selectedEntityIDs == selectedIDs)
+    #expect(engine.state.selectedEntityID == selectedIDs.first)
+}
+
+@Test func areaSelectionAddMutationAppendsUnitsWithoutDuplicates() {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "area-add-a",
+            type: .builder,
+            team: .player,
+            position: WorldPoint(100, 100),
+            hitPoints: 170,
+            maxHitPoints: 170
+        ),
+        UnitSnapshot(
+            id: "area-add-b",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(140, 120),
+            hitPoints: 245,
+            maxHitPoints: 245
+        ),
+        UnitSnapshot(
+            id: "area-add-enemy",
+            type: .tank,
+            team: .enemy,
+            position: WorldPoint(120, 120),
+            hitPoints: 245,
+            maxHitPoints: 245
+        )
+    ]
+    state.selectedEntityID = "area-add-a"
+    state.selectedEntityIDs = ["area-add-a"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerUnits(in: WorldRect(WorldPoint(80, 80), WorldPoint(160, 160)), mutation: .add)
+
+    #expect(selectedIDs == ["area-add-a", "area-add-b"])
+    #expect(engine.state.selectedEntityIDs == selectedIDs)
+    #expect(engine.state.selectedEntityID == "area-add-a")
+}
+
+@Test func sameTypeAddMutationMergesWithExistingSelection() throws {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "same-add-tank",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(100, 100),
+            hitPoints: 245,
+            maxHitPoints: 245
+        ),
+        UnitSnapshot(
+            id: "same-add-scout-a",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(130, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "same-add-scout-b",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(160, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        )
+    ]
+    state.selectedEntityID = "same-add-scout-a"
+    state.selectedEntityIDs = ["same-add-scout-a", "same-add-tank"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let selectedIDs = engine.selectPlayerUnitsMatchingPrimarySelection(mutation: .add)
+
+    #expect(selectedIDs == ["same-add-scout-a", "same-add-tank", "same-add-scout-b"])
+    #expect(engine.state.selectedEntityID == "same-add-scout-a")
+    #expect(engine.state.selectedEntityIDs == selectedIDs)
+}
+
+@Test func nearbySameTypeAddSelectionReceivesExistingMultiUnitMoveCommand() throws {
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "near-add-tank",
+            type: .tank,
+            team: .player,
+            position: WorldPoint(100, 100),
+            hitPoints: 245,
+            maxHitPoints: 245
+        ),
+        UnitSnapshot(
+            id: "near-add-scout-a",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(130, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        ),
+        UnitSnapshot(
+            id: "near-add-scout-b",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(160, 100),
+            hitPoints: 95,
+            maxHitPoints: 95
+        )
+    ]
+    state.selectedEntityID = "near-add-tank"
+    state.selectedEntityIDs = ["near-add-tank"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    let destination = WorldPoint(260, 260)
+
+    let selectedIDs = engine.selectPlayerUnitsMatching(unitID: "near-add-scout-a", within: 80, mutation: .add)
+
+    #expect(selectedIDs == ["near-add-tank", "near-add-scout-a", "near-add-scout-b"])
+    #expect(engine.issueMove(to: destination) == .issued)
+    for id in selectedIDs {
+        let unit = try #require(engine.state.units.first { $0.id == id })
+        if case let .move(activeDestination)? = unit.order {
+            #expect(activeDestination == destination)
+        } else {
+            #expect(Bool(false))
+        }
+    }
+}
+
 @Test func selectPlayerUnitsMatchingPrimarySelectionSelectsOnlyFriendlySameTypeUnits() throws {
     var state = GameState(mapID: .coast)
     state.units = [
