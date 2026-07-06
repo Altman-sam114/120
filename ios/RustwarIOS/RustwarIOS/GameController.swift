@@ -192,7 +192,7 @@ final class GameController {
     }
 
     var canIssueBuildFactory: Bool {
-        selectedPlayerBuilder != nil
+        !selectedPlayerBuilders.isEmpty
     }
 
     var canIssueStop: Bool {
@@ -608,7 +608,7 @@ final class GameController {
         } else if canIssueBuildFactory {
             clearPendingTargetCommands()
             isAwaitingBuildFactoryTarget = true
-            commandStatus = "Factory position"
+            commandStatus = selectedPlayerBuilders.count > 1 ? "Factory position for \(selectedPlayerBuilders.count) builders" : "Factory position"
         }
         renderRevision += 1
     }
@@ -794,7 +794,7 @@ final class GameController {
         } else if isAwaitingBuildFactoryTarget {
             let result = engine.issueBuildLandFactory(at: point)
             isAwaitingBuildFactoryTarget = false
-            commandStatus = statusText(forBuildFactory: result)
+            commandStatus = statusText(forBuildFactory: result, position: clampedMapPoint(point))
         } else {
             return false
         }
@@ -1131,10 +1131,11 @@ final class GameController {
         )
     }
 
-    private func statusText(forBuildFactory result: UnitCommandResult) -> String? {
+    private func statusText(forBuildFactory result: UnitCommandResult, position: WorldPoint) -> String? {
         switch result {
         case .issued:
-            return "Factory build started"
+            let count = pointBuildOrderIssuedCount(type: .landFactory, position: position)
+            return count > 1 ? "Factory build started by \(count) builders" : "Factory build started"
         case .noSelection:
             return "No builder selected"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:

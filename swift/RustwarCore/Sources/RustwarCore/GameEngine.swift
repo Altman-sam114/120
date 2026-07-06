@@ -287,12 +287,11 @@ public struct GameEngine: Sendable {
 
     @discardableResult
     public mutating func issueBuildLandFactory(at point: WorldPoint) -> UnitCommandResult {
-        guard let selectedEntityID = state.selectedEntityID else {
+        guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
         }
-        guard let unitIndex = state.units.firstIndex(where: { $0.id == selectedEntityID }),
-              state.units[unitIndex].team == .player,
-              state.units[unitIndex].type == .builder else {
+        let builderIndices = selectedPlayerBuilderIndices()
+        guard !builderIndices.isEmpty else {
             return .selectedEntityCannotBuild
         }
 
@@ -302,12 +301,15 @@ public struct GameEngine: Sendable {
         }
 
         let definition = GameDefinitions.building(.landFactory)
-        let team = state.units[unitIndex].team
+        let team = state.units[builderIndices[0]].team
         guard state.metal[team, default: 0] >= definition.metalCost else {
             return .insufficientMetal
         }
 
-        startPointBuildingBuild(.landFactory, builderIndex: unitIndex, position: position)
+        let buildingID = startPointBuildingBuild(.landFactory, builderIndex: builderIndices[0], position: position)
+        for builderIndex in builderIndices {
+            state.units[builderIndex].order = .build(targetID: buildingID)
+        }
         return .issued
     }
 

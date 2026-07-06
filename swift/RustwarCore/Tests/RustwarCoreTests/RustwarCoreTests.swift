@@ -2066,6 +2066,105 @@ import Testing
     }
 }
 
+@Test func buildLandFactoryCommandAppliesToSelectedPlayerBuilderGroup() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let extraBuilder = UnitSnapshot(
+        id: "factory-extra-builder",
+        type: .builder,
+        team: .player,
+        position: WorldPoint(builder.position.x + 80, builder.position.y),
+        hitPoints: builderDefinition.hitPoints,
+        maxHitPoints: builderDefinition.hitPoints
+    )
+    let point = clearLandFactoryBuildPoint(in: state)
+    state.units.append(extraBuilder)
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = [builder.id, extraBuilder.id]
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    let startingMetal = engine.state.metal[.player, default: 0]
+    let startingBuildingCount = engine.state.buildings.count
+    #expect(engine.issueBuildLandFactory(at: point) == .issued)
+
+    let factory = try #require(engine.state.buildings.first { $0.type == .landFactory && $0.team == .player && $0.buildProgress < 1 })
+    #expect(engine.state.buildings.count == startingBuildingCount + 1)
+    #expect(engine.state.metal[.player, default: 0] == startingMetal - GameDefinitions.building(.landFactory).metalCost)
+    #expect(factory.position == point)
+    #expect(factory.rally == point)
+    #expect(factory.productionQueue.isEmpty)
+
+    for builderID in [builder.id, extraBuilder.id] {
+        let activeBuilder = try #require(engine.state.units.first { $0.id == builderID })
+        if case let .build(targetID)? = activeBuilder.order {
+            #expect(targetID == factory.id)
+        } else {
+            #expect(Bool(false))
+        }
+    }
+}
+
+@Test func buildLandFactoryCommandIgnoresInvalidSelectedIDsWhenAnyPlayerBuilderIsSelected() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    let playerTank = try #require(state.units.first { $0.team == .player && $0.type != .builder })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let point = clearLandFactoryBuildPoint(in: state)
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyBuilder.id, "missing-id", playerTank.id, builder.id]
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.issueBuildLandFactory(at: point) == .issued)
+
+    let factory = try #require(engine.state.buildings.first { $0.type == .landFactory && $0.team == .player && $0.buildProgress < 1 })
+    let activeBuilder = try #require(engine.state.units.first { $0.id == builder.id })
+    let untouchedTank = try #require(engine.state.units.first { $0.id == playerTank.id })
+    let untouchedEnemyBuilder = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+    if case let .build(targetID)? = activeBuilder.order {
+        #expect(targetID == factory.id)
+    } else {
+        #expect(Bool(false))
+    }
+    #expect(untouchedTank.order == nil)
+    #expect(untouchedEnemyBuilder.order == nil)
+}
+
+@Test func buildLandFactoryRejectsSelectionWithoutPlayerBuilders() throws {
+    var state = GameState(mapID: .coast)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+    let playerTank = try #require(state.units.first { $0.team == .player && $0.type != .builder })
+    let playerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let point = clearLandFactoryBuildPoint(in: state)
+    state.selectedEntityID = playerBuilding.id
+    state.selectedEntityIDs = [playerBuilding.id, enemyBuilder.id, "missing-id", playerTank.id]
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.issueBuildLandFactory(at: point) == .selectedEntityCannotBuild)
+}
+
+@Test func buildLandFactoryFailureDoesNotReplaceExistingBuilderOrder() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    let existingDestination = WorldPoint(builder.position.x + 120, builder.position.y)
+    state.units[builderIndex].order = .move(destination: existingDestination)
+    state.selectedEntityID = builder.id
+
+    var invalidEngine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(invalidEngine.issueBuildLandFactory(at: WorldPoint(2_350, 1_280)) == .invalidBuildTarget)
+    let invalidBuilder = try #require(invalidEngine.state.units.first { $0.id == builder.id })
+    #expect(invalidBuilder.order == .move(destination: existingDestination))
+
+    var poorState = state
+    poorState.metal[.player] = 20
+    var poorEngine = GameEngine(state: poorState, enemyAIEnabled: false)
+    #expect(poorEngine.issueBuildLandFactory(at: clearLandFactoryBuildPoint(in: poorState)) == .insufficientMetal)
+    let poorBuilder = try #require(poorEngine.state.units.first { $0.id == builder.id })
+    #expect(poorBuilder.order == .move(destination: existingDestination))
+}
+
 @Test func buildLandFactoryCommandMovesBuilderIntoRangeAndKeepsOrder() throws {
     var state = GameState(mapID: .coast)
     let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
@@ -2090,6 +2189,45 @@ import Testing
     } else {
         #expect(Bool(false))
     }
+}
+
+@Test func buildLandFactoryCommandProgressesFasterWithSelectedBuilderGroup() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let extraBuilder = UnitSnapshot(
+        id: "factory-fast-extra-builder",
+        type: .builder,
+        team: .player,
+        position: WorldPoint(1_060, 1_000),
+        hitPoints: builderDefinition.hitPoints,
+        maxHitPoints: builderDefinition.hitPoints
+    )
+    let point = clearLandFactoryBuildPoint(in: state)
+    state.units[builderIndex].position = WorldPoint(point.x - 76, point.y)
+    state.units.append(extraBuilder)
+    let extraBuilderIndex = try #require(state.units.firstIndex { $0.id == extraBuilder.id })
+    state.units[extraBuilderIndex].position = WorldPoint(point.x + 76, point.y)
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = [builder.id, extraBuilder.id]
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.issueBuildLandFactory(at: point) == .issued)
+    engine.update(deltaTime: 1)
+
+    let factory = try #require(engine.state.buildings.first { $0.type == .landFactory && $0.team == .player })
+    #expect(abs(factory.buildProgress - (2.0 / GameDefinitions.building(.landFactory).buildTime)) < 0.0001)
+    for _ in 0..<10 {
+        engine.update(deltaTime: 1)
+    }
+    let completedFactory = try #require(engine.state.buildings.first { $0.id == factory.id })
+    let firstBuilder = try #require(engine.state.units.first { $0.id == builder.id })
+    let secondBuilder = try #require(engine.state.units.first { $0.id == extraBuilder.id })
+    #expect(completedFactory.buildProgress == 1)
+    #expect(completedFactory.hitPoints == completedFactory.maxHitPoints)
+    #expect(firstBuilder.order == nil)
+    #expect(secondBuilder.order == nil)
 }
 
 @Test func buildLandFactoryCompletesAndEnablesProduction() throws {
@@ -2157,6 +2295,49 @@ import Testing
     let stoppedBuilder = try #require(engine.state.units.first { $0.id == builder.id })
     #expect(stoppedBuilder.order == nil)
     #expect(engine.state.selectedEntityID == builder.id)
+}
+
+@Test func stopCommandClearsSelectedBuildLandFactoryGroupOnly() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let secondBuilder = UnitSnapshot(
+        id: "factory-stop-second-builder",
+        type: .builder,
+        team: .player,
+        position: WorldPoint(builder.position.x + 80, builder.position.y),
+        hitPoints: builderDefinition.hitPoints,
+        maxHitPoints: builderDefinition.hitPoints
+    )
+    let unselectedBuilder = UnitSnapshot(
+        id: "factory-stop-unselected-builder",
+        type: .builder,
+        team: .player,
+        position: WorldPoint(builder.position.x + 160, builder.position.y),
+        hitPoints: builderDefinition.hitPoints,
+        maxHitPoints: builderDefinition.hitPoints
+    )
+    state.units.append(secondBuilder)
+    state.units.append(unselectedBuilder)
+
+    let firstIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    let secondIndex = try #require(state.units.firstIndex { $0.id == secondBuilder.id })
+    let unselectedIndex = try #require(state.units.firstIndex { $0.id == unselectedBuilder.id })
+    state.units[firstIndex].order = .build(targetID: "shared-factory")
+    state.units[secondIndex].order = .build(targetID: "shared-factory")
+    state.units[unselectedIndex].order = .build(targetID: "shared-factory")
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = [builder.id, secondBuilder.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueStop() == .issued)
+
+    let stoppedFirst = try #require(engine.state.units.first { $0.id == builder.id })
+    let stoppedSecond = try #require(engine.state.units.first { $0.id == secondBuilder.id })
+    let untouchedBuilder = try #require(engine.state.units.first { $0.id == unselectedBuilder.id })
+    #expect(stoppedFirst.order == nil)
+    #expect(stoppedSecond.order == nil)
+    #expect(untouchedBuilder.order != nil)
 }
 
 @Test func gameStateJSONRoundTripPreservesBuildExtractorState() throws {
