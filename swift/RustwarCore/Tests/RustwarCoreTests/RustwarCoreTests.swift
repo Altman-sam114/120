@@ -217,7 +217,7 @@ import Testing
             id: "visible-radar-skip",
             type: .tank,
             team: .enemy,
-            position: WorldPoint(900, 600),
+            position: WorldPoint(820, 600),
             hitPoints: tankDefinition.hitPoints,
             maxHitPoints: tankDefinition.hitPoints
         ),
