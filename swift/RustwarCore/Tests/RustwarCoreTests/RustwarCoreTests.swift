@@ -158,6 +158,142 @@ import Testing
     #expect(!visibility.isVisible(at: WorldPoint(-1, -1)))
 }
 
+@Test func commandCenterDefinitionProvidesRadarRange() {
+    #expect(GameDefinitions.building(.command).radarRange == 920)
+    #expect(GameDefinitions.building(.extractor).radarRange == 0)
+    #expect(GameDefinitions.building(.landFactory).radarRange == 0)
+    #expect(GameDefinitions.building(.turret).radarRange == 0)
+}
+
+@Test func playerRadarContactsIncludeUnseenEnemiesWithoutRevealingTiles() throws {
+    let commandDefinition = GameDefinitions.building(.command)
+    let tankDefinition = GameDefinitions.unit(.tank)
+    let playerCommandPosition = WorldPoint(600, 600)
+    let radarOnlyEnemyPosition = WorldPoint(1_350, 600)
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "radar-only-tank",
+            type: .tank,
+            team: .enemy,
+            position: radarOnlyEnemyPosition,
+            hitPoints: tankDefinition.hitPoints,
+            maxHitPoints: tankDefinition.hitPoints
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-radar-command",
+            type: .command,
+            team: .player,
+            position: playerCommandPosition,
+            hitPoints: commandDefinition.hitPoints,
+            maxHitPoints: commandDefinition.hitPoints,
+            rally: playerCommandPosition
+        )
+    ]
+
+    let visibility = state.visibility(for: .player)
+    let contacts = state.radarContacts(for: .player)
+    let contact = try #require(contacts.first)
+
+    #expect(!visibility.isVisible(at: radarOnlyEnemyPosition))
+    #expect(contacts.count == 1)
+    #expect(contact.kind == .unit)
+    #expect(contact.position == radarOnlyEnemyPosition)
+}
+
+@Test func playerRadarContactsSkipVisibleAndOutOfRangeEnemies() {
+    let commandDefinition = GameDefinitions.building(.command)
+    let tankDefinition = GameDefinitions.unit(.tank)
+    let turretDefinition = GameDefinitions.building(.turret)
+    let playerCommandPosition = WorldPoint(600, 600)
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "visible-radar-skip",
+            type: .tank,
+            team: .enemy,
+            position: WorldPoint(900, 600),
+            hitPoints: tankDefinition.hitPoints,
+            maxHitPoints: tankDefinition.hitPoints
+        ),
+        UnitSnapshot(
+            id: "out-of-radar-skip",
+            type: .tank,
+            team: .enemy,
+            position: WorldPoint(1_650, 600),
+            hitPoints: tankDefinition.hitPoints,
+            maxHitPoints: tankDefinition.hitPoints
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-radar-command",
+            type: .command,
+            team: .player,
+            position: playerCommandPosition,
+            hitPoints: commandDefinition.hitPoints,
+            maxHitPoints: commandDefinition.hitPoints,
+            rally: playerCommandPosition
+        ),
+        BuildingSnapshot(
+            id: "radar-only-enemy-building",
+            type: .turret,
+            team: .enemy,
+            position: WorldPoint(1_350, 640),
+            hitPoints: turretDefinition.hitPoints,
+            maxHitPoints: turretDefinition.hitPoints,
+            rally: WorldPoint(1_350, 640)
+        )
+    ]
+
+    let contacts = state.radarContacts(for: .player)
+
+    #expect(contacts.count == 1)
+    #expect(contacts.first?.kind == .building)
+    #expect(contacts.first?.position == WorldPoint(1_350, 640))
+}
+
+@Test func playerRadarContactsRequireCompletedLivingRadarSource() {
+    let commandDefinition = GameDefinitions.building(.command)
+    let tankDefinition = GameDefinitions.unit(.tank)
+    let commandPosition = WorldPoint(600, 600)
+    let enemyPosition = WorldPoint(1_350, 600)
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "radar-source-test-enemy",
+            type: .tank,
+            team: .enemy,
+            position: enemyPosition,
+            hitPoints: tankDefinition.hitPoints,
+            maxHitPoints: tankDefinition.hitPoints
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "unfinished-radar-command",
+            type: .command,
+            team: .player,
+            position: commandPosition,
+            hitPoints: commandDefinition.hitPoints,
+            maxHitPoints: commandDefinition.hitPoints,
+            buildProgress: 0.5,
+            rally: commandPosition
+        )
+    ]
+
+    #expect(state.radarContacts(for: .player).isEmpty)
+
+    state.buildings[0].buildProgress = 1
+    state.buildings[0].hitPoints = 0
+    #expect(state.radarContacts(for: .player).isEmpty)
+
+    state.buildings[0].hitPoints = commandDefinition.hitPoints
+    #expect(state.radarContacts(for: .player).count == 1)
+}
+
 @Test func gameStateDecodesOldJSONWithoutExploredTilesAndEngineSeedsCurrentVision() throws {
     let state = GameState(mapID: .coast)
     let encoded = try JSONEncoder().encode(state)
@@ -241,6 +377,43 @@ import Testing
     state.units[0].position = WorldPoint(2_700, 900)
     let visibleEnemyBuildingTarget = try #require(state.selectionTargetVisibleToPlayer(at: enemyTurret.position, includeEnemies: true))
     #expect(visibleEnemyBuildingTarget.id == enemyTurret.id)
+}
+
+@Test func visibleSelectionTargetRejectsRadarOnlyEnemies() throws {
+    let commandDefinition = GameDefinitions.building(.command)
+    let tankDefinition = GameDefinitions.unit(.tank)
+    let commandPosition = WorldPoint(600, 600)
+    let radarOnlyEnemyPosition = WorldPoint(1_350, 600)
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "radar-only-selection-enemy",
+            type: .tank,
+            team: .enemy,
+            position: radarOnlyEnemyPosition,
+            hitPoints: tankDefinition.hitPoints,
+            maxHitPoints: tankDefinition.hitPoints
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-radar-command",
+            type: .command,
+            team: .player,
+            position: commandPosition,
+            hitPoints: commandDefinition.hitPoints,
+            maxHitPoints: commandDefinition.hitPoints,
+            rally: commandPosition
+        )
+    ]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(state.radarContacts(for: .player).count == 1)
+    let rawTarget = try #require(state.selectionTarget(at: radarOnlyEnemyPosition, includeEnemies: true))
+    #expect(rawTarget.id == "radar-only-selection-enemy")
+    #expect(state.selectionTargetVisibleToPlayer(at: radarOnlyEnemyPosition, includeEnemies: true) == nil)
+    #expect(engine.selectVisibleToPlayer(at: radarOnlyEnemyPosition, includeEnemies: true) == nil)
+    #expect(engine.state.selectedEntityID == nil)
 }
 
 @Test func selectVisibleToPlayerDoesNotSelectUnseenEnemy() throws {

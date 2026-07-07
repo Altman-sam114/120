@@ -9,6 +9,7 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
     public let income: Double
     public let supply: Int
     public let vision: Double
+    public let radarRange: Double
     public let produces: [UnitType]
     public let attackRange: Double
     public let damage: Double
@@ -25,6 +26,7 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
         income: Double,
         supply: Int,
         vision: Double,
+        radarRange: Double = 0,
         produces: [UnitType] = [],
         attackRange: Double = 0,
         damage: Double = 0,
@@ -40,6 +42,7 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
         self.income = income
         self.supply = supply
         self.vision = vision
+        self.radarRange = radarRange
         self.produces = produces
         self.attackRange = attackRange
         self.damage = damage

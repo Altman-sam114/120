@@ -21,6 +21,7 @@ struct TacticalMapView: View {
             let selectedEntityIDs = Set(state.selectedEntityIDs)
             let playerVisibility = state.visibility(for: .player)
             let playerExplored = state.exploredVisibility(for: .player)
+            let playerRadarContacts = state.radarContacts(for: .player)
             let cameraCenter = controller.camera.center
             let visibleWorldRect = controller.visibleBattlefieldWorldRect
             let shouldDifferentiateWithoutColor = differentiateWithoutColor
@@ -38,6 +39,7 @@ struct TacticalMapView: View {
                     selectedEntityIDs: selectedEntityIDs,
                     playerVisibility: playerVisibility,
                     playerExplored: playerExplored,
+                    playerRadarContacts: playerRadarContacts,
                     cameraCenter: cameraCenter,
                     visibleWorldRect: visibleWorldRect,
                     pendingCommandSymbol: pendingCommandSymbol,
@@ -163,6 +165,7 @@ struct TacticalMapView: View {
         selectedEntityIDs: Set<String>,
         playerVisibility: VisibilitySnapshot,
         playerExplored: VisibilitySnapshot,
+        playerRadarContacts: [RadarContactSnapshot],
         cameraCenter: WorldPoint,
         visibleWorldRect: WorldRect?,
         pendingCommandSymbol: String?,
@@ -184,6 +187,7 @@ struct TacticalMapView: View {
         }
 
         drawFog(visibility: playerVisibility, explored: playerExplored, in: &context, size: size)
+        drawRadarContacts(playerRadarContacts, in: &context, size: size)
 
         for building in buildings where isVisibleToPlayer(building, visibility: playerVisibility) {
             drawBuilding(
@@ -283,6 +287,21 @@ struct TacticalMapView: View {
         }
         if hasUnexploredTiles {
             context.fill(unexploredFog, with: .color(.black.opacity(0.58)))
+        }
+    }
+
+    private static func drawRadarContacts(
+        _ contacts: [RadarContactSnapshot],
+        in context: inout GraphicsContext,
+        size: CGSize
+    ) {
+        for contact in contacts {
+            let point = mapPoint(for: contact.position, size: size)
+            let side: CGFloat = contact.kind == .building ? 4.2 : 3
+            let rect = CGRect(x: point.x - side / 2, y: point.y - side / 2, width: side, height: side)
+            let path = contact.kind == .building ? Path(roundedRect: rect, cornerRadius: 0.8) : Path(ellipseIn: rect)
+            context.fill(path, with: .color(.cyan.opacity(0.78)))
+            context.stroke(path, with: .color(.white.opacity(0.62)), lineWidth: 0.5)
         }
     }
 

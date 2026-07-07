@@ -10,6 +10,7 @@ final class BattlefieldScene: SKScene {
     private let resourceNode = SKNode()
     private let entityNode = SKNode()
     private let fogNode = SKNode()
+    private let radarNode = SKNode()
     private var lastUpdateTime: TimeInterval?
     private var renderedMapID: MapID?
     private var renderedMapRevision = -1
@@ -50,9 +51,11 @@ final class BattlefieldScene: SKScene {
         syncCamera(controller.camera)
         let playerVisibility = state.visibility(for: .player)
         let playerExplored = state.exploredVisibility(for: .player)
+        let playerRadarContacts = state.radarContacts(for: .player)
         drawResources(state.resources)
         drawEntities(state, playerVisibility: playerVisibility)
         drawFog(visibility: playerVisibility, explored: playerExplored)
+        drawRadarContacts(playerRadarContacts)
     }
 
     private func configureScene() {
@@ -63,6 +66,7 @@ final class BattlefieldScene: SKScene {
         worldNode.addChild(resourceNode)
         worldNode.addChild(entityNode)
         worldNode.addChild(fogNode)
+        worldNode.addChild(radarNode)
     }
 
     private func syncCamera(_ camera: CameraState) {
@@ -157,6 +161,35 @@ final class BattlefieldScene: SKScene {
             node.strokeColor = .clear
             node.lineWidth = 0
             fogNode.addChild(node)
+        }
+    }
+
+    private func drawRadarContacts(_ contacts: [RadarContactSnapshot]) {
+        radarNode.removeAllChildren()
+        for contact in contacts {
+            let radius = contact.kind == .building ? 13.0 : 9.0
+            let node = SKShapeNode(circleOfRadius: radius)
+            node.position = spritePoint(for: contact.position)
+            node.fillColor = SKColor.systemCyan.withAlphaComponent(0.20)
+            node.strokeColor = SKColor.systemCyan.withAlphaComponent(0.86)
+            node.lineWidth = 2
+            radarNode.addChild(node)
+
+            let ticks = CGMutablePath()
+            ticks.move(to: CGPoint(x: -radius - 5, y: 0))
+            ticks.addLine(to: CGPoint(x: -radius + 2, y: 0))
+            ticks.move(to: CGPoint(x: radius - 2, y: 0))
+            ticks.addLine(to: CGPoint(x: radius + 5, y: 0))
+            ticks.move(to: CGPoint(x: 0, y: -radius - 5))
+            ticks.addLine(to: CGPoint(x: 0, y: -radius + 2))
+            ticks.move(to: CGPoint(x: 0, y: radius - 2))
+            ticks.addLine(to: CGPoint(x: 0, y: radius + 5))
+
+            let tickNode = SKShapeNode(path: ticks)
+            tickNode.strokeColor = SKColor.systemCyan.withAlphaComponent(0.78)
+            tickNode.lineWidth = 2
+            tickNode.lineCap = .round
+            node.addChild(tickNode)
         }
     }
 

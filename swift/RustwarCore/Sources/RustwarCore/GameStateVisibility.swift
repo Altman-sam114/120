@@ -48,6 +48,10 @@ public extension GameState {
         }
     }
 
+    func radarContacts(for team: Team) -> [RadarContactSnapshot] {
+        radarContacts(for: team, visibleTileIndices: visibility(for: team).visibleTileIndices)
+    }
+
     private func sanitizedTileIndices(_ indices: Set<Int>) -> Set<Int> {
         guard terrain.columns > 0, terrain.rows > 0 else {
             return []
@@ -86,5 +90,54 @@ public extension GameState {
                 }
             }
         }
+    }
+
+    private func radarContacts(for team: Team, visibleTileIndices: Set<Int>) -> [RadarContactSnapshot] {
+        let radarSources = buildings.compactMap { building -> (position: WorldPoint, range: Double)? in
+            guard building.team == team, building.hitPoints > 0, building.buildProgress >= 1 else {
+                return nil
+            }
+            let range = GameDefinitions.building(building.type).radarRange
+            guard range > 0 else {
+                return nil
+            }
+            return (building.position, range)
+        }
+
+        guard !radarSources.isEmpty else {
+            return []
+        }
+
+        let currentVisibility = VisibilitySnapshot(
+            columns: terrain.columns,
+            rows: terrain.rows,
+            visibleTileIndices: visibleTileIndices
+        )
+        var contacts: [RadarContactSnapshot] = []
+
+        for unit in units where unit.team != team && unit.hitPoints > 0 {
+            guard !currentVisibility.isVisible(at: unit.position),
+                  isRadarDetected(unit.position, by: radarSources) else {
+                continue
+            }
+            contacts.append(RadarContactSnapshot(kind: .unit, position: unit.position))
+        }
+
+        for building in buildings where building.team != team && building.hitPoints > 0 {
+            guard !currentVisibility.isVisible(at: building.position),
+                  isRadarDetected(building.position, by: radarSources) else {
+                continue
+            }
+            contacts.append(RadarContactSnapshot(kind: .building, position: building.position))
+        }
+
+        return contacts
+    }
+
+    private func isRadarDetected(_ position: WorldPoint, by sources: [(position: WorldPoint, range: Double)]) -> Bool {
+        for source in sources where source.position.distanceSquared(to: position) <= source.range * source.range {
+            return true
+        }
+        return false
     }
 }
