@@ -6616,7 +6616,8 @@ import Testing
     let radarDefinition = GameDefinitions.building(.radar)
     let contactPosition = try #require(radarOnlyContactPoint(near: completedRadar.position, in: buildOnlyEngine.state))
     let scoutDefinition = GameDefinitions.unit(.scout)
-    buildOnlyEngine.state.units.append(
+    var completedState = buildOnlyEngine.state
+    completedState.units.append(
         UnitSnapshot(
             id: "enemy-radar-detected-player-scout",
             type: .scout,
@@ -6626,11 +6627,11 @@ import Testing
             maxHitPoints: scoutDefinition.hitPoints
         )
     )
-    let enemyVisibility = buildOnlyEngine.state.visibility(for: .enemy)
-    let contacts = buildOnlyEngine.state.radarContacts(for: .enemy)
+    let enemyVisibility = completedState.visibility(for: .enemy)
+    let contacts = completedState.radarContacts(for: .enemy)
 
     #expect(completedRadar.buildProgress == 1)
-    #expect(completedRadar.position.distance(to: contactPosition) <= radarDefinition.radarRange)
+    #expect(completedRadar.position.distanceSquared(to: contactPosition) <= radarDefinition.radarRange * radarDefinition.radarRange)
     #expect(!enemyVisibility.isVisible(at: contactPosition))
     #expect(contacts.contains {
         $0.kind == .unit && $0.position == contactPosition
@@ -7611,14 +7612,21 @@ private func radarOnlyContactPoint(near radarPosition: WorldPoint, in state: Gam
     ]
 
     for offset in offsets {
-        let point = WorldPoint(radarPosition.x + offset.x, radarPosition.y + offset.y).clampedToMap()
-        guard radarPosition.distance(to: point) <= radarRange,
+        let point = clampedMapPointForTest(WorldPoint(radarPosition.x + offset.x, radarPosition.y + offset.y))
+        guard radarPosition.distanceSquared(to: point) <= radarRange * radarRange,
               !visibility.isVisible(at: point) else {
             continue
         }
         return point
     }
     return nil
+}
+
+private func clampedMapPointForTest(_ point: WorldPoint) -> WorldPoint {
+    WorldPoint(
+        min(max(point.x, 0), GameConstants.mapWidth),
+        min(max(point.y, 0), GameConstants.mapHeight)
+    )
 }
 
 private func enemyFactoryConstructionReadyState(mapID: MapID) -> GameState {
