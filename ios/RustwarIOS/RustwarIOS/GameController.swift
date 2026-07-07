@@ -683,6 +683,18 @@ final class GameController {
         centerCamera(on: point)
     }
 
+    func handleTacticalMapContextCommand(at point: WorldPoint) {
+        clearLastBattlefieldTap()
+        guard !isAwaitingTargetCommand else {
+            commandStatus = "Finish current command first"
+            renderRevision += 1
+            return
+        }
+
+        issueContextCommand(at: point)
+        renderRevision += 1
+    }
+
     func toggleMoveCommand() {
         if isAwaitingMoveTarget {
             isAwaitingMoveTarget = false

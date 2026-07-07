@@ -58,7 +58,7 @@ flowchart TD
   C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、残骸、双方单位建筑、多选高亮、相机中心和等待命令反馈，并复用点位、Builder 目标和实体目标命令"]
   C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、己方实体、当前可见敌方实体、多选高亮、移动目标和当前玩家视野雾层"]
   T["SpatialTap / LongPress / Drag / Magnify<br/>中文注释：iOS 触摸选择、移动落点、长按上下文命令、Select Area 框选、拖拽平移和捏合缩放"] --> C
-  TT["TacticalMap DragTap<br/>中文注释：点按小地图换算世界坐标；等待点位、Builder 目标或实体目标命令时显示反馈并下令，否则居中相机"] --> C
+  TT["TacticalMap DragTap / LongPress<br/>中文注释：点按小地图换算世界坐标；等待点位、Builder 目标或实体目标命令时显示反馈并下令，否则居中相机；无等待命令时长按复用上下文命令"] --> C
   CTX["Battlefield long press context command<br/>中文注释：非等待态长按主战场，按敌方 Attack、受损友方 Repair、健康友方 Guard、残骸 Reclaim、资源点 Build Extractor、空点 Rally 或 Move 的顺序复用已有命令"] --> C
   C --> M["UnitOrder.move<br/>中文注释：选中己方单位后写入移动目标；多选时按稳定方阵给选中己方单位分配围绕目标点的目的地"]
   M --> E
@@ -121,7 +121,7 @@ flowchart TD
   MP --> E
   C --> SL["UserDefaults Save / Load<br/>中文注释：JSON 保存 GameState、CameraState、地图、暂停、速度和 AI 开关，读取后刷新原生状态"]
   SL --> E
-  C --> VIS["VisibilitySnapshot fog and enemy filtering<br/>中文注释：根据存活己方单位和完成己方建筑 vision 计算可见 tile，SpriteKit 主战场和 SwiftUI 战术小地图覆盖不可见 tile，并隐藏当前视野外敌方单位/建筑及主战场不可见目标线；主战场 tap、长按上下文命令、Attack/Guard/Repair 等待态和战术小地图实体目标命中过滤雾外敌方；暂不实现雷达或已探索记忆"]
+  C --> VIS["VisibilitySnapshot fog and enemy filtering<br/>中文注释：根据存活己方单位和完成己方建筑 vision 计算可见 tile，SpriteKit 主战场和 SwiftUI 战术小地图覆盖不可见 tile，并隐藏当前视野外敌方单位/建筑及主战场不可见目标线；主战场 tap、长按上下文命令、Attack/Guard/Repair 等待态、战术小地图实体目标命中和战术小地图长按上下文命令过滤雾外敌方；暂不实现雷达或已探索记忆"]
   VIS --> B
   C --> FC["Camera focus Command Center<br/>中文注释：focusPlayerCommandCenter 只移动 camera.center，不改变 zoom、选择、等待态或单位命令"]
   FC --> B

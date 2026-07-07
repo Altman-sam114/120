@@ -2,8 +2,12 @@ import SwiftUI
 import RustwarCore
 
 struct TacticalMapView: View {
+    private static let contextTapSuppressionDuration: TimeInterval = 0.18
+
     let controller: GameController
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+    @State private var contextPressLocation: CGPoint?
+    @State private var suppressTapUntil: TimeInterval?
 
     var body: some View {
         GeometryReader { proxy in
@@ -35,7 +39,14 @@ struct TacticalMapView: View {
                 )
             }
             .contentShape(Rectangle())
-            .gesture(mapGesture(in: proxy.size))
+            .simultaneousGesture(mapGesture(in: proxy.size))
+            .onLongPressGesture(minimumDuration: 0.45, maximumDistance: 18) {
+                guard let contextPressLocation else {
+                    return
+                }
+                suppressTapUntil = ProcessInfo.processInfo.systemUptime + Self.contextTapSuppressionDuration
+                handleContextPress(at: contextPressLocation, in: proxy.size)
+            }
             .overlay(alignment: .topLeading) {
                 if let pendingCommandLabel {
                     Label(
@@ -71,23 +82,48 @@ struct TacticalMapView: View {
 
     private func mapGesture(in size: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .local)
+            .onChanged { value in
+                contextPressLocation = value.location
+            }
             .onEnded { value in
+                defer {
+                    contextPressLocation = nil
+                }
+                if let suppressTapUntil {
+                    self.suppressTapUntil = nil
+                    guard ProcessInfo.processInfo.systemUptime > suppressTapUntil else {
+                        return
+                    }
+                }
                 handleTap(at: value.location, in: size)
             }
     }
 
     private func handleTap(at location: CGPoint, in size: CGSize) {
-        guard size.width > 0, size.height > 0 else {
+        guard let worldPoint = worldPoint(for: location, in: size) else {
             return
+        }
+        controller.handleTacticalMapTap(at: worldPoint)
+    }
+
+    private func handleContextPress(at location: CGPoint, in size: CGSize) {
+        guard let worldPoint = worldPoint(for: location, in: size) else {
+            return
+        }
+        controller.handleTacticalMapContextCommand(at: worldPoint)
+    }
+
+    private func worldPoint(for location: CGPoint, in size: CGSize) -> WorldPoint? {
+        guard size.width > 0, size.height > 0 else {
+            return nil
         }
 
         let clampedX = min(size.width, max(0, location.x))
         let clampedY = min(size.height, max(0, location.y))
-        let worldPoint = WorldPoint(
+        return WorldPoint(
             Double(clampedX / size.width) * GameConstants.mapWidth,
             Double(clampedY / size.height) * GameConstants.mapHeight
         )
-        controller.handleTacticalMapTap(at: worldPoint)
     }
 
     private static func drawMap(
