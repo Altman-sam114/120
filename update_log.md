@@ -3151,7 +3151,12 @@
 验证结果：
 
 - 本地通过：`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v180 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`。
-- 本地 `swift test --package-path swift/RustwarCore` 和云端 artifact 复判待本轮提交并 push 后记录。
+- 本地 `git diff --check` 通过。
+- 本地 `swift test --package-path swift/RustwarCore` 未运行成功：沙箱内先遇到 SwiftPM cache 权限和本机 Swift/SDK mismatch；改用 `/private/tmp` module cache 后仍在 Package manifest 链接阶段失败，报 `PackageDescription.Package.__allocating_init(...)` undefined symbol。
+- 首次实现提交 `0b7638631f66a2dcbf2e57e7336629ecb4e9001f` 的云端 run `28846563022` 未通过：artifact `rustwar-ci-v1.0-main-0b76386-run28846563022-attempt1` 已下载到 `/private/tmp/rustwar-c-review-28846563022/`，目录大小 `224K`；manifest 与 `main` / commit / run / attempt 匹配。失败项为 Swift test 编译，原因是测试直接修改 `GameEngine.state` 且调用了 core 内 `fileprivate` helper。修复提交 `d5380e841685cfad2b0716263dbb0cec16913849` 改为通过可变 `GameState` 副本和测试侧公开 helper 断言。
+- 第二次修复提交 `d5380e841685cfad2b0716263dbb0cec16913849` 的云端 run `28846737239` 未通过：artifact `rustwar-ci-v1.0-main-d5380e8-run28846737239-attempt1` 已下载到 `/private/tmp/rustwar-c-review-28846737239/`，目录大小 `292K`；manifest 匹配。失败项为既有 `incompleteEnemyLandFactoryDoesNotProduceUntilCompleted` 断言，原因是新增 Radar Station 建造阶段改变了该测试后半段的 Builder/生产选择环境。修复提交 `ec81e53e25b9ce490b6e5d42e9a414e6740d4c38` 隔离该测试中的 Builder 建造行为。
+- 第三次修复提交 `ec81e53e25b9ce490b6e5d42e9a414e6740d4c38` 的云端 run `28846895491` 未通过：artifact `rustwar-ci-v1.0-main-ec81e53-run28846895491-attempt1` 已下载到 `/private/tmp/rustwar-c-review-28846895491/`，目录大小 `248K`；manifest 匹配。失败项为 Swift test 编译，原因是测试引用了尚未定义的 `keepEnemyBuildersBusy` helper。修复提交 `80a19b07e37ae1c35007f7f535f5ae3cb6efa0e4` 新增该测试 helper。
+- 最新修复提交 `80a19b07e37ae1c35007f7f535f5ae3cb6efa0e4` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `28847157033`，attempt `1`，artifact `rustwar-ci-v1.0-main-80a19b0-run28847157033-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-28847157033/`，目录大小 `292K`。manifest 确认 `branch=main`、`commitSha=80a19b07e37ae1c35007f7f535f5ae3cb6efa0e4`、`runId=28847157033`、`runAttempt=1`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`；JUnit 为 6 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`build.log` 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0，Swift Testing 277 tests passed，iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
