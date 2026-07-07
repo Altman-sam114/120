@@ -3,11 +3,13 @@ import RustwarCore
 
 struct TacticalMapView: View {
     private static let contextTapSuppressionDuration: TimeInterval = 0.18
+    private static let cameraDragActivationDistance: CGFloat = 22
 
     let controller: GameController
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     @State private var contextPressLocation: CGPoint?
     @State private var suppressTapUntil: TimeInterval?
+    @State private var isDraggingCamera = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -86,10 +88,31 @@ struct TacticalMapView: View {
         DragGesture(minimumDistance: 0, coordinateSpace: .local)
             .onChanged { value in
                 contextPressLocation = value.location
+                guard !controller.isAwaitingTargetCommand else {
+                    return
+                }
+
+                let dragDistance = hypot(
+                    value.location.x - value.startLocation.x,
+                    value.location.y - value.startLocation.y
+                )
+                guard isDraggingCamera || dragDistance >= Self.cameraDragActivationDistance else {
+                    return
+                }
+                guard let worldPoint = worldPoint(for: value.location, in: size) else {
+                    return
+                }
+
+                isDraggingCamera = true
+                controller.dragTacticalMapCamera(to: worldPoint)
             }
             .onEnded { value in
                 defer {
                     contextPressLocation = nil
+                    isDraggingCamera = false
+                }
+                guard !isDraggingCamera else {
+                    return
                 }
                 if let suppressTapUntil {
                     self.suppressTapUntil = nil

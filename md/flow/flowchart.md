@@ -58,7 +58,7 @@ flowchart TD
   C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、残骸、双方单位建筑、多选高亮、主战场视口矩形、相机中心和等待命令反馈，并复用点位、Builder 目标和实体目标命令"]
   C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、己方实体、当前可见敌方实体、多选高亮、移动目标和当前玩家视野雾层"]
   T["SpatialTap / LongPress / Drag / Magnify<br/>中文注释：iOS 触摸选择、移动落点、长按上下文命令、Select Area 框选、拖拽平移和捏合缩放"] --> C
-  TT["TacticalMap DragTap / LongPress<br/>中文注释：点按小地图换算世界坐标；等待点位、Builder 目标或实体目标命令时显示反馈并下令，否则居中相机；无等待命令时长按复用上下文命令"] --> C
+  TT["TacticalMap DragTap / DragCamera / LongPress<br/>中文注释：点按小地图换算世界坐标；等待点位、Builder 目标或实体目标命令时显示反馈并下令，否则点按居中相机、拖动连续移动相机；无等待命令时长按复用上下文命令"] --> C
   CTX["Battlefield long press context command<br/>中文注释：非等待态长按主战场，按敌方 Attack、受损友方 Repair、健康友方 Guard、残骸 Reclaim、资源点 Build Extractor、空点 Rally 或 Move 的顺序复用已有命令"] --> C
   C --> M["UnitOrder.move<br/>中文注释：选中己方单位后写入移动目标；多选时按稳定方阵给选中己方单位分配围绕目标点的目的地"]
   M --> E
@@ -129,6 +129,8 @@ flowchart TD
   KP --> B
   C --> VM["Tactical map viewport frame<br/>中文注释：GameController 根据 CameraState 和主战场 viewport size 暴露当前可见 WorldRect，TacticalMapView 绘制小地图白色视口框"]
   VM --> TM
+  C --> TMC["Tactical map camera drag<br/>中文注释：无等待命令时，小地图拖动超过阈值后调用 dragTacticalMapCamera，只移动 CameraState.center 并让视口框跟随更新"]
+  TMC --> TM
   E --> TF["Turret Fire<br/>中文注释：完成状态炮塔自动攻击射程内敌方单位或建筑并进入冷却"]
   TF --> E
   E --> AI["Enemy AI<br/>中文注释：红方 Builder 维修受损友军、扩张资源点、建造 Land Factory / Turret 并回收附近残骸，红方完成状态 Command Center 可排队 Builder，Land Factory 按完整 T1 列表排队造兵，空闲战斗单位按 Web-lite 评分获得攻击玩家目标的订单"]

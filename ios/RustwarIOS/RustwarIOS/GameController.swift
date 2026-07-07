@@ -498,7 +498,7 @@ final class GameController {
         if isAwaitingAreaSelection {
             return "Drag on the battlefield to select player units in an area."
         }
-        return "Tap the tactical map to center the battlefield camera."
+        return "Tap or drag the tactical map to move the battlefield camera."
     }
 
     var tacticalMapAccessibilityValue: String {
@@ -1001,6 +1001,14 @@ final class GameController {
         if !isAwaitingTargetCommand {
             commandStatus = "Camera centered"
         }
+        renderRevision += 1
+    }
+
+    func dragTacticalMapCamera(to point: WorldPoint) {
+        guard !isAwaitingTargetCommand else {
+            return
+        }
+        camera.center(on: point)
         renderRevision += 1
     }
 
