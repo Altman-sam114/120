@@ -48,9 +48,10 @@ final class BattlefieldScene: SKScene {
             renderedMapRevision = controller.mapRenderRevision
         }
         syncCamera(controller.camera)
+        let playerVisibility = state.visibility(for: .player)
         drawResources(state.resources)
-        drawEntities(state)
-        drawFog(state.visibility(for: .player))
+        drawEntities(state, playerVisibility: playerVisibility)
+        drawFog(playerVisibility)
     }
 
     private func configureScene() {
@@ -101,17 +102,17 @@ final class BattlefieldScene: SKScene {
         }
     }
 
-    private func drawEntities(_ state: GameState) {
+    private func drawEntities(_ state: GameState, playerVisibility: VisibilitySnapshot) {
         entityNode.removeAllChildren()
         let selectedIDs = Set(state.selectedEntityIDs)
         for wreck in state.wrecks {
             drawWreck(wreck)
         }
-        for building in state.buildings {
-            drawBuilding(building, selectedIDs: selectedIDs, state: state)
+        for building in state.buildings where isVisibleToPlayer(building, visibility: playerVisibility) {
+            drawBuilding(building, selectedIDs: selectedIDs, state: state, playerVisibility: playerVisibility)
         }
-        for unit in state.units {
-            drawUnit(unit, selectedIDs: selectedIDs, state: state)
+        for unit in state.units where isVisibleToPlayer(unit, visibility: playerVisibility) {
+            drawUnit(unit, selectedIDs: selectedIDs, state: state, playerVisibility: playerVisibility)
         }
     }
 
@@ -144,7 +145,12 @@ final class BattlefieldScene: SKScene {
         fogNode.addChild(node)
     }
 
-    private func drawBuilding(_ building: BuildingSnapshot, selectedIDs: Set<String>, state: GameState) {
+    private func drawBuilding(
+        _ building: BuildingSnapshot,
+        selectedIDs: Set<String>,
+        state: GameState,
+        playerVisibility: VisibilitySnapshot
+    ) {
         let definition = GameDefinitions.building(building.type)
         let isSelected = selectedIDs.contains(building.id)
         if isSelected, building.team == .player, !definition.produces.isEmpty {
@@ -153,7 +159,12 @@ final class BattlefieldScene: SKScene {
         if definition.damage > 0,
            building.buildProgress >= 1,
            building.weaponCooldown > 0,
-           let targetPosition = nearestBuildingWeaponTargetPosition(for: building, definition: definition, in: state) {
+           let targetPosition = nearestBuildingWeaponTargetPosition(
+                for: building,
+                definition: definition,
+                in: state,
+                playerVisibility: playerVisibility
+           ) {
             drawTurretFire(from: building.position, to: targetPosition, reloadFraction: building.weaponCooldown / definition.reloadTime)
         }
 
@@ -177,14 +188,19 @@ final class BattlefieldScene: SKScene {
         entityNode.addChild(node)
     }
 
-    private func drawUnit(_ unit: UnitSnapshot, selectedIDs: Set<String>, state: GameState) {
+    private func drawUnit(
+        _ unit: UnitSnapshot,
+        selectedIDs: Set<String>,
+        state: GameState,
+        playerVisibility: VisibilitySnapshot
+    ) {
         let definition = GameDefinitions.unit(unit.type)
         let isSelected = selectedIDs.contains(unit.id)
         switch unit.order {
         case let .move(destination)?:
             drawMoveOrder(from: unit.position, to: destination, isSelected: isSelected)
         case let .attack(targetID)?:
-            if let targetPosition = targetPosition(for: targetID, in: state) {
+            if let targetPosition = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility) {
                 drawAttackOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
             }
         case let .attackMove(destination)?:
@@ -192,19 +208,19 @@ final class BattlefieldScene: SKScene {
         case let .patrol(origin, destination, returning)?:
             drawPatrolOrder(origin: origin, destination: destination, returning: returning, isSelected: isSelected)
         case let .guardTarget(targetID, _)?:
-            if let targetPosition = targetPosition(for: targetID, in: state) {
+            if let targetPosition = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility) {
                 drawGuardOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
             }
         case let .build(targetID)?:
-            if let targetPosition = targetPosition(for: targetID, in: state) {
+            if let targetPosition = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility) {
                 drawBuildOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
             }
         case let .repair(targetID)?:
-            if let targetPosition = targetPosition(for: targetID, in: state) {
+            if let targetPosition = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility) {
                 drawRepairOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
             }
         case let .reclaim(wreckID)?:
-            if let targetPosition = targetPosition(for: wreckID, in: state) {
+            if let targetPosition = targetPosition(for: wreckID, in: state, playerVisibility: playerVisibility) {
                 drawReclaimOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
             }
         case nil:
@@ -546,11 +562,21 @@ final class BattlefieldScene: SKScene {
         node.addChild(fill)
     }
 
-    private func targetPosition(for targetID: String, in state: GameState) -> WorldPoint? {
+    private func targetPosition(
+        for targetID: String,
+        in state: GameState,
+        playerVisibility: VisibilitySnapshot
+    ) -> WorldPoint? {
         if let unit = state.units.first(where: { $0.id == targetID }) {
+            guard isVisibleToPlayer(unit, visibility: playerVisibility) else {
+                return nil
+            }
             return unit.position
         }
         if let building = state.buildings.first(where: { $0.id == targetID }) {
+            guard isVisibleToPlayer(building, visibility: playerVisibility) else {
+                return nil
+            }
             return building.position
         }
         if let wreck = state.wrecks.first(where: { $0.id == targetID }) {
@@ -562,13 +588,17 @@ final class BattlefieldScene: SKScene {
     private func nearestBuildingWeaponTargetPosition(
         for building: BuildingSnapshot,
         definition: BuildingDefinition,
-        in state: GameState
+        in state: GameState,
+        playerVisibility: VisibilitySnapshot
     ) -> WorldPoint? {
         var bestPosition: WorldPoint?
         var bestDistance = Double.infinity
 
         for unit in state.units {
             guard unit.team != building.team, unit.hitPoints > 0 else {
+                continue
+            }
+            guard isVisibleToPlayer(unit, visibility: playerVisibility) else {
                 continue
             }
             let unitDefinition = GameDefinitions.unit(unit.type)
@@ -587,6 +617,9 @@ final class BattlefieldScene: SKScene {
             guard targetBuilding.team != building.team, targetBuilding.hitPoints > 0 else {
                 continue
             }
+            guard isVisibleToPlayer(targetBuilding, visibility: playerVisibility) else {
+                continue
+            }
             let targetDefinition = GameDefinitions.building(targetBuilding.type)
             let effectiveRange = definition.attackRange + targetDefinition.size / 2
             let distance = building.position.distanceSquared(to: targetBuilding.position)
@@ -600,6 +633,14 @@ final class BattlefieldScene: SKScene {
         }
 
         return bestPosition
+    }
+
+    private func isVisibleToPlayer(_ unit: UnitSnapshot, visibility: VisibilitySnapshot) -> Bool {
+        unit.team == .player || visibility.isVisible(at: unit.position)
+    }
+
+    private func isVisibleToPlayer(_ building: BuildingSnapshot, visibility: VisibilitySnapshot) -> Bool {
+        building.team == .player || visibility.isVisible(at: building.position)
     }
 
     private func spritePoint(for point: WorldPoint) -> CGPoint {

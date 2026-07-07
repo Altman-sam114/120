@@ -16,6 +16,7 @@
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
 - Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、选择替换/追加 mutation、世界矩形框选、单位优先/建筑 fallback 区域选择、全图同类型选择、附近同类型选择、控制编队、多选集合、空闲 Builder / 战斗单位批量选择、资源点命中、残骸模型、单单位和多单位 Move / Attack-Move / Patrol 队形落点、单单位和多单位 Attack 命令、单单位 Guard 和多单位 Guard 方阵护航偏移命令、单位攻击姿态 Aggressive / Defensive / Hold Fire、单 Builder Repair 和多 Builder Repair 分散接近点命令、单 Builder Reclaim 和多 Builder Reclaim 分散接近点命令、单 Builder Build 和多 Builder Build 分散接近建筑命令、玩家当前视野 tile 计算、单单位和多单位 Stop 命令、Command Center Builder 生产、Land Factory T1 生产列表、生产建筑队列 MVP、生产取消/退款、重复生产开关、集结点设置、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方 Command Center Builder 生产、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI MVP、红方 AI Web-lite 目标评分、红方 AI On/Off 开关 API，以及从已保存 `GameState` 恢复原生模拟的入口。
 - iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、Replace / Add 选择模式、Idle Builders / Combat Units / Screen Combat 批量选择入口、Select Area 显式框选己方单位并在框内无己方单位时 fallback 选择己方建筑、Same Type 全图同类型选择入口、双击附近同类型选择入口、主战场长按上下文 Move / Attack / Guard / Repair / Reclaim / Build Extractor / Rally 入口、1-9 号控制编队保存/召回入口、外接键盘 Control+1-9 保存和 1-9 召回控制编队快捷键、外接键盘 WASD / 方向键连续移动视野、Base / Space 回到己方 Command Center、外接键盘 P / R / E / F / Control+A / Option+A / A / G / H / C / S / Z / X / V 触发已迁移的 Pause、Restart、批量选择、战术命令和攻击姿态切换、外接键盘 Shift+1-9 / Shift+E/T/F/C/P/R 触发生产、建造和生产建筑管理按钮、单单位和多单位 Move / Attack Move / Patrol 队形落点、多单位 Guard 方阵护航偏移、多 Builder Repair 分散接近点、单单位和多单位 Attack 命令、Aggressive / Defensive / Hold Fire 姿态按钮、单 Builder Reclaim 和多 Builder Reclaim 分散接近点、单 Builder Build 和多 Builder Build 分散接近建筑按钮语义、玩家当前视野主战场雾层、单单位和多单位 Stop 命令、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张、维修受损友军、回收附近残骸、Land Factory / Turret 建造、Command Center Builder 生产、完整 T1 编成生产、红方 AI Web-lite 目标评分和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off HUD 开关、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图多选高亮、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
+- v1.71 起，iOS 主战场会隐藏当前玩家视野外的敌方单位和建筑，并在目标型命令线与炮塔火力线中跳过不可见敌方目标；战术小地图雾层、雷达信号和已探索记忆仍未迁移。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
 - 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
 - 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
@@ -2774,3 +2775,40 @@
 遗留事项：
 
 - v1.70 只建立玩家当前视野和主战场雾层地基；尚无完整 Web fog parity、已探索记忆、雷达信号、敌方实体隐藏、雾内选择限制、AI 情报限制、战术小地图雾层或存档 explored grid。
+
+### v1.71 / iOS hide unseen enemy entities
+
+日期：2026-07-07
+
+核心变更：
+
+- `BattlefieldScene.renderNow()` 每帧复用一次 `GameState.visibility(for: .player)`，同时驱动实体过滤和雾层绘制。
+- iOS 主战场绘制实体时，己方单位和建筑始终显示；敌方单位和建筑只有当前位置所在 tile 对玩家可见时才显示。
+- 目标型命令线通过可见性 helper 过滤敌方单位/建筑目标，玩家单位攻击不可见敌方目标时不会绘制到该目标的攻击线。
+- 炮塔火力线的目标查找同样跳过当前不可见敌方目标，避免可见性外的敌方位置通过火力线泄露。
+- 本轮不修改 Web `app.js`、Swift core 状态、AI、命令、选择、存档、战术小地图、雷达、已探索记忆或雾内点选/命中限制。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.71-ios-hide-unseen-enemies.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地 `git diff --check` 通过。
+- 本地 `node --check app.js` 通过。
+- 本地 `swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v171 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 未运行成功：当前容器缺少 Swift 编译器，返回 `/bin/bash: line 1: swiftc: command not found`。
+- 本地 `swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift` 未运行成功：当前容器缺少 Swift 编译器，返回 `/bin/bash: line 1: swiftc: command not found`。
+- 本地 `swift test --package-path swift/RustwarCore` 未运行成功：当前容器缺少 SwiftPM，返回 `/bin/bash: line 1: swift: command not found`。
+- 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 未运行成功：当前容器缺少 Xcode 命令行工具，返回 `/bin/bash: line 1: xcodebuild: command not found`。
+- 本地 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 未运行成功：当前容器缺少 Xcode 命令行工具，返回 `/bin/bash: line 1: xcodebuild: command not found`。
+- 云端 GitHub Actions artifact：待本轮实现提交 push 后由 Agent C 复判最新 `origin/main` run。
+
+遗留事项：
+
+- v1.71 只隐藏 iOS 主战场当前视野外敌方实体和不可见敌方目标线；尚无完整 Web fog parity、已探索记忆、雷达信号、战术小地图雾层、雾内选择限制、AI 情报限制或存档 explored grid。
