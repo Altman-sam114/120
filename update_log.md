@@ -2961,7 +2961,7 @@
 - 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 未运行成功：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，`xcodebuild` 要求完整 Xcode。
 - 本地 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 未运行成功：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，`xcodebuild` 要求完整 Xcode。
 - 首次实现提交 `2499af9f585a477af81c7eaf2875099e39f7bbeb` 的云端 run `28853302380` 未通过：artifact `rustwar-ci-v1.0-main-2499af9-run28853302380-attempt1` 已下载到 `/private/tmp/rustwar-c-review-28853302380/`，目录大小 `272K`；manifest 与 `main` / commit / run / attempt 匹配。失败项为 Swift test `radarStationUpgradeQueuesConsumesMetalAndCompletesOverTime`，原因是 22 次 1 秒 tick 后升级进度为 `0.9999999999999997`，引擎完成判断未使用浮点容差，导致升级未完成。
-- 修复提交待本轮 push 后由 Agent C 复判最新云端 artifact。
+- 修复提交 `3e11239f86f1c693037425b6acc58d4fff6f76b5` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `28855294594`，attempt `1`，artifact `rustwar-ci-v1.0-main-3e11239-run28855294594-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-28855294594/`，目录大小 `272K`。manifest 确认 `branch=main`、`commitSha=3e11239f86f1c693037425b6acc58d4fff6f76b5`、`runId=28855294594`、`runAttempt=1`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`；JUnit 为 6 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`build.log` 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0，Swift Testing 284 tests passed，iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
