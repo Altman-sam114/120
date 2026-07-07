@@ -92,8 +92,17 @@ final class GameController {
         engine.state.radarContacts(for: .player).count
     }
 
+    var upgradedPlayerRadarStationCount: Int {
+        engine.state.radarCoverage(for: .player).count { coverage in
+            guard let building = engine.state.buildings.first(where: { $0.id == coverage.buildingID }) else {
+                return false
+            }
+            return building.upgradeLevel >= 2
+        }
+    }
+
     var radarIntelAccessibilitySummary: String {
-        "\(playerRadarStationCount) active \(pluralized("radar station", count: playerRadarStationCount)), \(playerRadarContactCount) radar \(pluralized("contact", count: playerRadarContactCount))"
+        "\(playerRadarStationCount) active \(pluralized("radar station", count: playerRadarStationCount)), \(upgradedPlayerRadarStationCount) upgraded, \(playerRadarContactCount) radar \(pluralized("contact", count: playerRadarContactCount))"
     }
 
     var pauseButtonTitle: String {
@@ -287,6 +296,31 @@ final class GameController {
         !selectedPlayerBuilders.isEmpty
     }
 
+    var canUpgradeSelectedRadar: Bool {
+        guard let radar = selectedCompletedPlayerRadar,
+              radar.upgradeProgress == nil,
+              let upgrade = GameDefinitions.nextUpgrade(for: radar) else {
+            return false
+        }
+        return engine.state.metal[.player, default: 0] >= upgrade.metalCost
+    }
+
+    var selectedRadarUpgradeSummary: String? {
+        guard let radar = selectedCompletedPlayerRadar else {
+            return nil
+        }
+        if let progress = radar.upgradeProgress {
+            return "Radar upgrade \(Int((progress * 100).rounded()))%"
+        }
+        if radar.upgradeLevel >= 2 {
+            return "Radar Level 2"
+        }
+        guard let upgrade = GameDefinitions.nextUpgrade(for: radar) else {
+            return nil
+        }
+        return "Radar upgrade \(Int(upgrade.metalCost)) metal"
+    }
+
     var canIssueStop: Bool {
         !selectedPlayerUnits.isEmpty
     }
@@ -341,6 +375,14 @@ final class GameController {
 
     var buildRadarCommandButtonTitle: String {
         isAwaitingBuildRadarTarget ? "Cancel" : "Radar"
+    }
+
+    var upgradeRadarButtonTitle: String {
+        guard let radar = selectedCompletedPlayerRadar,
+              let upgrade = GameDefinitions.nextUpgrade(for: radar) else {
+            return "Upgrade Radar"
+        }
+        return "Upgrade Radar \(Int(upgrade.metalCost))"
     }
 
     var rallyCommandButtonTitle: String {
@@ -887,6 +929,13 @@ final class GameController {
             commandStatus = selectedPlayerBuilders.count > 1 ? "Radar position for \(selectedPlayerBuilders.count) builders" : "Radar position"
         }
         renderRevision += 1
+    }
+
+    func upgradeSelectedRadar() {
+        let result = engine.queueBuildingUpgrade()
+        commandStatus = statusText(for: result)
+        renderRevision += 1
+        mapRenderRevision += 1
     }
 
     func toggleRallyCommand() {
@@ -1447,6 +1496,22 @@ final class GameController {
         return GameDefinitions.building(building.type).produces.isEmpty ? nil : building
     }
 
+    private var selectedCompletedPlayerRadar: BuildingSnapshot? {
+        let selectedIDs = engine.state.selectedEntityIDs.isEmpty
+            ? engine.state.selectedEntityID.map { [$0] } ?? []
+            : engine.state.selectedEntityIDs
+        guard selectedIDs.count == 1, let selectedEntityID = selectedIDs.first else {
+            return nil
+        }
+        return engine.state.buildings.first {
+            $0.id == selectedEntityID &&
+                $0.team == .player &&
+                $0.type == .radar &&
+                $0.hitPoints > 0 &&
+                $0.buildProgress >= 1
+        }
+    }
+
     private func statusText(for result: UnitCommandResult) -> String? {
         switch result {
         case .issued:
@@ -1690,6 +1755,23 @@ final class GameController {
             return "Builder required"
         case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .occupiedResourceNode:
             return "Clear land required"
+        case .insufficientMetal:
+            return "Need more metal"
+        }
+    }
+
+    private func statusText(for result: BuildingUpgradeResult) -> String? {
+        switch result {
+        case .queued:
+            return "Radar upgrade started"
+        case .noSelection:
+            return "No radar selected"
+        case .selectedBuildingCannotUpgrade:
+            return "Radar Station required"
+        case .upgradeAlreadyQueued:
+            return "Radar upgrade already queued"
+        case .fullyUpgraded:
+            return "Radar already upgraded"
         case .insufficientMetal:
             return "Need more metal"
         }

@@ -14,6 +14,7 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
     public let attackRange: Double
     public let damage: Double
     public let reloadTime: Double
+    public let upgrades: [BuildingUpgradeDefinition]
 
     public init(
         type: BuildingType,
@@ -30,7 +31,8 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
         produces: [UnitType] = [],
         attackRange: Double = 0,
         damage: Double = 0,
-        reloadTime: Double = 1
+        reloadTime: Double = 1,
+        upgrades: [BuildingUpgradeDefinition] = []
     ) {
         self.type = type
         self.name = name
@@ -47,5 +49,34 @@ public struct BuildingDefinition: Codable, Equatable, Sendable {
         self.attackRange = attackRange
         self.damage = damage
         self.reloadTime = reloadTime
+        self.upgrades = upgrades
+    }
+}
+
+public struct BuildingUpgradeDefinition: Codable, Equatable, Sendable {
+    public let level: Int
+    public let name: String
+    public let metalCost: Double
+    public let buildTime: Double
+    public let hitPoints: Double
+    public let vision: Double
+    public let radarRange: Double
+
+    public init(
+        level: Int,
+        name: String,
+        metalCost: Double,
+        buildTime: Double,
+        hitPoints: Double,
+        vision: Double,
+        radarRange: Double
+    ) {
+        self.level = level
+        self.name = name
+        self.metalCost = metalCost
+        self.buildTime = buildTime
+        self.hitPoints = hitPoints
+        self.vision = vision
+        self.radarRange = radarRange
     }
 }

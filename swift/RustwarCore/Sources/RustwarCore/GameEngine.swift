@@ -42,6 +42,7 @@ public struct GameEngine: Sendable {
         for team in Team.allCases {
             state.metal[team, default: 0] += state.income(for: team) * step
         }
+        updateBuildingUpgrades(deltaTime: step)
         updateProduction(deltaTime: step)
         updateBuildingWeapons(deltaTime: step)
         if enemyAIEnabled {
@@ -467,6 +468,38 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func queueBuildingUpgrade() -> BuildingUpgradeResult {
+        let selectedIDs = selectedCommandEntityIDs()
+        guard selectedIDs.count == 1, let selectedEntityID = selectedIDs.first else {
+            return selectedIDs.isEmpty ? .noSelection : .selectedBuildingCannotUpgrade
+        }
+        guard let buildingIndex = state.buildings.firstIndex(where: { $0.id == selectedEntityID }),
+              state.buildings[buildingIndex].team == .player,
+              state.buildings[buildingIndex].hitPoints > 0,
+              state.buildings[buildingIndex].buildProgress >= 1 else {
+            return .selectedBuildingCannotUpgrade
+        }
+        guard state.buildings[buildingIndex].upgradeProgress == nil else {
+            return .upgradeAlreadyQueued
+        }
+        guard !GameDefinitions.building(state.buildings[buildingIndex].type).upgrades.isEmpty else {
+            return .selectedBuildingCannotUpgrade
+        }
+        guard let upgrade = GameDefinitions.nextUpgrade(for: state.buildings[buildingIndex]) else {
+            return .fullyUpgraded
+        }
+
+        let team = state.buildings[buildingIndex].team
+        guard state.metal[team, default: 0] >= upgrade.metalCost else {
+            return .insufficientMetal
+        }
+
+        state.metal[team, default: 0] -= upgrade.metalCost
+        state.buildings[buildingIndex].upgradeProgress = 0
+        return .queued
+    }
+
+    @discardableResult
     public mutating func setRepeatProduction(_ unitType: UnitType?) -> ProductionRepeatResult {
         guard let selectedEntityID = state.selectedEntityID else {
             return .noSelection
@@ -545,7 +578,7 @@ public struct GameEngine: Sendable {
     private mutating func updateBuildingWeapons(deltaTime: Double) {
         for buildingIndex in state.buildings.indices {
             let building = state.buildings[buildingIndex]
-            let definition = GameDefinitions.building(building.type)
+            let definition = GameDefinitions.building(for: building)
             guard building.hitPoints > 0,
                   building.buildProgress >= 1,
                   definition.damage > 0,
@@ -561,6 +594,33 @@ public struct GameEngine: Sendable {
 
             applyDamage(definition.damage, to: target.id)
             state.buildings[buildingIndex].weaponCooldown = definition.reloadTime
+        }
+    }
+
+    private mutating func updateBuildingUpgrades(deltaTime: Double) {
+        for buildingIndex in state.buildings.indices {
+            guard let progress = state.buildings[buildingIndex].upgradeProgress,
+                  state.buildings[buildingIndex].hitPoints > 0,
+                  state.buildings[buildingIndex].buildProgress >= 1,
+                  let upgrade = GameDefinitions.nextUpgrade(for: state.buildings[buildingIndex]) else {
+                continue
+            }
+
+            let updatedProgress = min(1, progress + deltaTime / max(0.1, upgrade.buildTime))
+            state.buildings[buildingIndex].upgradeProgress = updatedProgress
+            guard updatedProgress >= 1 else {
+                continue
+            }
+
+            let oldMaxHitPoints = state.buildings[buildingIndex].maxHitPoints
+            state.buildings[buildingIndex].upgradeLevel = upgrade.level
+            state.buildings[buildingIndex].upgradeProgress = nil
+            state.buildings[buildingIndex].maxHitPoints = upgrade.hitPoints
+            let gainedMaximumHitPoints = max(0, upgrade.hitPoints - oldMaxHitPoints)
+            state.buildings[buildingIndex].hitPoints = min(
+                upgrade.hitPoints,
+                state.buildings[buildingIndex].hitPoints + gainedMaximumHitPoints
+            )
         }
     }
 

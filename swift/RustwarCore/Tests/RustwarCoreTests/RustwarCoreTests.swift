@@ -168,6 +168,19 @@ import Testing
     #expect(GameDefinitions.building(.radar).damage == 0)
 }
 
+@Test func radarStationDefinitionProvidesLevelTwoUpgrade() throws {
+    let upgrade = try #require(GameDefinitions.building(.radar).upgrades.first)
+
+    #expect(GameDefinitions.building(.radar).upgrades.count == 1)
+    #expect(upgrade.level == 2)
+    #expect(upgrade.name == "Radar Station T2")
+    #expect(upgrade.metalCost == 780)
+    #expect(upgrade.buildTime == 22)
+    #expect(upgrade.hitPoints == 520)
+    #expect(upgrade.vision == 390)
+    #expect(upgrade.radarRange == 1_360)
+}
+
 @Test func playerRadarCoverageIncludesCompletedRadarStationFields() throws {
     let radarDefinition = GameDefinitions.building(.radar)
     let radarPosition = WorldPoint(600, 600)
@@ -415,6 +428,229 @@ import Testing
 
     #expect(state.radarContacts(for: .player).isEmpty)
     #expect(state.radarCoverage(for: .player).isEmpty)
+}
+
+@Test func buildingSnapshotDecodesLegacyUpgradeDefaultsAndRoundTripsUpgradeState() throws {
+    let radarDefinition = GameDefinitions.building(.radar)
+    let radar = BuildingSnapshot(
+        id: "legacy-radar-upgrade",
+        type: .radar,
+        team: .player,
+        position: WorldPoint(600, 600),
+        hitPoints: radarDefinition.hitPoints,
+        maxHitPoints: radarDefinition.hitPoints,
+        rally: WorldPoint(600, 600)
+    )
+    let encoded = try JSONEncoder().encode(radar)
+    var json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    json.removeValue(forKey: "upgradeLevel")
+    json.removeValue(forKey: "upgradeProgress")
+    let legacyEncoded = try JSONSerialization.data(withJSONObject: json)
+
+    let decoded = try JSONDecoder().decode(BuildingSnapshot.self, from: legacyEncoded)
+    #expect(decoded.upgradeLevel == 1)
+    #expect(decoded.upgradeProgress == nil)
+
+    let upgradingRadar = BuildingSnapshot(
+        id: "active-radar-upgrade",
+        type: .radar,
+        team: .player,
+        position: WorldPoint(600, 600),
+        hitPoints: 500,
+        maxHitPoints: 520,
+        rally: WorldPoint(600, 600),
+        upgradeLevel: 2,
+        upgradeProgress: 0.42
+    )
+    let roundTripped = try JSONDecoder().decode(
+        BuildingSnapshot.self,
+        from: JSONEncoder().encode(upgradingRadar)
+    )
+    #expect(roundTripped.upgradeLevel == 2)
+    #expect(roundTripped.upgradeProgress == 0.42)
+}
+
+@Test func radarStationUpgradeCommandRejectsInvalidSelections() {
+    let radarDefinition = GameDefinitions.building(.radar)
+    let turretDefinition = GameDefinitions.building(.turret)
+    let radarPosition = WorldPoint(600, 600)
+    let turretPosition = WorldPoint(820, 600)
+
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-radar-upgrade-reject",
+            type: .radar,
+            team: .player,
+            position: radarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: radarPosition
+        ),
+        BuildingSnapshot(
+            id: "player-turret-upgrade-reject",
+            type: .turret,
+            team: .player,
+            position: turretPosition,
+            hitPoints: turretDefinition.hitPoints,
+            maxHitPoints: turretDefinition.hitPoints,
+            rally: turretPosition
+        ),
+        BuildingSnapshot(
+            id: "enemy-radar-upgrade-reject",
+            type: .radar,
+            team: .enemy,
+            position: WorldPoint(1_040, 600),
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: WorldPoint(1_040, 600)
+        ),
+        BuildingSnapshot(
+            id: "unfinished-radar-upgrade-reject",
+            type: .radar,
+            team: .player,
+            position: WorldPoint(1_260, 600),
+            hitPoints: radarDefinition.hitPoints * 0.5,
+            maxHitPoints: radarDefinition.hitPoints,
+            buildProgress: 0.5,
+            rally: WorldPoint(1_260, 600)
+        ),
+        BuildingSnapshot(
+            id: "queued-radar-upgrade-reject",
+            type: .radar,
+            team: .player,
+            position: WorldPoint(1_480, 600),
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: WorldPoint(1_480, 600),
+            upgradeProgress: 0.25
+        ),
+        BuildingSnapshot(
+            id: "complete-radar-upgrade-reject",
+            type: .radar,
+            team: .player,
+            position: WorldPoint(1_700, 600),
+            hitPoints: 520,
+            maxHitPoints: 520,
+            rally: WorldPoint(1_700, 600),
+            upgradeLevel: 2
+        )
+    ]
+    state.metal[.player] = 1_000
+
+    func upgradeResult(
+        selectedID: String?,
+        selectedIDs: [String] = [],
+        playerMetal: Double = 1_000
+    ) -> BuildingUpgradeResult {
+        var candidate = state
+        candidate.selectedEntityID = selectedID
+        candidate.selectedEntityIDs = selectedIDs
+        candidate.metal[.player] = playerMetal
+        var engine = GameEngine(state: candidate, enemyAIEnabled: false)
+        return engine.queueBuildingUpgrade()
+    }
+
+    #expect(upgradeResult(selectedID: nil) == .noSelection)
+    #expect(upgradeResult(selectedID: "player-turret-upgrade-reject") == .selectedBuildingCannotUpgrade)
+    #expect(upgradeResult(selectedID: "unfinished-radar-upgrade-reject") == .selectedBuildingCannotUpgrade)
+    #expect(upgradeResult(selectedID: "enemy-radar-upgrade-reject") == .selectedBuildingCannotUpgrade)
+    #expect(upgradeResult(selectedID: "queued-radar-upgrade-reject") == .upgradeAlreadyQueued)
+    #expect(upgradeResult(selectedID: "complete-radar-upgrade-reject") == .fullyUpgraded)
+    #expect(upgradeResult(
+        selectedID: "player-radar-upgrade-reject",
+        selectedIDs: ["player-radar-upgrade-reject", "player-turret-upgrade-reject"]
+    ) == .selectedBuildingCannotUpgrade)
+    #expect(upgradeResult(selectedID: "player-radar-upgrade-reject", playerMetal: 100) == .insufficientMetal)
+}
+
+@Test func radarStationUpgradeQueuesConsumesMetalAndCompletesOverTime() throws {
+    let radarDefinition = GameDefinitions.building(.radar)
+    let radarPosition = WorldPoint(600, 600)
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-radar-upgrade-progress",
+            type: .radar,
+            team: .player,
+            position: radarPosition,
+            hitPoints: 300,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: radarPosition
+        )
+    ]
+    state.metal[.player] = 1_000
+    state.selectedEntityID = "player-radar-upgrade-progress"
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.queueBuildingUpgrade() == .queued)
+    #expect(engine.state.metal[.player] == 220)
+    #expect(engine.state.buildings[0].upgradeLevel == 1)
+    #expect(engine.state.buildings[0].upgradeProgress == 0)
+
+    for _ in 0..<11 {
+        engine.update(deltaTime: 1)
+    }
+    #expect(engine.state.buildings[0].upgradeLevel == 1)
+    #expect(abs((engine.state.buildings[0].upgradeProgress ?? -1) - 0.5) < 0.0001)
+
+    for _ in 0..<11 {
+        engine.update(deltaTime: 1)
+    }
+    let upgradedRadar = try #require(engine.state.buildings.first)
+    #expect(upgradedRadar.upgradeLevel == 2)
+    #expect(upgradedRadar.upgradeProgress == nil)
+    #expect(upgradedRadar.maxHitPoints == 520)
+    #expect(upgradedRadar.hitPoints == 400)
+}
+
+@Test func upgradedRadarExpandsCoverageVisibilityAndContactsWithoutSelectionReveal() throws {
+    let radarDefinition = GameDefinitions.building(.radar)
+    let tankDefinition = GameDefinitions.unit(.tank)
+    let radarPosition = WorldPoint(600, 600)
+    let expandedVisionPoint = WorldPoint(960, 600)
+    let radarOnlyEnemyPosition = WorldPoint(1_800, 600)
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "radar-t2-contact-tank",
+            type: .tank,
+            team: .enemy,
+            position: radarOnlyEnemyPosition,
+            hitPoints: tankDefinition.hitPoints,
+            maxHitPoints: tankDefinition.hitPoints
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-radar-upgrade-effects",
+            type: .radar,
+            team: .player,
+            position: radarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: radarPosition
+        )
+    ]
+
+    #expect(!state.visibility(for: .player).isVisible(at: expandedVisionPoint))
+    #expect(state.radarCoverage(for: .player).first?.radarRange == 920)
+    #expect(state.radarContacts(for: .player).isEmpty)
+
+    state.buildings[0].upgradeLevel = 2
+    state.buildings[0].maxHitPoints = 520
+    state.buildings[0].hitPoints = 520
+
+    let coverage = try #require(state.radarCoverage(for: .player).first)
+    let contacts = state.radarContacts(for: .player)
+    #expect(coverage.visionRange == 390)
+    #expect(coverage.radarRange == 1_360)
+    #expect(state.visibility(for: .player).isVisible(at: expandedVisionPoint))
+    #expect(contacts.count == 1)
+    #expect(contacts.first?.position == radarOnlyEnemyPosition)
+    #expect(state.selectionTargetVisibleToPlayer(at: radarOnlyEnemyPosition, includeEnemies: true) == nil)
 }
 
 @Test func gameStateDecodesOldJSONWithoutExploredTilesAndEngineSeedsCurrentVision() throws {

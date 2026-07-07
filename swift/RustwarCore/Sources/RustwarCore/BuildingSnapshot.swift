@@ -11,6 +11,8 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
     public var productionQueue: [ProductionQueueItem]
     public var repeatUnitType: UnitType?
     public var weaponCooldown: Double
+    public var upgradeLevel: Int
+    public var upgradeProgress: Double?
 
     private enum CodingKeys: String, CodingKey {
         case id
@@ -25,6 +27,8 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
         case productionQueue
         case repeatUnitType
         case weaponCooldown
+        case upgradeLevel
+        case upgradeProgress
     }
 
     public init(
@@ -39,7 +43,9 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
         nodeID: String? = nil,
         productionQueue: [ProductionQueueItem] = [],
         repeatUnitType: UnitType? = nil,
-        weaponCooldown: Double = 0
+        weaponCooldown: Double = 0,
+        upgradeLevel: Int = 1,
+        upgradeProgress: Double? = nil
     ) {
         self.id = id
         self.type = type
@@ -53,6 +59,8 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
         self.productionQueue = productionQueue
         self.repeatUnitType = repeatUnitType
         self.weaponCooldown = weaponCooldown
+        self.upgradeLevel = upgradeLevel
+        self.upgradeProgress = upgradeProgress
     }
 
     public init(from decoder: Decoder) throws {
@@ -69,5 +77,7 @@ public struct BuildingSnapshot: Codable, Equatable, Identifiable, Sendable {
         self.productionQueue = try container.decodeIfPresent([ProductionQueueItem].self, forKey: .productionQueue) ?? []
         self.repeatUnitType = try container.decodeIfPresent(UnitType.self, forKey: .repeatUnitType)
         self.weaponCooldown = try container.decodeIfPresent(Double.self, forKey: .weaponCooldown) ?? 0
+        self.upgradeLevel = try container.decodeIfPresent(Int.self, forKey: .upgradeLevel) ?? 1
+        self.upgradeProgress = try container.decodeIfPresent(Double.self, forKey: .upgradeProgress)
     }
 }

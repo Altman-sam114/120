@@ -273,7 +273,7 @@ final class BattlefieldScene: SKScene {
         state: GameState,
         playerVisibility: VisibilitySnapshot
     ) {
-        let definition = GameDefinitions.building(building.type)
+        let definition = GameDefinitions.building(for: building)
         let isSelected = selectedIDs.contains(building.id)
         if isSelected, building.team == .player, !definition.produces.isEmpty {
             drawRally(from: building.position, to: building.rally)
@@ -306,6 +306,8 @@ final class BattlefieldScene: SKScene {
         drawHealthBar(current: building.hitPoints, max: building.maxHitPoints, width: definition.size, yOffset: definition.size / 2 + 8, on: node)
         if building.buildProgress < 1 {
             drawBuildProgressBar(progress: building.buildProgress, width: definition.size, yOffset: -definition.size / 2 - 11, on: node)
+        } else if let upgradeProgress = building.upgradeProgress {
+            drawBuildProgressBar(progress: upgradeProgress, width: definition.size, yOffset: -definition.size / 2 - 11, on: node)
         }
         entityNode.addChild(node)
     }

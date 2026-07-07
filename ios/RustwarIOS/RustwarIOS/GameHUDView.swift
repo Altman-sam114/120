@@ -359,6 +359,18 @@ struct GameHUDView: View {
                     .keyboardShortcut(commandKey("d"), modifiers: .shift)
                     .accessibilityLabel("Build radar")
                 }
+                if controller.canUpgradeSelectedRadar {
+                    Button(
+                        controller.upgradeRadarButtonTitle,
+                        systemImage: "dot.radiowaves.left.and.right",
+                        action: controller.upgradeSelectedRadar
+                    )
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .accessibilityLabel("Upgrade radar")
+                    .accessibilityHint("Increases the selected Radar Station vision and radar range.")
+                }
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                     Button(
                         controller.attackCommandButtonTitle,
@@ -422,6 +434,13 @@ struct GameHUDView: View {
 
             if let selectedAttackStanceSummary = controller.selectedAttackStanceSummary {
                 Text(selectedAttackStanceSummary)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            if let selectedRadarUpgradeSummary = controller.selectedRadarUpgradeSummary {
+                Text(selectedRadarUpgradeSummary)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

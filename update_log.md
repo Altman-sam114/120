@@ -2888,7 +2888,7 @@
 - 本地 `swift test --package-path swift/RustwarCore` 未运行成功：当前容器缺少 SwiftPM，返回 `/bin/bash: line 1: swift: command not found`。
 - 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 未运行成功：当前容器缺少 Xcode 命令行工具，返回 `/bin/bash: line 1: xcodebuild: command not found`。
 - 本地 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 未运行成功：当前容器缺少 Xcode 命令行工具，返回 `/bin/bash: line 1: xcodebuild: command not found`。
-- 云端 artifact 复判待本轮 push 后由 Agent C 执行。
+- 验收记录提交 `022a01a2f1e07096590e14e3a01083aef5a2a44b` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `28849840433`，attempt `1`，artifact `rustwar-ci-v1.0-main-022a01a-run28849840433-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-28849840433/`，目录大小 `268K`。manifest 确认 `branch=main`、`commitSha=022a01a2f1e07096590e14e3a01083aef5a2a44b`、`runId=28849840433`、`runAttempt=1`；JUnit 为 6 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`build.log` 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0，Swift Testing 279 tests passed，iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
@@ -3201,3 +3201,47 @@
 遗留事项：
 
 - v1.81 只补齐雷达覆盖可视化和情报摘要；尚无 Radar Station 升级、雾内敌方残影、雷达目标记忆、AI 情报限制、雷达干扰或完整 Web radar parity。
+
+### v1.82 / iOS Radar Station upgrade MVP
+
+日期：2026-07-07
+
+核心变更：
+
+- `BuildingSnapshot` 新增 `upgradeLevel` 和 `upgradeProgress`，旧 JSON 默认解码为 level 1 且无升级进度。
+- `BuildingDefinition` 新增 `BuildingUpgradeDefinition` 列表，Radar Station T2 定义为 780 metal、22 秒、520 HP、390 vision、1360 radar range。
+- `GameEngine.queueBuildingUpgrade()` 支持玩家单选完成状态 Radar Station 后启动升级；升级排队时扣金属，`update(deltaTime:)` 推进进度，完成后提升等级、清空进度并提高 HP 上限。
+- `GameDefinitions.building(for:)` 提供按建筑实例计算的有效定义，`visibility(for:)`、`radarCoverage(for:)` 和 `radarContacts(for:)` 会读取升级后的 vision / radarRange。
+- iOS HUD 选中可升级 Radar Station 时显示 `Upgrade Radar` 按钮，主战场显示升级进度条，Radar VoiceOver 摘要新增已升级雷达数量。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/BuildingDefinition.swift`
+- `swift/RustwarCore/Sources/RustwarCore/BuildingSnapshot.swift`
+- `swift/RustwarCore/Sources/RustwarCore/BuildingUpgradeResult.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameDefinitions.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameStateVisibility.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.82-ios-radar-station-upgrade-mvp.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地通过：`git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v182 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`、`swiftc -parse ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift ios/RustwarIOS/RustwarIOS/TacticalMapView.swift ios/RustwarIOS/RustwarIOS/GameController.swift ios/RustwarIOS/RustwarIOS/GameHUDView.swift`。
+- 本地 `swift test --package-path swift/RustwarCore` 未运行成功：沙箱内先遇到 SwiftPM cache 权限和本机 Swift/SDK mismatch；提升权限重试后仍在 Package manifest 链接阶段失败，报 `PackageDescription.Package.__allocating_init(...)` undefined symbol。
+- 本地直接测试 typecheck 未运行成功：先用 `swiftc -enable-testing -emit-module` 成功生成 `/private/tmp/RustwarCore.swiftmodule`，随后 `swiftc -I /private/tmp -typecheck swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift` 受本机 Foundation/CoreFoundation SDK 与 Swift compiler 版本不匹配阻塞。
+- 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 未运行成功：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，`xcodebuild` 要求完整 Xcode。
+- 本地 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 未运行成功：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，`xcodebuild` 要求完整 Xcode。
+- 云端 artifact 复判待本轮 push 后由 Agent C 执行。
+
+遗留事项：
+
+- v1.82 只新增玩家手动 Radar Station T2 升级；红方 AI 不会升级雷达，仍无升级取消、通用建筑升级树、雾内敌方残影、雷达目标记忆、雷达干扰或完整 Web radar parity。

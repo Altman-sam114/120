@@ -13,7 +13,7 @@ public extension GameState {
         }
 
         for building in buildings where building.team == team && building.hitPoints > 0 && building.buildProgress >= 1 {
-            let definition = GameDefinitions.building(building.type)
+            let definition = GameDefinitions.building(for: building)
             markVisibleTiles(
                 around: building.position,
                 radius: definition.vision,
@@ -134,7 +134,7 @@ public extension GameState {
             guard building.team == team, building.hitPoints > 0, building.buildProgress >= 1 else {
                 return nil
             }
-            let definition = GameDefinitions.building(building.type)
+            let definition = GameDefinitions.building(for: building)
             guard definition.radarRange > 0 else {
                 return nil
             }

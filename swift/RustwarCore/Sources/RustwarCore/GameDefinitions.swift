@@ -14,7 +14,30 @@ public enum GameDefinitions {
         .extractor: BuildingDefinition(type: .extractor, name: "Extractor", icon: "EX", hitPoints: 560, size: 48, metalCost: 260, buildTime: 10, income: 9, supply: 0, vision: 240),
         .landFactory: BuildingDefinition(type: .landFactory, name: "Land Factory", icon: "LF", hitPoints: 920, size: 76, metalCost: 620, buildTime: 22, income: 0, supply: 8, vision: 310, produces: [.scout, .tank, .hover, .artillery, .aaTank]),
         .turret: BuildingDefinition(type: .turret, name: "Turret", icon: "TR", hitPoints: 650, size: 48, metalCost: 330, buildTime: 13, income: 0, supply: 0, vision: 330, attackRange: 230, damage: 28, reloadTime: 1.2),
-        .radar: BuildingDefinition(type: .radar, name: "Radar Station", icon: "RD", hitPoints: 420, size: 52, metalCost: 430, buildTime: 15, income: 0, supply: 0, vision: 260, radarRange: 920)
+        .radar: BuildingDefinition(
+            type: .radar,
+            name: "Radar Station",
+            icon: "RD",
+            hitPoints: 420,
+            size: 52,
+            metalCost: 430,
+            buildTime: 15,
+            income: 0,
+            supply: 0,
+            vision: 260,
+            radarRange: 920,
+            upgrades: [
+                BuildingUpgradeDefinition(
+                    level: 2,
+                    name: "Radar Station T2",
+                    metalCost: 780,
+                    buildTime: 22,
+                    hitPoints: 520,
+                    vision: 390,
+                    radarRange: 1_360
+                )
+            ]
+        )
     ]
 
     public static func unit(_ type: UnitType) -> UnitDefinition {
@@ -29,5 +52,39 @@ public enum GameDefinitions {
             fatalError("Missing building definition for \(type.rawValue).")
         }
         return definition
+    }
+
+    public static func building(for snapshot: BuildingSnapshot) -> BuildingDefinition {
+        let base = building(snapshot.type)
+        guard let upgrade = base.upgrades
+            .filter({ $0.level <= snapshot.upgradeLevel })
+            .max(by: { $0.level < $1.level }) else {
+            return base
+        }
+
+        return BuildingDefinition(
+            type: base.type,
+            name: base.name,
+            icon: base.icon,
+            hitPoints: upgrade.hitPoints,
+            size: base.size,
+            metalCost: base.metalCost,
+            buildTime: base.buildTime,
+            income: base.income,
+            supply: base.supply,
+            vision: upgrade.vision,
+            radarRange: upgrade.radarRange,
+            produces: base.produces,
+            attackRange: base.attackRange,
+            damage: base.damage,
+            reloadTime: base.reloadTime,
+            upgrades: base.upgrades
+        )
+    }
+
+    public static func nextUpgrade(for snapshot: BuildingSnapshot) -> BuildingUpgradeDefinition? {
+        building(snapshot.type).upgrades
+            .filter { $0.level > snapshot.upgradeLevel }
+            .min { $0.level < $1.level }
     }
 }
