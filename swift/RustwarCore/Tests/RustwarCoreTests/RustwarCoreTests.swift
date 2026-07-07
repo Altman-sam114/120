@@ -7671,6 +7671,163 @@ import Testing
     })
 }
 
+@Test func enemyAIQueuesExtractorUpgradeWhenFootholdReady() throws {
+    var state = enemyExtractorUpgradeReadyState(mapID: .coast)
+    let selectedPlayerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let playerExtractorDefinition = GameDefinitions.building(.extractor)
+    let playerExtractorPosition = WorldPoint(state.map.playerBase.x + 180, state.map.playerBase.y + 180)
+    state.buildings.append(
+        BuildingSnapshot(
+            id: "player-extractor-not-upgraded-by-ai",
+            type: .extractor,
+            team: .player,
+            position: playerExtractorPosition,
+            hitPoints: playerExtractorDefinition.hitPoints,
+            maxHitPoints: playerExtractorDefinition.hitPoints,
+            rally: playerExtractorPosition
+        )
+    )
+    state.selectedEntityID = selectedPlayerBuilding.id
+    state.selectedEntityIDs = [selectedPlayerBuilding.id]
+    let extractorID = try #require(state.buildings.first {
+        $0.team == .enemy && $0.type == .extractor && GameDefinitions.nextUpgrade(for: $0) != nil
+    }?.id)
+    let startingEnemyMetal = state.metal[.enemy, default: 0]
+    let startingEnemyIncome = state.income(for: .enemy)
+    let upgrade = try #require(GameDefinitions.building(.extractor).upgrades.first)
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let enemyExtractor = try #require(engine.state.buildings.first { $0.id == extractorID })
+    let playerExtractor = try #require(engine.state.buildings.first { $0.id == "player-extractor-not-upgraded-by-ai" })
+    #expect(enemyExtractor.upgradeLevel == 1)
+    #expect(enemyExtractor.upgradeProgress == 0)
+    #expect(engine.state.metal[.enemy, default: 0] == startingEnemyMetal + startingEnemyIncome - upgrade.metalCost)
+    #expect(engine.state.selectedEntityID == selectedPlayerBuilding.id)
+    #expect(engine.state.selectedEntityIDs == [selectedPlayerBuilding.id])
+    #expect(playerExtractor.upgradeProgress == nil)
+    #expect(playerExtractor.upgradeLevel == 1)
+}
+
+@Test func enemyExtractorUpgradeAIWaitsForInvalidStates() throws {
+    let baseState = enemyExtractorUpgradeReadyState(mapID: .coast)
+    let extractorID = try #require(baseState.buildings.first {
+        $0.team == .enemy && $0.type == .extractor && GameDefinitions.nextUpgrade(for: $0) != nil
+    }?.id)
+    let upgrade = try #require(GameDefinitions.building(.extractor).upgrades.first)
+    let reserveMetal = GameDefinitions.building(.extractor).metalCost
+
+    var poorState = baseState
+    poorState.metal[.enemy] = max(0, upgrade.metalCost + reserveMetal - poorState.income(for: .enemy) - 1)
+    let poorIncome = poorState.income(for: .enemy)
+    var poorEngine = GameEngine(state: poorState)
+    poorEngine.update(deltaTime: 1)
+    #expect(poorEngine.state.buildings.first { $0.id == extractorID }?.upgradeProgress == nil)
+    #expect(poorEngine.state.metal[.enemy, default: 0] == poorState.metal[.enemy, default: 0] + poorIncome)
+
+    var incompleteState = baseState
+    let incompleteExtractorIndex = try #require(incompleteState.buildings.firstIndex { $0.id == extractorID })
+    incompleteState.buildings[incompleteExtractorIndex].buildProgress = 0.5
+    let incompleteIncome = incompleteState.income(for: .enemy)
+    var incompleteEngine = GameEngine(state: incompleteState)
+    incompleteEngine.update(deltaTime: 1)
+    let incompleteExtractor = try #require(incompleteEngine.state.buildings.first { $0.id == extractorID })
+    #expect(incompleteExtractor.upgradeProgress == nil)
+    #expect(incompleteEngine.state.metal[.enemy, default: 0] == incompleteState.metal[.enemy, default: 0] + incompleteIncome)
+
+    var queuedState = baseState
+    let queuedExtractorIndex = try #require(queuedState.buildings.firstIndex { $0.id == extractorID })
+    queuedState.buildings[queuedExtractorIndex].upgradeProgress = 0.25
+    let queuedIncome = queuedState.income(for: .enemy)
+    var queuedEngine = GameEngine(state: queuedState)
+    queuedEngine.update(deltaTime: 1)
+    let queuedExtractor = try #require(queuedEngine.state.buildings.first { $0.id == extractorID })
+    #expect((queuedExtractor.upgradeProgress ?? 0) > 0.25)
+    #expect(queuedEngine.state.metal[.enemy, default: 0] == queuedState.metal[.enemy, default: 0] + queuedIncome)
+
+    var upgradedState = baseState
+    let upgradedExtractorIndex = try #require(upgradedState.buildings.firstIndex { $0.id == extractorID })
+    upgradedState.buildings[upgradedExtractorIndex].upgradeLevel = 3
+    let upgradedIncome = upgradedState.income(for: .enemy)
+    var upgradedEngine = GameEngine(state: upgradedState)
+    upgradedEngine.update(deltaTime: 1)
+    let upgradedExtractor = try #require(upgradedEngine.state.buildings.first { $0.id == extractorID })
+    #expect(upgradedExtractor.upgradeProgress == nil)
+    #expect(upgradedEngine.state.metal[.enemy, default: 0] == upgradedState.metal[.enemy, default: 0] + upgradedIncome)
+
+    var disabledEngine = GameEngine(state: baseState, enemyAIEnabled: false)
+    disabledEngine.update(deltaTime: 1)
+    #expect(disabledEngine.state.buildings.first { $0.id == extractorID }?.upgradeProgress == nil)
+    #expect(disabledEngine.state.metal[.enemy, default: 0] == baseState.metal[.enemy, default: 0] + baseState.income(for: .enemy))
+}
+
+@Test func enemyRadarUpgradeKeepsPriorityOverExtractorUpgrade() throws {
+    var state = enemyRadarUpgradeReadyState(mapID: .coast)
+    keepEnemyBuildersBusy(in: &state)
+    let radarID = "enemy-upgrade-radar"
+    let extractorID = try #require(state.buildings.first {
+        $0.team == .enemy && $0.type == .extractor && GameDefinitions.nextUpgrade(for: $0) != nil
+    }?.id)
+    let radarUpgrade = try #require(GameDefinitions.building(.radar).upgrades.first)
+    let income = state.income(for: .enemy)
+    state.metal[.enemy] = max(0, radarUpgrade.metalCost - income)
+    let startingEnemyMetal = state.metal[.enemy, default: 0]
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let radar = try #require(engine.state.buildings.first { $0.id == radarID })
+    let extractor = try #require(engine.state.buildings.first { $0.id == extractorID })
+    #expect(radar.upgradeProgress == 0)
+    #expect(extractor.upgradeProgress == nil)
+    #expect(engine.state.metal[.enemy, default: 0] == startingEnemyMetal + income - radarUpgrade.metalCost)
+}
+
+@Test func enemyExtractorUpgradesCompleteThroughExistingProgression() throws {
+    let t2State = enemyExtractorUpgradeReadyState(mapID: .coast)
+    let extractorID = try #require(t2State.buildings.first {
+        $0.team == .enemy && $0.type == .extractor && GameDefinitions.nextUpgrade(for: $0) != nil
+    }?.id)
+
+    var t2QueueEngine = GameEngine(state: t2State)
+    t2QueueEngine.update(deltaTime: 1)
+    var t2ProgressEngine = GameEngine(state: t2QueueEngine.state, enemyAIEnabled: false)
+    for _ in 0..<20 {
+        t2ProgressEngine.update(deltaTime: 1)
+    }
+
+    let t2Extractor = try #require(t2ProgressEngine.state.buildings.first { $0.id == extractorID })
+    let t2Definition = GameDefinitions.building(for: t2Extractor)
+    #expect(t2Extractor.upgradeLevel == 2)
+    #expect(t2Extractor.upgradeProgress == nil)
+    #expect(t2Extractor.maxHitPoints == 760)
+    #expect(t2Definition.income == 18)
+    #expect(t2Definition.vision == 290)
+
+    var t3State = enemyExtractorUpgradeReadyState(mapID: .coast)
+    let t3ExtractorIndex = try #require(t3State.buildings.firstIndex { $0.id == extractorID })
+    t3State.buildings[t3ExtractorIndex].upgradeLevel = 2
+    t3State.buildings[t3ExtractorIndex].hitPoints = 760
+    t3State.buildings[t3ExtractorIndex].maxHitPoints = 760
+    t3State.metal[.enemy] = 1_600
+
+    var t3QueueEngine = GameEngine(state: t3State)
+    t3QueueEngine.update(deltaTime: 1)
+    var t3ProgressEngine = GameEngine(state: t3QueueEngine.state, enemyAIEnabled: false)
+    for _ in 0..<32 {
+        t3ProgressEngine.update(deltaTime: 1)
+    }
+
+    let t3Extractor = try #require(t3ProgressEngine.state.buildings.first { $0.id == extractorID })
+    let t3Definition = GameDefinitions.building(for: t3Extractor)
+    #expect(t3Extractor.upgradeLevel == 3)
+    #expect(t3Extractor.upgradeProgress == nil)
+    #expect(t3Extractor.maxHitPoints == 1_020)
+    #expect(t3Definition.income == 32)
+    #expect(t3Definition.vision == 340)
+}
+
 @Test func completedEnemyAIRadarProvidesEnemyRadarContacts() throws {
     let state = enemyRadarConstructionReadyState(mapID: .coast)
     let initialBuildingIDs = Set(state.buildings.map(\.id))
@@ -8815,6 +8972,54 @@ private func enemyRadarUpgradeReadyState(mapID: MapID) -> GameState {
             rally: radarPosition
         )
     )
+    state.metal[.enemy] = 1_000
+    return state
+}
+
+private func enemyExtractorUpgradeReadyState(mapID: MapID) -> GameState {
+    var state = enemyRadarUpgradeReadyState(mapID: mapID)
+    keepEnemyProducersBusy(in: &state)
+
+    let radarUpgrade = GameDefinitions.building(.radar).upgrades.first
+    for buildingIndex in state.buildings.indices {
+        guard state.buildings[buildingIndex].team == .enemy,
+              state.buildings[buildingIndex].type == .radar,
+              let radarUpgrade else {
+            continue
+        }
+        state.buildings[buildingIndex].upgradeLevel = radarUpgrade.level
+        state.buildings[buildingIndex].upgradeProgress = nil
+        state.buildings[buildingIndex].hitPoints = radarUpgrade.hitPoints
+        state.buildings[buildingIndex].maxHitPoints = radarUpgrade.hitPoints
+    }
+
+    let baseExtractor = GameDefinitions.building(.extractor)
+    let t3Extractor = GameDefinitions.building(.extractor).upgrades.last
+    var keptUpgradeTarget = false
+    for buildingIndex in state.buildings.indices {
+        guard state.buildings[buildingIndex].team == .enemy,
+              state.buildings[buildingIndex].type == .extractor else {
+            continue
+        }
+
+        if keptUpgradeTarget, let t3Extractor {
+            state.buildings[buildingIndex].upgradeLevel = t3Extractor.level
+            state.buildings[buildingIndex].upgradeProgress = nil
+            state.buildings[buildingIndex].hitPoints = t3Extractor.hitPoints
+            state.buildings[buildingIndex].maxHitPoints = t3Extractor.hitPoints
+        } else {
+            keptUpgradeTarget = true
+            state.buildings[buildingIndex].upgradeLevel = 1
+            state.buildings[buildingIndex].upgradeProgress = nil
+            state.buildings[buildingIndex].buildProgress = 1
+            state.buildings[buildingIndex].hitPoints = baseExtractor.hitPoints
+            state.buildings[buildingIndex].maxHitPoints = baseExtractor.hitPoints
+        }
+    }
+
+    guard keptUpgradeTarget else {
+        fatalError("No enemy Extractor available for upgrade setup.")
+    }
     state.metal[.enemy] = 1_000
     return state
 }

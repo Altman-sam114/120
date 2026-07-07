@@ -14,7 +14,7 @@
 - 项目形态：完整可玩的 Web Canvas RTS 原型 + v1.0 起新增的原生 Swift/iOS 迁移地基。
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
-- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、当前玩家可见敌方命中过滤、选择替换/追加 mutation、世界矩形框选、单位优先/建筑 fallback 区域选择、全图同类型选择、附近同类型选择、控制编队、多选集合、空闲 Builder / 战斗单位批量选择、资源点命中、残骸模型、单单位和多单位 Move / Attack-Move / Patrol 队形落点、单单位和多单位 Attack 命令、单单位 Guard 和多单位 Guard 方阵护航偏移命令、单位攻击姿态 Aggressive / Defensive / Hold Fire、单 Builder Repair 和多 Builder Repair 分散接近点命令、单 Builder Reclaim 和多 Builder Reclaim 分散接近点命令、单 Builder Build 和多 Builder Build 分散接近建筑命令、玩家当前视野 tile 计算、已探索 tile 记忆、Radar Station 建筑定义和建造命令、雷达信号 contact、雷达覆盖 coverage snapshot、单单位和多单位 Stop 命令、Command Center Builder 生产、Land Factory T1 生产列表、生产建筑队列 MVP、生产取消/退款、重复生产开关、集结点设置、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方 Command Center Builder 生产、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI MVP、红方 AI Web-lite 目标评分、红方 AI On/Off 开关 API，以及从已保存 `GameState` 恢复原生模拟的入口。
+- Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、当前可见敌方命中过滤、选择替换/追加 mutation、世界矩形框选、单位优先/建筑 fallback 区域选择、全图同类型选择、附近同类型选择、控制编队、多选集合、空闲 Builder / 战斗单位批量选择、资源点命中、残骸模型、单单位和多单位 Move / Attack-Move / Patrol 队形落点、单单位和多单位 Attack 命令、单单位 Guard 和多单位 Guard 方阵护航偏移命令、单位攻击姿态 Aggressive / Defensive / Hold Fire、单 Builder Repair 和多 Builder Repair 分散接近点命令、单 Builder Reclaim 和多 Builder Reclaim 分散接近点命令、单 Builder Build 和多 Builder Build 分散接近建筑命令、玩家当前视野 tile 计算、已探索 tile 记忆、Extractor T2/T3 经济升级、Radar Station 建筑定义和建造命令、雷达信号 contact、雷达覆盖 coverage snapshot、单单位和多单位 Stop 命令、Command Center Builder 生产、Land Factory T1 生产列表、生产建筑队列 MVP、生产取消/退款、重复生产开关、集结点设置、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方 Command Center Builder 生产、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/Radar Station 建造/Radar Station T2 升级/Extractor T2/T3 升级/进攻 AI MVP、红方 AI Web-lite 目标评分、红方 AI On/Off 开关 API，以及从已保存 `GameState` 恢复原生模拟的入口。
 - iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、Replace / Add 选择模式、Idle Builders / Combat Units / Screen Combat 批量选择入口、Select Area 显式框选己方单位并在框内无己方单位时 fallback 选择己方建筑、Same Type 全图同类型选择入口、双击附近同类型选择入口、主战场长按上下文 Move / Attack / Guard / Repair / Reclaim / Build Extractor / Rally 入口、战术小地图无等待命令长按上下文 Move / Attack / Guard / Repair / Reclaim / Build Extractor / Rally 入口、1-9 号控制编队保存/召回入口、外接键盘 Control+1-9 保存和 1-9 召回控制编队快捷键、外接键盘 WASD / 方向键连续移动视野、Base / Space 回到己方 Command Center、外接键盘 P / R / E / F / Control+A / Option+A / A / G / H / C / S / Z / X / V 触发已迁移的 Pause、Restart、批量选择、战术命令和攻击姿态切换、外接键盘 Shift+1-9 / Shift+E/T/F/D/C/P/R 触发生产、建造和生产建筑管理按钮、单单位和多单位 Move / Attack Move / Patrol 队形落点、多单位 Guard 方阵护航偏移、多 Builder Repair 分散接近点、单单位和多单位 Attack 命令、Aggressive / Defensive / Hold Fire 姿态按钮、单 Builder Reclaim 和多 Builder Reclaim 分散接近点、单 Builder Build 和多 Builder Build 分散接近建筑按钮语义、玩家当前视野、已探索记忆和 Radar Station 雷达信号主战场雾层和战术小地图雾层、当前视野外敌方单位/建筑隐藏、单单位和多单位 Stop 命令、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张、维修受损友军、回收附近残骸、Land Factory / Turret 建造、Command Center Builder 生产、完整 T1 编成生产、红方 AI Web-lite 目标评分和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off HUD 开关、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图无等待命令拖动相机、战术小地图多选高亮、战术小地图当前主战场视口矩形、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
 - v1.73 起，iOS 主战场和战术小地图都会隐藏当前玩家视野外的敌方单位和建筑，普通 tap、长按上下文命令、Attack / Guard / Repair 实体目标等待态和战术小地图实体目标命令也会过滤不可见敌方；主战场目标型命令线与炮塔火力线同样跳过不可见敌方目标。
 - v1.74 起，iOS 战术小地图无等待命令长按会复用主战场上下文派发顺序下达 Move / Attack / Guard / Repair / Reclaim / Build Extractor / Rally；普通点按居中和等待态点按命令保持不变。
@@ -3394,4 +3394,38 @@
 
 遗留事项：
 
-- v1.86 只补齐玩家 Extractor T3；仍无敌方 AI Extractor 升级、Resource Fabricator、通用升级选择器、其它建筑升级、雾内敌方残影或完整 Web economy upgrade parity。
+- v1.86 只补齐玩家 Extractor T3；仍无 Resource Fabricator、通用升级选择器、其它建筑升级、雾内敌方残影或完整 Web economy upgrade parity。
+
+### v1.87 / iOS enemy AI Extractor upgrade
+
+日期：2026-07-07
+
+核心变更：
+
+- `updateEnemyAI()` 在红方 Radar Station 建造和 Radar Station T2 升级之后、回收和生产之前新增 Extractor T2/T3 升级决策。
+- 红方 AI 只有在已有 Land Factory、达到基础 Extractor 数、建厂/炮塔/雷达建造优先级不再阻塞、没有可立即执行的 Radar Station T2 升级目标，并且金属足够支付升级费用加 260 metal Extractor 建造缓冲时，才会排队 Extractor 升级。
+- Extractor 升级复用既有私有 `enqueueBuildingUpgrade(at:)`、`updateBuildingUpgrades(deltaTime:)` 和 `GameDefinitions.building(for:)`，不新增平行升级状态机；T2/T3 完成后继续通过有效建筑定义提高收入、HP 和视野。
+- 新增 Core 测试覆盖红方 Extractor 升级排队、资源扣除、玩家选择保持、玩家 Extractor 不被 AI 修改、金属不足/未完成/已排队/满级/Enemy AI Off 等等待路径、Radar Station T2 优先级，以及 T2/T3 完成后的收入/HP/视野生效。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.87-ios-enemy-ai-extractor-upgrade.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地通过：`git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v187 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v187 -enable-testing -emit-module -module-name RustwarCore -emit-module-path /private/tmp/RustwarCore.swiftmodule swift/RustwarCore/Sources/RustwarCore/*.swift`。
+- 本地 `swift test --package-path swift/RustwarCore` 未运行成功：非提升权限运行先遇到 SwiftPM user cache 权限和本机 Swift/SDK mismatch，报 `SwiftShims` cache `Operation not permitted`，并提示 SDK 由 `Apple Swift version 6.2 effective-5.10 (swiftlang-6.2.3.3.2 clang-1700.6.3.2)` 构建，而当前 compiler 为 `Apple Swift version 6.2.4 effective-5.10 (swiftlang-6.2.4.1.4 clang-1700.6.4.2)`；提升权限重试被当前审批服务 `502 Bad Gateway` 阻塞。
+- 本地直接测试 typecheck 未运行成功：生成 `/private/tmp/RustwarCore.swiftmodule` 后，`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v187 -I /private/tmp -typecheck swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift` 仍受本机 Foundation/CoreFoundation SDK 与 Swift compiler 版本不匹配阻塞。
+- 本轮未改 `ios/RustwarIOS/`，未在本机继续运行 iOS build；完整 SwiftPM 和 iOS build 等待 GitHub Actions macOS runner 复判。
+- 云端 artifact 复判待本轮 push 后由 Agent C 执行。
+
+遗留事项：
+
+- v1.87 只新增红方 AI 使用既有 Extractor T2/T3 升级；仍无 Resource Fabricator、通用升级选择器、其它建筑升级、雾内敌方残影、正式模型特效精细化、iOS 操作手感深度优化或完整 Web economy upgrade parity。
