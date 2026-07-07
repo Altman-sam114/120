@@ -192,7 +192,8 @@ import Testing
     #expect(engine.state.selectedEntityID == nil)
     #expect(engine.state.selectedEntityIDs.isEmpty)
 
-    let selectedScout = try #require(engine.selectVisibleToPlayer(at: playerScout.position, includeEnemies: true))
+    let selectedScoutResult = engine.selectVisibleToPlayer(at: playerScout.position, includeEnemies: true)
+    let selectedScout = try #require(selectedScoutResult)
     #expect(selectedScout.id == playerScout.id)
     #expect(engine.state.selectedEntityID == playerScout.id)
     #expect(engine.state.selectedEntityIDs == [playerScout.id])
