@@ -7766,9 +7766,13 @@ import Testing
     var state = enemyRadarUpgradeReadyState(mapID: .coast)
     keepEnemyBuildersBusy(in: &state)
     let radarID = "enemy-upgrade-radar"
-    let extractorID = try #require(state.buildings.first {
-        $0.team == .enemy && $0.type == .extractor && GameDefinitions.nextUpgrade(for: $0) != nil
-    }?.id)
+    let extractorIndex = try #require(state.buildings.firstIndex { $0.team == .enemy && $0.type == .extractor })
+    let extractorID = state.buildings[extractorIndex].id
+    let extractorDefinition = GameDefinitions.building(.extractor)
+    state.buildings[extractorIndex].upgradeLevel = 1
+    state.buildings[extractorIndex].upgradeProgress = nil
+    state.buildings[extractorIndex].hitPoints = extractorDefinition.hitPoints
+    state.buildings[extractorIndex].maxHitPoints = extractorDefinition.hitPoints
     let radarUpgrade = try #require(GameDefinitions.building(.radar).upgrades.first)
     let income = state.income(for: .enemy)
     state.metal[.enemy] = max(0, radarUpgrade.metalCost - income)
@@ -8959,6 +8963,18 @@ private func enemyRadarConstructionReadyState(mapID: MapID) -> GameState {
 private func enemyRadarUpgradeReadyState(mapID: MapID) -> GameState {
     var state = enemyRadarConstructionReadyState(mapID: mapID)
     keepEnemyProducersBusy(in: &state)
+    let extractorT3 = GameDefinitions.building(.extractor).upgrades.last
+    for buildingIndex in state.buildings.indices {
+        guard state.buildings[buildingIndex].team == .enemy,
+              state.buildings[buildingIndex].type == .extractor,
+              let extractorT3 else {
+            continue
+        }
+        state.buildings[buildingIndex].upgradeLevel = extractorT3.level
+        state.buildings[buildingIndex].upgradeProgress = nil
+        state.buildings[buildingIndex].hitPoints = extractorT3.hitPoints
+        state.buildings[buildingIndex].maxHitPoints = extractorT3.hitPoints
+    }
     let radarDefinition = GameDefinitions.building(.radar)
     let radarPosition = clearRadarBuildPoint(in: state)
     state.buildings.append(

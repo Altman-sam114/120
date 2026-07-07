@@ -3424,7 +3424,8 @@
 - 本地 `swift test --package-path swift/RustwarCore` 未运行成功：非提升权限运行先遇到 SwiftPM user cache 权限和本机 Swift/SDK mismatch，报 `SwiftShims` cache `Operation not permitted`，并提示 SDK 由 `Apple Swift version 6.2 effective-5.10 (swiftlang-6.2.3.3.2 clang-1700.6.3.2)` 构建，而当前 compiler 为 `Apple Swift version 6.2.4 effective-5.10 (swiftlang-6.2.4.1.4 clang-1700.6.4.2)`；提升权限重试被当前审批服务 `502 Bad Gateway` 阻塞。
 - 本地直接测试 typecheck 未运行成功：生成 `/private/tmp/RustwarCore.swiftmodule` 后，`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v187 -I /private/tmp -typecheck swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift` 仍受本机 Foundation/CoreFoundation SDK 与 Swift compiler 版本不匹配阻塞。
 - 本轮未改 `ios/RustwarIOS/`，未在本机继续运行 iOS build；完整 SwiftPM 和 iOS build 等待 GitHub Actions macOS runner 复判。
-- 云端 artifact 复判待本轮 push 后由 Agent C 执行。
+- 首次实现提交 `c1422c15807cd12185ac01d8d86e8e1a07a40831` 的云端 run `28881301589` 未通过：artifact `rustwar-ci-v1.0-main-c1422c1-run28881301589-attempt1` 已下载到 `/private/tmp/rustwar-c-review-28881301589/`，目录大小 `300K`；manifest 与 `main` / commit / run / attempt 匹配。失败项为 Swift test `enemyRadarUpgradeAIWaitsForInvalidStates`，原因是新增 Extractor AI 在旧雷达无效状态测试中合法触发了 Extractor 升级，使旧测试的金属断言不再成立。修复提交把 `enemyRadarUpgradeReadyState` 中的敌方 Extractor 隔离为满级，并让新的雷达优先级测试显式降级一个 Extractor 作为竞争目标。
+- 最新云端 artifact 复判待修复 commit push 后由 Agent C 执行。
 
 遗留事项：
 
