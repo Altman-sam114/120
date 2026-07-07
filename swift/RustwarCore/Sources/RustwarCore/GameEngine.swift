@@ -409,6 +409,34 @@ public struct GameEngine: Sendable {
     }
 
     @discardableResult
+    public mutating func issueBuildRadar(at point: WorldPoint) -> UnitCommandResult {
+        guard !selectedCommandEntityIDs().isEmpty else {
+            return .noSelection
+        }
+        let builderIndices = selectedPlayerBuilderIndices()
+        guard !builderIndices.isEmpty else {
+            return .selectedEntityCannotBuild
+        }
+
+        let position = point.clampedToMap()
+        guard canPlaceBuilding(.radar, at: position) else {
+            return .invalidBuildTarget
+        }
+
+        let definition = GameDefinitions.building(.radar)
+        let team = state.units[builderIndices[0]].team
+        guard state.metal[team, default: 0] >= definition.metalCost else {
+            return .insufficientMetal
+        }
+
+        let buildingID = startPointBuildingBuild(.radar, builderIndex: builderIndices[0], position: position)
+        for builderIndex in builderIndices {
+            state.units[builderIndex].order = .build(targetID: buildingID)
+        }
+        return .issued
+    }
+
+    @discardableResult
     public mutating func issueStop() -> UnitCommandResult {
         guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
@@ -777,6 +805,8 @@ public struct GameEngine: Sendable {
                 score -= 36
             case .turret:
                 score -= 30
+            case .radar:
+                score -= 34
             }
         } else if let unitType = candidate.unitType {
             switch unitType {

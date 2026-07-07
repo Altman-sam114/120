@@ -335,6 +335,18 @@ struct GameHUDView: View {
                     .keyboardShortcut(commandKey("f"), modifiers: .shift)
                     .accessibilityLabel("Build factory")
                 }
+                if controller.canIssueBuildRadar || controller.isAwaitingBuildRadarTarget {
+                    Button(
+                        controller.buildRadarCommandButtonTitle,
+                        systemImage: controller.isAwaitingBuildRadarTarget ? "xmark.circle" : "dot.radiowaves.left.and.right",
+                        action: controller.toggleBuildRadarCommand
+                    )
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .keyboardShortcut(commandKey("d"), modifiers: .shift)
+                    .accessibilityLabel("Build radar")
+                }
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                     Button(
                         controller.attackCommandButtonTitle,
@@ -356,6 +368,7 @@ struct GameHUDView: View {
                     controller.isAwaitingBuildExtractorTarget ||
                     controller.isAwaitingBuildTurretTarget ||
                     controller.isAwaitingBuildFactoryTarget ||
+                    controller.isAwaitingBuildRadarTarget ||
                     controller.isAwaitingAreaSelection {
                     Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
                         .buttonStyle(.bordered)

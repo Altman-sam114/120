@@ -46,6 +46,7 @@ final class GameController {
     var isAwaitingBuildExtractorTarget = false
     var isAwaitingBuildTurretTarget = false
     var isAwaitingBuildFactoryTarget = false
+    var isAwaitingBuildRadarTarget = false
     var isAwaitingRallyTarget = false
     var isAwaitingAreaSelection = false
     var isPaused = false
@@ -270,6 +271,10 @@ final class GameController {
         !selectedPlayerBuilders.isEmpty
     }
 
+    var canIssueBuildRadar: Bool {
+        !selectedPlayerBuilders.isEmpty
+    }
+
     var canIssueStop: Bool {
         !selectedPlayerUnits.isEmpty
     }
@@ -322,6 +327,10 @@ final class GameController {
         isAwaitingBuildFactoryTarget ? "Cancel" : "Factory"
     }
 
+    var buildRadarCommandButtonTitle: String {
+        isAwaitingBuildRadarTarget ? "Cancel" : "Radar"
+    }
+
     var rallyCommandButtonTitle: String {
         isAwaitingRallyTarget ? "Cancel" : "Rally"
     }
@@ -337,6 +346,7 @@ final class GameController {
             isAwaitingBuildExtractorTarget ||
             isAwaitingBuildTurretTarget ||
             isAwaitingBuildFactoryTarget ||
+            isAwaitingBuildRadarTarget ||
             isAwaitingRallyTarget ||
             isAwaitingAreaSelection
     }
@@ -365,6 +375,9 @@ final class GameController {
         }
         if isAwaitingBuildFactoryTarget {
             return "Factory"
+        }
+        if isAwaitingBuildRadarTarget {
+            return "Radar"
         }
         if isAwaitingAttackTarget {
             return "Attack"
@@ -406,6 +419,9 @@ final class GameController {
         if isAwaitingBuildFactoryTarget {
             return "F"
         }
+        if isAwaitingBuildRadarTarget {
+            return "RD"
+        }
         if isAwaitingAttackTarget {
             return "A"
         }
@@ -446,6 +462,9 @@ final class GameController {
         if isAwaitingBuildFactoryTarget {
             return "building.2"
         }
+        if isAwaitingBuildRadarTarget {
+            return "dot.radiowaves.left.and.right"
+        }
         if isAwaitingAttackTarget {
             return "scope"
         }
@@ -485,6 +504,9 @@ final class GameController {
         }
         if isAwaitingBuildFactoryTarget {
             return "Tap the tactical map to choose a clear land position for a factory."
+        }
+        if isAwaitingBuildRadarTarget {
+            return "Tap the tactical map to choose a clear land position for a radar station."
         }
         if isAwaitingAttackTarget {
             return "Tap an enemy unit or building marker on the tactical map to issue attack."
@@ -842,6 +864,18 @@ final class GameController {
         renderRevision += 1
     }
 
+    func toggleBuildRadarCommand() {
+        if isAwaitingBuildRadarTarget {
+            isAwaitingBuildRadarTarget = false
+            commandStatus = nil
+        } else if canIssueBuildRadar {
+            clearPendingTargetCommands()
+            isAwaitingBuildRadarTarget = true
+            commandStatus = selectedPlayerBuilders.count > 1 ? "Radar position for \(selectedPlayerBuilders.count) builders" : "Radar position"
+        }
+        renderRevision += 1
+    }
+
     func toggleRallyCommand() {
         if isAwaitingRallyTarget {
             isAwaitingRallyTarget = false
@@ -1068,6 +1102,7 @@ final class GameController {
         isAwaitingBuildExtractorTarget = false
         isAwaitingBuildTurretTarget = false
         isAwaitingBuildFactoryTarget = false
+        isAwaitingBuildRadarTarget = false
         isAwaitingRallyTarget = false
         isAwaitingAreaSelection = false
     }
@@ -1216,6 +1251,10 @@ final class GameController {
             let result = engine.issueBuildLandFactory(at: point)
             isAwaitingBuildFactoryTarget = false
             commandStatus = statusText(forBuildFactory: result, position: clampedMapPoint(point))
+        } else if isAwaitingBuildRadarTarget {
+            let result = engine.issueBuildRadar(at: point)
+            isAwaitingBuildRadarTarget = false
+            commandStatus = statusText(forBuildRadar: result, position: clampedMapPoint(point))
         } else {
             return false
         }
@@ -1612,6 +1651,22 @@ final class GameController {
         case .issued:
             let count = pointBuildOrderIssuedCount(type: .landFactory, position: position)
             return count > 1 ? "Factory build started by \(count) builders" : "Factory build started"
+        case .noSelection:
+            return "No builder selected"
+        case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
+            return "Builder required"
+        case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .occupiedResourceNode:
+            return "Clear land required"
+        case .insufficientMetal:
+            return "Need more metal"
+        }
+    }
+
+    private func statusText(forBuildRadar result: UnitCommandResult, position: WorldPoint) -> String? {
+        switch result {
+        case .issued:
+            let count = pointBuildOrderIssuedCount(type: .radar, position: position)
+            return count > 1 ? "Radar build started by \(count) builders" : "Radar build started"
         case .noSelection:
             return "No builder selected"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:

@@ -10,10 +10,11 @@ public enum GameDefinitions {
     ]
 
     public static let buildings: [BuildingType: BuildingDefinition] = [
-        .command: BuildingDefinition(type: .command, name: "Command Center", icon: "CC", hitPoints: 1_850, size: 84, metalCost: 0, income: 4, supply: 18, vision: 520, radarRange: 920, produces: [.builder]),
+        .command: BuildingDefinition(type: .command, name: "Command Center", icon: "CC", hitPoints: 1_850, size: 84, metalCost: 0, income: 4, supply: 18, vision: 520, produces: [.builder]),
         .extractor: BuildingDefinition(type: .extractor, name: "Extractor", icon: "EX", hitPoints: 560, size: 48, metalCost: 260, buildTime: 10, income: 9, supply: 0, vision: 240),
         .landFactory: BuildingDefinition(type: .landFactory, name: "Land Factory", icon: "LF", hitPoints: 920, size: 76, metalCost: 620, buildTime: 22, income: 0, supply: 8, vision: 310, produces: [.scout, .tank, .hover, .artillery, .aaTank]),
-        .turret: BuildingDefinition(type: .turret, name: "Turret", icon: "TR", hitPoints: 650, size: 48, metalCost: 330, buildTime: 13, income: 0, supply: 0, vision: 330, attackRange: 230, damage: 28, reloadTime: 1.2)
+        .turret: BuildingDefinition(type: .turret, name: "Turret", icon: "TR", hitPoints: 650, size: 48, metalCost: 330, buildTime: 13, income: 0, supply: 0, vision: 330, attackRange: 230, damage: 28, reloadTime: 1.2),
+        .radar: BuildingDefinition(type: .radar, name: "Radar Station", icon: "RD", hitPoints: 420, size: 52, metalCost: 430, buildTime: 15, income: 0, supply: 0, vision: 260, radarRange: 920)
     ]
 
     public static func unit(_ type: UnitType) -> UnitDefinition {

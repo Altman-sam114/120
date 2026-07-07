@@ -158,17 +158,20 @@ import Testing
     #expect(!visibility.isVisible(at: WorldPoint(-1, -1)))
 }
 
-@Test func commandCenterDefinitionProvidesRadarRange() {
-    #expect(GameDefinitions.building(.command).radarRange == 920)
+@Test func radarStationDefinitionProvidesRadarRange() {
+    #expect(GameDefinitions.building(.command).radarRange == 0)
     #expect(GameDefinitions.building(.extractor).radarRange == 0)
     #expect(GameDefinitions.building(.landFactory).radarRange == 0)
     #expect(GameDefinitions.building(.turret).radarRange == 0)
+    #expect(GameDefinitions.building(.radar).radarRange == 920)
+    #expect(GameDefinitions.building(.radar).produces.isEmpty)
+    #expect(GameDefinitions.building(.radar).damage == 0)
 }
 
 @Test func playerRadarContactsIncludeUnseenEnemiesWithoutRevealingTiles() throws {
-    let commandDefinition = GameDefinitions.building(.command)
+    let radarDefinition = GameDefinitions.building(.radar)
     let tankDefinition = GameDefinitions.unit(.tank)
-    let playerCommandPosition = WorldPoint(600, 600)
+    let playerRadarPosition = WorldPoint(600, 600)
     let radarOnlyEnemyPosition = WorldPoint(1_350, 600)
     var state = GameState(mapID: .coast)
     state.units = [
@@ -183,13 +186,13 @@ import Testing
     ]
     state.buildings = [
         BuildingSnapshot(
-            id: "player-radar-command",
-            type: .command,
+            id: "player-radar-station",
+            type: .radar,
             team: .player,
-            position: playerCommandPosition,
-            hitPoints: commandDefinition.hitPoints,
-            maxHitPoints: commandDefinition.hitPoints,
-            rally: playerCommandPosition
+            position: playerRadarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: playerRadarPosition
         )
     ]
 
@@ -204,10 +207,10 @@ import Testing
 }
 
 @Test func playerRadarContactsSkipVisibleAndOutOfRangeEnemies() {
-    let commandDefinition = GameDefinitions.building(.command)
+    let radarDefinition = GameDefinitions.building(.radar)
     let tankDefinition = GameDefinitions.unit(.tank)
     let turretDefinition = GameDefinitions.building(.turret)
-    let playerCommandPosition = WorldPoint(600, 600)
+    let playerRadarPosition = WorldPoint(600, 600)
     var state = GameState(mapID: .coast)
     state.units = [
         UnitSnapshot(
@@ -229,13 +232,13 @@ import Testing
     ]
     state.buildings = [
         BuildingSnapshot(
-            id: "player-radar-command",
-            type: .command,
+            id: "player-radar-station",
+            type: .radar,
             team: .player,
-            position: playerCommandPosition,
-            hitPoints: commandDefinition.hitPoints,
-            maxHitPoints: commandDefinition.hitPoints,
-            rally: playerCommandPosition
+            position: playerRadarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: playerRadarPosition
         ),
         BuildingSnapshot(
             id: "radar-only-enemy-building",
@@ -256,9 +259,9 @@ import Testing
 }
 
 @Test func playerRadarContactsRequireCompletedLivingRadarSource() {
-    let commandDefinition = GameDefinitions.building(.command)
+    let radarDefinition = GameDefinitions.building(.radar)
     let tankDefinition = GameDefinitions.unit(.tank)
-    let commandPosition = WorldPoint(600, 600)
+    let radarPosition = WorldPoint(600, 600)
     let enemyPosition = WorldPoint(1_350, 600)
     var state = GameState(mapID: .coast)
     state.units = [
@@ -273,14 +276,14 @@ import Testing
     ]
     state.buildings = [
         BuildingSnapshot(
-            id: "unfinished-radar-command",
-            type: .command,
+            id: "unfinished-radar-station",
+            type: .radar,
             team: .player,
-            position: commandPosition,
-            hitPoints: commandDefinition.hitPoints,
-            maxHitPoints: commandDefinition.hitPoints,
+            position: radarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
             buildProgress: 0.5,
-            rally: commandPosition
+            rally: radarPosition
         )
     ]
 
@@ -290,8 +293,37 @@ import Testing
     state.buildings[0].hitPoints = 0
     #expect(state.radarContacts(for: .player).isEmpty)
 
-    state.buildings[0].hitPoints = commandDefinition.hitPoints
+    state.buildings[0].hitPoints = radarDefinition.hitPoints
     #expect(state.radarContacts(for: .player).count == 1)
+}
+
+@Test func commandCenterNoLongerProvidesRadarContactsWithoutRadarStation() {
+    let commandDefinition = GameDefinitions.building(.command)
+    let tankDefinition = GameDefinitions.unit(.tank)
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "command-radar-regression-enemy",
+            type: .tank,
+            team: .enemy,
+            position: WorldPoint(1_350, 600),
+            hitPoints: tankDefinition.hitPoints,
+            maxHitPoints: tankDefinition.hitPoints
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-command-no-radar",
+            type: .command,
+            team: .player,
+            position: WorldPoint(600, 600),
+            hitPoints: commandDefinition.hitPoints,
+            maxHitPoints: commandDefinition.hitPoints,
+            rally: WorldPoint(600, 600)
+        )
+    ]
+
+    #expect(state.radarContacts(for: .player).isEmpty)
 }
 
 @Test func gameStateDecodesOldJSONWithoutExploredTilesAndEngineSeedsCurrentVision() throws {
@@ -380,9 +412,9 @@ import Testing
 }
 
 @Test func visibleSelectionTargetRejectsRadarOnlyEnemies() throws {
-    let commandDefinition = GameDefinitions.building(.command)
+    let radarDefinition = GameDefinitions.building(.radar)
     let tankDefinition = GameDefinitions.unit(.tank)
-    let commandPosition = WorldPoint(600, 600)
+    let radarPosition = WorldPoint(600, 600)
     let radarOnlyEnemyPosition = WorldPoint(1_350, 600)
     var state = GameState(mapID: .coast)
     state.units = [
@@ -397,13 +429,13 @@ import Testing
     ]
     state.buildings = [
         BuildingSnapshot(
-            id: "player-radar-command",
-            type: .command,
+            id: "player-radar-station-selection",
+            type: .radar,
             team: .player,
-            position: commandPosition,
-            hitPoints: commandDefinition.hitPoints,
-            maxHitPoints: commandDefinition.hitPoints,
-            rally: commandPosition
+            position: radarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: radarPosition
         )
     ]
     var engine = GameEngine(state: state, enemyAIEnabled: false)
@@ -4000,6 +4032,112 @@ import Testing
     }
 }
 
+@Test func buildRadarCommandRejectsInvalidSelectionTargetsAndMetal() throws {
+    let baseState = GameState(mapID: .coast)
+    let builder = try #require(baseState.units.first { $0.team == .player && $0.type == .builder })
+    let enemyBuilder = try #require(baseState.units.first { $0.team == .enemy && $0.type == .builder })
+    let playerTank = try #require(baseState.units.first { $0.team == .player && $0.type == .tank })
+    let playerBuilding = try #require(baseState.buildings.first { $0.team == .player })
+    let resource = try #require(baseState.resources.first)
+    let clearPoint = clearRadarBuildPoint(in: baseState)
+
+    var noSelectionEngine = GameEngine(state: baseState, enemyAIEnabled: false)
+    #expect(noSelectionEngine.issueBuildRadar(at: clearPoint) == .noSelection)
+
+    var enemySelectedState = baseState
+    enemySelectedState.selectedEntityID = enemyBuilder.id
+    var enemySelectedEngine = GameEngine(state: enemySelectedState, enemyAIEnabled: false)
+    #expect(enemySelectedEngine.issueBuildRadar(at: clearPoint) == .selectedEntityCannotBuild)
+
+    var tankSelectedState = baseState
+    tankSelectedState.selectedEntityID = playerTank.id
+    var tankSelectedEngine = GameEngine(state: tankSelectedState, enemyAIEnabled: false)
+    #expect(tankSelectedEngine.issueBuildRadar(at: clearPoint) == .selectedEntityCannotBuild)
+
+    var buildingSelectedState = baseState
+    buildingSelectedState.selectedEntityID = playerBuilding.id
+    var buildingSelectedEngine = GameEngine(state: buildingSelectedState, enemyAIEnabled: false)
+    #expect(buildingSelectedEngine.issueBuildRadar(at: clearPoint) == .selectedEntityCannotBuild)
+
+    var builderSelectedState = baseState
+    builderSelectedState.selectedEntityID = builder.id
+    var builderSelectedEngine = GameEngine(state: builderSelectedState, enemyAIEnabled: false)
+    #expect(builderSelectedEngine.issueBuildRadar(at: WorldPoint(2_350, 1_280)) == .invalidBuildTarget)
+    #expect(builderSelectedEngine.issueBuildRadar(at: resource.position) == .invalidBuildTarget)
+    #expect(builderSelectedEngine.issueBuildRadar(at: playerBuilding.position) == .invalidBuildTarget)
+    #expect(builderSelectedEngine.issueBuildRadar(at: playerTank.position) == .invalidBuildTarget)
+
+    var poorState = builderSelectedState
+    poorState.metal[.player] = 20
+    var poorEngine = GameEngine(state: poorState, enemyAIEnabled: false)
+    #expect(poorEngine.issueBuildRadar(at: clearPoint) == .insufficientMetal)
+}
+
+@Test func buildRadarCommandCreatesIncompleteRadarAndBuildOrder() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let point = clearRadarBuildPoint(in: state)
+    state.selectedEntityID = builder.id
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    let startingMetal = engine.state.metal[.player, default: 0]
+    let startingBuildingCount = engine.state.buildings.count
+    #expect(engine.issueBuildRadar(at: point) == .issued)
+
+    let radar = try #require(engine.state.buildings.first { $0.type == .radar && $0.team == .player })
+    let builderAfterIssue = try #require(engine.state.units.first { $0.id == builder.id })
+
+    #expect(engine.state.buildings.count == startingBuildingCount + 1)
+    #expect(engine.state.metal[.player, default: 0] == startingMetal - GameDefinitions.building(.radar).metalCost)
+    #expect(radar.position == point)
+    #expect(radar.nodeID == nil)
+    #expect(radar.productionQueue.isEmpty)
+    #expect(radar.buildProgress == 0)
+    #expect(radar.hitPoints == radar.maxHitPoints * 0.1)
+    if case let .build(targetID)? = builderAfterIssue.order {
+        #expect(targetID == radar.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func buildRadarCommandAppliesToSelectedPlayerBuilderGroup() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let builderDefinition = GameDefinitions.unit(.builder)
+    let extraBuilder = UnitSnapshot(
+        id: "radar-extra-builder",
+        type: .builder,
+        team: .player,
+        position: WorldPoint(builder.position.x + 80, builder.position.y),
+        hitPoints: builderDefinition.hitPoints,
+        maxHitPoints: builderDefinition.hitPoints
+    )
+    let point = clearRadarBuildPoint(in: state)
+    state.units.append(extraBuilder)
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = [builder.id, extraBuilder.id]
+
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    let startingMetal = engine.state.metal[.player, default: 0]
+    let startingBuildingCount = engine.state.buildings.count
+    #expect(engine.issueBuildRadar(at: point) == .issued)
+
+    let radar = try #require(engine.state.buildings.first { $0.type == .radar && $0.team == .player })
+    #expect(engine.state.buildings.count == startingBuildingCount + 1)
+    #expect(engine.state.metal[.player, default: 0] == startingMetal - GameDefinitions.building(.radar).metalCost)
+    #expect(radar.position == point)
+
+    for builderID in [builder.id, extraBuilder.id] {
+        let activeBuilder = try #require(engine.state.units.first { $0.id == builderID })
+        if case let .build(targetID)? = activeBuilder.order {
+            #expect(targetID == radar.id)
+        } else {
+            #expect(Bool(false))
+        }
+    }
+}
+
 @Test func buildLandFactoryCommandIgnoresInvalidSelectedIDsWhenAnyPlayerBuilderIsSelected() throws {
     var state = GameState(mapID: .coast)
     let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
@@ -7313,6 +7451,10 @@ private func clearTurretBuildPoint(in state: GameState) -> WorldPoint {
 
 private func clearLandFactoryBuildPoint(in state: GameState) -> WorldPoint {
     clearBuildPoint(for: .landFactory, in: state)
+}
+
+private func clearRadarBuildPoint(in state: GameState) -> WorldPoint {
+    clearBuildPoint(for: .radar, in: state)
 }
 
 private func enemyFactoryConstructionReadyState(mapID: MapID) -> GameState {

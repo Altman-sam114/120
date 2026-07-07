@@ -75,7 +75,7 @@ flowchart TD
   KBD["External Keyboard 1-9<br/>中文注释：Control+数字触发 Save，裸数字触发 Recall，复用 HUD 按钮 action 和 disabled 条件"] --> C
   KBT["External Keyboard tactical shortcuts<br/>中文注释：P/R/E/F/Ctrl+A/Option+A/A/G/H/C/S/Z/X/V 复用现有 HUD 按钮 action、条件渲染和 disabled 状态"]
   KBT --> C
-  KBP["External Keyboard production/build shortcuts<br/>中文注释：Shift+1-9 按当前 productionOptions 顺序生产；Shift+E/T/F 进入建造等待态；Shift+C/P/R 复用取消生产、重复生产和集结点按钮"]
+  KBP["External Keyboard production/build shortcuts<br/>中文注释：Shift+1-9 按当前 productionOptions 顺序生产；Shift+E/T/F/D 进入建造等待态；Shift+C/P/R 复用取消生产、重复生产和集结点按钮"]
   KBP --> C
   KBC["External Keyboard camera pan<br/>中文注释：RootGameView 捕捉 WASD / 方向键 down-repeat-up，GameController 每帧按方向集合推进 CameraState"]
   KBC --> C
@@ -121,7 +121,7 @@ flowchart TD
   MP --> E
   C --> SL["UserDefaults Save / Load<br/>中文注释：JSON 保存 GameState、CameraState、地图、暂停、速度和 AI 开关，读取后刷新原生状态"]
   SL --> E
-  C --> VIS["VisibilitySnapshot fog / RadarContactSnapshot signal / enemy filtering<br/>中文注释：根据存活己方单位和完成己方建筑 vision 计算当前可见 tile，并把当前可见 tile 合并进 GameState explored 记忆；完成状态 Command Center 的 radarRange 生成不可见敌方雷达信号点，但不写入可见 tile 或 explored；SpriteKit 主战场和 SwiftUI 战术小地图用浅雾覆盖已探索但当前不可见 tile、用深雾覆盖从未探索 tile，并隐藏当前视野外敌方真实单位/建筑及主战场不可见目标线；主战场 tap、长按上下文命令、Attack/Guard/Repair 等待态、战术小地图实体目标命中和战术小地图长按上下文命令过滤雾外敌方；暂不实现 Radar Station 建筑或雾内敌方残影"]
+  C --> VIS["VisibilitySnapshot fog / RadarContactSnapshot signal / enemy filtering<br/>中文注释：根据存活己方单位和完成己方建筑 vision 计算当前可见 tile，并把当前可见 tile 合并进 GameState explored 记忆；完成状态 Radar Station 的 radarRange 生成不可见敌方雷达信号点，但不写入可见 tile 或 explored，Command Center 不再是雷达来源；SpriteKit 主战场和 SwiftUI 战术小地图用浅雾覆盖已探索但当前不可见 tile、用深雾覆盖从未探索 tile，并隐藏当前视野外敌方真实单位/建筑及主战场不可见目标线；主战场 tap、长按上下文命令、Attack/Guard/Repair 等待态、战术小地图实体目标命中和战术小地图长按上下文命令过滤雾外敌方；暂不实现雷达升级或雾内敌方残影"]
   VIS --> B
   C --> FC["Camera focus Command Center<br/>中文注释：focusPlayerCommandCenter 只移动 camera.center，不改变 zoom、选择、等待态或单位命令"]
   FC --> B
