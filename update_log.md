@@ -3320,3 +3320,42 @@
 遗留事项：
 
 - v1.84 只新增玩家 Radar Station T2 升级取消；仍无通用建筑升级队列 UI、AI 升级取消、雾内敌方残影、雷达目标记忆、雷达干扰或完整 Web radar parity。
+
+### v1.85 / iOS Extractor T2 economy upgrade MVP
+
+日期：2026-07-07
+
+核心变更：
+
+- `BuildingUpgradeDefinition` 新增可选 `income` 覆盖值，让建筑升级可改变经济收入。
+- Extractor 新增 T2 升级定义，沿用 Web T2 数值：650 metal、20 秒、760 HP、18 income、290 vision。
+- `GameDefinitions.building(for:)` 在建筑达到升级等级后返回升级后的 HP、income、vision 和 radarRange；`GameState.income(for:)` 改读有效建筑定义，因此完成状态 T2 Extractor 会把收入从 9 提升到 18。
+- 既有 `GameEngine.queueBuildingUpgrade()` / `cancelBuildingUpgrade()` 现在可用于玩家 Extractor T2：单选完成、存活、玩家 Extractor 时可升级，升级中可取消并按剩余进度退款。
+- iOS HUD 在选中可升级 Extractor 时显示 `Upgrade Extractor`，选中升级中 Extractor 时显示 `Cancel Upgrade`，并显示 Extractor 升级摘要；SpriteKit 继续复用已有 `upgradeProgress` 进度条。
+- 新增 Core 测试覆盖 Extractor T2 定义、有效收入、排队/扣款/进度/完成、收入提升、取消退款和无效状态拒绝。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/BuildingDefinition.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameDefinitions.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameStateEconomy.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.85-ios-extractor-t2-upgrade.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地通过：`git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v185 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`、`swiftc -parse ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift ios/RustwarIOS/RustwarIOS/TacticalMapView.swift ios/RustwarIOS/RustwarIOS/GameController.swift ios/RustwarIOS/RustwarIOS/GameHUDView.swift`。
+- 本地 `swift test --package-path swift/RustwarCore` 未运行成功：沙箱内先遇到 SwiftPM cache 权限和本机 Swift/SDK mismatch；提升权限重试后仍在 Package manifest 链接阶段失败，报 `PackageDescription.Package.__allocating_init(...)` undefined symbol。
+- 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 未运行成功：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，`xcodebuild` 要求完整 Xcode。
+- 完整 SwiftPM 和 iOS build 等待 GitHub Actions macOS runner 复判。
+
+遗留事项：
+
+- v1.85 只新增玩家 Extractor T2；仍无 Extractor T3、敌方 AI Extractor 升级、Resource Fabricator、通用升级选择器、其它建筑升级、雾内敌方残影或完整 Web economy upgrade parity。

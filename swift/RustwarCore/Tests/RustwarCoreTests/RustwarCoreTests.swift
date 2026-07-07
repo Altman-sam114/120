@@ -606,6 +606,322 @@ import Testing
     #expect(upgradedRadar.hitPoints == 400)
 }
 
+@Test func extractorT2UpgradeDefinitionAndEffectiveEconomy() throws {
+    let extractorDefinition = GameDefinitions.building(.extractor)
+    let upgrade = try #require(extractorDefinition.upgrades.first)
+
+    #expect(extractorDefinition.upgrades.count == 1)
+    #expect(upgrade.level == 2)
+    #expect(upgrade.name == "Extractor T2")
+    #expect(upgrade.metalCost == 650)
+    #expect(upgrade.buildTime == 20)
+    #expect(upgrade.hitPoints == 760)
+    #expect(upgrade.income == 18)
+    #expect(upgrade.vision == 290)
+    #expect(upgrade.radarRange == 0)
+
+    let baseExtractor = BuildingSnapshot(
+        id: "extractor-base-definition",
+        type: .extractor,
+        team: .player,
+        position: WorldPoint(600, 600),
+        hitPoints: extractorDefinition.hitPoints,
+        maxHitPoints: extractorDefinition.hitPoints,
+        rally: WorldPoint(600, 600)
+    )
+    let upgradedExtractor = BuildingSnapshot(
+        id: "extractor-t2-definition",
+        type: .extractor,
+        team: .player,
+        position: WorldPoint(700, 600),
+        hitPoints: 760,
+        maxHitPoints: 760,
+        rally: WorldPoint(700, 600),
+        upgradeLevel: 2
+    )
+
+    #expect(GameDefinitions.building(for: baseExtractor).income == 9)
+    #expect(GameDefinitions.building(for: baseExtractor).hitPoints == 560)
+    #expect(GameDefinitions.building(for: baseExtractor).vision == 240)
+    #expect(GameDefinitions.building(for: upgradedExtractor).income == 18)
+    #expect(GameDefinitions.building(for: upgradedExtractor).hitPoints == 760)
+    #expect(GameDefinitions.building(for: upgradedExtractor).vision == 290)
+
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [baseExtractor, upgradedExtractor]
+    #expect(state.income(for: .player) == 27)
+}
+
+@Test func extractorUpgradeRejectsInvalidSelectionAndQueueStates() {
+    let extractorDefinition = GameDefinitions.building(.extractor)
+    let turretDefinition = GameDefinitions.building(.turret)
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-extractor-upgrade-reject",
+            type: .extractor,
+            team: .player,
+            position: WorldPoint(600, 600),
+            hitPoints: extractorDefinition.hitPoints,
+            maxHitPoints: extractorDefinition.hitPoints,
+            rally: WorldPoint(600, 600)
+        ),
+        BuildingSnapshot(
+            id: "enemy-extractor-upgrade-reject",
+            type: .extractor,
+            team: .enemy,
+            position: WorldPoint(700, 600),
+            hitPoints: extractorDefinition.hitPoints,
+            maxHitPoints: extractorDefinition.hitPoints,
+            rally: WorldPoint(700, 600)
+        ),
+        BuildingSnapshot(
+            id: "unfinished-extractor-upgrade-reject",
+            type: .extractor,
+            team: .player,
+            position: WorldPoint(800, 600),
+            hitPoints: extractorDefinition.hitPoints * 0.5,
+            maxHitPoints: extractorDefinition.hitPoints,
+            buildProgress: 0.5,
+            rally: WorldPoint(800, 600)
+        ),
+        BuildingSnapshot(
+            id: "player-turret-extractor-upgrade-reject",
+            type: .turret,
+            team: .player,
+            position: WorldPoint(900, 600),
+            hitPoints: turretDefinition.hitPoints,
+            maxHitPoints: turretDefinition.hitPoints,
+            rally: WorldPoint(900, 600)
+        ),
+        BuildingSnapshot(
+            id: "queued-extractor-upgrade-reject",
+            type: .extractor,
+            team: .player,
+            position: WorldPoint(1_000, 600),
+            hitPoints: extractorDefinition.hitPoints,
+            maxHitPoints: extractorDefinition.hitPoints,
+            rally: WorldPoint(1_000, 600),
+            upgradeProgress: 0.25
+        ),
+        BuildingSnapshot(
+            id: "complete-extractor-upgrade-reject",
+            type: .extractor,
+            team: .player,
+            position: WorldPoint(1_100, 600),
+            hitPoints: 760,
+            maxHitPoints: 760,
+            rally: WorldPoint(1_100, 600),
+            upgradeLevel: 2
+        )
+    ]
+
+    func upgradeResult(
+        selectedID: String?,
+        selectedIDs: [String] = [],
+        playerMetal: Double = 1_000
+    ) -> BuildingUpgradeResult {
+        var candidate = state
+        candidate.selectedEntityID = selectedID
+        candidate.selectedEntityIDs = selectedIDs
+        candidate.metal[.player] = playerMetal
+        var engine = GameEngine(state: candidate, enemyAIEnabled: false)
+        return engine.queueBuildingUpgrade()
+    }
+
+    #expect(upgradeResult(selectedID: nil) == .noSelection)
+    #expect(upgradeResult(selectedID: "enemy-extractor-upgrade-reject") == .selectedBuildingCannotUpgrade)
+    #expect(upgradeResult(selectedID: "unfinished-extractor-upgrade-reject") == .selectedBuildingCannotUpgrade)
+    #expect(upgradeResult(selectedID: "player-turret-extractor-upgrade-reject") == .selectedBuildingCannotUpgrade)
+    #expect(upgradeResult(selectedID: "queued-extractor-upgrade-reject") == .upgradeAlreadyQueued)
+    #expect(upgradeResult(selectedID: "complete-extractor-upgrade-reject") == .fullyUpgraded)
+    #expect(upgradeResult(
+        selectedID: "player-extractor-upgrade-reject",
+        selectedIDs: ["player-extractor-upgrade-reject", "complete-extractor-upgrade-reject"]
+    ) == .selectedBuildingCannotUpgrade)
+    #expect(upgradeResult(selectedID: "player-extractor-upgrade-reject", playerMetal: 100) == .insufficientMetal)
+}
+
+@Test func extractorUpgradeQueuesConsumesMetalCompletesAndRaisesIncome() throws {
+    let extractorDefinition = GameDefinitions.building(.extractor)
+    let extractorPosition = WorldPoint(600, 600)
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-extractor-upgrade-progress",
+            type: .extractor,
+            team: .player,
+            position: extractorPosition,
+            hitPoints: 500,
+            maxHitPoints: extractorDefinition.hitPoints,
+            rally: extractorPosition,
+            nodeID: "node-a"
+        )
+    ]
+    state.metal[.player] = 1_000
+    state.selectedEntityID = "player-extractor-upgrade-progress"
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.state.income(for: .player) == 9)
+    #expect(engine.queueBuildingUpgrade() == .queued)
+    #expect(engine.state.metal[.player] == 350)
+    #expect(engine.state.buildings[0].upgradeLevel == 1)
+    #expect(engine.state.buildings[0].upgradeProgress == 0)
+
+    for _ in 0..<10 {
+        engine.update(deltaTime: 1)
+    }
+    #expect(engine.state.buildings[0].upgradeLevel == 1)
+    #expect(abs((engine.state.buildings[0].upgradeProgress ?? -1) - 0.5) < 0.0001)
+    #expect(engine.state.income(for: .player) == 9)
+
+    for _ in 0..<10 {
+        engine.update(deltaTime: 1)
+    }
+    let upgradedExtractor = try #require(engine.state.buildings.first)
+    #expect(upgradedExtractor.upgradeLevel == 2)
+    #expect(upgradedExtractor.upgradeProgress == nil)
+    #expect(upgradedExtractor.maxHitPoints == 760)
+    #expect(upgradedExtractor.hitPoints == 700)
+    #expect(GameDefinitions.building(for: upgradedExtractor).vision == 290)
+    #expect(engine.state.income(for: .player) == 18)
+}
+
+@Test func cancelExtractorUpgradeRejectsMissingInvalidAndInactiveSelection() {
+    let extractorDefinition = GameDefinitions.building(.extractor)
+    let turretDefinition = GameDefinitions.building(.turret)
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-extractor-cancel-active",
+            type: .extractor,
+            team: .player,
+            position: WorldPoint(600, 600),
+            hitPoints: extractorDefinition.hitPoints,
+            maxHitPoints: extractorDefinition.hitPoints,
+            rally: WorldPoint(600, 600),
+            upgradeProgress: 0.3
+        ),
+        BuildingSnapshot(
+            id: "player-turret-extractor-cancel-reject",
+            type: .turret,
+            team: .player,
+            position: WorldPoint(700, 600),
+            hitPoints: turretDefinition.hitPoints,
+            maxHitPoints: turretDefinition.hitPoints,
+            rally: WorldPoint(700, 600)
+        ),
+        BuildingSnapshot(
+            id: "enemy-extractor-cancel-reject",
+            type: .extractor,
+            team: .enemy,
+            position: WorldPoint(800, 600),
+            hitPoints: extractorDefinition.hitPoints,
+            maxHitPoints: extractorDefinition.hitPoints,
+            rally: WorldPoint(800, 600),
+            upgradeProgress: 0.4
+        ),
+        BuildingSnapshot(
+            id: "unfinished-extractor-cancel-reject",
+            type: .extractor,
+            team: .player,
+            position: WorldPoint(900, 600),
+            hitPoints: extractorDefinition.hitPoints * 0.5,
+            maxHitPoints: extractorDefinition.hitPoints,
+            buildProgress: 0.5,
+            rally: WorldPoint(900, 600),
+            upgradeProgress: 0.2
+        ),
+        BuildingSnapshot(
+            id: "idle-extractor-cancel-reject",
+            type: .extractor,
+            team: .player,
+            position: WorldPoint(1_000, 600),
+            hitPoints: extractorDefinition.hitPoints,
+            maxHitPoints: extractorDefinition.hitPoints,
+            rally: WorldPoint(1_000, 600)
+        ),
+        BuildingSnapshot(
+            id: "upgraded-extractor-cancel-reject",
+            type: .extractor,
+            team: .player,
+            position: WorldPoint(1_100, 600),
+            hitPoints: 760,
+            maxHitPoints: 760,
+            rally: WorldPoint(1_100, 600),
+            upgradeLevel: 2
+        )
+    ]
+
+    func cancelResult(selectedID: String?, selectedIDs: [String]? = nil) -> BuildingUpgradeCancelResult {
+        var candidate = state
+        candidate.selectedEntityID = selectedID
+        candidate.selectedEntityIDs = selectedIDs ?? selectedID.map { [$0] } ?? []
+        var engine = GameEngine(state: candidate, enemyAIEnabled: false)
+        return engine.cancelBuildingUpgrade()
+    }
+
+    #expect(cancelResult(selectedID: nil) == .noSelection)
+    #expect(cancelResult(selectedID: "player-turret-extractor-cancel-reject") == .selectedBuildingCannotCancelUpgrade)
+    #expect(cancelResult(selectedID: "enemy-extractor-cancel-reject") == .selectedBuildingCannotCancelUpgrade)
+    #expect(cancelResult(selectedID: "unfinished-extractor-cancel-reject") == .selectedBuildingCannotCancelUpgrade)
+    #expect(cancelResult(selectedID: "idle-extractor-cancel-reject") == .noUpgradeQueued)
+    #expect(cancelResult(selectedID: "upgraded-extractor-cancel-reject") == .noUpgradeQueued)
+    #expect(cancelResult(
+        selectedID: "player-extractor-cancel-active",
+        selectedIDs: ["player-extractor-cancel-active", "idle-extractor-cancel-reject"]
+    ) == .selectedBuildingCannotCancelUpgrade)
+}
+
+@Test func cancelExtractorUpgradeRefundsAndDoesNotCompleteLater() throws {
+    let extractorDefinition = GameDefinitions.building(.extractor)
+    let extractorPosition = WorldPoint(600, 600)
+    let rally = WorldPoint(690, 640)
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-extractor-cancel-progress",
+            type: .extractor,
+            team: .player,
+            position: extractorPosition,
+            hitPoints: 410,
+            maxHitPoints: extractorDefinition.hitPoints,
+            rally: rally,
+            nodeID: "node-b",
+            upgradeProgress: 0.4
+        )
+    ]
+    state.metal[.player] = 50
+    state.selectedEntityID = "player-extractor-cancel-progress"
+    state.selectedEntityIDs = ["player-extractor-cancel-progress"]
+    state.controlGroups = [2: ["player-extractor-cancel-progress"]]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let result = engine.cancelBuildingUpgrade()
+    for _ in 0..<25 {
+        engine.update(deltaTime: 1)
+    }
+
+    let extractor = try #require(engine.state.buildings.first)
+    #expect(result == .cancelled(refundedMetal: 390))
+    #expect(engine.state.metal[.player, default: 0] == 440)
+    #expect(extractor.upgradeProgress == nil)
+    #expect(extractor.upgradeLevel == 1)
+    #expect(extractor.hitPoints == 410)
+    #expect(extractor.maxHitPoints == extractorDefinition.hitPoints)
+    #expect(extractor.rally == rally)
+    #expect(extractor.nodeID == "node-b")
+    #expect(engine.state.selectedEntityID == "player-extractor-cancel-progress")
+    #expect(engine.state.selectedEntityIDs == ["player-extractor-cancel-progress"])
+    #expect(engine.state.controlGroups == [2: ["player-extractor-cancel-progress"]])
+    #expect(engine.state.income(for: .player) == 9)
+}
+
 @Test func cancelRadarUpgradeRejectsMissingInvalidAndInactiveSelection() {
     let radarDefinition = GameDefinitions.building(.radar)
     let turretDefinition = GameDefinitions.building(.turret)

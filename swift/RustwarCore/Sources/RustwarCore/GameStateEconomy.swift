@@ -4,7 +4,7 @@ public extension GameState {
             guard building.team == team, building.buildProgress >= 1 else {
                 return partial
             }
-            return partial + GameDefinitions.building(building.type).income
+            return partial + GameDefinitions.building(for: building).income
         }
     }
 

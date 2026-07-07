@@ -309,6 +309,19 @@ final class GameController {
         selectedCompletedPlayerRadar?.upgradeProgress != nil
     }
 
+    var canUpgradeSelectedExtractor: Bool {
+        guard let extractor = selectedCompletedPlayerExtractor,
+              extractor.upgradeProgress == nil,
+              let upgrade = GameDefinitions.nextUpgrade(for: extractor) else {
+            return false
+        }
+        return engine.state.metal[.player, default: 0] >= upgrade.metalCost
+    }
+
+    var canCancelSelectedExtractorUpgrade: Bool {
+        selectedCompletedPlayerExtractor?.upgradeProgress != nil
+    }
+
     var selectedRadarUpgradeSummary: String? {
         guard let radar = selectedCompletedPlayerRadar else {
             return nil
@@ -323,6 +336,22 @@ final class GameController {
             return nil
         }
         return "Radar upgrade \(Int(upgrade.metalCost)) metal"
+    }
+
+    var selectedExtractorUpgradeSummary: String? {
+        guard let extractor = selectedCompletedPlayerExtractor else {
+            return nil
+        }
+        if let progress = extractor.upgradeProgress {
+            return "Extractor upgrade \(Int((progress * 100).rounded()))%"
+        }
+        if extractor.upgradeLevel >= 2 {
+            return "Extractor Level 2"
+        }
+        guard let upgrade = GameDefinitions.nextUpgrade(for: extractor) else {
+            return nil
+        }
+        return "Extractor upgrade \(Int(upgrade.metalCost)) metal"
     }
 
     var canIssueStop: Bool {
@@ -387,6 +416,14 @@ final class GameController {
             return "Upgrade Radar"
         }
         return "Upgrade Radar \(Int(upgrade.metalCost))"
+    }
+
+    var upgradeExtractorButtonTitle: String {
+        guard let extractor = selectedCompletedPlayerExtractor,
+              let upgrade = GameDefinitions.nextUpgrade(for: extractor) else {
+            return "Upgrade Extractor"
+        }
+        return "Upgrade Extractor \(Int(upgrade.metalCost))"
     }
 
     var rallyCommandButtonTitle: String {
@@ -945,6 +982,18 @@ final class GameController {
     func cancelRadarUpgrade() {
         let result = engine.cancelBuildingUpgrade()
         commandStatus = statusText(for: result)
+        renderRevision += 1
+    }
+
+    func upgradeSelectedExtractor() {
+        let result = engine.queueBuildingUpgrade()
+        commandStatus = statusText(forExtractorUpgrade: result)
+        renderRevision += 1
+    }
+
+    func cancelExtractorUpgrade() {
+        let result = engine.cancelBuildingUpgrade()
+        commandStatus = statusText(forExtractorUpgradeCancel: result)
         renderRevision += 1
     }
 
@@ -1507,6 +1556,14 @@ final class GameController {
     }
 
     private var selectedCompletedPlayerRadar: BuildingSnapshot? {
+        selectedCompletedPlayerBuilding(type: .radar)
+    }
+
+    private var selectedCompletedPlayerExtractor: BuildingSnapshot? {
+        selectedCompletedPlayerBuilding(type: .extractor)
+    }
+
+    private func selectedCompletedPlayerBuilding(type: BuildingType) -> BuildingSnapshot? {
         let selectedIDs = engine.state.selectedEntityIDs.isEmpty
             ? engine.state.selectedEntityID.map { [$0] } ?? []
             : engine.state.selectedEntityIDs
@@ -1516,7 +1573,7 @@ final class GameController {
         return engine.state.buildings.first {
             $0.id == selectedEntityID &&
                 $0.team == .player &&
-                $0.type == .radar &&
+                $0.type == type &&
                 $0.hitPoints > 0 &&
                 $0.buildProgress >= 1
         }
@@ -1798,6 +1855,37 @@ final class GameController {
             return "Radar Station required"
         case .noUpgradeQueued:
             return "No radar upgrade queued"
+        }
+    }
+
+    private func statusText(forExtractorUpgrade result: BuildingUpgradeResult) -> String? {
+        switch result {
+        case .queued:
+            return "Extractor upgrade started"
+        case .noSelection:
+            return "No extractor selected"
+        case .selectedBuildingCannotUpgrade:
+            return "Extractor required"
+        case .upgradeAlreadyQueued:
+            return "Extractor upgrade already queued"
+        case .fullyUpgraded:
+            return "Extractor already upgraded"
+        case .insufficientMetal:
+            return "Need more metal"
+        }
+    }
+
+    private func statusText(forExtractorUpgradeCancel result: BuildingUpgradeCancelResult) -> String? {
+        switch result {
+        case let .cancelled(refundedMetal):
+            let refund = refundedMetal.formatted(.number.precision(.fractionLength(0...1)))
+            return "Extractor upgrade cancelled (+\(refund) metal)"
+        case .noSelection:
+            return "No extractor selected"
+        case .selectedBuildingCannotCancelUpgrade:
+            return "Extractor required"
+        case .noUpgradeQueued:
+            return "No extractor upgrade queued"
         }
     }
 

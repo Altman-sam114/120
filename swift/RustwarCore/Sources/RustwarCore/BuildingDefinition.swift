@@ -59,6 +59,7 @@ public struct BuildingUpgradeDefinition: Codable, Equatable, Sendable {
     public let metalCost: Double
     public let buildTime: Double
     public let hitPoints: Double
+    public let income: Double?
     public let vision: Double
     public let radarRange: Double
 
@@ -68,6 +69,7 @@ public struct BuildingUpgradeDefinition: Codable, Equatable, Sendable {
         metalCost: Double,
         buildTime: Double,
         hitPoints: Double,
+        income: Double? = nil,
         vision: Double,
         radarRange: Double
     ) {
@@ -76,6 +78,7 @@ public struct BuildingUpgradeDefinition: Codable, Equatable, Sendable {
         self.metalCost = metalCost
         self.buildTime = buildTime
         self.hitPoints = hitPoints
+        self.income = income
         self.vision = vision
         self.radarRange = radarRange
     }

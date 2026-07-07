@@ -379,6 +379,26 @@ struct GameHUDView: View {
                         .accessibilityLabel("Cancel radar upgrade")
                         .accessibilityHint("Stops the selected Radar Station upgrade and refunds remaining metal.")
                 }
+                if controller.canUpgradeSelectedExtractor {
+                    Button(
+                        controller.upgradeExtractorButtonTitle,
+                        systemImage: "arrow.up.circle",
+                        action: controller.upgradeSelectedExtractor
+                    )
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.regular)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .accessibilityLabel("Upgrade extractor")
+                    .accessibilityHint("Increases the selected Extractor income, hit points, and vision.")
+                }
+                if controller.canCancelSelectedExtractorUpgrade {
+                    Button("Cancel Upgrade", systemImage: "xmark.circle", action: controller.cancelExtractorUpgrade)
+                        .buttonStyle(.bordered)
+                        .controlSize(.regular)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .accessibilityLabel("Cancel extractor upgrade")
+                        .accessibilityHint("Stops the selected Extractor upgrade and refunds remaining metal.")
+                }
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                     Button(
                         controller.attackCommandButtonTitle,
@@ -449,6 +469,13 @@ struct GameHUDView: View {
 
             if let selectedRadarUpgradeSummary = controller.selectedRadarUpgradeSummary {
                 Text(selectedRadarUpgradeSummary)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            if let selectedExtractorUpgradeSummary = controller.selectedExtractorUpgradeSummary {
+                Text(selectedExtractorUpgradeSummary)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
