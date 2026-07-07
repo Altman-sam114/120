@@ -55,7 +55,7 @@ flowchart TD
   S --> E["GameEngine.update / GameState.visibility(for:) / select(mutation:) / selectVisibleToPlayer(mutation:) / selectIdlePlayerBuilders / selectPlayerCombatUnits / selectPlayerCombatUnits(in:mutation:) / selectPlayerUnits(in:mutation:) / selectPlayerEntities(in:mutation:) / selectPlayerUnitsMatchingPrimarySelection(mutation:) / selectPlayerUnitsMatching(unitID:within:mutation:) / storeControlGroup / recallControlGroup / issueMove / issueAttackMove / issuePatrol / issueGuard / setAttackStance / issueRepair / issueReclaim / issueBuildExtractor / issueBuildTurret / issueBuildLandFactory / issueStop / issueAttack / queueUnit / cancelLastProduction / setRepeatProduction / setRally / setEnemyAIEnabled / init(state)<br/>中文注释：推进收入 tick、按单位/建筑 vision 计算玩家当前可见 tile、点选、玩家可见敌方过滤点选、多选集合、选择替换/追加、世界矩形框选、区域选择建筑 fallback、屏幕范围作战单位选择、全图同类型选择、附近同类型选择、控制编队保存/召回、空闲 Builder/战斗单位批量选择、单单位和多单位移动、单单位和多单位攻击、单单位和多单位攻击移动、单单位和多单位巡逻、单单位和多单位护航；Move、Attack-Move 和 Patrol 多选点位命令共用稳定方阵落点，Guard 多选目标命令使用稳定方阵护航偏移，Repair、Reclaim 和 Build 多 Builder 更新时使用动态分散接近点；攻击姿态切换、单 Builder 和多 Builder 维修、单 Builder 和多 Builder 回收、单 Builder 和多 Builder 建造 Extractor、单 Builder 和多 Builder 建造 Turret、单 Builder 和多 Builder 建造 Land Factory、停止、炮塔防御开火、死亡残骸、生产建筑队列、生产取消、重复生产、集结点、红方 AI 开关、红方资源扩张/维修/回收/建造 Land Factory/建造 Turret/生产/进攻 AI 和存档状态恢复"]
   E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、Enemy AI 开关、Replace/Add 选择模式、批量选择入口、Select Area 单位优先框选和建筑 fallback 等待态、Screen Combat 当前屏幕作战单位选择、Same Type 全图同类型选择、双击附近同类型选择、控制编队保存/召回、移动命令、攻击、攻击移动、护航、维修、回收、建造、生产、生产取消、重复生产、集结点和 Save/Load 入口；Move/Attack/Attack Move/Patrol/Guard/Repair/Reclaim/Build Extractor/Stop 复用多选集合"]
   C --> H["SwiftUI RootGameView / GameHUDView<br/>中文注释：显示资源、收入、人口和选择反馈"]
-  C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、残骸、双方单位建筑、多选高亮、相机中心和等待命令反馈，并复用点位、Builder 目标和实体目标命令"]
+  C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、残骸、双方单位建筑、多选高亮、主战场视口矩形、相机中心和等待命令反馈，并复用点位、Builder 目标和实体目标命令"]
   C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、己方实体、当前可见敌方实体、多选高亮、移动目标和当前玩家视野雾层"]
   T["SpatialTap / LongPress / Drag / Magnify<br/>中文注释：iOS 触摸选择、移动落点、长按上下文命令、Select Area 框选、拖拽平移和捏合缩放"] --> C
   TT["TacticalMap DragTap / LongPress<br/>中文注释：点按小地图换算世界坐标；等待点位、Builder 目标或实体目标命令时显示反馈并下令，否则居中相机；无等待命令时长按复用上下文命令"] --> C
@@ -127,6 +127,8 @@ flowchart TD
   FC --> B
   C --> KP["Camera keyboard pan<br/>中文注释：WASD / 方向键只移动 camera.center，斜向归一化并 clamp 到地图边界"]
   KP --> B
+  C --> VM["Tactical map viewport frame<br/>中文注释：GameController 根据 CameraState 和主战场 viewport size 暴露当前可见 WorldRect，TacticalMapView 绘制小地图白色视口框"]
+  VM --> TM
   E --> TF["Turret Fire<br/>中文注释：完成状态炮塔自动攻击射程内敌方单位或建筑并进入冷却"]
   TF --> E
   E --> AI["Enemy AI<br/>中文注释：红方 Builder 维修受损友军、扩张资源点、建造 Land Factory / Turret 并回收附近残骸，红方完成状态 Command Center 可排队 Builder，Land Factory 按完整 T1 列表排队造兵，空闲战斗单位按 Web-lite 评分获得攻击玩家目标的订单"]

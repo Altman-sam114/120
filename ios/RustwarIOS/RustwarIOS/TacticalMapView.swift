@@ -19,6 +19,7 @@ struct TacticalMapView: View {
             let selectedEntityIDs = Set(state.selectedEntityIDs)
             let playerVisibility = state.visibility(for: .player)
             let cameraCenter = controller.camera.center
+            let visibleWorldRect = controller.visibleBattlefieldWorldRect
             let shouldDifferentiateWithoutColor = differentiateWithoutColor
             let pendingCommandLabel = controller.tacticalMapPendingCommandLabel
             let pendingCommandSymbol = controller.tacticalMapPendingCommandSymbol
@@ -34,6 +35,7 @@ struct TacticalMapView: View {
                     selectedEntityIDs: selectedEntityIDs,
                     playerVisibility: playerVisibility,
                     cameraCenter: cameraCenter,
+                    visibleWorldRect: visibleWorldRect,
                     pendingCommandSymbol: pendingCommandSymbol,
                     differentiateWithoutColor: shouldDifferentiateWithoutColor
                 )
@@ -136,6 +138,7 @@ struct TacticalMapView: View {
         selectedEntityIDs: Set<String>,
         playerVisibility: VisibilitySnapshot,
         cameraCenter: WorldPoint,
+        visibleWorldRect: WorldRect?,
         pendingCommandSymbol: String?,
         differentiateWithoutColor: Bool
     ) {
@@ -176,6 +179,9 @@ struct TacticalMapView: View {
             )
         }
 
+        if let visibleWorldRect {
+            drawVisibleWorldRect(visibleWorldRect, in: &context, size: size)
+        }
         drawCameraCenter(cameraCenter, in: &context, size: size)
 
         if let pendingCommandSymbol {
@@ -295,6 +301,24 @@ struct TacticalMapView: View {
         vertical.move(to: CGPoint(x: point.x, y: point.y - radius - 3))
         vertical.addLine(to: CGPoint(x: point.x, y: point.y + radius + 3))
         context.stroke(vertical, with: .color(.white.opacity(0.8)), lineWidth: 1)
+    }
+
+    private static func drawVisibleWorldRect(_ rect: WorldRect, in context: inout GraphicsContext, size: CGSize) {
+        let topLeft = mapPoint(for: WorldPoint(rect.minX, rect.minY), size: size)
+        let bottomRight = mapPoint(for: WorldPoint(rect.maxX, rect.maxY), size: size)
+        let mapRect = CGRect(
+            x: min(topLeft.x, bottomRight.x),
+            y: min(topLeft.y, bottomRight.y),
+            width: abs(bottomRight.x - topLeft.x),
+            height: abs(bottomRight.y - topLeft.y)
+        ).insetBy(dx: 0.5, dy: 0.5)
+
+        guard mapRect.width > 1, mapRect.height > 1 else {
+            return
+        }
+
+        context.fill(Path(mapRect), with: .color(.white.opacity(0.08)))
+        context.stroke(Path(mapRect), with: .color(.white.opacity(0.86)), lineWidth: 1.2)
     }
 
     private static func drawPendingCommandIndicator(

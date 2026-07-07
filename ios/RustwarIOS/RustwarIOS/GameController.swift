@@ -1326,7 +1326,7 @@ final class GameController {
         return true
     }
 
-    private var visibleBattlefieldWorldRect: WorldRect? {
+    var visibleBattlefieldWorldRect: WorldRect? {
         camera.visibleWorldRect(for: battlefieldViewportSize)
     }
 
