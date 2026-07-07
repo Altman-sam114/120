@@ -479,24 +479,7 @@ public struct GameEngine: Sendable {
               state.buildings[buildingIndex].buildProgress >= 1 else {
             return .selectedBuildingCannotUpgrade
         }
-        guard state.buildings[buildingIndex].upgradeProgress == nil else {
-            return .upgradeAlreadyQueued
-        }
-        guard !GameDefinitions.building(state.buildings[buildingIndex].type).upgrades.isEmpty else {
-            return .selectedBuildingCannotUpgrade
-        }
-        guard let upgrade = GameDefinitions.nextUpgrade(for: state.buildings[buildingIndex]) else {
-            return .fullyUpgraded
-        }
-
-        let team = state.buildings[buildingIndex].team
-        guard state.metal[team, default: 0] >= upgrade.metalCost else {
-            return .insufficientMetal
-        }
-
-        state.metal[team, default: 0] -= upgrade.metalCost
-        state.buildings[buildingIndex].upgradeProgress = 0
-        return .queued
+        return enqueueBuildingUpgrade(at: buildingIndex)
     }
 
     @discardableResult
@@ -570,6 +553,7 @@ public struct GameEngine: Sendable {
         updateEnemyFactoryConstruction(rebuildMissingFactoryOnly: false)
         updateEnemyTurretConstruction()
         updateEnemyRadarConstruction()
+        updateEnemyRadarUpgrade()
         updateEnemyReclaim()
         updateEnemyProduction()
         updateEnemyAttackOrders()
@@ -755,6 +739,14 @@ public struct GameEngine: Sendable {
         }
     }
 
+    private mutating func updateEnemyRadarUpgrade() {
+        guard let buildingIndex = enemyRadarUpgradeCandidateIndex() else {
+            return
+        }
+
+        _ = enqueueBuildingUpgrade(at: buildingIndex)
+    }
+
     private mutating func updateEnemyProduction() {
         for buildingIndex in state.buildings.indices {
             guard state.buildings[buildingIndex].team == .enemy,
@@ -767,6 +759,32 @@ public struct GameEngine: Sendable {
 
             _ = enqueueUnit(unitType, at: buildingIndex)
         }
+    }
+
+    private mutating func enqueueBuildingUpgrade(at buildingIndex: Int) -> BuildingUpgradeResult {
+        guard state.buildings.indices.contains(buildingIndex),
+              state.buildings[buildingIndex].hitPoints > 0,
+              state.buildings[buildingIndex].buildProgress >= 1 else {
+            return .selectedBuildingCannotUpgrade
+        }
+        guard state.buildings[buildingIndex].upgradeProgress == nil else {
+            return .upgradeAlreadyQueued
+        }
+        guard !GameDefinitions.building(state.buildings[buildingIndex].type).upgrades.isEmpty else {
+            return .selectedBuildingCannotUpgrade
+        }
+        guard let upgrade = GameDefinitions.nextUpgrade(for: state.buildings[buildingIndex]) else {
+            return .fullyUpgraded
+        }
+
+        let team = state.buildings[buildingIndex].team
+        guard state.metal[team, default: 0] >= upgrade.metalCost else {
+            return .insufficientMetal
+        }
+
+        state.metal[team, default: 0] -= upgrade.metalCost
+        state.buildings[buildingIndex].upgradeProgress = 0
+        return .queued
     }
 
     private func enemyProductionChoice(for building: BuildingSnapshot) -> UnitType? {
@@ -1927,6 +1945,31 @@ public struct GameEngine: Sendable {
             && livingEnemyBuildingCount(type: .extractor) >= Self.enemyExtractorCountBeforeAdditionalFactory
             && livingEnemyBuildingCount(type: .turret) >= Self.enemyTurretLimit
             && livingEnemyBuildingCount(type: .radar) < Self.enemyRadarLimit
+    }
+
+    private func shouldPrioritizeEnemyRadarUpgrade() -> Bool {
+        livingEnemyBuildingCount(type: .landFactory) > 0
+            && livingEnemyBuildingCount(type: .extractor) >= Self.enemyExtractorCountBeforeAdditionalFactory
+            && livingEnemyBuildingCount(type: .turret) >= Self.enemyTurretLimit
+    }
+
+    private func enemyRadarUpgradeCandidateIndex() -> Int? {
+        guard shouldPrioritizeEnemyRadarUpgrade() else {
+            return nil
+        }
+
+        return state.buildings.indices.first { buildingIndex in
+            let building = state.buildings[buildingIndex]
+            guard building.team == .enemy,
+                  building.type == .radar,
+                  building.hitPoints > 0,
+                  building.buildProgress >= 1,
+                  building.upgradeProgress == nil,
+                  let upgrade = GameDefinitions.nextUpgrade(for: building) else {
+                return false
+            }
+            return state.metal[.enemy, default: 0] >= upgrade.metalCost
+        }
     }
 
     private func enemyLandFactoryBuildPosition(for builder: UnitSnapshot) -> WorldPoint? {

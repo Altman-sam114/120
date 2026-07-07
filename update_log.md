@@ -3246,3 +3246,38 @@
 遗留事项：
 
 - v1.82 只新增玩家手动 Radar Station T2 升级；红方 AI 不会升级雷达，仍无升级取消、通用建筑升级树、雾内敌方残影、雷达目标记忆、雷达干扰或完整 Web radar parity。
+
+### v1.83 / iOS enemy AI Radar Station upgrade
+
+日期：2026-07-07
+
+核心变更：
+
+- `GameEngine.queueBuildingUpgrade()` 保持玩家选择门控，但把实际扣金属和 `upgradeProgress = 0` 排队逻辑抽为私有 helper，供 AI 安全复用。
+- `updateEnemyAI()` 在红方 Radar Station 建造决策之后、回收和生产之前新增 Radar T2 升级决策。
+- 红方 AI 只有在 Enemy AI 开启、红方已有 Land Factory、达到基础 Extractor 数、达到 Turret foothold、拥有完成状态且未升级中的 Radar Station，并且金属足够时，才会消耗 780 metal 排队 Radar Station T2。
+- 升级进度和完成效果继续走既有 `updateBuildingUpgrades(deltaTime:)`、`GameDefinitions.building(for:)`、`radarCoverage(for:)` 和 `radarContacts(for:)`，不会改变玩家雾外目标命中规则。
+- 新增 Core 测试覆盖红方雷达升级排队、资源扣除、玩家选择保持、玩家雷达不被 AI 修改、无效状态等待、Enemy AI Off 门控和升级完成后的 1360 红方雷达覆盖范围。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.83-ios-enemy-ai-radar-upgrade.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地通过：`git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v183 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`。
+- 本地 `swift test --package-path swift/RustwarCore` 未运行成功：沙箱内先遇到 SwiftPM cache 权限和本机 Swift/SDK mismatch；提升权限重试后仍在 Package manifest 链接阶段失败，报 `PackageDescription.Package.__allocating_init(...)` undefined symbol。
+- 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 未运行成功：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，`xcodebuild` 要求完整 Xcode。
+- 本轮未改 `ios/RustwarIOS/`，未在本机继续运行 iOS build；完整 SwiftPM 和 iOS build 等待 GitHub Actions macOS runner 复判。
+- 云端 artifact 复判待本轮 push 后由 Agent C 执行。
+
+遗留事项：
+
+- v1.83 只新增红方 AI 自动使用既有 Radar Station T2 升级；仍无升级取消、通用建筑升级树、AI 情报限制、雾内敌方残影、雷达目标记忆、雷达干扰或完整 Web radar parity。

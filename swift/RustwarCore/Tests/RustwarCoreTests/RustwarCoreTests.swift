@@ -6925,6 +6925,109 @@ import Testing
     })
 }
 
+@Test func enemyAIQueuesRadarUpgradeWhenFootholdReady() throws {
+    var state = enemyRadarUpgradeReadyState(mapID: .coast)
+    let selectedPlayerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let playerRadarDefinition = GameDefinitions.building(.radar)
+    let playerRadarPosition = WorldPoint(state.map.playerBase.x + 220, state.map.playerBase.y + 220)
+    state.buildings.append(
+        BuildingSnapshot(
+            id: "player-radar-not-upgraded-by-ai",
+            type: .radar,
+            team: .player,
+            position: playerRadarPosition,
+            hitPoints: playerRadarDefinition.hitPoints,
+            maxHitPoints: playerRadarDefinition.hitPoints,
+            rally: playerRadarPosition
+        )
+    )
+    state.selectedEntityID = selectedPlayerBuilding.id
+    state.selectedEntityIDs = [selectedPlayerBuilding.id]
+    let radarID = try #require(state.buildings.first { $0.id == "enemy-upgrade-radar" }?.id)
+    let startingEnemyMetal = state.metal[.enemy, default: 0]
+    let startingEnemyIncome = state.income(for: .enemy)
+    let upgrade = try #require(GameDefinitions.building(.radar).upgrades.first)
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let enemyRadar = try #require(engine.state.buildings.first { $0.id == radarID })
+    let playerRadar = try #require(engine.state.buildings.first { $0.id == "player-radar-not-upgraded-by-ai" })
+    #expect(enemyRadar.upgradeLevel == 1)
+    #expect(enemyRadar.upgradeProgress == 0)
+    #expect(engine.state.metal[.enemy, default: 0] == startingEnemyMetal + startingEnemyIncome - upgrade.metalCost)
+    #expect(engine.state.selectedEntityID == selectedPlayerBuilding.id)
+    #expect(engine.state.selectedEntityIDs == [selectedPlayerBuilding.id])
+    #expect(playerRadar.upgradeProgress == nil)
+    #expect(playerRadar.upgradeLevel == 1)
+}
+
+@Test func enemyRadarUpgradeAIWaitsForInvalidStates() throws {
+    let baseState = enemyRadarUpgradeReadyState(mapID: .coast)
+    let radarID = "enemy-upgrade-radar"
+    let upgrade = try #require(GameDefinitions.building(.radar).upgrades.first)
+    let enemyIncome = baseState.income(for: .enemy)
+
+    var poorState = baseState
+    poorState.metal[.enemy] = max(0, upgrade.metalCost - enemyIncome - 1)
+    var poorEngine = GameEngine(state: poorState)
+    poorEngine.update(deltaTime: 1)
+    #expect(poorEngine.state.buildings.first { $0.id == radarID }?.upgradeProgress == nil)
+    #expect(poorEngine.state.metal[.enemy, default: 0] == poorState.metal[.enemy, default: 0] + enemyIncome)
+
+    var incompleteState = baseState
+    let incompleteRadarIndex = try #require(incompleteState.buildings.firstIndex { $0.id == radarID })
+    incompleteState.buildings[incompleteRadarIndex].buildProgress = 0.5
+    var incompleteEngine = GameEngine(state: incompleteState)
+    incompleteEngine.update(deltaTime: 1)
+    let incompleteRadar = try #require(incompleteEngine.state.buildings.first { $0.id == radarID })
+    #expect(incompleteRadar.upgradeProgress == nil)
+    #expect(incompleteEngine.state.metal[.enemy, default: 0] == incompleteState.metal[.enemy, default: 0] + enemyIncome)
+
+    var queuedState = baseState
+    let queuedRadarIndex = try #require(queuedState.buildings.firstIndex { $0.id == radarID })
+    queuedState.buildings[queuedRadarIndex].upgradeProgress = 0.25
+    var queuedEngine = GameEngine(state: queuedState)
+    queuedEngine.update(deltaTime: 1)
+    let queuedRadar = try #require(queuedEngine.state.buildings.first { $0.id == radarID })
+    #expect((queuedRadar.upgradeProgress ?? 0) > 0.25)
+    #expect(queuedEngine.state.metal[.enemy, default: 0] == queuedState.metal[.enemy, default: 0] + enemyIncome)
+
+    var upgradedState = baseState
+    let upgradedRadarIndex = try #require(upgradedState.buildings.firstIndex { $0.id == radarID })
+    upgradedState.buildings[upgradedRadarIndex].upgradeLevel = 2
+    var upgradedEngine = GameEngine(state: upgradedState)
+    upgradedEngine.update(deltaTime: 1)
+    let upgradedRadar = try #require(upgradedEngine.state.buildings.first { $0.id == radarID })
+    #expect(upgradedRadar.upgradeProgress == nil)
+    #expect(upgradedEngine.state.metal[.enemy, default: 0] == upgradedState.metal[.enemy, default: 0] + enemyIncome)
+
+    var disabledEngine = GameEngine(state: baseState, enemyAIEnabled: false)
+    disabledEngine.update(deltaTime: 1)
+    #expect(disabledEngine.state.buildings.first { $0.id == radarID }?.upgradeProgress == nil)
+    #expect(disabledEngine.state.metal[.enemy, default: 0] == baseState.metal[.enemy, default: 0] + enemyIncome)
+}
+
+@Test func enemyRadarUpgradeCompletesThroughExistingUpgradeProgression() throws {
+    let state = enemyRadarUpgradeReadyState(mapID: .coast)
+    let radarID = "enemy-upgrade-radar"
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+    for _ in 0..<22 {
+        engine.update(deltaTime: 1)
+    }
+
+    let enemyRadar = try #require(engine.state.buildings.first { $0.id == radarID })
+    let enemyRadarCoverage = engine.state.radarCoverage(for: .enemy)
+    #expect(enemyRadar.upgradeLevel == 2)
+    #expect(enemyRadar.upgradeProgress == nil)
+    #expect(enemyRadar.maxHitPoints == 520)
+    #expect(enemyRadarCoverage.contains {
+        $0.buildingID == radarID && $0.team == .enemy && $0.radarRange == 1_360
+    })
+}
+
 @Test func completedEnemyAIRadarProvidesEnemyRadarContacts() throws {
     let state = enemyRadarConstructionReadyState(mapID: .coast)
     let initialBuildingIDs = Set(state.buildings.map(\.id))
@@ -8049,6 +8152,26 @@ private func enemyRadarConstructionReadyState(mapID: MapID) -> GameState {
             )
         )
     }
+    state.metal[.enemy] = 1_000
+    return state
+}
+
+private func enemyRadarUpgradeReadyState(mapID: MapID) -> GameState {
+    var state = enemyRadarConstructionReadyState(mapID: mapID)
+    keepEnemyProducersBusy(in: &state)
+    let radarDefinition = GameDefinitions.building(.radar)
+    let radarPosition = clearRadarBuildPoint(in: state)
+    state.buildings.append(
+        BuildingSnapshot(
+            id: "enemy-upgrade-radar",
+            type: .radar,
+            team: .enemy,
+            position: radarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: radarPosition
+        )
+    )
     state.metal[.enemy] = 1_000
     return state
 }
