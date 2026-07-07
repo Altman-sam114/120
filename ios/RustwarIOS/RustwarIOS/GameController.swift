@@ -345,8 +345,8 @@ final class GameController {
         if let progress = extractor.upgradeProgress {
             return "Extractor upgrade \(Int((progress * 100).rounded()))%"
         }
-        if extractor.upgradeLevel >= 2 {
-            return "Extractor Level 2"
+        if extractor.upgradeLevel > 1 {
+            return "Extractor Level \(extractor.upgradeLevel)"
         }
         guard let upgrade = GameDefinitions.nextUpgrade(for: extractor) else {
             return nil

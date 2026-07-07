@@ -608,17 +608,26 @@ import Testing
 
 @Test func extractorT2UpgradeDefinitionAndEffectiveEconomy() throws {
     let extractorDefinition = GameDefinitions.building(.extractor)
-    let upgrade = try #require(extractorDefinition.upgrades.first)
+    let t2Upgrade = try #require(extractorDefinition.upgrades.first)
+    let t3Upgrade = try #require(extractorDefinition.upgrades.last)
 
-    #expect(extractorDefinition.upgrades.count == 1)
-    #expect(upgrade.level == 2)
-    #expect(upgrade.name == "Extractor T2")
-    #expect(upgrade.metalCost == 650)
-    #expect(upgrade.buildTime == 20)
-    #expect(upgrade.hitPoints == 760)
-    #expect(upgrade.income == 18)
-    #expect(upgrade.vision == 290)
-    #expect(upgrade.radarRange == 0)
+    #expect(extractorDefinition.upgrades.count == 2)
+    #expect(t2Upgrade.level == 2)
+    #expect(t2Upgrade.name == "Extractor T2")
+    #expect(t2Upgrade.metalCost == 650)
+    #expect(t2Upgrade.buildTime == 20)
+    #expect(t2Upgrade.hitPoints == 760)
+    #expect(t2Upgrade.income == 18)
+    #expect(t2Upgrade.vision == 290)
+    #expect(t2Upgrade.radarRange == 0)
+    #expect(t3Upgrade.level == 3)
+    #expect(t3Upgrade.name == "Extractor T3")
+    #expect(t3Upgrade.metalCost == 1_250)
+    #expect(t3Upgrade.buildTime == 32)
+    #expect(t3Upgrade.hitPoints == 1_020)
+    #expect(t3Upgrade.income == 32)
+    #expect(t3Upgrade.vision == 340)
+    #expect(t3Upgrade.radarRange == 0)
 
     let baseExtractor = BuildingSnapshot(
         id: "extractor-base-definition",
@@ -639,6 +648,16 @@ import Testing
         rally: WorldPoint(700, 600),
         upgradeLevel: 2
     )
+    let advancedExtractor = BuildingSnapshot(
+        id: "extractor-t3-definition",
+        type: .extractor,
+        team: .player,
+        position: WorldPoint(800, 600),
+        hitPoints: 1_020,
+        maxHitPoints: 1_020,
+        rally: WorldPoint(800, 600),
+        upgradeLevel: 3
+    )
 
     #expect(GameDefinitions.building(for: baseExtractor).income == 9)
     #expect(GameDefinitions.building(for: baseExtractor).hitPoints == 560)
@@ -646,11 +665,14 @@ import Testing
     #expect(GameDefinitions.building(for: upgradedExtractor).income == 18)
     #expect(GameDefinitions.building(for: upgradedExtractor).hitPoints == 760)
     #expect(GameDefinitions.building(for: upgradedExtractor).vision == 290)
+    #expect(GameDefinitions.building(for: advancedExtractor).income == 32)
+    #expect(GameDefinitions.building(for: advancedExtractor).hitPoints == 1_020)
+    #expect(GameDefinitions.building(for: advancedExtractor).vision == 340)
 
     var state = GameState(mapID: .coast)
     state.units = []
-    state.buildings = [baseExtractor, upgradedExtractor]
-    #expect(state.income(for: .player) == 27)
+    state.buildings = [baseExtractor, upgradedExtractor, advancedExtractor]
+    #expect(state.income(for: .player) == 59)
 }
 
 @Test func extractorUpgradeRejectsInvalidSelectionAndQueueStates() {
@@ -707,7 +729,7 @@ import Testing
             upgradeProgress: 0.25
         ),
         BuildingSnapshot(
-            id: "complete-extractor-upgrade-reject",
+            id: "t2-extractor-upgrade-allowed",
             type: .extractor,
             team: .player,
             position: WorldPoint(1_100, 600),
@@ -715,6 +737,16 @@ import Testing
             maxHitPoints: 760,
             rally: WorldPoint(1_100, 600),
             upgradeLevel: 2
+        ),
+        BuildingSnapshot(
+            id: "complete-extractor-upgrade-reject",
+            type: .extractor,
+            team: .player,
+            position: WorldPoint(1_200, 600),
+            hitPoints: 1_020,
+            maxHitPoints: 1_020,
+            rally: WorldPoint(1_200, 600),
+            upgradeLevel: 3
         )
     ]
 
@@ -737,6 +769,7 @@ import Testing
     #expect(upgradeResult(selectedID: "player-turret-extractor-upgrade-reject") == .selectedBuildingCannotUpgrade)
     #expect(upgradeResult(selectedID: "queued-extractor-upgrade-reject") == .upgradeAlreadyQueued)
     #expect(upgradeResult(selectedID: "complete-extractor-upgrade-reject") == .fullyUpgraded)
+    #expect(upgradeResult(selectedID: "t2-extractor-upgrade-allowed", playerMetal: 1_300) == .queued)
     #expect(upgradeResult(
         selectedID: "player-extractor-upgrade-reject",
         selectedIDs: ["player-extractor-upgrade-reject", "complete-extractor-upgrade-reject"]
@@ -788,6 +821,52 @@ import Testing
     #expect(upgradedExtractor.hitPoints == 700)
     #expect(GameDefinitions.building(for: upgradedExtractor).vision == 290)
     #expect(engine.state.income(for: .player) == 18)
+}
+
+@Test func extractorT3UpgradeQueuesConsumesMetalCompletesAndRaisesIncome() throws {
+    let extractorPosition = WorldPoint(600, 600)
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-extractor-t3-upgrade-progress",
+            type: .extractor,
+            team: .player,
+            position: extractorPosition,
+            hitPoints: 700,
+            maxHitPoints: 760,
+            rally: extractorPosition,
+            nodeID: "node-t3",
+            upgradeLevel: 2
+        )
+    ]
+    state.metal[.player] = 1_500
+    state.selectedEntityID = "player-extractor-t3-upgrade-progress"
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.state.income(for: .player) == 18)
+    #expect(engine.queueBuildingUpgrade() == .queued)
+    #expect(engine.state.metal[.player] == 250)
+    #expect(engine.state.buildings[0].upgradeLevel == 2)
+    #expect(engine.state.buildings[0].upgradeProgress == 0)
+
+    for _ in 0..<16 {
+        engine.update(deltaTime: 1)
+    }
+    #expect(engine.state.buildings[0].upgradeLevel == 2)
+    #expect(abs((engine.state.buildings[0].upgradeProgress ?? -1) - 0.5) < 0.0001)
+    #expect(engine.state.income(for: .player) == 18)
+
+    for _ in 0..<16 {
+        engine.update(deltaTime: 1)
+    }
+    let upgradedExtractor = try #require(engine.state.buildings.first)
+    #expect(upgradedExtractor.upgradeLevel == 3)
+    #expect(upgradedExtractor.upgradeProgress == nil)
+    #expect(upgradedExtractor.maxHitPoints == 1_020)
+    #expect(upgradedExtractor.hitPoints == 960)
+    #expect(GameDefinitions.building(for: upgradedExtractor).vision == 340)
+    #expect(engine.state.income(for: .player) == 32)
 }
 
 @Test func cancelExtractorUpgradeRejectsMissingInvalidAndInactiveSelection() {
@@ -850,10 +929,10 @@ import Testing
             type: .extractor,
             team: .player,
             position: WorldPoint(1_100, 600),
-            hitPoints: 760,
-            maxHitPoints: 760,
+            hitPoints: 1_020,
+            maxHitPoints: 1_020,
             rally: WorldPoint(1_100, 600),
-            upgradeLevel: 2
+            upgradeLevel: 3
         )
     ]
 
@@ -903,13 +982,14 @@ import Testing
     var engine = GameEngine(state: state, enemyAIEnabled: false)
 
     let result = engine.cancelBuildingUpgrade()
+    #expect(result == .cancelled(refundedMetal: 390))
+    #expect(engine.state.metal[.player, default: 0] == 440)
+
     for _ in 0..<25 {
         engine.update(deltaTime: 1)
     }
 
     let extractor = try #require(engine.state.buildings.first)
-    #expect(result == .cancelled(refundedMetal: 390))
-    #expect(engine.state.metal[.player, default: 0] == 440)
     #expect(extractor.upgradeProgress == nil)
     #expect(extractor.upgradeLevel == 1)
     #expect(extractor.hitPoints == 410)
@@ -920,6 +1000,48 @@ import Testing
     #expect(engine.state.selectedEntityIDs == ["player-extractor-cancel-progress"])
     #expect(engine.state.controlGroups == [2: ["player-extractor-cancel-progress"]])
     #expect(engine.state.income(for: .player) == 9)
+    #expect(engine.state.metal[.player, default: 0] == 665)
+}
+
+@Test func cancelExtractorT3UpgradeRefundsAndDoesNotCompleteLater() throws {
+    let extractorPosition = WorldPoint(600, 600)
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-extractor-t3-cancel-progress",
+            type: .extractor,
+            team: .player,
+            position: extractorPosition,
+            hitPoints: 700,
+            maxHitPoints: 760,
+            rally: extractorPosition,
+            nodeID: "node-t3-cancel",
+            upgradeLevel: 2,
+            upgradeProgress: 0.5
+        )
+    ]
+    state.metal[.player] = 100
+    state.selectedEntityID = "player-extractor-t3-cancel-progress"
+    state.selectedEntityIDs = ["player-extractor-t3-cancel-progress"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let result = engine.cancelBuildingUpgrade()
+    #expect(result == .cancelled(refundedMetal: 625))
+    #expect(engine.state.metal[.player, default: 0] == 725)
+
+    for _ in 0..<40 {
+        engine.update(deltaTime: 1)
+    }
+
+    let extractor = try #require(engine.state.buildings.first)
+    #expect(extractor.upgradeProgress == nil)
+    #expect(extractor.upgradeLevel == 2)
+    #expect(extractor.hitPoints == 700)
+    #expect(extractor.maxHitPoints == 760)
+    #expect(GameDefinitions.building(for: extractor).income == 18)
+    #expect(engine.state.income(for: .player) == 18)
+    #expect(engine.state.metal[.player, default: 0] == 1_445)
 }
 
 @Test func cancelRadarUpgradeRejectsMissingInvalidAndInactiveSelection() {

@@ -32,6 +32,16 @@ public enum GameDefinitions {
                     income: 18,
                     vision: 290,
                     radarRange: 0
+                ),
+                BuildingUpgradeDefinition(
+                    level: 3,
+                    name: "Extractor T3",
+                    metalCost: 1_250,
+                    buildTime: 32,
+                    hitPoints: 1_020,
+                    income: 32,
+                    vision: 340,
+                    radarRange: 0
                 )
             ]
         ),

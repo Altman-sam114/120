@@ -3355,7 +3355,43 @@
 - 本地 `swift test --package-path swift/RustwarCore` 未运行成功：沙箱内先遇到 SwiftPM cache 权限和本机 Swift/SDK mismatch；提升权限重试后仍在 Package manifest 链接阶段失败，报 `PackageDescription.Package.__allocating_init(...)` undefined symbol。
 - 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 未运行成功：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，`xcodebuild` 要求完整 Xcode。
 - 完整 SwiftPM 和 iOS build 等待 GitHub Actions macOS runner 复判。
+- 首次实现提交 `dda737ee3c331fe57bf010ab737d2deb474ebc09` 的云端 run `28865815825` 未通过：artifact `rustwar-ci-v1.0-main-dda737e-run28865815825-attempt1` 已下载到 `/private/tmp/rustwar-c-review-28865815825/`，目录大小 `300K`；manifest 与 `main` / commit / run / attempt 匹配。失败项为 Swift test `cancelExtractorUpgradeRefundsAndDoesNotCompleteLater`，原因是测试在取消升级后推进了 25 秒模拟，却仍断言金属等于即时退款值；实际基础 Extractor 收入会继续增长。修复提交改为先断言即时退款，再推进模拟并断言升级未完成、收入仍为基础值和金属按基础收入增长。
 
 遗留事项：
 
 - v1.85 只新增玩家 Extractor T2；仍无 Extractor T3、敌方 AI Extractor 升级、Resource Fabricator、通用升级选择器、其它建筑升级、雾内敌方残影或完整 Web economy upgrade parity。
+
+### v1.86 / iOS Extractor T3 economy upgrade parity
+
+日期：2026-07-07
+
+核心变更：
+
+- Extractor 升级链追加 T3，沿用 Web T3 数值：1250 metal、32 秒、1020 HP、32 income、340 vision。
+- 现有 `GameDefinitions.nextUpgrade(for:)` 多级升级选择逻辑继续用于 T2 -> T3，不新增平行状态机。
+- `GameDefinitions.building(for:)` 在 `upgradeLevel == 3` 时返回 T3 的 HP、income 和 vision；`GameState.income(for:)` 继续通过有效建筑定义读取收入。
+- iOS HUD 的 Extractor 摘要从固定 `Extractor Level 2` 改为显示实际 `upgradeLevel`，避免 T3 完成后文案停留在 Level 2。
+- 新增 Core 测试覆盖 T3 定义、T2 -> T3 排队/扣款/进度/完成、收入/HP/视野生效、T3 取消退款和取消后不完成。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/GameDefinitions.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.86-ios-extractor-t3-upgrade.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地通过：`git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v186 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`、`swiftc -parse ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift ios/RustwarIOS/RustwarIOS/TacticalMapView.swift ios/RustwarIOS/RustwarIOS/GameController.swift ios/RustwarIOS/RustwarIOS/GameHUDView.swift`。
+- 本地 `swift test --package-path swift/RustwarCore` 未运行成功：非提升权限运行先遇到 SwiftPM user cache 权限和本机 Swift/SDK mismatch；提升权限重试被当前审批服务 `502 Bad Gateway` 阻塞，未能取得可用 SwiftPM 测试结果。
+- 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 未运行成功：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，`xcodebuild` 要求完整 Xcode。
+- 本轮尚未提交、push 或云端 artifact 复判：`git add` 提升权限连续被审批服务 `502 Bad Gateway` 阻塞，不能写入 Git 索引或触发 `origin/main` CI。
+
+遗留事项：
+
+- v1.86 只补齐玩家 Extractor T3；仍无敌方 AI Extractor 升级、Resource Fabricator、通用升级选择器、其它建筑升级、雾内敌方残影或完整 Web economy upgrade parity。
