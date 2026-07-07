@@ -121,7 +121,7 @@ flowchart TD
   MP --> E
   C --> SL["UserDefaults Save / Load<br/>中文注释：JSON 保存 GameState、CameraState、地图、暂停、速度和 AI 开关，读取后刷新原生状态"]
   SL --> E
-  C --> VIS["VisibilitySnapshot fog and enemy filtering<br/>中文注释：根据存活己方单位和完成己方建筑 vision 计算可见 tile，SpriteKit 用单个聚合路径覆盖不可见 tile，并隐藏当前视野外敌方单位/建筑及其不可见目标线；暂不实现雷达、已探索记忆或战术小地图雾层"]
+  C --> VIS["VisibilitySnapshot fog and enemy filtering<br/>中文注释：根据存活己方单位和完成己方建筑 vision 计算可见 tile，SpriteKit 主战场和 SwiftUI 战术小地图覆盖不可见 tile，并隐藏当前视野外敌方单位/建筑及主战场不可见目标线；暂不实现雷达或已探索记忆"]
   VIS --> B
   C --> FC["Camera focus Command Center<br/>中文注释：focusPlayerCommandCenter 只移动 camera.center，不改变 zoom、选择、等待态或单位命令"]
   FC --> B

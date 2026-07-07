@@ -13,6 +13,7 @@ struct TacticalMapView: View {
             let buildings = state.buildings
             let wrecks = state.wrecks
             let selectedEntityIDs = Set(state.selectedEntityIDs)
+            let playerVisibility = state.visibility(for: .player)
             let cameraCenter = controller.camera.center
             let shouldDifferentiateWithoutColor = differentiateWithoutColor
             let pendingCommandLabel = controller.tacticalMapPendingCommandLabel
@@ -27,6 +28,7 @@ struct TacticalMapView: View {
                     buildings: buildings,
                     wrecks: wrecks,
                     selectedEntityIDs: selectedEntityIDs,
+                    playerVisibility: playerVisibility,
                     cameraCenter: cameraCenter,
                     pendingCommandSymbol: pendingCommandSymbol,
                     differentiateWithoutColor: shouldDifferentiateWithoutColor
@@ -96,6 +98,7 @@ struct TacticalMapView: View {
         buildings: [BuildingSnapshot],
         wrecks: [WreckSnapshot],
         selectedEntityIDs: Set<String>,
+        playerVisibility: VisibilitySnapshot,
         cameraCenter: WorldPoint,
         pendingCommandSymbol: String?,
         differentiateWithoutColor: Bool
@@ -115,7 +118,9 @@ struct TacticalMapView: View {
             drawWreck(wreck, in: &context, size: size)
         }
 
-        for building in buildings {
+        drawFog(playerVisibility, in: &context, size: size)
+
+        for building in buildings where isVisibleToPlayer(building, visibility: playerVisibility) {
             drawBuilding(
                 building,
                 in: &context,
@@ -125,7 +130,7 @@ struct TacticalMapView: View {
             )
         }
 
-        for unit in units {
+        for unit in units where isVisibleToPlayer(unit, visibility: playerVisibility) {
             drawUnit(
                 unit,
                 in: &context,
@@ -168,6 +173,35 @@ struct TacticalMapView: View {
         let path = Path(roundedRect: rect, cornerRadius: 1)
         context.fill(path, with: .color(.brown.opacity(0.82)))
         context.stroke(path, with: .color(.yellow.opacity(0.66)), lineWidth: 0.6)
+    }
+
+    private static func drawFog(_ visibility: VisibilitySnapshot, in context: inout GraphicsContext, size: CGSize) {
+        guard visibility.columns > 0, visibility.rows > 0 else {
+            return
+        }
+
+        let tileWidth = size.width / CGFloat(visibility.columns)
+        let tileHeight = size.height / CGFloat(visibility.rows)
+        var fog = Path()
+        var hasHiddenTiles = false
+
+        for row in 0..<visibility.rows {
+            for column in 0..<visibility.columns where !visibility.isVisible(column: column, row: row) {
+                hasHiddenTiles = true
+                fog.addRect(CGRect(
+                    x: CGFloat(column) * tileWidth,
+                    y: CGFloat(row) * tileHeight,
+                    width: tileWidth,
+                    height: tileHeight
+                ))
+            }
+        }
+
+        guard hasHiddenTiles else {
+            return
+        }
+
+        context.fill(fog, with: .color(.black.opacity(0.42)))
     }
 
     private static func drawBuilding(
@@ -304,6 +338,14 @@ struct TacticalMapView: View {
             x: CGFloat(point.x / GameConstants.mapWidth) * size.width,
             y: CGFloat(point.y / GameConstants.mapHeight) * size.height
         )
+    }
+
+    private static func isVisibleToPlayer(_ unit: UnitSnapshot, visibility: VisibilitySnapshot) -> Bool {
+        unit.team == .player || visibility.isVisible(at: unit.position)
+    }
+
+    private static func isVisibleToPlayer(_ building: BuildingSnapshot, visibility: VisibilitySnapshot) -> Bool {
+        building.team == .player || visibility.isVisible(at: building.position)
     }
 
     private static func color(for team: Team) -> Color {
