@@ -305,6 +305,10 @@ final class GameController {
         return engine.state.metal[.player, default: 0] >= upgrade.metalCost
     }
 
+    var canCancelSelectedRadarUpgrade: Bool {
+        selectedCompletedPlayerRadar?.upgradeProgress != nil
+    }
+
     var selectedRadarUpgradeSummary: String? {
         guard let radar = selectedCompletedPlayerRadar else {
             return nil
@@ -936,6 +940,12 @@ final class GameController {
         commandStatus = statusText(for: result)
         renderRevision += 1
         mapRenderRevision += 1
+    }
+
+    func cancelRadarUpgrade() {
+        let result = engine.cancelBuildingUpgrade()
+        commandStatus = statusText(for: result)
+        renderRevision += 1
     }
 
     func toggleRallyCommand() {
@@ -1774,6 +1784,20 @@ final class GameController {
             return "Radar already upgraded"
         case .insufficientMetal:
             return "Need more metal"
+        }
+    }
+
+    private func statusText(for result: BuildingUpgradeCancelResult) -> String? {
+        switch result {
+        case let .cancelled(refundedMetal):
+            let refund = refundedMetal.formatted(.number.precision(.fractionLength(0...1)))
+            return "Radar upgrade cancelled (+\(refund) metal)"
+        case .noSelection:
+            return "No radar selected"
+        case .selectedBuildingCannotCancelUpgrade:
+            return "Radar Station required"
+        case .noUpgradeQueued:
+            return "No radar upgrade queued"
         }
     }
 

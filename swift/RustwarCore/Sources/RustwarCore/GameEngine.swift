@@ -546,6 +546,34 @@ public struct GameEngine: Sendable {
         return .cancelled(refundedMetal: refundedMetal)
     }
 
+    @discardableResult
+    public mutating func cancelBuildingUpgrade() -> BuildingUpgradeCancelResult {
+        let selectedIDs = selectedCommandEntityIDs()
+        guard selectedIDs.count == 1, let selectedEntityID = selectedIDs.first else {
+            return selectedIDs.isEmpty ? .noSelection : .selectedBuildingCannotCancelUpgrade
+        }
+        guard let buildingIndex = state.buildings.firstIndex(where: { $0.id == selectedEntityID }),
+              state.buildings[buildingIndex].team == .player,
+              state.buildings[buildingIndex].hitPoints > 0,
+              state.buildings[buildingIndex].buildProgress >= 1 else {
+            return .selectedBuildingCannotCancelUpgrade
+        }
+        guard !GameDefinitions.building(state.buildings[buildingIndex].type).upgrades.isEmpty else {
+            return .selectedBuildingCannotCancelUpgrade
+        }
+        guard let progress = state.buildings[buildingIndex].upgradeProgress,
+              let upgrade = GameDefinitions.nextUpgrade(for: state.buildings[buildingIndex]) else {
+            return .noUpgradeQueued
+        }
+
+        let clampedProgress = min(max(progress, 0), 1)
+        let refundedMetal = upgrade.metalCost * (1 - clampedProgress)
+        let team = state.buildings[buildingIndex].team
+        state.metal[team, default: 0] += refundedMetal
+        state.buildings[buildingIndex].upgradeProgress = nil
+        return .cancelled(refundedMetal: refundedMetal)
+    }
+
     private mutating func updateEnemyAI() {
         updateEnemyFactoryConstruction(rebuildMissingFactoryOnly: true)
         updateEnemyRepair()

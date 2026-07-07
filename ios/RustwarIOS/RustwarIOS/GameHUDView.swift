@@ -371,6 +371,14 @@ struct GameHUDView: View {
                     .accessibilityLabel("Upgrade radar")
                     .accessibilityHint("Increases the selected Radar Station vision and radar range.")
                 }
+                if controller.canCancelSelectedRadarUpgrade {
+                    Button("Cancel Upgrade", systemImage: "xmark.circle", action: controller.cancelRadarUpgrade)
+                        .buttonStyle(.bordered)
+                        .controlSize(.regular)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .accessibilityLabel("Cancel radar upgrade")
+                        .accessibilityHint("Stops the selected Radar Station upgrade and refunds remaining metal.")
+                }
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                     Button(
                         controller.attackCommandButtonTitle,

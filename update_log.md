@@ -3281,3 +3281,41 @@
 遗留事项：
 
 - v1.83 只新增红方 AI 自动使用既有 Radar Station T2 升级；仍无升级取消、通用建筑升级树、AI 情报限制、雾内敌方残影、雷达目标记忆、雷达干扰或完整 Web radar parity。
+
+### v1.84 / iOS Radar Station upgrade cancel MVP
+
+日期：2026-07-07
+
+核心变更：
+
+- 新增 `BuildingUpgradeCancelResult`，把升级取消结果与生产取消结果分开表达。
+- `GameEngine.cancelBuildingUpgrade()` 支持玩家单选完成、存活、可升级建筑时取消当前升级进度；当前首个调用场景是 Radar Station T2 升级。
+- 取消会按 `upgrade.metalCost * (1 - progress)` 退还剩余金属，`progress` 会 clamp 到 `0...1`，并只清空 `upgradeProgress`。
+- 取消升级不会改变 `upgradeLevel`、HP、HP 上限、集结点、生产队列、重复生产、当前选择、选择集合或控制编队；玩家不能取消敌方 Radar Station 升级。
+- iOS HUD 在选中正在升级的完成状态玩家 Radar Station 时显示 `Cancel Upgrade` 按钮，调用 Core 取消命令并显示退款状态文案。
+- 新增 Core 测试覆盖缺失/无效/多选拒绝、退款与状态保持、取消后不会完成升级，以及敌方雷达升级不受玩家取消影响。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/BuildingUpgradeCancelResult.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.84-ios-radar-upgrade-cancel.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地通过：`git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v184 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`、`swiftc -parse ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift ios/RustwarIOS/RustwarIOS/TacticalMapView.swift ios/RustwarIOS/RustwarIOS/GameController.swift ios/RustwarIOS/RustwarIOS/GameHUDView.swift`。
+- 本地 `swift test --package-path swift/RustwarCore` 未运行成功：沙箱内先遇到 SwiftPM cache 权限和本机 Swift/SDK mismatch；提升权限重试后仍在 Package manifest 链接阶段失败，报 `PackageDescription.Package.__allocating_init(...)` undefined symbol。
+- 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 未运行成功：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，`xcodebuild` 要求完整 Xcode。
+- 完整 SwiftPM 和 iOS build 等待 GitHub Actions macOS runner 复判。
+
+遗留事项：
+
+- v1.84 只新增玩家 Radar Station T2 升级取消；仍无通用建筑升级队列 UI、AI 升级取消、雾内敌方残影、雷达目标记忆、雷达干扰或完整 Web radar parity。

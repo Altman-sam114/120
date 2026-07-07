@@ -606,6 +606,211 @@ import Testing
     #expect(upgradedRadar.hitPoints == 400)
 }
 
+@Test func cancelRadarUpgradeRejectsMissingInvalidAndInactiveSelection() {
+    let radarDefinition = GameDefinitions.building(.radar)
+    let turretDefinition = GameDefinitions.building(.turret)
+    let radarPosition = WorldPoint(600, 600)
+    let turretPosition = WorldPoint(700, 600)
+    let enemyRadarPosition = WorldPoint(800, 600)
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-radar-cancel-active",
+            type: .radar,
+            team: .player,
+            position: radarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: radarPosition,
+            upgradeProgress: 0.3
+        ),
+        BuildingSnapshot(
+            id: "player-turret-cancel-reject",
+            type: .turret,
+            team: .player,
+            position: turretPosition,
+            hitPoints: turretDefinition.hitPoints,
+            maxHitPoints: turretDefinition.hitPoints,
+            rally: turretPosition
+        ),
+        BuildingSnapshot(
+            id: "enemy-radar-cancel-reject",
+            type: .radar,
+            team: .enemy,
+            position: enemyRadarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: enemyRadarPosition,
+            upgradeProgress: 0.4
+        ),
+        BuildingSnapshot(
+            id: "unfinished-radar-cancel-reject",
+            type: .radar,
+            team: .player,
+            position: WorldPoint(900, 600),
+            hitPoints: radarDefinition.hitPoints * 0.5,
+            maxHitPoints: radarDefinition.hitPoints,
+            buildProgress: 0.5,
+            rally: WorldPoint(900, 600),
+            upgradeProgress: 0.2
+        ),
+        BuildingSnapshot(
+            id: "idle-radar-cancel-reject",
+            type: .radar,
+            team: .player,
+            position: WorldPoint(1_000, 600),
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: WorldPoint(1_000, 600)
+        ),
+        BuildingSnapshot(
+            id: "upgraded-radar-cancel-reject",
+            type: .radar,
+            team: .player,
+            position: WorldPoint(1_100, 600),
+            hitPoints: 520,
+            maxHitPoints: 520,
+            rally: WorldPoint(1_100, 600),
+            upgradeLevel: 2
+        )
+    ]
+
+    func cancelResult(selectedID: String?, selectedIDs: [String]? = nil) -> BuildingUpgradeCancelResult {
+        var candidate = state
+        candidate.selectedEntityID = selectedID
+        candidate.selectedEntityIDs = selectedIDs ?? selectedID.map { [$0] } ?? []
+        var engine = GameEngine(state: candidate, enemyAIEnabled: false)
+        return engine.cancelBuildingUpgrade()
+    }
+
+    #expect(cancelResult(selectedID: nil) == .noSelection)
+    #expect(cancelResult(selectedID: "player-turret-cancel-reject") == .selectedBuildingCannotCancelUpgrade)
+    #expect(cancelResult(selectedID: "enemy-radar-cancel-reject") == .selectedBuildingCannotCancelUpgrade)
+    #expect(cancelResult(selectedID: "unfinished-radar-cancel-reject") == .selectedBuildingCannotCancelUpgrade)
+    #expect(cancelResult(selectedID: "idle-radar-cancel-reject") == .noUpgradeQueued)
+    #expect(cancelResult(selectedID: "upgraded-radar-cancel-reject") == .noUpgradeQueued)
+    #expect(cancelResult(
+        selectedID: "player-radar-cancel-active",
+        selectedIDs: ["player-radar-cancel-active", "idle-radar-cancel-reject"]
+    ) == .selectedBuildingCannotCancelUpgrade)
+}
+
+@Test func cancelRadarUpgradeRefundsRemainingMetalAndPreservesBuildingState() throws {
+    let radarDefinition = GameDefinitions.building(.radar)
+    let radarPosition = WorldPoint(600, 600)
+    let rally = WorldPoint(720, 680)
+    let queuedItem = ProductionQueueItem(id: "preserved-radar-queue", unitType: .scout, progress: 0.25, buildTime: 4)
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-radar-cancel-progress",
+            type: .radar,
+            team: .player,
+            position: radarPosition,
+            hitPoints: 310,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: rally,
+            productionQueue: [queuedItem],
+            repeatUnitType: .scout,
+            weaponCooldown: 0.75,
+            upgradeProgress: 0.25
+        )
+    ]
+    state.metal[.player] = 120
+    state.selectedEntityID = "player-radar-cancel-progress"
+    state.selectedEntityIDs = ["player-radar-cancel-progress"]
+    state.controlGroups = [4: ["player-radar-cancel-progress"]]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    let result = engine.cancelBuildingUpgrade()
+    let radar = try #require(engine.state.buildings.first)
+
+    #expect(result == .cancelled(refundedMetal: 585))
+    #expect(engine.state.metal[.player, default: 0] == 705)
+    #expect(radar.upgradeProgress == nil)
+    #expect(radar.upgradeLevel == 1)
+    #expect(radar.hitPoints == 310)
+    #expect(radar.maxHitPoints == radarDefinition.hitPoints)
+    #expect(radar.rally == rally)
+    #expect(radar.productionQueue == [queuedItem])
+    #expect(radar.repeatUnitType == .scout)
+    #expect(radar.weaponCooldown == 0.75)
+    #expect(engine.state.selectedEntityID == "player-radar-cancel-progress")
+    #expect(engine.state.selectedEntityIDs == ["player-radar-cancel-progress"])
+    #expect(engine.state.controlGroups == [4: ["player-radar-cancel-progress"]])
+}
+
+@Test func cancelledRadarUpgradeDoesNotCompleteLater() throws {
+    let radarDefinition = GameDefinitions.building(.radar)
+    let radarPosition = WorldPoint(600, 600)
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-radar-cancel-no-complete",
+            type: .radar,
+            team: .player,
+            position: radarPosition,
+            hitPoints: 300,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: radarPosition,
+            upgradeProgress: 0.9
+        )
+    ]
+    state.metal[.player] = 0
+    state.selectedEntityID = "player-radar-cancel-no-complete"
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(abs(engine.cancelBuildingUpgrade().refundedMetal - 78) < 0.0001)
+    for _ in 0..<30 {
+        engine.update(deltaTime: 1)
+    }
+
+    let radar = try #require(engine.state.buildings.first)
+    #expect(radar.upgradeLevel == 1)
+    #expect(radar.upgradeProgress == nil)
+    #expect(radar.maxHitPoints == radarDefinition.hitPoints)
+    #expect(radar.hitPoints == 300)
+}
+
+@Test func cancelRadarUpgradeDoesNotCancelEnemyRadarUpgrade() throws {
+    let radarDefinition = GameDefinitions.building(.radar)
+    let playerRadarPosition = WorldPoint(600, 600)
+    let enemyRadarPosition = WorldPoint(900, 600)
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-idle-radar-cancel-enemy",
+            type: .radar,
+            team: .player,
+            position: playerRadarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: playerRadarPosition
+        ),
+        BuildingSnapshot(
+            id: "enemy-active-radar-cancel-enemy",
+            type: .radar,
+            team: .enemy,
+            position: enemyRadarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: enemyRadarPosition,
+            upgradeProgress: 0.4
+        )
+    ]
+    state.selectedEntityID = "player-idle-radar-cancel-enemy"
+    state.selectedEntityIDs = ["player-idle-radar-cancel-enemy"]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.cancelBuildingUpgrade() == .noUpgradeQueued)
+    let enemyRadar = try #require(engine.state.buildings.first { $0.id == "enemy-active-radar-cancel-enemy" })
+    #expect(enemyRadar.upgradeProgress == 0.4)
+}
+
 @Test func upgradedRadarExpandsCoverageVisibilityAndContactsWithoutSelectionReveal() throws {
     let radarDefinition = GameDefinitions.building(.radar)
     let tankDefinition = GameDefinitions.unit(.tank)
