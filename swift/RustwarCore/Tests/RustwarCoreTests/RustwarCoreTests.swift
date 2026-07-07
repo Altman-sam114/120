@@ -6386,6 +6386,7 @@ import Testing
     completedState.buildings[existingFactoryIndex].productionQueue = [
         ProductionQueueItem(id: "busy-original-enemy-factory", unitType: .scout, buildTime: 99)
     ]
+    keepEnemyBuildersBusy(in: &completedState)
     completedState.metal[.enemy] = 1_000
 
     var productionEngine = GameEngine(state: completedState)
