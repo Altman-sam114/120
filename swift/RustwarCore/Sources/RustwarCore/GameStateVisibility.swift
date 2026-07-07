@@ -25,6 +25,37 @@ public extension GameState {
         return VisibilitySnapshot(columns: terrain.columns, rows: terrain.rows, visibleTileIndices: visibleTileIndices)
     }
 
+    func exploredVisibility(for team: Team) -> VisibilitySnapshot {
+        VisibilitySnapshot(
+            columns: terrain.columns,
+            rows: terrain.rows,
+            visibleTileIndices: sanitizedTileIndices(exploredTileIndicesByTeam[team] ?? [])
+        )
+    }
+
+    mutating func revealVisibleTiles(for team: Team) {
+        let visible = visibility(for: team)
+        guard !visible.visibleTileIndices.isEmpty else {
+            return
+        }
+        exploredTileIndicesByTeam[team, default: []].formUnion(visible.visibleTileIndices)
+        exploredTileIndicesByTeam[team] = sanitizedTileIndices(exploredTileIndicesByTeam[team] ?? [])
+    }
+
+    mutating func updateExploredVisibility() {
+        for team in Team.allCases {
+            revealVisibleTiles(for: team)
+        }
+    }
+
+    private func sanitizedTileIndices(_ indices: Set<Int>) -> Set<Int> {
+        guard terrain.columns > 0, terrain.rows > 0 else {
+            return []
+        }
+        let validRange = 0..<(terrain.columns * terrain.rows)
+        return indices.filter { validRange.contains($0) }
+    }
+
     private func markVisibleTiles(
         around source: WorldPoint,
         radius: Double,

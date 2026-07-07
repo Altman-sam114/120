@@ -49,9 +49,10 @@ final class BattlefieldScene: SKScene {
         }
         syncCamera(controller.camera)
         let playerVisibility = state.visibility(for: .player)
+        let playerExplored = state.exploredVisibility(for: .player)
         drawResources(state.resources)
         drawEntities(state, playerVisibility: playerVisibility)
-        drawFog(playerVisibility)
+        drawFog(visibility: playerVisibility, explored: playerExplored)
     }
 
     private func configureScene() {
@@ -116,33 +117,47 @@ final class BattlefieldScene: SKScene {
         }
     }
 
-    private func drawFog(_ visibility: VisibilitySnapshot) {
+    private func drawFog(visibility: VisibilitySnapshot, explored: VisibilitySnapshot) {
         fogNode.removeAllChildren()
 
-        let path = CGMutablePath()
+        let exploredPath = CGMutablePath()
+        let unexploredPath = CGMutablePath()
         let tileSize = GameConstants.tileSize
-        var hasHiddenTiles = false
+        var hasExploredHiddenTiles = false
+        var hasUnexploredTiles = false
         for row in 0..<visibility.rows {
             for column in 0..<visibility.columns where !visibility.isVisible(column: column, row: row) {
-                hasHiddenTiles = true
-                path.addRect(CGRect(
+                let rect = CGRect(
                     x: Double(column) * tileSize,
                     y: -Double(row + 1) * tileSize,
                     width: tileSize,
                     height: tileSize
-                ))
+                )
+                if explored.isVisible(column: column, row: row) {
+                    hasExploredHiddenTiles = true
+                    exploredPath.addRect(rect)
+                } else {
+                    hasUnexploredTiles = true
+                    unexploredPath.addRect(rect)
+                }
             }
         }
 
-        guard hasHiddenTiles else {
-            return
+        if hasExploredHiddenTiles {
+            let node = SKShapeNode(path: exploredPath)
+            node.fillColor = SKColor.black.withAlphaComponent(0.34)
+            node.strokeColor = .clear
+            node.lineWidth = 0
+            fogNode.addChild(node)
         }
 
-        let node = SKShapeNode(path: path)
-        node.fillColor = SKColor.black.withAlphaComponent(0.48)
-        node.strokeColor = .clear
-        node.lineWidth = 0
-        fogNode.addChild(node)
+        if hasUnexploredTiles {
+            let node = SKShapeNode(path: unexploredPath)
+            node.fillColor = SKColor.black.withAlphaComponent(0.62)
+            node.strokeColor = .clear
+            node.lineWidth = 0
+            fogNode.addChild(node)
+        }
     }
 
     private func drawBuilding(

@@ -23,6 +23,7 @@ public struct GameEngine: Sendable {
 
     public init(state: GameState, enemyAIEnabled: Bool = true) {
         self.state = state
+        self.state.updateExploredVisibility()
         self.enemyAIEnabled = enemyAIEnabled
     }
 
@@ -47,6 +48,7 @@ public struct GameEngine: Sendable {
         }
         updateUnitOrders(deltaTime: step)
         updateWrecks(deltaTime: step)
+        state.updateExploredVisibility()
     }
 
     @discardableResult

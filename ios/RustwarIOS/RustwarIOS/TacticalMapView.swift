@@ -20,6 +20,7 @@ struct TacticalMapView: View {
             let wrecks = state.wrecks
             let selectedEntityIDs = Set(state.selectedEntityIDs)
             let playerVisibility = state.visibility(for: .player)
+            let playerExplored = state.exploredVisibility(for: .player)
             let cameraCenter = controller.camera.center
             let visibleWorldRect = controller.visibleBattlefieldWorldRect
             let shouldDifferentiateWithoutColor = differentiateWithoutColor
@@ -36,6 +37,7 @@ struct TacticalMapView: View {
                     wrecks: wrecks,
                     selectedEntityIDs: selectedEntityIDs,
                     playerVisibility: playerVisibility,
+                    playerExplored: playerExplored,
                     cameraCenter: cameraCenter,
                     visibleWorldRect: visibleWorldRect,
                     pendingCommandSymbol: pendingCommandSymbol,
@@ -160,6 +162,7 @@ struct TacticalMapView: View {
         wrecks: [WreckSnapshot],
         selectedEntityIDs: Set<String>,
         playerVisibility: VisibilitySnapshot,
+        playerExplored: VisibilitySnapshot,
         cameraCenter: WorldPoint,
         visibleWorldRect: WorldRect?,
         pendingCommandSymbol: String?,
@@ -180,7 +183,7 @@ struct TacticalMapView: View {
             drawWreck(wreck, in: &context, size: size)
         }
 
-        drawFog(playerVisibility, in: &context, size: size)
+        drawFog(visibility: playerVisibility, explored: playerExplored, in: &context, size: size)
 
         for building in buildings where isVisibleToPlayer(building, visibility: playerVisibility) {
             drawBuilding(
@@ -240,33 +243,47 @@ struct TacticalMapView: View {
         context.stroke(path, with: .color(.yellow.opacity(0.66)), lineWidth: 0.6)
     }
 
-    private static func drawFog(_ visibility: VisibilitySnapshot, in context: inout GraphicsContext, size: CGSize) {
+    private static func drawFog(
+        visibility: VisibilitySnapshot,
+        explored: VisibilitySnapshot,
+        in context: inout GraphicsContext,
+        size: CGSize
+    ) {
         guard visibility.columns > 0, visibility.rows > 0 else {
             return
         }
 
         let tileWidth = size.width / CGFloat(visibility.columns)
         let tileHeight = size.height / CGFloat(visibility.rows)
-        var fog = Path()
-        var hasHiddenTiles = false
+        var exploredFog = Path()
+        var unexploredFog = Path()
+        var hasExploredHiddenTiles = false
+        var hasUnexploredTiles = false
 
         for row in 0..<visibility.rows {
             for column in 0..<visibility.columns where !visibility.isVisible(column: column, row: row) {
-                hasHiddenTiles = true
-                fog.addRect(CGRect(
+                let rect = CGRect(
                     x: CGFloat(column) * tileWidth,
                     y: CGFloat(row) * tileHeight,
                     width: tileWidth,
                     height: tileHeight
-                ))
+                )
+                if explored.isVisible(column: column, row: row) {
+                    hasExploredHiddenTiles = true
+                    exploredFog.addRect(rect)
+                } else {
+                    hasUnexploredTiles = true
+                    unexploredFog.addRect(rect)
+                }
             }
         }
 
-        guard hasHiddenTiles else {
-            return
+        if hasExploredHiddenTiles {
+            context.fill(exploredFog, with: .color(.black.opacity(0.28)))
         }
-
-        context.fill(fog, with: .color(.black.opacity(0.42)))
+        if hasUnexploredTiles {
+            context.fill(unexploredFog, with: .color(.black.opacity(0.58)))
+        }
     }
 
     private static func drawBuilding(

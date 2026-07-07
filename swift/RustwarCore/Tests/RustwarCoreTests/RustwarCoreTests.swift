@@ -40,6 +40,52 @@ import Testing
     #expect(!visibility.isVisible(at: enemyCommand.position))
 }
 
+@Test func playerExploredVisibilityIsSeededFromInitialVision() throws {
+    let state = GameState(mapID: .coast)
+    let playerCommand = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let enemyCommand = try #require(state.buildings.first { $0.team == .enemy && $0.type == .command })
+    let explored = state.exploredVisibility(for: .player)
+
+    #expect(explored.columns == state.terrain.columns)
+    #expect(explored.rows == state.terrain.rows)
+    #expect(explored.visibleTileCount >= state.visibility(for: .player).visibleTileCount)
+    #expect(explored.isVisible(at: playerCommand.position))
+    #expect(!explored.isVisible(at: enemyCommand.position))
+}
+
+@Test func playerExploredVisibilityKeepsOldTilesAfterScoutMoves() throws {
+    let scoutDefinition = GameDefinitions.unit(.scout)
+    let oldPosition = WorldPoint(520, 520)
+    let destination = WorldPoint(2_650, 1_560)
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "explorer-scout",
+            type: .scout,
+            team: .player,
+            position: oldPosition,
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        )
+    ]
+    state.buildings = []
+    state.exploredTileIndicesByTeam = [:]
+    state.updateExploredVisibility()
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    _ = engine.select(at: oldPosition, includeEnemies: false)
+    #expect(engine.issueMove(to: destination) == .issued)
+    for _ in 0..<24 {
+        engine.update(deltaTime: 1)
+    }
+
+    let currentVisibility = engine.state.visibility(for: .player)
+    let explored = engine.state.exploredVisibility(for: .player)
+    #expect(!currentVisibility.isVisible(at: oldPosition))
+    #expect(explored.isVisible(at: oldPosition))
+    #expect(explored.isVisible(at: destination))
+}
+
 @Test func playerVisibilityFollowsMovedScout() throws {
     var state = GameState(mapID: .coast)
     let scout = try #require(state.units.first { $0.team == .player && $0.type == .scout })
@@ -110,6 +156,39 @@ import Testing
     #expect(!visibility.isVisible(column: -1, row: 0))
     #expect(!visibility.isVisible(column: state.terrain.columns, row: 0))
     #expect(!visibility.isVisible(at: WorldPoint(-1, -1)))
+}
+
+@Test func gameStateDecodesOldJSONWithoutExploredTilesAndEngineSeedsCurrentVision() throws {
+    let state = GameState(mapID: .coast)
+    let encoded = try JSONEncoder().encode(state)
+    var json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    json.removeValue(forKey: "exploredTileIndicesByTeam")
+    let legacyEncoded = try JSONSerialization.data(withJSONObject: json)
+
+    let decoded = try JSONDecoder().decode(GameState.self, from: legacyEncoded)
+    #expect(decoded.exploredVisibility(for: .player).visibleTileCount == 0)
+
+    let restoredEngine = GameEngine(state: decoded, enemyAIEnabled: false)
+    #expect(restoredEngine.state.exploredVisibility(for: .player).visibleTileCount > 0)
+    #expect(restoredEngine.state.exploredVisibility(for: .player).visibleTileCount >= restoredEngine.state.visibility(for: .player).visibleTileCount)
+}
+
+@Test func gameStateJSONRoundTripKeepsExploredTilesAndSanitizesVisibilitySnapshot() throws {
+    var state = GameState(mapID: .coast)
+    let validTileIndex = 12
+    let invalidTileIndex = state.terrain.columns * state.terrain.rows
+    state.exploredTileIndicesByTeam[.player] = [validTileIndex, invalidTileIndex, -1]
+
+    let encoded = try JSONEncoder().encode(state)
+    let decoded = try JSONDecoder().decode(GameState.self, from: encoded)
+    let decodedTiles = try #require(decoded.exploredTileIndicesByTeam[.player])
+
+    #expect(decodedTiles.contains(validTileIndex))
+    #expect(decodedTiles.contains(invalidTileIndex))
+    #expect(decodedTiles.contains(-1))
+
+    let explored = decoded.exploredVisibility(for: .player)
+    #expect(explored.visibleTileIndices == [validTileIndex])
 }
 
 @Test func visibleSelectionTargetRejectsUnseenEnemiesAndKeepsPlayerTargets() throws {

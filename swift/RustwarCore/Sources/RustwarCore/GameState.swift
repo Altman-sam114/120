@@ -10,6 +10,7 @@ public struct GameState: Codable, Equatable, Sendable {
     public var selectedEntityID: String?
     public var selectedEntityIDs: [String]
     public var controlGroups: [Int: [String]]
+    public var exploredTileIndicesByTeam: [Team: Set<Int>]
     public var mode: GameMode
     public var nextEntityNumber: Int
 
@@ -25,6 +26,7 @@ public struct GameState: Codable, Equatable, Sendable {
         case selectedEntityID
         case selectedEntityIDs
         case controlGroups
+        case exploredTileIndicesByTeam
         case mode
         case nextEntityNumber
     }
@@ -120,8 +122,10 @@ public struct GameState: Codable, Equatable, Sendable {
         self.selectedEntityID = nil
         self.selectedEntityIDs = []
         self.controlGroups = [:]
+        self.exploredTileIndicesByTeam = [:]
         self.mode = mode
         self.nextEntityNumber = nextEntityNumber
+        updateExploredVisibility()
     }
 
     public init(from decoder: Decoder) throws {
@@ -139,6 +143,7 @@ public struct GameState: Codable, Equatable, Sendable {
             ?? selectedEntityID.map { [$0] }
             ?? []
         self.controlGroups = try container.decodeIfPresent([Int: [String]].self, forKey: .controlGroups) ?? [:]
+        self.exploredTileIndicesByTeam = try container.decodeIfPresent([Team: Set<Int>].self, forKey: .exploredTileIndicesByTeam) ?? [:]
         self.mode = try container.decode(GameMode.self, forKey: .mode)
         self.nextEntityNumber = try container.decode(Int.self, forKey: .nextEntityNumber)
     }

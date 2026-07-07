@@ -1,7 +1,7 @@
 public struct VisibilitySnapshot: Equatable, Sendable {
     public let columns: Int
     public let rows: Int
-    private let visibleTileIndices: Set<Int>
+    public let visibleTileIndices: Set<Int>
 
     public init(columns: Int, rows: Int, visibleTileIndices: Set<Int>) {
         self.columns = columns
