@@ -608,7 +608,7 @@ public struct GameEngine: Sendable {
 
             let updatedProgress = min(1, progress + deltaTime / max(0.1, upgrade.buildTime))
             state.buildings[buildingIndex].upgradeProgress = updatedProgress
-            guard updatedProgress >= 1 else {
+            guard updatedProgress >= 1 - Self.buildCompletionEpsilon else {
                 continue
             }
 
