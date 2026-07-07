@@ -3315,6 +3315,7 @@
 - 本地 `swift test --package-path swift/RustwarCore` 未运行成功：沙箱内先遇到 SwiftPM cache 权限和本机 Swift/SDK mismatch；提升权限重试后仍在 Package manifest 链接阶段失败，报 `PackageDescription.Package.__allocating_init(...)` undefined symbol。
 - 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 未运行成功：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，`xcodebuild` 要求完整 Xcode。
 - 完整 SwiftPM 和 iOS build 等待 GitHub Actions macOS runner 复判。
+- 实现提交 `f57c09d842cad2ec4b3139d4dc277d31c5edac00` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `28863894818`，attempt `1`，artifact `rustwar-ci-v1.0-main-f57c09d-run28863894818-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-28863894818/`，目录大小 `296K`。manifest 确认 `branch=main`、`commitSha=f57c09d842cad2ec4b3139d4dc277d31c5edac00`、`runId=28863894818`、`runAttempt=1`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`；JUnit 为 6 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`build.log` 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0，Swift Testing 291 tests passed，iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
