@@ -121,7 +121,7 @@ flowchart TD
   MP --> E
   C --> SL["UserDefaults Save / Load<br/>中文注释：JSON 保存 GameState、CameraState、地图、暂停、速度和 AI 开关，读取后刷新原生状态"]
   SL --> E
-  C --> VIS["VisibilitySnapshot fog / RadarContactSnapshot signal / enemy filtering<br/>中文注释：根据存活己方单位和完成己方建筑 vision 计算当前可见 tile，并把当前可见 tile 合并进 GameState explored 记忆；完成状态 Radar Station 的 radarRange 生成不可见敌方雷达信号点，但不写入可见 tile 或 explored，Command Center 不再是雷达来源；SpriteKit 主战场和 SwiftUI 战术小地图用浅雾覆盖已探索但当前不可见 tile、用深雾覆盖从未探索 tile，并隐藏当前视野外敌方真实单位/建筑及主战场不可见目标线；主战场 tap、长按上下文命令、Attack/Guard/Repair 等待态、战术小地图实体目标命中和战术小地图长按上下文命令过滤雾外敌方；暂不实现雷达升级或雾内敌方残影"]
+  C --> VIS["VisibilitySnapshot fog / RadarContactSnapshot signal / enemy filtering<br/>中文注释：根据存活己方单位和完成己方建筑 vision 计算当前可见 tile，并把当前可见 tile 合并进 GameState explored 记忆；完成状态 Radar Station 的 radarRange 生成不可见敌方雷达信号点，但不写入可见 tile 或 explored，Command Center 不再是雷达来源；v1.80 起红方 AI 在基础经济、工厂和炮塔成型后会建造 1 座 Radar Station；SpriteKit 主战场和 SwiftUI 战术小地图用浅雾覆盖已探索但当前不可见 tile、用深雾覆盖从未探索 tile，并隐藏当前视野外敌方真实单位/建筑及主战场不可见目标线；主战场 tap、长按上下文命令、Attack/Guard/Repair 等待态、战术小地图实体目标命中和战术小地图长按上下文命令过滤雾外敌方；暂不实现雷达升级或雾内敌方残影"]
   VIS --> B
   C --> FC["Camera focus Command Center<br/>中文注释：focusPlayerCommandCenter 只移动 camera.center，不改变 zoom、选择、等待态或单位命令"]
   FC --> B
@@ -133,7 +133,7 @@ flowchart TD
   TMC --> TM
   E --> TF["Turret Fire<br/>中文注释：完成状态炮塔自动攻击射程内敌方单位或建筑并进入冷却"]
   TF --> E
-  E --> AI["Enemy AI<br/>中文注释：红方 Builder 维修受损友军、扩张资源点、建造 Land Factory / Turret 并回收附近残骸，红方完成状态 Command Center 可排队 Builder，Land Factory 按完整 T1 列表排队造兵，空闲战斗单位按 Web-lite 评分获得攻击玩家目标的订单"]
+  E --> AI["Enemy AI<br/>中文注释：红方 Builder 维修受损友军、扩张资源点、建造 Land Factory / Turret / Radar Station 并回收附近残骸，红方完成状态 Command Center 可排队 Builder，Land Factory 按完整 T1 列表排队造兵，空闲战斗单位按 Web-lite 评分获得攻击玩家目标的订单"]
   AI --> E
   C --> E
   B --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html，显示血条、建造进度、残骸、移动线、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线和红方行动"]

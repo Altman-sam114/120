@@ -10,6 +10,7 @@ public struct GameEngine: Sendable {
     private static let activeReclaimWreckMinimumTTL = 8.0
     private static let enemyLandFactoryLimit = 2
     private static let enemyTurretLimit = 2
+    private static let enemyRadarLimit = 1
     private static let enemyExtractorCountBeforeAdditionalFactory = 3
     private static let enemyReclaimSearchRange = 560.0
 
@@ -535,6 +536,7 @@ public struct GameEngine: Sendable {
         updateEnemyExpansion()
         updateEnemyFactoryConstruction(rebuildMissingFactoryOnly: false)
         updateEnemyTurretConstruction()
+        updateEnemyRadarConstruction()
         updateEnemyReclaim()
         updateEnemyProduction()
         updateEnemyAttackOrders()
@@ -565,7 +567,8 @@ public struct GameEngine: Sendable {
     private mutating func updateEnemyExpansion() {
         let enemyFactoryCount = livingEnemyBuildingCount(type: .landFactory)
         if shouldPrioritizeEnemyFactoryConstruction(enemyFactoryCount: enemyFactoryCount)
-            || shouldPrioritizeEnemyTurretConstruction() {
+            || shouldPrioritizeEnemyTurretConstruction()
+            || shouldPrioritizeEnemyRadarConstruction() {
             return
         }
 
@@ -664,6 +667,30 @@ public struct GameEngine: Sendable {
             }
 
             startPointBuildingBuild(.turret, builderIndex: unitIndex, position: position)
+            return
+        }
+    }
+
+    private mutating func updateEnemyRadarConstruction() {
+        guard shouldPrioritizeEnemyRadarConstruction() else {
+            return
+        }
+
+        let definition = GameDefinitions.building(.radar)
+        guard state.metal[.enemy, default: 0] >= definition.metalCost else {
+            return
+        }
+
+        for unitIndex in state.units.indices {
+            guard state.units[unitIndex].team == .enemy,
+                  state.units[unitIndex].type == .builder,
+                  state.units[unitIndex].hitPoints > 0,
+                  state.units[unitIndex].order == nil,
+                  let position = enemyRadarBuildPosition(for: state.units[unitIndex]) else {
+                continue
+            }
+
+            startPointBuildingBuild(.radar, builderIndex: unitIndex, position: position)
             return
         }
     }
@@ -1835,6 +1862,13 @@ public struct GameEngine: Sendable {
             && livingEnemyBuildingCount(type: .extractor) >= Self.enemyExtractorCountBeforeAdditionalFactory
     }
 
+    private func shouldPrioritizeEnemyRadarConstruction() -> Bool {
+        livingEnemyBuildingCount(type: .landFactory) > 0
+            && livingEnemyBuildingCount(type: .extractor) >= Self.enemyExtractorCountBeforeAdditionalFactory
+            && livingEnemyBuildingCount(type: .turret) >= Self.enemyTurretLimit
+            && livingEnemyBuildingCount(type: .radar) < Self.enemyRadarLimit
+    }
+
     private func enemyLandFactoryBuildPosition(for builder: UnitSnapshot) -> WorldPoint? {
         let anchors = enemyFactoryBuildAnchors(for: builder)
         let offsets = [
@@ -1914,6 +1948,48 @@ public struct GameEngine: Sendable {
         }
         anchors.append(state.map.enemyBase)
         anchors.append(state.map.enemyRally)
+        anchors.append(builder.position)
+        return anchors
+    }
+
+    private func enemyRadarBuildPosition(for builder: UnitSnapshot) -> WorldPoint? {
+        let anchors = enemyRadarBuildAnchors(for: builder)
+        let offsets = [
+            WorldPoint(-180, -240),
+            WorldPoint(120, -260),
+            WorldPoint(260, -80),
+            WorldPoint(-280, 20),
+            WorldPoint(-120, 220),
+            WorldPoint(180, 240),
+            WorldPoint(-380, -180),
+            WorldPoint(380, 80),
+            WorldPoint(0, 360),
+            WorldPoint(-520, 120),
+            WorldPoint(480, -180),
+            WorldPoint(80, -420)
+        ]
+
+        for anchor in anchors {
+            for offset in offsets {
+                let position = WorldPoint(anchor.x + offset.x, anchor.y + offset.y).clampedToMap()
+                if canPlaceBuilding(.radar, at: position) {
+                    return position
+                }
+            }
+        }
+        return nil
+    }
+
+    private func enemyRadarBuildAnchors(for builder: UnitSnapshot) -> [WorldPoint] {
+        var anchors: [WorldPoint] = []
+        if let command = state.buildings.first(where: {
+            $0.team == .enemy && $0.type == .command && $0.hitPoints > 0
+        }) {
+            anchors.append(command.position)
+        }
+        anchors.append(state.map.enemyBase)
+        anchors.append(state.map.enemyRally)
+        anchors.append(state.map.enemyFactory)
         anchors.append(builder.position)
         return anchors
     }

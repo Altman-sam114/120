@@ -6498,6 +6498,145 @@ import Testing
     }
 }
 
+@Test func enemyAIBuildsRadarAfterFactoryEconomyAndTurrets() throws {
+    var state = enemyRadarConstructionReadyState(mapID: .coast)
+    keepEnemyProducersBusy(in: &state)
+    let selectedPlayerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    state.selectedEntityID = selectedPlayerBuilding.id
+    let initialBuildingIDs = Set(state.buildings.map(\.id))
+    let startingEnemyMetal = state.metal[.enemy, default: 0]
+    let startingEnemyIncome = state.income(for: .enemy)
+    let enemyBuilder = try #require(state.units.first { $0.team == .enemy && $0.type == .builder })
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let newRadar = try #require(engine.state.buildings.first {
+        !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .radar
+    })
+    let builderAfterUpdate = try #require(engine.state.units.first { $0.id == enemyBuilder.id })
+
+    #expect(newRadar.buildProgress == 0)
+    #expect(newRadar.hitPoints == newRadar.maxHitPoints * 0.1)
+    #expect(newRadar.nodeID == nil)
+    #expect(newRadar.rally == newRadar.position)
+    #expect(engine.state.selectedEntityID == selectedPlayerBuilding.id)
+    #expect(engine.state.metal[.enemy, default: 0] == startingEnemyMetal + startingEnemyIncome - GameDefinitions.building(.radar).metalCost)
+    if case let .build(targetID)? = builderAfterUpdate.order {
+        #expect(targetID == newRadar.id)
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func enemyRadarAIFindsBuildPointOnEveryNativeMap() throws {
+    for mapID in MapID.allCases {
+        let state = enemyRadarConstructionReadyState(mapID: mapID)
+        let initialBuildingIDs = Set(state.buildings.map(\.id))
+
+        var engine = GameEngine(state: state)
+        engine.update(deltaTime: 1)
+
+        #expect(engine.state.buildings.contains {
+            !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .radar
+        })
+    }
+}
+
+@Test func enemyRadarAIWaitsForMetalIdleBuilderLimitAndTurretFoothold() throws {
+    let baseState = enemyRadarConstructionReadyState(mapID: .coast)
+    let startingRadarCount = baseState.buildings.filter { $0.team == .enemy && $0.type == .radar }.count
+    let enemyBuilder = try #require(baseState.units.first { $0.team == .enemy && $0.type == .builder })
+    let enemyBuilderIndex = try #require(baseState.units.firstIndex { $0.id == enemyBuilder.id })
+
+    var poorState = baseState
+    poorState.metal[.enemy] = max(0, GameDefinitions.building(.radar).metalCost - poorState.income(for: .enemy) - 1)
+    var poorEngine = GameEngine(state: poorState)
+    poorEngine.update(deltaTime: 1)
+    #expect(poorEngine.state.buildings.filter { $0.team == .enemy && $0.type == .radar }.count == startingRadarCount)
+    #expect(poorEngine.state.units.first { $0.id == enemyBuilder.id }?.order == nil)
+
+    var busyState = baseState
+    busyState.units[enemyBuilderIndex].order = .move(destination: WorldPoint(3_800, 1_120))
+    var busyEngine = GameEngine(state: busyState)
+    busyEngine.update(deltaTime: 1)
+    #expect(busyEngine.state.buildings.filter { $0.team == .enemy && $0.type == .radar }.count == startingRadarCount)
+    let busyBuilder = try #require(busyEngine.state.units.first { $0.id == enemyBuilder.id })
+    if case .some(.move) = busyBuilder.order {
+        #expect(Bool(true))
+    } else {
+        #expect(Bool(false))
+    }
+
+    var cappedState = baseState
+    let radarDefinition = GameDefinitions.building(.radar)
+    let radarPosition = clearRadarBuildPoint(in: cappedState)
+    cappedState.buildings.append(
+        BuildingSnapshot(
+            id: "enemy-existing-radar",
+            type: .radar,
+            team: .enemy,
+            position: radarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: radarPosition
+        )
+    )
+    var cappedEngine = GameEngine(state: cappedState)
+    cappedEngine.update(deltaTime: 1)
+    #expect(cappedEngine.state.buildings.filter { $0.team == .enemy && $0.type == .radar }.count == 1)
+    #expect(cappedEngine.state.units.first { $0.id == enemyBuilder.id }?.order == nil)
+
+    var noTurretFootholdState = baseState
+    noTurretFootholdState.buildings.removeAll { $0.team == .enemy && $0.type == .turret }
+    var noTurretFootholdEngine = GameEngine(state: noTurretFootholdState)
+    noTurretFootholdEngine.update(deltaTime: 1)
+    #expect(noTurretFootholdEngine.state.buildings.filter { $0.team == .enemy && $0.type == .radar }.count == startingRadarCount)
+    #expect(noTurretFootholdEngine.state.buildings.contains {
+        $0.team == .enemy && $0.type == .turret && $0.buildProgress < 1
+    })
+}
+
+@Test func completedEnemyAIRadarProvidesEnemyRadarContacts() throws {
+    var state = enemyRadarConstructionReadyState(mapID: .coast)
+    let initialBuildingIDs = Set(state.buildings.map(\.id))
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+    let newRadar = try #require(engine.state.buildings.first {
+        !initialBuildingIDs.contains($0.id) && $0.team == .enemy && $0.type == .radar
+    })
+
+    var buildOnlyEngine = GameEngine(state: engine.state, enemyAIEnabled: false)
+    for _ in 0..<20 {
+        buildOnlyEngine.update(deltaTime: 1)
+    }
+
+    let completedRadar = try #require(buildOnlyEngine.state.buildings.first { $0.id == newRadar.id })
+    let radarDefinition = GameDefinitions.building(.radar)
+    let contactPosition = try #require(radarOnlyContactPoint(near: completedRadar.position, in: buildOnlyEngine.state))
+    let scoutDefinition = GameDefinitions.unit(.scout)
+    buildOnlyEngine.state.units.append(
+        UnitSnapshot(
+            id: "enemy-radar-detected-player-scout",
+            type: .scout,
+            team: .player,
+            position: contactPosition,
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        )
+    )
+    let enemyVisibility = buildOnlyEngine.state.visibility(for: .enemy)
+    let contacts = buildOnlyEngine.state.radarContacts(for: .enemy)
+
+    #expect(completedRadar.buildProgress == 1)
+    #expect(completedRadar.position.distance(to: contactPosition) <= radarDefinition.radarRange)
+    #expect(!enemyVisibility.isVisible(at: contactPosition))
+    #expect(contacts.contains {
+        $0.kind == .unit && $0.position == contactPosition
+    })
+}
+
 @Test func enemyAITurretDoesNotFireUntilCompleted() throws {
     var state = enemyTurretConstructionReadyState(mapID: .coast)
     state.buildings.removeAll { $0.team == .enemy && $0.type == .turret }
@@ -7457,6 +7596,31 @@ private func clearRadarBuildPoint(in state: GameState) -> WorldPoint {
     clearBuildPoint(for: .radar, in: state)
 }
 
+private func radarOnlyContactPoint(near radarPosition: WorldPoint, in state: GameState) -> WorldPoint? {
+    let radarRange = GameDefinitions.building(.radar).radarRange
+    let visibility = state.visibility(for: .enemy)
+    let offsets = [
+        WorldPoint(-650, 0),
+        WorldPoint(650, 0),
+        WorldPoint(0, -650),
+        WorldPoint(0, 650),
+        WorldPoint(-520, 420),
+        WorldPoint(520, -420),
+        WorldPoint(-420, -520),
+        WorldPoint(420, 520)
+    ]
+
+    for offset in offsets {
+        let point = WorldPoint(radarPosition.x + offset.x, radarPosition.y + offset.y).clampedToMap()
+        guard radarPosition.distance(to: point) <= radarRange,
+              !visibility.isVisible(at: point) else {
+            continue
+        }
+        return point
+    }
+    return nil
+}
+
 private func enemyFactoryConstructionReadyState(mapID: MapID) -> GameState {
     var state = GameState(mapID: mapID)
     let extractorDefinition = GameDefinitions.building(.extractor)
@@ -7513,6 +7677,27 @@ private func enemyTurretConstructionReadyState(mapID: MapID) -> GameState {
             ]
         )
     )
+    state.metal[.enemy] = 1_000
+    return state
+}
+
+private func enemyRadarConstructionReadyState(mapID: MapID) -> GameState {
+    var state = enemyTurretConstructionReadyState(mapID: mapID)
+    let turretDefinition = GameDefinitions.building(.turret)
+    while state.buildings.filter({ $0.team == .enemy && $0.type == .turret && $0.hitPoints > 0 }).count < 2 {
+        let turretPosition = clearBuildPoint(for: .turret, in: state)
+        state.buildings.append(
+            BuildingSnapshot(
+                id: "enemy-extra-turret-\(state.buildings.count)",
+                type: .turret,
+                team: .enemy,
+                position: turretPosition,
+                hitPoints: turretDefinition.hitPoints,
+                maxHitPoints: turretDefinition.hitPoints,
+                rally: turretPosition
+            )
+        )
+    }
     state.metal[.enemy] = 1_000
     return state
 }

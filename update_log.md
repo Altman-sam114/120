@@ -3125,3 +3125,34 @@
 遗留事项：
 
 - v1.79 只补齐 Radar Station 可建造地基；尚无 Radar Station 升级、AI 建造雷达、雷达范围 HUD 圈、雾内敌方残影、雷达目标记忆或完整 Web radar parity。
+
+### v1.80 / iOS enemy AI Radar Station construction MVP
+
+日期：2026-07-07
+
+核心变更：
+
+- 红方 AI 新增 Radar Station 建造阶段：在基础经济、Land Factory 和炮塔防御成型后，空闲红方 Builder 会尝试建造 1 座 Radar Station。
+- `updateEnemyExpansion()` 会在工厂、炮塔或雷达等高级建筑应优先建造时暂停普通 Extractor 扩张，避免 Builder 被低优先级扩张抢走。
+- Radar Station 建造复用现有点位建筑建造体系：扣除金属、创建未完成建筑、给 Builder 写入 `.build(targetID:)`，并在完成后复用既有 `radarContacts(for:)` 雷达信号逻辑。
+- 新增红方雷达选点 helper，围绕 enemy Command Center、enemy base、enemy rally、enemy factory 和 Builder 当前位置寻找合法陆地点。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.80-ios-enemy-ai-radar-station.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地通过：`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v180 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`。
+- 本地 `swift test --package-path swift/RustwarCore` 和云端 artifact 复判待本轮提交并 push 后记录。
+
+遗留事项：
+
+- v1.80 只补齐红方 AI 建造 Radar Station；尚无 Radar Station 升级、雷达范围 HUD 圈、雷达范围 snapshot API、雾内敌方残影、雷达目标记忆或完整 Web radar parity。
