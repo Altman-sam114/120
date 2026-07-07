@@ -60,6 +60,17 @@ public struct GameEngine: Sendable {
         return target
     }
 
+    @discardableResult
+    public mutating func selectVisibleToPlayer(
+        at point: WorldPoint,
+        includeEnemies: Bool = true,
+        mutation: SelectionMutation = .replace
+    ) -> SelectionTarget? {
+        let target = state.selectionTargetVisibleToPlayer(at: point, includeEnemies: includeEnemies)
+        applySelection(target.map { [$0.id] } ?? [], mutation: mutation)
+        return target
+    }
+
     public mutating func reset(mapID: MapID = .coast) {
         state = GameState(mapID: mapID)
     }

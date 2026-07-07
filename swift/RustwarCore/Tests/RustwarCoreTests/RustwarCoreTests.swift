@@ -112,6 +112,92 @@ import Testing
     #expect(!visibility.isVisible(at: WorldPoint(-1, -1)))
 }
 
+@Test func visibleSelectionTargetRejectsUnseenEnemiesAndKeepsPlayerTargets() throws {
+    let scoutDefinition = GameDefinitions.unit(.scout)
+    let tankDefinition = GameDefinitions.unit(.tank)
+    let turretDefinition = GameDefinitions.building(.turret)
+    let playerScout = UnitSnapshot(
+        id: "visible-selection-scout",
+        type: .scout,
+        team: .player,
+        position: WorldPoint(600, 600),
+        hitPoints: scoutDefinition.hitPoints,
+        maxHitPoints: scoutDefinition.hitPoints
+    )
+    let enemyTank = UnitSnapshot(
+        id: "visible-selection-enemy",
+        type: .tank,
+        team: .enemy,
+        position: WorldPoint(3_000, 600),
+        hitPoints: tankDefinition.hitPoints,
+        maxHitPoints: tankDefinition.hitPoints
+    )
+    let enemyTurret = BuildingSnapshot(
+        id: "visible-selection-turret",
+        type: .turret,
+        team: .enemy,
+        position: WorldPoint(3_000, 900),
+        hitPoints: turretDefinition.hitPoints,
+        maxHitPoints: turretDefinition.hitPoints,
+        rally: WorldPoint(3_000, 900)
+    )
+    var state = GameState(mapID: .coast)
+    state.units = [playerScout, enemyTank]
+    state.buildings = [enemyTurret]
+
+    let rawEnemyTarget = try #require(state.selectionTarget(at: enemyTank.position, includeEnemies: true))
+    #expect(rawEnemyTarget.id == enemyTank.id)
+    #expect(state.selectionTargetVisibleToPlayer(at: enemyTank.position, includeEnemies: true) == nil)
+    let rawEnemyBuildingTarget = try #require(state.selectionTarget(at: enemyTurret.position, includeEnemies: true))
+    #expect(rawEnemyBuildingTarget.id == enemyTurret.id)
+    #expect(state.selectionTargetVisibleToPlayer(at: enemyTurret.position, includeEnemies: true) == nil)
+
+    let playerTarget = try #require(state.selectionTargetVisibleToPlayer(at: playerScout.position, includeEnemies: true))
+    #expect(playerTarget.id == playerScout.id)
+
+    state.units[0].position = WorldPoint(2_700, 600)
+    let visibleEnemyTarget = try #require(state.selectionTargetVisibleToPlayer(at: enemyTank.position, includeEnemies: true))
+    #expect(visibleEnemyTarget.id == enemyTank.id)
+
+    state.units[0].position = WorldPoint(2_700, 900)
+    let visibleEnemyBuildingTarget = try #require(state.selectionTargetVisibleToPlayer(at: enemyTurret.position, includeEnemies: true))
+    #expect(visibleEnemyBuildingTarget.id == enemyTurret.id)
+}
+
+@Test func selectVisibleToPlayerDoesNotSelectUnseenEnemy() throws {
+    let scoutDefinition = GameDefinitions.unit(.scout)
+    let tankDefinition = GameDefinitions.unit(.tank)
+    let playerScout = UnitSnapshot(
+        id: "engine-visible-selection-scout",
+        type: .scout,
+        team: .player,
+        position: WorldPoint(600, 600),
+        hitPoints: scoutDefinition.hitPoints,
+        maxHitPoints: scoutDefinition.hitPoints
+    )
+    let enemyTank = UnitSnapshot(
+        id: "engine-visible-selection-enemy",
+        type: .tank,
+        team: .enemy,
+        position: WorldPoint(3_000, 600),
+        hitPoints: tankDefinition.hitPoints,
+        maxHitPoints: tankDefinition.hitPoints
+    )
+    var state = GameState(mapID: .coast)
+    state.units = [playerScout, enemyTank]
+    state.buildings = []
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.selectVisibleToPlayer(at: enemyTank.position, includeEnemies: true) == nil)
+    #expect(engine.state.selectedEntityID == nil)
+    #expect(engine.state.selectedEntityIDs.isEmpty)
+
+    let selectedScout = try #require(engine.selectVisibleToPlayer(at: playerScout.position, includeEnemies: true))
+    #expect(selectedScout.id == playerScout.id)
+    #expect(engine.state.selectedEntityID == playerScout.id)
+    #expect(engine.state.selectedEntityIDs == [playerScout.id])
+}
+
 @Test func engineTickAccumulatesIncome() {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 

@@ -639,12 +639,12 @@ final class GameController {
             clearLastBattlefieldTap()
             return
         } else {
-            let target = engine.state.selectionTarget(at: point, includeEnemies: true)
+            let target = engine.state.selectionTargetVisibleToPlayer(at: point, includeEnemies: true)
             if handleNearbySameTypeSelectionIfDoubleTap(target: target, screenPoint: screenPoint) {
                 renderRevision += 1
                 return
             }
-            engine.select(at: point, includeEnemies: true, mutation: selectionMutation)
+            engine.selectVisibleToPlayer(at: point, includeEnemies: true, mutation: selectionMutation)
             commandStatus = nil
             recordBattlefieldTap(target: target, screenPoint: screenPoint)
         }
@@ -1112,7 +1112,7 @@ final class GameController {
     }
 
     private func issueContextCommand(at point: WorldPoint) {
-        if let target = engine.state.selectionTarget(at: point, includeEnemies: true) {
+        if let target = engine.state.selectionTargetVisibleToPlayer(at: point, includeEnemies: true) {
             issueContextEntityCommand(target)
             return
         }
@@ -1239,7 +1239,7 @@ final class GameController {
 
     private func handleSelectionTargetCommand(at point: WorldPoint) -> Bool {
         if isAwaitingGuardTarget {
-            let target = engine.state.selectionTarget(at: point, includeEnemies: true)
+            let target = engine.state.selectionTargetVisibleToPlayer(at: point, includeEnemies: true)
             let result: UnitCommandResult
             if let target {
                 result = engine.issueGuard(targetID: target.id)
@@ -1249,7 +1249,7 @@ final class GameController {
             isAwaitingGuardTarget = false
             commandStatus = statusText(forGuard: result)
         } else if isAwaitingRepairTarget {
-            let target = engine.state.selectionTarget(at: point, includeEnemies: true)
+            let target = engine.state.selectionTargetVisibleToPlayer(at: point, includeEnemies: true)
             let result: UnitCommandResult
             let targetID: String?
             if let target {
@@ -1262,7 +1262,7 @@ final class GameController {
             isAwaitingRepairTarget = false
             commandStatus = statusText(forRepair: result, targetID: targetID)
         } else if isAwaitingAttackTarget {
-            let target = engine.state.selectionTarget(at: point, includeEnemies: true)
+            let target = engine.state.selectionTargetVisibleToPlayer(at: point, includeEnemies: true)
             let result: UnitCommandResult
             if let target {
                 result = engine.issueAttack(targetID: target.id)

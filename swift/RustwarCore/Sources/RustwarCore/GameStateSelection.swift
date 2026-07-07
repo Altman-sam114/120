@@ -135,6 +135,46 @@ public extension GameState {
         return best
     }
 
+    func selectionTargetVisibleToPlayer(at point: WorldPoint, includeEnemies: Bool = true) -> SelectionTarget? {
+        let playerVisibility = visibility(for: .player)
+        var best: SelectionTarget?
+        var bestDistance = Double.infinity
+
+        for unit in units {
+            if !includeEnemies, unit.team != .player {
+                continue
+            }
+            guard unit.team == .player || playerVisibility.isVisible(at: unit.position) else {
+                continue
+            }
+            let definition = GameDefinitions.unit(unit.type)
+            let radius = definition.radius + 7
+            let distance = unit.position.distanceSquared(to: point)
+            if distance < radius * radius, distance < bestDistance {
+                best = SelectionTarget(id: unit.id, kind: .unit, team: unit.team, displayName: definition.name, position: unit.position)
+                bestDistance = distance
+            }
+        }
+
+        for building in buildings {
+            if !includeEnemies, building.team != .player {
+                continue
+            }
+            guard building.team == .player || playerVisibility.isVisible(at: building.position) else {
+                continue
+            }
+            let definition = GameDefinitions.building(building.type)
+            let radius = definition.size / 2 + 4
+            let distance = building.position.distanceSquared(to: point)
+            if distance < radius * radius, distance < bestDistance {
+                best = SelectionTarget(id: building.id, kind: .building, team: building.team, displayName: definition.name, position: building.position)
+                bestDistance = distance
+            }
+        }
+
+        return best
+    }
+
     func selectionSummary() -> String {
         let validSelectedEntityIDs = selectedEntityIDs.filter { id in
             units.contains { $0.id == id } || buildings.contains { $0.id == id }
