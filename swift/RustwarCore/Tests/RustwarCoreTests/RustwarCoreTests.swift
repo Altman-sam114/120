@@ -168,6 +168,96 @@ import Testing
     #expect(GameDefinitions.building(.radar).damage == 0)
 }
 
+@Test func playerRadarCoverageIncludesCompletedRadarStationFields() throws {
+    let radarDefinition = GameDefinitions.building(.radar)
+    let radarPosition = WorldPoint(600, 600)
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "player-radar-coverage",
+            type: .radar,
+            team: .player,
+            position: radarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: radarPosition
+        )
+    ]
+
+    let coverage = try #require(state.radarCoverage(for: .player).first)
+
+    #expect(state.radarCoverage(for: .player).count == 1)
+    #expect(coverage.buildingID == "player-radar-coverage")
+    #expect(coverage.team == .player)
+    #expect(coverage.position == radarPosition)
+    #expect(coverage.visionRange == 260)
+    #expect(coverage.radarRange == 920)
+}
+
+@Test func playerRadarCoverageFiltersInvalidSources() {
+    let commandDefinition = GameDefinitions.building(.command)
+    let radarDefinition = GameDefinitions.building(.radar)
+    let turretDefinition = GameDefinitions.building(.turret)
+    let radarPosition = WorldPoint(600, 600)
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [
+        BuildingSnapshot(
+            id: "unfinished-player-radar",
+            type: .radar,
+            team: .player,
+            position: radarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            buildProgress: 0.5,
+            rally: radarPosition
+        ),
+        BuildingSnapshot(
+            id: "dead-player-radar",
+            type: .radar,
+            team: .player,
+            position: WorldPoint(800, 600),
+            hitPoints: 0,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: WorldPoint(800, 600)
+        ),
+        BuildingSnapshot(
+            id: "player-turret-no-radar",
+            type: .turret,
+            team: .player,
+            position: WorldPoint(1_000, 600),
+            hitPoints: turretDefinition.hitPoints,
+            maxHitPoints: turretDefinition.hitPoints,
+            rally: WorldPoint(1_000, 600)
+        ),
+        BuildingSnapshot(
+            id: "enemy-radar-not-player-coverage",
+            type: .radar,
+            team: .enemy,
+            position: WorldPoint(1_200, 600),
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: WorldPoint(1_200, 600)
+        ),
+        BuildingSnapshot(
+            id: "player-command-no-radar-coverage",
+            type: .command,
+            team: .player,
+            position: WorldPoint(1_400, 600),
+            hitPoints: commandDefinition.hitPoints,
+            maxHitPoints: commandDefinition.hitPoints,
+            rally: WorldPoint(1_400, 600)
+        )
+    ]
+
+    #expect(state.radarCoverage(for: .player).isEmpty)
+    #expect(state.radarCoverage(for: .enemy).map(\.buildingID) == ["enemy-radar-not-player-coverage"])
+
+    state.buildings[0].buildProgress = 1
+    #expect(state.radarCoverage(for: .player).map(\.buildingID) == ["unfinished-player-radar"])
+}
+
 @Test func playerRadarContactsIncludeUnseenEnemiesWithoutRevealingTiles() throws {
     let radarDefinition = GameDefinitions.building(.radar)
     let tankDefinition = GameDefinitions.unit(.tank)
@@ -324,6 +414,7 @@ import Testing
     ]
 
     #expect(state.radarContacts(for: .player).isEmpty)
+    #expect(state.radarCoverage(for: .player).isEmpty)
 }
 
 @Test func gameStateDecodesOldJSONWithoutExploredTilesAndEngineSeedsCurrentVision() throws {
@@ -6630,10 +6721,14 @@ import Testing
     )
     let enemyVisibility = completedState.visibility(for: .enemy)
     let contacts = completedState.radarContacts(for: .enemy)
+    let enemyRadarCoverage = completedState.radarCoverage(for: .enemy)
 
     #expect(completedRadar.buildProgress == 1)
     #expect(completedRadar.position.distanceSquared(to: contactPosition) <= radarDefinition.radarRange * radarDefinition.radarRange)
     #expect(!enemyVisibility.isVisible(at: contactPosition))
+    #expect(enemyRadarCoverage.contains {
+        $0.buildingID == completedRadar.id && $0.team == .enemy && $0.radarRange == radarDefinition.radarRange
+    })
     #expect(contacts.contains {
         $0.kind == .unit && $0.position == contactPosition
     })

@@ -52,6 +52,10 @@ public extension GameState {
         radarContacts(for: team, visibleTileIndices: visibility(for: team).visibleTileIndices)
     }
 
+    func radarCoverage(for team: Team) -> [RadarCoverageSnapshot] {
+        radarSources(for: team).map(\.coverage)
+    }
+
     private func sanitizedTileIndices(_ indices: Set<Int>) -> Set<Int> {
         guard terrain.columns > 0, terrain.rows > 0 else {
             return []
@@ -93,16 +97,7 @@ public extension GameState {
     }
 
     private func radarContacts(for team: Team, visibleTileIndices: Set<Int>) -> [RadarContactSnapshot] {
-        let radarSources = buildings.compactMap { building -> (position: WorldPoint, range: Double)? in
-            guard building.team == team, building.hitPoints > 0, building.buildProgress >= 1 else {
-                return nil
-            }
-            let range = GameDefinitions.building(building.type).radarRange
-            guard range > 0 else {
-                return nil
-            }
-            return (building.position, range)
-        }
+        let radarSources = radarSources(for: team)
 
         guard !radarSources.isEmpty else {
             return []
@@ -134,8 +129,31 @@ public extension GameState {
         return contacts
     }
 
-    private func isRadarDetected(_ position: WorldPoint, by sources: [(position: WorldPoint, range: Double)]) -> Bool {
-        for source in sources where source.position.distanceSquared(to: position) <= source.range * source.range {
+    private func radarSources(for team: Team) -> [(coverage: RadarCoverageSnapshot, rangeSquared: Double)] {
+        buildings.compactMap { building -> (coverage: RadarCoverageSnapshot, rangeSquared: Double)? in
+            guard building.team == team, building.hitPoints > 0, building.buildProgress >= 1 else {
+                return nil
+            }
+            let definition = GameDefinitions.building(building.type)
+            guard definition.radarRange > 0 else {
+                return nil
+            }
+            let coverage = RadarCoverageSnapshot(
+                buildingID: building.id,
+                team: building.team,
+                position: building.position,
+                visionRange: definition.vision,
+                radarRange: definition.radarRange
+            )
+            return (coverage, definition.radarRange * definition.radarRange)
+        }
+    }
+
+    private func isRadarDetected(
+        _ position: WorldPoint,
+        by sources: [(coverage: RadarCoverageSnapshot, rangeSquared: Double)]
+    ) -> Bool {
+        for source in sources where source.coverage.position.distanceSquared(to: position) <= source.rangeSquared {
             return true
         }
         return false

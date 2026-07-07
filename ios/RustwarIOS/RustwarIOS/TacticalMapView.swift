@@ -18,9 +18,10 @@ struct TacticalMapView: View {
             let units = state.units
             let buildings = state.buildings
             let wrecks = state.wrecks
-            let selectedEntityIDs = Set(state.selectedEntityIDs)
+            let selectedEntityIDs = Self.selectedEntityIDs(in: state)
             let playerVisibility = state.visibility(for: .player)
             let playerExplored = state.exploredVisibility(for: .player)
+            let playerRadarCoverage = state.radarCoverage(for: .player)
             let playerRadarContacts = state.radarContacts(for: .player)
             let cameraCenter = controller.camera.center
             let visibleWorldRect = controller.visibleBattlefieldWorldRect
@@ -39,6 +40,7 @@ struct TacticalMapView: View {
                     selectedEntityIDs: selectedEntityIDs,
                     playerVisibility: playerVisibility,
                     playerExplored: playerExplored,
+                    playerRadarCoverage: playerRadarCoverage,
                     playerRadarContacts: playerRadarContacts,
                     cameraCenter: cameraCenter,
                     visibleWorldRect: visibleWorldRect,
@@ -165,6 +167,7 @@ struct TacticalMapView: View {
         selectedEntityIDs: Set<String>,
         playerVisibility: VisibilitySnapshot,
         playerExplored: VisibilitySnapshot,
+        playerRadarCoverage: [RadarCoverageSnapshot],
         playerRadarContacts: [RadarContactSnapshot],
         cameraCenter: WorldPoint,
         visibleWorldRect: WorldRect?,
@@ -187,6 +190,7 @@ struct TacticalMapView: View {
         }
 
         drawFog(visibility: playerVisibility, explored: playerExplored, in: &context, size: size)
+        drawRadarCoverage(playerRadarCoverage, in: &context, size: size, differentiateWithoutColor: differentiateWithoutColor)
         drawRadarContacts(playerRadarContacts, in: &context, size: size)
 
         for building in buildings where isVisibleToPlayer(building, visibility: playerVisibility) {
@@ -303,6 +307,57 @@ struct TacticalMapView: View {
             context.fill(path, with: .color(.cyan.opacity(0.78)))
             context.stroke(path, with: .color(.white.opacity(0.62)), lineWidth: 0.5)
         }
+    }
+
+    private static func drawRadarCoverage(
+        _ coverage: [RadarCoverageSnapshot],
+        in context: inout GraphicsContext,
+        size: CGSize,
+        differentiateWithoutColor: Bool
+    ) {
+        for item in coverage {
+            let center = mapPoint(for: item.position, size: size)
+            let radiusX = CGFloat(item.radarRange / GameConstants.mapWidth) * size.width
+            let radiusY = CGFloat(item.radarRange / GameConstants.mapHeight) * size.height
+            let rect = CGRect(
+                x: center.x - radiusX,
+                y: center.y - radiusY,
+                width: radiusX * 2,
+                height: radiusY * 2
+            )
+            guard rect.width > 1, rect.height > 1 else {
+                continue
+            }
+
+            context.fill(Path(ellipseIn: rect), with: .color(.cyan.opacity(0.035)))
+            context.stroke(Path(ellipseIn: rect), with: .color(.cyan.opacity(0.48)), lineWidth: 0.9)
+
+            if differentiateWithoutColor {
+                drawRadarCoverageTicks(center: center, radiusX: radiusX, radiusY: radiusY, in: &context)
+            }
+        }
+    }
+
+    private static func drawRadarCoverageTicks(
+        center: CGPoint,
+        radiusX: CGFloat,
+        radiusY: CGFloat,
+        in context: inout GraphicsContext
+    ) {
+        let tickLength: CGFloat = 4.5
+        let color = Color.white.opacity(0.58)
+        var ticks = Path()
+
+        ticks.move(to: CGPoint(x: center.x - radiusX - tickLength, y: center.y))
+        ticks.addLine(to: CGPoint(x: center.x - radiusX + tickLength, y: center.y))
+        ticks.move(to: CGPoint(x: center.x + radiusX - tickLength, y: center.y))
+        ticks.addLine(to: CGPoint(x: center.x + radiusX + tickLength, y: center.y))
+        ticks.move(to: CGPoint(x: center.x, y: center.y - radiusY - tickLength))
+        ticks.addLine(to: CGPoint(x: center.x, y: center.y - radiusY + tickLength))
+        ticks.move(to: CGPoint(x: center.x, y: center.y + radiusY - tickLength))
+        ticks.addLine(to: CGPoint(x: center.x, y: center.y + radiusY + tickLength))
+
+        context.stroke(ticks, with: .color(color), lineWidth: 0.8)
     }
 
     private static func drawBuilding(
@@ -465,6 +520,14 @@ struct TacticalMapView: View {
 
     private static func isVisibleToPlayer(_ building: BuildingSnapshot, visibility: VisibilitySnapshot) -> Bool {
         building.team == .player || visibility.isVisible(at: building.position)
+    }
+
+    private static func selectedEntityIDs(in state: GameState) -> Set<String> {
+        var ids = Set(state.selectedEntityIDs)
+        if let selectedEntityID = state.selectedEntityID {
+            ids.insert(selectedEntityID)
+        }
+        return ids
     }
 
     private static func color(for team: Team) -> Color {

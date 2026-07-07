@@ -51,11 +51,13 @@ final class BattlefieldScene: SKScene {
         syncCamera(controller.camera)
         let playerVisibility = state.visibility(for: .player)
         let playerExplored = state.exploredVisibility(for: .player)
+        let playerRadarCoverage = state.radarCoverage(for: .player)
         let playerRadarContacts = state.radarContacts(for: .player)
+        let selectedIDs = selectedEntityIDs(in: state)
         drawResources(state.resources)
-        drawEntities(state, playerVisibility: playerVisibility)
+        drawEntities(state, playerVisibility: playerVisibility, selectedIDs: selectedIDs)
         drawFog(visibility: playerVisibility, explored: playerExplored)
-        drawRadarContacts(playerRadarContacts)
+        drawRadarLayer(coverage: playerRadarCoverage, contacts: playerRadarContacts, selectedIDs: selectedIDs)
     }
 
     private func configureScene() {
@@ -107,9 +109,8 @@ final class BattlefieldScene: SKScene {
         }
     }
 
-    private func drawEntities(_ state: GameState, playerVisibility: VisibilitySnapshot) {
+    private func drawEntities(_ state: GameState, playerVisibility: VisibilitySnapshot, selectedIDs: Set<String>) {
         entityNode.removeAllChildren()
-        let selectedIDs = Set(state.selectedEntityIDs)
         for wreck in state.wrecks {
             drawWreck(wreck)
         }
@@ -119,6 +120,14 @@ final class BattlefieldScene: SKScene {
         for unit in state.units where isVisibleToPlayer(unit, visibility: playerVisibility) {
             drawUnit(unit, selectedIDs: selectedIDs, state: state, playerVisibility: playerVisibility)
         }
+    }
+
+    private func selectedEntityIDs(in state: GameState) -> Set<String> {
+        var ids = Set(state.selectedEntityIDs)
+        if let selectedEntityID = state.selectedEntityID {
+            ids.insert(selectedEntityID)
+        }
+        return ids
     }
 
     private func drawFog(visibility: VisibilitySnapshot, explored: VisibilitySnapshot) {
@@ -164,8 +173,73 @@ final class BattlefieldScene: SKScene {
         }
     }
 
-    private func drawRadarContacts(_ contacts: [RadarContactSnapshot]) {
+    private func drawRadarLayer(
+        coverage: [RadarCoverageSnapshot],
+        contacts: [RadarContactSnapshot],
+        selectedIDs: Set<String>
+    ) {
         radarNode.removeAllChildren()
+        drawSelectedRadarCoverage(coverage, selectedIDs: selectedIDs)
+        drawRadarContacts(contacts)
+    }
+
+    private func drawSelectedRadarCoverage(_ coverage: [RadarCoverageSnapshot], selectedIDs: Set<String>) {
+        for item in coverage where selectedIDs.contains(item.buildingID) {
+            let rect = CGRect(
+                x: -item.radarRange,
+                y: -item.radarRange,
+                width: item.radarRange * 2,
+                height: item.radarRange * 2
+            )
+            let node = SKShapeNode(ellipseIn: rect)
+            node.position = spritePoint(for: item.position)
+            node.fillColor = SKColor.systemCyan.withAlphaComponent(0.035)
+            node.strokeColor = SKColor.systemCyan.withAlphaComponent(0.62)
+            node.lineWidth = 3
+            radarNode.addChild(node)
+
+            let tickNode = radarCoverageTickNode(radius: item.radarRange)
+            tickNode.position = spritePoint(for: item.position)
+            radarNode.addChild(tickNode)
+
+            guard item.visionRange > 0 else {
+                continue
+            }
+            let innerRect = CGRect(
+                x: -item.visionRange,
+                y: -item.visionRange,
+                width: item.visionRange * 2,
+                height: item.visionRange * 2
+            )
+            let innerNode = SKShapeNode(ellipseIn: innerRect)
+            innerNode.position = spritePoint(for: item.position)
+            innerNode.fillColor = .clear
+            innerNode.strokeColor = SKColor.white.withAlphaComponent(0.26)
+            innerNode.lineWidth = 1.4
+            radarNode.addChild(innerNode)
+        }
+    }
+
+    private func radarCoverageTickNode(radius: Double) -> SKShapeNode {
+        let tickLength = 28.0
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: -radius - tickLength, y: 0))
+        path.addLine(to: CGPoint(x: -radius + tickLength, y: 0))
+        path.move(to: CGPoint(x: radius - tickLength, y: 0))
+        path.addLine(to: CGPoint(x: radius + tickLength, y: 0))
+        path.move(to: CGPoint(x: 0, y: -radius - tickLength))
+        path.addLine(to: CGPoint(x: 0, y: -radius + tickLength))
+        path.move(to: CGPoint(x: 0, y: radius - tickLength))
+        path.addLine(to: CGPoint(x: 0, y: radius + tickLength))
+
+        let node = SKShapeNode(path: path)
+        node.strokeColor = SKColor.white.withAlphaComponent(0.42)
+        node.lineWidth = 2
+        node.lineCap = .round
+        return node
+    }
+
+    private func drawRadarContacts(_ contacts: [RadarContactSnapshot]) {
         for contact in contacts {
             let radius = contact.kind == .building ? 13.0 : 9.0
             let node = SKShapeNode(circleOfRadius: radius)

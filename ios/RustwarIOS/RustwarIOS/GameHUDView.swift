@@ -37,6 +37,18 @@ struct GameHUDView: View {
                         .monospacedDigit()
                 }
 
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Radar")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("\(controller.playerRadarStationCount)/\(controller.playerRadarContactCount)")
+                        .font(.headline)
+                        .monospacedDigit()
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Radar intelligence")
+                .accessibilityValue(controller.radarIntelAccessibilitySummary)
+
             }
 
             HStack(spacing: 8) {

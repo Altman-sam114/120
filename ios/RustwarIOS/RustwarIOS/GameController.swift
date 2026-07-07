@@ -84,6 +84,18 @@ final class GameController {
             + engine.state.buildings.count(where: { $0.team == .enemy })
     }
 
+    var playerRadarStationCount: Int {
+        engine.state.radarCoverage(for: .player).count
+    }
+
+    var playerRadarContactCount: Int {
+        engine.state.radarContacts(for: .player).count
+    }
+
+    var radarIntelAccessibilitySummary: String {
+        "\(playerRadarStationCount) active \(pluralized("radar station", count: playerRadarStationCount)), \(playerRadarContactCount) radar \(pluralized("contact", count: playerRadarContactCount))"
+    }
+
     var pauseButtonTitle: String {
         isPaused ? "Play" : "Pause"
     }
@@ -524,10 +536,11 @@ final class GameController {
     }
 
     var tacticalMapAccessibilityValue: String {
+        let radarSummary = radarIntelAccessibilitySummary
         if let label = tacticalMapPendingCommandLabel {
-            return "Pending \(label)"
+            return "Pending \(label). \(radarSummary)"
         }
-        return "Camera center mode"
+        return "Camera center mode. \(radarSummary)"
     }
 
     func advance(deltaTime: TimeInterval) {
@@ -1164,6 +1177,10 @@ final class GameController {
         lastBattlefieldTapUnitID = nil
         lastBattlefieldTapScreenPoint = nil
         lastBattlefieldTapTime = nil
+    }
+
+    private func pluralized(_ text: String, count: Int) -> String {
+        count == 1 ? text : "\(text)s"
     }
 
     private func issueContextCommand(at point: WorldPoint) {
