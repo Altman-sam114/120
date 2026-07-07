@@ -7425,6 +7425,17 @@ private func keepEnemyProducersBusy(in state: inout GameState) {
     }
 }
 
+private func keepEnemyBuildersBusy(in state: inout GameState) {
+    for unitIndex in state.units.indices {
+        guard state.units[unitIndex].team == .enemy,
+              state.units[unitIndex].type == .builder,
+              state.units[unitIndex].order == nil else {
+            continue
+        }
+        state.units[unitIndex].order = .move(destination: state.map.enemyRally)
+    }
+}
+
 private func keepProducerBusy(at buildingIndex: Int, in state: inout GameState) {
     let produces = GameDefinitions.building(state.buildings[buildingIndex].type).produces
     guard let unitType = produces.first,
