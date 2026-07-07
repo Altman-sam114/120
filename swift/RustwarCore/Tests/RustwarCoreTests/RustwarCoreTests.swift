@@ -6690,7 +6690,7 @@ import Testing
 }
 
 @Test func completedEnemyAIRadarProvidesEnemyRadarContacts() throws {
-    var state = enemyRadarConstructionReadyState(mapID: .coast)
+    let state = enemyRadarConstructionReadyState(mapID: .coast)
     let initialBuildingIDs = Set(state.buildings.map(\.id))
 
     var engine = GameEngine(state: state)

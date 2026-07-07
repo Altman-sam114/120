@@ -2925,7 +2925,7 @@
 - 本地 `swift test --package-path swift/RustwarCore` 未运行成功：当前本机 SwiftPM manifest 编译阶段无法写入 `/Users/a114514/.cache/clang/ModuleCache/.../SwiftShims-*.pcm`，并报告 Command Line Tools SDK 与 Swift compiler 版本不匹配：SDK `Apple Swift version 6.2 effective-5.10 (swiftlang-6.2.3.3.2 clang-1700.6.3.2)`，compiler `Apple Swift version 6.2.4 effective-5.10 (swiftlang-6.2.4.1.4 clang-1700.6.4.2)`。
 - 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 未运行成功：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，`xcodebuild` 要求完整 Xcode。
 - 本地 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 未运行成功：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，`xcodebuild` 要求完整 Xcode。
-- 云端 artifact 复判待本轮 push 后由 Agent C 执行。
+- 实现提交 `b5236e8e692d90094395e6413949d8214dfeacab` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `28849508648`，attempt `1`，artifact `rustwar-ci-v1.0-main-b5236e8-run28849508648-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-28849508648/`，目录大小 `296K`。manifest 确认 `branch=main`、`commitSha=b5236e8e692d90094395e6413949d8214dfeacab`、`runId=28849508648`、`runAttempt=1`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`；JUnit 为 6 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`build.log` 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0，Swift Testing 279 tests passed，iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
