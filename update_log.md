@@ -3574,7 +3574,7 @@
 
 - 本地通过：`git diff --check`、`node --check app.js`、`swiftc -parse ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift ios/RustwarIOS/RustwarIOS/BattlefieldView.swift ios/RustwarIOS/RustwarIOS/RootGameView.swift ios/RustwarIOS/RustwarIOS/GameHUDView.swift ios/RustwarIOS/RustwarIOS/TacticalMapView.swift ios/RustwarIOS/RustwarIOS/GameController.swift`。
 - 默认 `xcodebuild` 因 active developer directory 是 `/Library/Developer/CommandLineTools` 而失败；确认 `/Applications/Xcode.app` 为 Xcode 26.6 后，没有修改全局 `xcode-select`，改用 `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` 运行。沙箱内首次尝试受 DerivedData、SourcePackages 和 CoreSimulator 权限阻塞；提升权限后，`xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 成功识别 `RustwarCore` / `RustwarIOS` schemes，`xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 完成双架构编译并输出 `BUILD SUCCEEDED`。
-- 最新 `origin/main` Actions artifact 状态将在 push 后补录。
+- 实现提交 `21dea317580553e955e4062b9b20d73106a9db6c` 已通过主线程 Agent C 云端 artifact 复判：GitHub Actions run `29113711760`，attempt `1`，artifact `rustwar-ci-v1.0-main-21dea31-run29113711760-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29113711760/`，目录大小 `300K`。manifest 确认 `branch=main`、`commitSha=21dea317580553e955e4062b9b20d73106a9db6c`、`runId=29113711760`、`runAttempt=1`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`；JUnit 为 6 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`repo-state.txt` 确认最新提交为 v1.91；`build.log` 确认 Swift Testing 303 tests passed，iOS build `BUILD SUCCEEDED`。
 - 本机 Simulator 视觉 smoke、不同武器逐项观察、雾边界死亡检查、Reduce Motion、像素对比和性能采样尚未运行。
 
 遗留事项：
