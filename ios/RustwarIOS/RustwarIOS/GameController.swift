@@ -1447,7 +1447,8 @@ final class GameController {
         commandConfirmation = CommandConfirmation(
             revision: commandConfirmationRevision,
             kind: kind,
-            position: position
+            position: position,
+            issuedAtUptime: ProcessInfo.processInfo.systemUptime
         )
     }
 

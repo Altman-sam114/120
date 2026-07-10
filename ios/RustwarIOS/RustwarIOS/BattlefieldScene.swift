@@ -1050,26 +1050,13 @@ final class BattlefieldScene: SKScene {
     }
 
     private func commandConfirmationColor(for kind: CommandConfirmationKind) -> SKColor {
-        switch kind {
-        case .move:
-            SKColor(red: 0.28, green: 0.94, blue: 0.53, alpha: 1)
-        case .attack:
-            SKColor(red: 1, green: 0.24, blue: 0.18, alpha: 1)
-        case .attackMove:
-            SKColor(red: 1, green: 0.55, blue: 0.12, alpha: 1)
-        case .patrol:
-            SKColor(red: 0.20, green: 0.84, blue: 0.98, alpha: 1)
-        case .guardTarget:
-            SKColor(red: 0.30, green: 0.58, blue: 1, alpha: 1)
-        case .repair:
-            SKColor(red: 0.42, green: 0.98, blue: 0.72, alpha: 1)
-        case .reclaim:
-            SKColor(red: 0.98, green: 0.82, blue: 0.24, alpha: 1)
-        case .build:
-            SKColor(red: 1, green: 0.68, blue: 0.24, alpha: 1)
-        case .rally:
-            SKColor(red: 0.88, green: 0.94, blue: 1, alpha: 1)
-        }
+        let color = kind.colorComponents
+        return SKColor(
+            red: CGFloat(color.red),
+            green: CGFloat(color.green),
+            blue: CGFloat(color.blue),
+            alpha: 1
+        )
     }
 
     private func commandConfirmationPath(for kind: CommandConfirmationKind) -> CGPath {

@@ -3733,3 +3733,38 @@
 
 - 当前 CI 没有 SpriteKit screenshot/XCUITest，不能证明 marker 的实际颜色、形状、雾遮挡、缩放稳定性、密集操作节奏或与爆炸特效的视觉优先级；后续仍需云端视觉自动化和真机人工验收。
 - Tactical Map 暂不绘制 marker；离屏命令仍有触觉和 HUD 状态，但没有小地图落点闪烁。
+
+### v1.96 / iOS Tactical Map command pulse
+
+日期：2026-07-11
+
+核心变更：
+
+- `CommandConfirmation` 增加 `issuedAtUptime`，并把九类命令 RGB 集中到 `CommandConfirmationColorComponents`；BattlefieldScene 和 TacticalMapView 分别转换为 `SKColor` / SwiftUI `Color`，不再复制色值 switch。
+- `TacticalMapView` 复用 v1.95 同一事件，在 fog、实体、视口框和 camera center 之后绘制类型化落点脉冲，再保留 pending command indicator 顶层反馈；marker 只表示玩家刚发出的命令坐标，不增加任何敌方状态读取。
+- 新 revision 通过 `.task(id:)` 启动可取消动画，新命令自动取消旧 task。View 会读取 monotonic age，从正确 progress 继续剩余动画；超过期限的旧事件直接忽略，旋转或布局重建不会重放。
+- 普通 marker 从约 5pt 扩至 9pt 并在 0.78 秒内淡出；Reduce Motion 固定约 7pt、只在 0.3 秒内淡出。九类命令同时使用共享颜色和不同微型路径，Differentiate Without Color 不只依赖色相。
+- 没有使用 TimelineView、Timer、常驻高帧率 Canvas、第二套 controller 状态、Core 字段、存档字段或第三方依赖；原 tap/drag/long press/contentShape/VoiceOver 保持。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/CommandConfirmation.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.96-ios-tactical-map-command-pulse.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、parse、Simulator、Preview 或浏览器验证。
+- 实现提交将 push 到 `origin/main`，仅以精确 commit SHA 对应的 GitHub Actions run 和下载 artifact 作为验收依据。
+
+遗留事项：
+
+- CI 没有 SwiftUI Canvas screenshot/XCUITest，不能证明脉冲实际颜色、形状、动画时长、雾上层级、快速连续命令取消效果或手势不受影响。
+- 主战场和小地图路径仍分别使用 SpriteKit CGPath 与 SwiftUI Path；只共享语义和调色板，后续如增加更多命令类型应继续保持两个 renderer 的穷尽 switch。

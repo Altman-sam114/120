@@ -35,6 +35,8 @@ v1.94 新增原生命令触觉反馈：`GameController` 在离散用户 action �
 
 v1.95 新增战场命令确认 marker：成功的点位/实体命令由 `GameController` 发布 presentation-only `CommandConfirmation(kind, position, revision)`，`BattlefieldScene` 只消费新 revision，并在当前真实视野内的世界坐标生成类型化目标环。marker 复用有界 `effectNode`、位于雾层下、使用逆 zoom 保持屏幕尺寸，且 Reduce Motion 不执行缩放。
 
+v1.96 把同一 `CommandConfirmation` 扩展到 Tactical Map：事件增加 monotonic uptime，Canvas 只在新 revision 时启动可取消的短时 SwiftUI animation task，并按事件真实年龄恢复/过期。小地图 marker 绘制在 fog 后，表示玩家自己的命令坐标而不暴露敌方状态；九类 RGB 调色板集中在 confirmation kind，由 SpriteKit/SwiftUI 分别转换。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
@@ -42,6 +44,7 @@ RustwarCore MapPreset / GameState / GameEngine
   -> TacticalHUDComponents -> GameHUD top status bar + fixed dock header + continuous command sections
   -> explicit selection / command result -> feedback revisions -> SwiftUI sensoryFeedback
   -> successful world command -> CommandConfirmation -> bounded SpriteKit marker under fog
+  -> same CommandConfirmation + uptime -> short Tactical Map Canvas pulse above fog
   -> reserved Battlefield region + non-overlapping TacticalMapView
   -> TerrainGrid stable hash + compound fill/detail/boundary paths -> terrainNode
   -> SpriteKit BattlefieldScene 只读快照，维护 scene-only 朝向 / cooldown / HP / entity-id 历史
@@ -420,6 +423,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v1.94 起，`GameController` 暴露三个只增不减的反馈 revision：selection 覆盖选择集合变化、批量/同类/框选/编队召回、Replace/Add 和等待命令模式；command success 覆盖 Core `.issued` / `.queued` / `.cancelled` / `.updated` 等成功 case；warning 覆盖其它拒绝 case、无存档和编码解码失败。`RootGameView` 分别绑定 `.selection`、`.success`、`.warning`，没有 UIKit generator。`advance`、pan/zoom、Tactical Map drag、keyboard repeat、render/map revision 和 AI 都不调用反馈 helper，因此持续模拟和相机操作不会产生触觉风暴。
 - v1.94 同时把 terrain switch 的 `.grass, .grass2 where detailGate > 0.44` 改为共享 case 内的显式 guard，使两种草地都受相同稳定噪声 gate 控制，并消除 Swift 只对第二个 pattern 应用 `where` 的警告；其它地形材质和节点边界不变。
 - v1.95 起，`CommandConfirmation` 与九类 `CommandConfirmationKind` 留在 iOS presentation target。Controller 的类型化 result helper 只在 `.issued` 后附带目标坐标发布事件；context、等待点位和等待实体命令都使用真实 target/resource/wreck 或 clamp 后的 build position，失败只触发 warning sensory feedback。Scene 在收到未消费 revision 时先更新已消费值，再检查 `VisibilitySnapshot`，因此不可见事件不会在以后开视野时重放。marker 进入既有 `effectNode` 64 上限，颜色和路径同时区分类型；逆 camera zoom 维持约 60pt 外环，普通生命周期 0.78 秒，Reduce Motion 为 0.3 秒静态淡出。
+- v1.96 起，`CommandConfirmation.issuedAtUptime` 记录发布时的 monotonic uptime，Tactical Map 的 `.task(id: revision)` 会自动取消前一动画；新事件先按 `age / duration` 设置初始 progress，再只动画剩余时间，超过期限直接置为完成，因此 View 重建不重放旧落点。Canvas 在 fog、实体、视口框和 camera center 后绘制 marker，再绘制 pending command corners；marker 不改变 gesture/contentShape。普通 radius 5-9pt，Reduce Motion 固定 7pt。`CommandConfirmationColorComponents` 统一九类 RGB，避免 BattlefieldScene 与 TacticalMapView 色值漂移。
 - v1.7 起，`RootGameView` 叠加原生 `TacticalMapView`；小地图用 SwiftUI `Canvas` 从 `GameState.resources`、`units`、`buildings` 和 `CameraState.center` 绘制资源、双方实体和相机中心，点按/拖放小地图会调用 `GameController.centerCamera(on:)`，再由 `CameraState.center(on:)` 夹到地图边界。
 - v1.8 起，选中己方单位时 HUD 显示 Stop 命令；点按 Stop 会调用 `GameEngine.issueStop()` 清除当前选中玩家单位的 `UnitSnapshot.order`，并由 `GameController` 取消待选 Move/Attack Move/Patrol/Guard/Repair/Reclaim/Build Extractor/Attack 目标模式。SpriteKit 订单线会随 `order == nil` 自然消失。
 - v1.9 起，选中己方生产建筑时 HUD 显示 Rally 命令；Rally 模式下一次主战场 tap 会调用 `GameEngine.setRally(to:)` 更新 `BuildingSnapshot.rally`，后续生产完成的单位在新集结点生成。SpriteKit 在选中己方生产建筑时显示建筑到集结点的线和标记。

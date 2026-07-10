@@ -7,9 +7,12 @@ struct TacticalMapView: View {
 
     let controller: GameController
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     @State private var contextPressLocation: CGPoint?
     @State private var suppressTapUntil: TimeInterval?
     @State private var isDraggingCamera = false
+    @State private var animatedCommandConfirmationRevision = 0
+    @State private var commandConfirmationProgress: CGFloat = 1
 
     var body: some View {
         GeometryReader { proxy in
@@ -28,6 +31,8 @@ struct TacticalMapView: View {
             let shouldDifferentiateWithoutColor = differentiateWithoutColor
             let pendingCommandLabel = controller.tacticalMapPendingCommandLabel
             let pendingCommandSymbol = controller.tacticalMapPendingCommandSymbol
+            let commandConfirmation = controller.commandConfirmation
+            let shouldReduceMotion = accessibilityReduceMotion
 
             Canvas { context, size in
                 Self.drawMap(
@@ -45,8 +50,32 @@ struct TacticalMapView: View {
                     cameraCenter: cameraCenter,
                     visibleWorldRect: visibleWorldRect,
                     pendingCommandSymbol: pendingCommandSymbol,
+                    commandConfirmation: commandConfirmation,
+                    commandConfirmationProgress: commandConfirmationProgress,
+                    reduceMotion: shouldReduceMotion,
                     differentiateWithoutColor: shouldDifferentiateWithoutColor
                 )
+            }
+            .task(id: commandConfirmation?.revision) {
+                guard let commandConfirmation,
+                      commandConfirmation.revision != animatedCommandConfirmationRevision else {
+                    return
+                }
+                animatedCommandConfirmationRevision = commandConfirmation.revision
+                let duration = shouldReduceMotion ? 0.3 : 0.78
+                let age = max(0, ProcessInfo.processInfo.systemUptime - commandConfirmation.issuedAtUptime)
+                guard age < duration else {
+                    commandConfirmationProgress = 1
+                    return
+                }
+                commandConfirmationProgress = CGFloat(age / duration)
+                await Task.yield()
+                guard !Task.isCancelled else {
+                    return
+                }
+                withAnimation(.easeOut(duration: duration - age)) {
+                    commandConfirmationProgress = 1
+                }
             }
             .contentShape(Rectangle())
             .simultaneousGesture(mapGesture(in: proxy.size))
@@ -172,6 +201,9 @@ struct TacticalMapView: View {
         cameraCenter: WorldPoint,
         visibleWorldRect: WorldRect?,
         pendingCommandSymbol: String?,
+        commandConfirmation: CommandConfirmation?,
+        commandConfirmationProgress: CGFloat,
+        reduceMotion: Bool,
         differentiateWithoutColor: Bool
     ) {
         guard size.width > 0, size.height > 0 else {
@@ -217,6 +249,16 @@ struct TacticalMapView: View {
             drawVisibleWorldRect(visibleWorldRect, in: &context, size: size)
         }
         drawCameraCenter(cameraCenter, in: &context, size: size)
+
+        if let commandConfirmation, commandConfirmationProgress < 1 {
+            drawCommandConfirmation(
+                commandConfirmation,
+                progress: commandConfirmationProgress,
+                reduceMotion: reduceMotion,
+                in: &context,
+                size: size
+            )
+        }
 
         if let pendingCommandSymbol {
             drawPendingCommandIndicator(pendingCommandSymbol, in: &context, size: size)
@@ -480,6 +522,116 @@ struct TacticalMapView: View {
                 .foregroundStyle(.yellow)
         )
         context.draw(resolvedText, at: CGPoint(x: symbolRect.midX, y: symbolRect.midY), anchor: .center)
+    }
+
+    private static func drawCommandConfirmation(
+        _ confirmation: CommandConfirmation,
+        progress: CGFloat,
+        reduceMotion: Bool,
+        in context: inout GraphicsContext,
+        size: CGSize
+    ) {
+        let point = mapPoint(for: confirmation.position, size: size)
+        let clampedProgress = min(1, max(0, progress))
+        let opacity = 1 - clampedProgress
+        guard opacity > 0.01 else {
+            return
+        }
+
+        let radius: CGFloat = reduceMotion ? 7 : 5 + clampedProgress * 4
+        let color = commandConfirmationColor(for: confirmation.kind).opacity(opacity)
+        let ringRect = CGRect(
+            x: point.x - radius,
+            y: point.y - radius,
+            width: radius * 2,
+            height: radius * 2
+        )
+        context.fill(Path(ellipseIn: ringRect), with: .color(commandConfirmationColor(for: confirmation.kind).opacity(0.12 * opacity)))
+        context.stroke(Path(ellipseIn: ringRect), with: .color(color), lineWidth: 1.6)
+
+        let symbol = commandConfirmationPath(
+            for: confirmation.kind,
+            center: point,
+            radius: max(3.5, radius * 0.62)
+        )
+        context.stroke(symbol, with: .color(color), lineWidth: 1.3)
+    }
+
+    private static func commandConfirmationColor(for kind: CommandConfirmationKind) -> Color {
+        let color = kind.colorComponents
+        return Color(red: color.red, green: color.green, blue: color.blue)
+    }
+
+    private static func commandConfirmationPath(
+        for kind: CommandConfirmationKind,
+        center: CGPoint,
+        radius: CGFloat
+    ) -> Path {
+        var path = Path()
+        switch kind {
+        case .move:
+            drawPlus(into: &path, center: center, radius: radius)
+        case .attack:
+            drawCross(into: &path, center: center, radius: radius)
+        case .attackMove:
+            drawCross(into: &path, center: center, radius: radius)
+            path.move(to: CGPoint(x: center.x - radius, y: center.y + radius))
+            path.addLine(to: CGPoint(x: center.x + radius, y: center.y - radius))
+        case .patrol:
+            path.addEllipse(in: CGRect(
+                x: center.x - radius,
+                y: center.y - radius,
+                width: radius * 2,
+                height: radius * 2
+            ))
+            path.move(to: CGPoint(x: center.x + radius, y: center.y))
+            path.addLine(to: CGPoint(x: center.x + radius * 0.35, y: center.y - radius * 0.55))
+        case .guardTarget:
+            path.move(to: CGPoint(x: center.x, y: center.y - radius))
+            path.addLine(to: CGPoint(x: center.x + radius, y: center.y - radius * 0.35))
+            path.addLine(to: CGPoint(x: center.x + radius * 0.65, y: center.y + radius * 0.75))
+            path.addLine(to: CGPoint(x: center.x, y: center.y + radius))
+            path.addLine(to: CGPoint(x: center.x - radius * 0.65, y: center.y + radius * 0.75))
+            path.addLine(to: CGPoint(x: center.x - radius, y: center.y - radius * 0.35))
+            path.closeSubpath()
+        case .repair:
+            drawPlus(into: &path, center: center, radius: radius)
+        case .reclaim:
+            path.addRect(CGRect(
+                x: center.x - radius,
+                y: center.y - radius,
+                width: radius * 2,
+                height: radius * 2
+            ))
+        case .build:
+            path.addRect(CGRect(
+                x: center.x - radius,
+                y: center.y - radius,
+                width: radius * 2,
+                height: radius * 2
+            ))
+            drawCross(into: &path, center: center, radius: radius * 0.7)
+        case .rally:
+            path.move(to: CGPoint(x: center.x - radius * 0.55, y: center.y + radius))
+            path.addLine(to: CGPoint(x: center.x - radius * 0.55, y: center.y - radius))
+            path.addLine(to: CGPoint(x: center.x + radius, y: center.y - radius * 0.45))
+            path.addLine(to: CGPoint(x: center.x - radius * 0.55, y: center.y))
+        }
+        return path
+    }
+
+    private static func drawPlus(into path: inout Path, center: CGPoint, radius: CGFloat) {
+        path.move(to: CGPoint(x: center.x - radius, y: center.y))
+        path.addLine(to: CGPoint(x: center.x + radius, y: center.y))
+        path.move(to: CGPoint(x: center.x, y: center.y - radius))
+        path.addLine(to: CGPoint(x: center.x, y: center.y + radius))
+    }
+
+    private static func drawCross(into path: inout Path, center: CGPoint, radius: CGFloat) {
+        path.move(to: CGPoint(x: center.x - radius, y: center.y - radius))
+        path.addLine(to: CGPoint(x: center.x + radius, y: center.y + radius))
+        path.move(to: CGPoint(x: center.x - radius, y: center.y + radius))
+        path.addLine(to: CGPoint(x: center.x + radius, y: center.y - radius))
     }
 
     private static func drawSlash(in context: inout GraphicsContext, rect: CGRect, color: Color, lineWidth: CGFloat) {

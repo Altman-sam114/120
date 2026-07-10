@@ -59,6 +59,7 @@ flowchart TD
   FB --> SF["SwiftUI sensoryFeedback<br/>中文注释：RootGameView 使用系统 selection / success / warning 反馈，不使用 UIKit generator 或文本解析"]
   C --> CF["CommandConfirmation(kind, WorldPoint, revision)<br/>中文注释：仅成功的世界坐标命令发布，失败和无坐标操作不发布"]
   CF --> CM["Bounded command marker under fog<br/>中文注释：当前真实可见才生成，类型化颜色/符号、逆 zoom 稳定尺寸，Reduce Motion 只淡出"]
+  CF --> TMP["Short Tactical Map command pulse<br/>中文注释：复用同一事件和共享调色板；revision task 按 monotonic age 动画/过期，不永久刷新 Canvas"]
   LAY --> H["TacticalHUDComponents -> GameHUD status + command dock<br/>中文注释：复用资源指标、命令状态、分区标题、eager 网格和按钮样式；六组 action 与条件仍由 GameHUD 编排"]
   LAY --> TM["Reserved TacticalMapView region<br/>中文注释：只放在 Battlefield 自身区域，按 176x118、144x96 或 120x80 缩放，与顶栏和 dock frame 不相交；原手势和世界换算不变"]
   LAY --> B["SpriteView + BattlefieldScene snapshot reader<br/>中文注释：只读 Core 快照，维护 scene-only heading / cooldown / HP / entity-id 历史；真实剩余 viewport 随 HUD 分区更新，不回写玩法状态"]
