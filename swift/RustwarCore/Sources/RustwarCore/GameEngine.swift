@@ -581,11 +581,13 @@ public struct GameEngine: Sendable {
         updateEnemyFactoryConstruction(rebuildMissingFactoryOnly: false)
         updateEnemyTurretConstruction()
         updateEnemyRadarConstruction()
-        if !updateEnemyRadarUpgrade() {
-            updateEnemyExtractorUpgrade()
-        }
+        let queuedRadarUpgrade = updateEnemyRadarUpgrade()
+        let queuedExtractorUpgrade = queuedRadarUpgrade ? false : updateEnemyExtractorUpgrade()
         updateEnemyReclaim()
-        updateEnemyProduction()
+        let productionReserve = queuedExtractorUpgrade
+            ? GameDefinitions.building(.extractor).metalCost
+            : 0
+        updateEnemyProduction(minimumRemainingMetal: productionReserve)
         updateEnemyAttackOrders()
     }
 
@@ -777,25 +779,32 @@ public struct GameEngine: Sendable {
         return enqueueBuildingUpgrade(at: buildingIndex) == .queued
     }
 
-    private mutating func updateEnemyExtractorUpgrade() {
+    private mutating func updateEnemyExtractorUpgrade() -> Bool {
         guard let buildingIndex = enemyExtractorUpgradeCandidateIndex() else {
-            return
+            return false
         }
 
-        _ = enqueueBuildingUpgrade(at: buildingIndex)
+        return enqueueBuildingUpgrade(at: buildingIndex) == .queued
     }
 
-    private mutating func updateEnemyProduction() {
+    private mutating func updateEnemyProduction(minimumRemainingMetal: Double = 0) {
         for buildingIndex in state.buildings.indices {
             guard state.buildings[buildingIndex].team == .enemy,
                   state.buildings[buildingIndex].hitPoints > 0,
                   state.buildings[buildingIndex].buildProgress >= 1,
                   state.buildings[buildingIndex].productionQueue.isEmpty,
-                  let unitType = enemyProductionChoice(for: state.buildings[buildingIndex]) else {
+                  let unitType = enemyProductionChoice(
+                      for: state.buildings[buildingIndex],
+                      minimumRemainingMetal: minimumRemainingMetal
+                  ) else {
                 continue
             }
 
-            _ = enqueueUnit(unitType, at: buildingIndex)
+            _ = enqueueUnit(
+                unitType,
+                at: buildingIndex,
+                minimumRemainingMetal: minimumRemainingMetal
+            )
         }
     }
 
@@ -825,14 +834,21 @@ public struct GameEngine: Sendable {
         return .queued
     }
 
-    private func enemyProductionChoice(for building: BuildingSnapshot) -> UnitType? {
+    private func enemyProductionChoice(
+        for building: BuildingSnapshot,
+        minimumRemainingMetal: Double = 0
+    ) -> UnitType? {
         let options = GameDefinitions.building(building.type).produces
         guard !options.isEmpty else {
             return nil
         }
 
         let availableOptions = options.enumerated().filter { _, unitType in
-            canEnqueueUnit(unitType, for: building.team)
+            canEnqueueUnit(
+                unitType,
+                for: building.team,
+                minimumRemainingMetal: minimumRemainingMetal
+            )
         }
         return availableOptions.min { lhs, rhs in
             let lhsCount = enemyProductionCount(for: lhs.element, team: building.team)
@@ -1648,7 +1664,11 @@ public struct GameEngine: Sendable {
         _ = enqueueUnit(repeatUnitType, at: buildingIndex)
     }
 
-    private mutating func enqueueUnit(_ unitType: UnitType, at buildingIndex: Int) -> ProductionCommandResult {
+    private mutating func enqueueUnit(
+        _ unitType: UnitType,
+        at buildingIndex: Int,
+        minimumRemainingMetal: Double = 0
+    ) -> ProductionCommandResult {
         guard state.buildings[buildingIndex].hitPoints > 0,
               state.buildings[buildingIndex].buildProgress >= 1 else {
             return .selectedBuildingCannotProduce
@@ -1664,7 +1684,7 @@ public struct GameEngine: Sendable {
 
         let team = state.buildings[buildingIndex].team
         let unitDefinition = GameDefinitions.unit(unitType)
-        guard state.metal[team, default: 0] >= unitDefinition.metalCost else {
+        guard state.metal[team, default: 0] >= unitDefinition.metalCost + max(0, minimumRemainingMetal) else {
             return .insufficientMetal
         }
 
@@ -1685,9 +1705,13 @@ public struct GameEngine: Sendable {
         return .queued
     }
 
-    private func canEnqueueUnit(_ unitType: UnitType, for team: Team) -> Bool {
+    private func canEnqueueUnit(
+        _ unitType: UnitType,
+        for team: Team,
+        minimumRemainingMetal: Double = 0
+    ) -> Bool {
         let unitDefinition = GameDefinitions.unit(unitType)
-        guard state.metal[team, default: 0] >= unitDefinition.metalCost else {
+        guard state.metal[team, default: 0] >= unitDefinition.metalCost + max(0, minimumRemainingMetal) else {
             return false
         }
 

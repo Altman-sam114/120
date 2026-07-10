@@ -3404,8 +3404,9 @@
 
 - `updateEnemyAI()` 在红方 Radar Station 建造和 Radar Station T2 升级之后、回收和生产之前新增 Extractor T2/T3 升级决策。
 - 红方 AI 只有在已有 Land Factory、达到基础 Extractor 数、建厂/炮塔/雷达建造优先级不再阻塞、没有可立即执行的 Radar Station T2 升级目标，并且金属足够支付升级费用加 260 metal Extractor 建造缓冲时，才会排队 Extractor 升级。
+- 回退修复让升级成功排队后的同 tick 红方生产继续以 260 metal 作为最低余额；空闲 Command Center / Land Factory 可以使用缓冲以上的金属，但不能立即耗掉升级预留。
 - Extractor 升级复用既有私有 `enqueueBuildingUpgrade(at:)`、`updateBuildingUpgrades(deltaTime:)` 和 `GameDefinitions.building(for:)`，不新增平行升级状态机；T2/T3 完成后继续通过有效建筑定义提高收入、HP 和视野。
-- 新增 Core 测试覆盖红方 Extractor 升级排队、资源扣除、玩家选择保持、玩家 Extractor 不被 AI 修改、金属不足/未完成/已排队/满级/Enemy AI Off 等等待路径、Radar Station T2 优先级，以及 T2/T3 完成后的收入/HP/视野生效。
+- 新增 Core 测试覆盖红方 Extractor 升级排队、资源扣除、空闲生产建筑同 tick 仍保留 Extractor 费用、玩家选择保持、玩家 Extractor 不被 AI 修改、金属不足/未完成/已排队/满级/Enemy AI Off 等等待路径、Radar Station T2 优先级，以及 T2/T3 完成后的收入/HP/视野生效。
 
 关键文件：
 
@@ -3420,12 +3421,15 @@
 
 验证结果：
 
+- 本次回退修复本地通过：`git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v187-fix -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`。
+- 本次回退修复的 `swift test --package-path swift/RustwarCore` 未进入测试执行：沙箱内先遇到 SwiftPM cache 权限和 Swift 6.2.4 compiler / 6.2.3 SDK 不匹配；提升权限后仍在 Package manifest 链接阶段失败，报 `PackageDescription.Package.__allocating_init(...)` undefined symbol。
 - 本地通过：`git diff --check`、`node --check app.js`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v187 -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift`、`swiftc -parse swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`、`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v187 -enable-testing -emit-module -module-name RustwarCore -emit-module-path /private/tmp/RustwarCore.swiftmodule swift/RustwarCore/Sources/RustwarCore/*.swift`。
 - 本地 `swift test --package-path swift/RustwarCore` 未运行成功：非提升权限运行先遇到 SwiftPM user cache 权限和本机 Swift/SDK mismatch，报 `SwiftShims` cache `Operation not permitted`，并提示 SDK 由 `Apple Swift version 6.2 effective-5.10 (swiftlang-6.2.3.3.2 clang-1700.6.3.2)` 构建，而当前 compiler 为 `Apple Swift version 6.2.4 effective-5.10 (swiftlang-6.2.4.1.4 clang-1700.6.4.2)`；提升权限重试被当前审批服务 `502 Bad Gateway` 阻塞。
 - 本地直接测试 typecheck 未运行成功：生成 `/private/tmp/RustwarCore.swiftmodule` 后，`swiftc -module-cache-path /private/tmp/rustwar-swift-module-cache-v187 -I /private/tmp -typecheck swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift` 仍受本机 Foundation/CoreFoundation SDK 与 Swift compiler 版本不匹配阻塞。
 - 本轮未改 `ios/RustwarIOS/`，未在本机继续运行 iOS build；完整 SwiftPM 和 iOS build 等待 GitHub Actions macOS runner 复判。
 - 首次实现提交 `c1422c15807cd12185ac01d8d86e8e1a07a40831` 的云端 run `28881301589` 未通过：artifact `rustwar-ci-v1.0-main-c1422c1-run28881301589-attempt1` 已下载到 `/private/tmp/rustwar-c-review-28881301589/`，目录大小 `300K`；manifest 与 `main` / commit / run / attempt 匹配。失败项为 Swift test `enemyRadarUpgradeAIWaitsForInvalidStates`，原因是新增 Extractor AI 在旧雷达无效状态测试中合法触发了 Extractor 升级，使旧测试的金属断言不再成立。修复提交把 `enemyRadarUpgradeReadyState` 中的敌方 Extractor 隔离为满级，并让新的雷达优先级测试显式降级一个 Extractor 作为竞争目标。
-- 最新云端 artifact 复判待修复 commit push 后由 Agent C 执行。
+- 隔离测试提交 `a9cd5128f7d933bf96bb261d46ef9d14143ee5a2` 的云端 run `28881692792`、attempt `1` 为 success，artifact 名为 `rustwar-ci-v1.0-main-a9cd512-run28881692792-attempt1`；Agent C 代码审阅发现升级扣款后同 tick 的空闲生产建筑仍会立即消耗 260 metal 缓冲，因此验收不通过。该 artifact 因本机 `Altman-sam114` GitHub CLI 凭证失效而未下载复判。
+- 本次缓冲回退修复的最新云端 artifact 待新提交 push 后由 Agent C 下载复判。
 
 遗留事项：
 

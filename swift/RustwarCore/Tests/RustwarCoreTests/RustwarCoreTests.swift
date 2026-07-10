@@ -7710,6 +7710,31 @@ import Testing
     #expect(playerExtractor.upgradeLevel == 1)
 }
 
+@Test func enemyExtractorUpgradeKeepsReserveWhenProducersAreIdle() throws {
+    var state = enemyExtractorUpgradeReadyState(mapID: .coast)
+    for buildingIndex in state.buildings.indices where state.buildings[buildingIndex].team == .enemy {
+        state.buildings[buildingIndex].productionQueue = []
+    }
+
+    let extractorID = try #require(state.buildings.first {
+        $0.team == .enemy && $0.type == .extractor && GameDefinitions.nextUpgrade(for: $0) != nil
+    }?.id)
+    let upgrade = try #require(GameDefinitions.building(.extractor).upgrades.first)
+    let reserveMetal = GameDefinitions.building(.extractor).metalCost
+    let builderMetal = GameDefinitions.unit(.builder).metalCost
+    let enemyIncome = state.income(for: .enemy)
+    state.metal[.enemy] = upgrade.metalCost + reserveMetal + builderMetal - enemyIncome
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    #expect(engine.state.buildings.first { $0.id == extractorID }?.upgradeProgress == 0)
+    #expect(engine.state.buildings.contains {
+        $0.team == .enemy && !$0.productionQueue.isEmpty
+    })
+    #expect(engine.state.metal[.enemy, default: 0] >= reserveMetal)
+}
+
 @Test func enemyExtractorUpgradeAIWaitsForInvalidStates() throws {
     let baseState = enemyExtractorUpgradeReadyState(mapID: .coast)
     let extractorID = try #require(baseState.buildings.first {

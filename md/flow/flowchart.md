@@ -136,7 +136,7 @@ flowchart TD
   E --> TF["Turret Fire<br/>中文注释：完成状态炮塔自动攻击射程内敌方单位或建筑并进入冷却"]
   TF --> E
   E --> AI["Enemy AI<br/>中文注释：红方 Builder 维修受损友军、扩张资源点、建造 Land Factory / Turret / Radar Station 并回收附近残骸，红方完成状态 Command Center 可排队 Builder，Land Factory 按完整 T1 列表排队造兵，空闲战斗单位按 Web-lite 评分获得攻击玩家目标的订单"]
-  AI --> AIUP["Enemy Building Upgrades<br/>中文注释：v1.83 起红方 AI 在经济、Land Factory、Turret 和完成状态 Radar Station 都就绪且金属足够时，复用建筑升级 helper 排队 Radar Station T2；v1.87 起若雷达升级没有立即目标且保留一个 Extractor 建造费用缓冲，则排队红方 Extractor T2/T3"]
+  AI --> AIUP["Enemy Building Upgrades<br/>中文注释：v1.83 起红方 AI 在经济、Land Factory、Turret 和完成状态 Radar Station 都就绪且金属足够时，复用建筑升级 helper 排队 Radar Station T2；v1.87 起若雷达升级没有立即目标且保留一个 Extractor 建造费用缓冲，则排队红方 Extractor T2/T3，并让同 tick 后续生产继续保留该缓冲"]
   AIUP --> E
   AI --> E
   C --> E

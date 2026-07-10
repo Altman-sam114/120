@@ -89,7 +89,7 @@ git diff --check
 - v1.84 起，Swift core 测试还应覆盖玩家 Radar Station T2 升级取消的缺失/无效/多选拒绝、退款、清空 `upgradeProgress`、保留建筑和选择状态、取消后不会完成升级，以及不影响敌方雷达升级进度。
 - v1.85 起，Swift core 测试还应覆盖 Extractor T2 升级定义、有效收入读取、升级排队/扣款/进度/完成、收入提升、取消退款、状态保持、取消后不完成，以及无效选择、敌方、未完成、多选、已排队、满级和资源不足拒绝。
 - v1.86 起，Swift core 测试还应覆盖 Extractor T3 升级定义、T2 -> T3 排队/扣款/进度/完成、T3 收入/HP/视野生效、T3 取消退款后不完成，以及 iOS HUD 对已升级 Extractor 显示真实等级。
-- v1.87 起，Swift core 测试还应覆盖红方 AI Extractor T2/T3 升级的排队、资源扣除、金属缓冲、玩家选择保持、玩家 Extractor 不被 AI 修改、无效状态等待、Enemy AI Off 门控、Radar Station T2 优先级，以及 T2/T3 完成后的收入、HP 和视野生效。
+- v1.87 起，Swift core 测试还应覆盖红方 AI Extractor T2/T3 升级的排队、资源扣除、金属缓冲、空闲 Command Center / Land Factory 在同 tick 生产后仍保留至少一个 Extractor 费用、玩家选择保持、玩家 Extractor 不被 AI 修改、无效状态等待、Enemy AI Off 门控、Radar Station T2 优先级，以及 T2/T3 完成后的收入、HP 和视野生效。
 - 若本机 SwiftPM、PackageDescription、Swift/SDK 版本或权限导致 `swift test` 无法进入源码编译，必须记录原始错误；可额外执行 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 区分源码错误和工具链错误。
 
 ### 5. iOS App 检查
