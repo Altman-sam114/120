@@ -4,16 +4,32 @@ import RustwarCore
 @MainActor
 final class BattlefieldScene: SKScene {
     weak var controller: GameController?
+    var accessibilityReduceMotion = false {
+        didSet {
+            if accessibilityReduceMotion {
+                effectNode.removeAllChildren()
+            }
+        }
+    }
 
     private let worldNode = SKNode()
     private let terrainNode = SKNode()
     private let resourceNode = SKNode()
     private let entityNode = SKNode()
+    private let effectNode = SKNode()
     private let fogNode = SKNode()
     private let radarNode = SKNode()
+    private let maximumActiveEffects = 48
     private var lastUpdateTime: TimeInterval?
     private var renderedMapID: MapID?
     private var renderedMapRevision = -1
+    private var previousUnitPositions: [String: WorldPoint] = [:]
+    private var unitHeadings: [String: CGFloat] = [:]
+    private var turretHeadings: [String: CGFloat] = [:]
+    private var previousUnitCooldowns: [String: Double] = [:]
+    private var previousBuildingCooldowns: [String: Double] = [:]
+    private var previousUnitHitPoints: [String: Double] = [:]
+    private var previousBuildingHitPoints: [String: Double] = [:]
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -43,10 +59,12 @@ final class BattlefieldScene: SKScene {
         }
 
         let state = controller.engine.state
-        if renderedMapID != state.map.id || renderedMapRevision != controller.mapRenderRevision {
+        let mapRenderChanged = renderedMapID != state.map.id || renderedMapRevision != controller.mapRenderRevision
+        if mapRenderChanged {
             drawTerrain(state.terrain)
             renderedMapID = state.map.id
             renderedMapRevision = controller.mapRenderRevision
+            resetVisualHistory(with: state)
         }
         syncCamera(controller.camera)
         let playerVisibility = state.visibility(for: .player)
@@ -54,6 +72,7 @@ final class BattlefieldScene: SKScene {
         let playerRadarCoverage = state.radarCoverage(for: .player)
         let playerRadarContacts = state.radarContacts(for: .player)
         let selectedIDs = selectedEntityIDs(in: state)
+        updateVisualHistoryAndEffects(state, playerVisibility: playerVisibility)
         drawResources(state.resources)
         drawEntities(state, playerVisibility: playerVisibility, selectedIDs: selectedIDs)
         drawFog(visibility: playerVisibility, explored: playerExplored)
@@ -67,6 +86,7 @@ final class BattlefieldScene: SKScene {
         worldNode.addChild(terrainNode)
         worldNode.addChild(resourceNode)
         worldNode.addChild(entityNode)
+        worldNode.addChild(effectNode)
         worldNode.addChild(fogNode)
         worldNode.addChild(radarNode)
     }
@@ -115,7 +135,7 @@ final class BattlefieldScene: SKScene {
             drawWreck(wreck)
         }
         for building in state.buildings where isVisibleToPlayer(building, visibility: playerVisibility) {
-            drawBuilding(building, selectedIDs: selectedIDs, state: state, playerVisibility: playerVisibility)
+            drawBuilding(building, selectedIDs: selectedIDs)
         }
         for unit in state.units where isVisibleToPlayer(unit, visibility: playerVisibility) {
             drawUnit(unit, selectedIDs: selectedIDs, state: state, playerVisibility: playerVisibility)
@@ -128,6 +148,347 @@ final class BattlefieldScene: SKScene {
             ids.insert(selectedEntityID)
         }
         return ids
+    }
+
+    private func resetVisualHistory(with state: GameState) {
+        effectNode.removeAllChildren()
+        previousUnitPositions = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, $0.position) })
+        unitHeadings = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, defaultHeading(for: $0.team)) })
+        turretHeadings = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, defaultHeading(for: $0.team)) })
+        previousUnitCooldowns = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, $0.weaponCooldown) })
+        previousBuildingCooldowns = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.weaponCooldown) })
+        previousUnitHitPoints = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, $0.hitPoints) })
+        previousBuildingHitPoints = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.hitPoints) })
+    }
+
+    private func updateVisualHistoryAndEffects(_ state: GameState, playerVisibility: VisibilitySnapshot) {
+        let liveUnitIDs = Set(state.units.map(\.id))
+        let liveBuildingIDs = Set(state.buildings.map(\.id))
+        previousUnitPositions = previousUnitPositions.filter { liveUnitIDs.contains($0.key) }
+        unitHeadings = unitHeadings.filter { liveUnitIDs.contains($0.key) }
+        previousUnitCooldowns = previousUnitCooldowns.filter { liveUnitIDs.contains($0.key) }
+        previousUnitHitPoints = previousUnitHitPoints.filter { liveUnitIDs.contains($0.key) }
+        turretHeadings = turretHeadings.filter { liveBuildingIDs.contains($0.key) }
+        previousBuildingCooldowns = previousBuildingCooldowns.filter { liveBuildingIDs.contains($0.key) }
+        previousBuildingHitPoints = previousBuildingHitPoints.filter { liveBuildingIDs.contains($0.key) }
+
+        for unit in state.units {
+            let definition = GameDefinitions.unit(unit.type)
+            let heading = inferredHeading(for: unit, in: state, playerVisibility: playerVisibility)
+            unitHeadings[unit.id] = heading
+            let isVisible = isVisibleToPlayer(unit, visibility: playerVisibility)
+
+            if let previousCooldown = previousUnitCooldowns[unit.id],
+               didStartFiring(previous: previousCooldown, current: unit.weaponCooldown, reloadTime: definition.reloadTime),
+               isVisible {
+                spawnUnitFireEffect(
+                    from: unit.position,
+                    heading: heading,
+                    radius: definition.radius,
+                    type: unit.type,
+                    target: visibleAttackTargetPosition(for: unit, in: state, playerVisibility: playerVisibility)
+                )
+            }
+            if let previousHitPoints = previousUnitHitPoints[unit.id],
+               unit.hitPoints < previousHitPoints,
+               isVisible {
+                spawnImpactEffect(at: unit.position, intensity: impactIntensity(for: unit.type))
+            }
+
+            previousUnitPositions[unit.id] = unit.position
+            previousUnitCooldowns[unit.id] = unit.weaponCooldown
+            previousUnitHitPoints[unit.id] = unit.hitPoints
+        }
+
+        for building in state.buildings {
+            let definition = GameDefinitions.building(for: building)
+            let isVisible = isVisibleToPlayer(building, visibility: playerVisibility)
+            let visibleTarget = definition.damage > 0 && building.buildProgress >= 1
+                ? nearestBuildingWeaponTargetPosition(
+                    for: building,
+                    definition: definition,
+                    in: state,
+                    playerVisibility: playerVisibility
+                )
+                : nil
+            if let visibleTarget, let heading = heading(from: building.position, to: visibleTarget) {
+                turretHeadings[building.id] = heading
+            }
+            let heading = turretHeadings[building.id] ?? defaultHeading(for: building.team)
+
+            if let previousCooldown = previousBuildingCooldowns[building.id],
+               didStartFiring(previous: previousCooldown, current: building.weaponCooldown, reloadTime: definition.reloadTime),
+               definition.damage > 0,
+               building.buildProgress >= 1,
+               isVisible {
+                spawnBuildingFireEffect(
+                    from: building.position,
+                    heading: heading,
+                    size: definition.size,
+                    target: visibleTarget
+                )
+            }
+            if let previousHitPoints = previousBuildingHitPoints[building.id],
+               building.hitPoints < previousHitPoints,
+               isVisible {
+                spawnImpactEffect(at: building.position, intensity: 1.2)
+            }
+
+            previousBuildingCooldowns[building.id] = building.weaponCooldown
+            previousBuildingHitPoints[building.id] = building.hitPoints
+        }
+    }
+
+    private func inferredHeading(
+        for unit: UnitSnapshot,
+        in state: GameState,
+        playerVisibility: VisibilitySnapshot
+    ) -> CGFloat {
+        if let previousPosition = previousUnitPositions[unit.id],
+           previousPosition.distanceSquared(to: unit.position) > 0.25,
+           let movementHeading = heading(from: previousPosition, to: unit.position) {
+            return movementHeading
+        }
+
+        let target: WorldPoint?
+        switch unit.order {
+        case let .attack(targetID)?:
+            target = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility)
+        case let .move(destination)?:
+            target = destination
+        case let .attackMove(destination)?:
+            target = destination
+        case let .patrol(origin, destination, returning)?:
+            target = returning ? origin : destination
+        case let .guardTarget(targetID, _)?:
+            target = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility)
+        case let .build(targetID)?:
+            target = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility)
+        case let .repair(targetID)?:
+            target = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility)
+        case let .reclaim(wreckID)?:
+            target = targetPosition(for: wreckID, in: state, playerVisibility: playerVisibility)
+        case nil:
+            target = nil
+        }
+        if let target, let orderHeading = heading(from: unit.position, to: target) {
+            return orderHeading
+        }
+        return unitHeadings[unit.id] ?? defaultHeading(for: unit.team)
+    }
+
+    private func visibleAttackTargetPosition(
+        for unit: UnitSnapshot,
+        in state: GameState,
+        playerVisibility: VisibilitySnapshot
+    ) -> WorldPoint? {
+        guard case let .attack(targetID)? = unit.order else {
+            return nil
+        }
+        return targetPosition(for: targetID, in: state, playerVisibility: playerVisibility)
+    }
+
+    private func didStartFiring(previous: Double, current: Double, reloadTime: Double) -> Bool {
+        guard reloadTime > 0 else {
+            return false
+        }
+        let minimumJump = Swift.max(0.08, reloadTime * 0.3)
+        return current >= reloadTime * 0.55 && current - previous >= minimumJump
+    }
+
+    private func heading(from start: WorldPoint, to end: WorldPoint) -> CGFloat? {
+        let dx = end.x - start.x
+        let dy = -(end.y - start.y)
+        guard dx * dx + dy * dy > 0.0001 else {
+            return nil
+        }
+        return atan2(dy, dx)
+    }
+
+    private func defaultHeading(for team: Team) -> CGFloat {
+        team == .player ? 0 : .pi
+    }
+
+    private func impactIntensity(for type: UnitType) -> Double {
+        switch type {
+        case .builder, .scout:
+            0.72
+        case .tank, .hover, .aaTank:
+            0.9
+        case .artillery, .gunboat:
+            1.08
+        }
+    }
+
+    private func spawnUnitFireEffect(
+        from source: WorldPoint,
+        heading: CGFloat,
+        radius: Double,
+        type: UnitType,
+        target: WorldPoint?
+    ) {
+        let color: SKColor
+        let projectileRadius: Double
+        let flashRadius: Double
+        let shotCount: Int
+        switch type {
+        case .builder:
+            color = .systemMint
+            projectileRadius = 1.8
+            flashRadius = 3.2
+            shotCount = 1
+        case .scout:
+            color = .systemYellow
+            projectileRadius = 1.8
+            flashRadius = 3.4
+            shotCount = 1
+        case .tank:
+            color = .systemOrange
+            projectileRadius = 2.4
+            flashRadius = 4.4
+            shotCount = 1
+        case .hover:
+            color = .systemCyan
+            projectileRadius = 2.2
+            flashRadius = 4
+            shotCount = 1
+        case .aaTank:
+            color = SKColor(red: 1, green: 0.84, blue: 0.38, alpha: 1)
+            projectileRadius = 1.6
+            flashRadius = 3.2
+            shotCount = 2
+        case .artillery:
+            color = SKColor(red: 1, green: 0.55, blue: 0.22, alpha: 1)
+            projectileRadius = 3.2
+            flashRadius = 5.6
+            shotCount = 1
+        case .gunboat:
+            color = SKColor(red: 0.45, green: 0.9, blue: 1, alpha: 1)
+            projectileRadius = 2.5
+            flashRadius = 4.6
+            shotCount = 1
+        }
+        spawnFireEffect(
+            from: source,
+            heading: heading,
+            muzzleDistance: radius * 0.9,
+            target: target,
+            color: color,
+            projectileRadius: projectileRadius,
+            flashRadius: flashRadius,
+            shotCount: shotCount
+        )
+    }
+
+    private func spawnBuildingFireEffect(
+        from source: WorldPoint,
+        heading: CGFloat,
+        size: Double,
+        target: WorldPoint?
+    ) {
+        spawnFireEffect(
+            from: source,
+            heading: heading,
+            muzzleDistance: size * 0.44,
+            target: target,
+            color: .systemOrange,
+            projectileRadius: 2.5,
+            flashRadius: 4.8,
+            shotCount: 1
+        )
+    }
+
+    private func spawnFireEffect(
+        from source: WorldPoint,
+        heading: CGFloat,
+        muzzleDistance: Double,
+        target: WorldPoint?,
+        color: SKColor,
+        projectileRadius: Double,
+        flashRadius: Double,
+        shotCount: Int
+    ) {
+        let container = SKNode()
+        let sourcePoint = spritePoint(for: source)
+        let direction = CGVector(dx: cos(heading), dy: sin(heading))
+        let normal = CGVector(dx: -direction.dy, dy: direction.dx)
+        let muzzle = CGPoint(
+            x: sourcePoint.x + direction.dx * muzzleDistance,
+            y: sourcePoint.y + direction.dy * muzzleDistance
+        )
+
+        for shot in 0..<shotCount {
+            let lateralOffset = shotCount == 1 ? 0 : (shot == 0 ? -3.2 : 3.2)
+            let origin = CGPoint(
+                x: muzzle.x + normal.dx * lateralOffset,
+                y: muzzle.y + normal.dy * lateralOffset
+            )
+            let flash = SKShapeNode(circleOfRadius: flashRadius)
+            flash.position = origin
+            flash.fillColor = color
+            flash.strokeColor = .white.withAlphaComponent(0.9)
+            flash.lineWidth = 1
+            container.addChild(flash)
+            let flashFade = SKAction.fadeOut(withDuration: accessibilityReduceMotion ? 0.12 : 0.1)
+            if accessibilityReduceMotion {
+                flash.run(flashFade)
+            } else {
+                flash.run(.group([flashFade, .scale(to: 1.65, duration: 0.1)]))
+            }
+
+            guard !accessibilityReduceMotion, let target else {
+                continue
+            }
+            let targetPoint = spritePoint(for: target)
+            let distance = sqrt(
+                (targetPoint.x - origin.x) * (targetPoint.x - origin.x)
+                    + (targetPoint.y - origin.y) * (targetPoint.y - origin.y)
+            )
+            let duration = Swift.min(0.28, Swift.max(0.08, distance / 900))
+            let projectile = SKShapeNode(circleOfRadius: projectileRadius)
+            projectile.position = origin
+            projectile.fillColor = color
+            projectile.strokeColor = .white.withAlphaComponent(0.8)
+            projectile.lineWidth = 0.8
+            container.addChild(projectile)
+            projectile.run(.group([
+                .move(to: targetPoint, duration: duration),
+                .sequence([.wait(forDuration: duration * 0.7), .fadeOut(withDuration: duration * 0.3)])
+            ]))
+        }
+        addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.14 : 0.32)
+    }
+
+    private func spawnImpactEffect(at position: WorldPoint, intensity: Double) {
+        let container = SKNode()
+        container.position = spritePoint(for: position)
+        let core = SKShapeNode(circleOfRadius: 3.5 * intensity)
+        core.fillColor = .white.withAlphaComponent(0.94)
+        core.strokeColor = SKColor.systemOrange
+        core.lineWidth = 1.2
+        container.addChild(core)
+
+        let ring = SKShapeNode(circleOfRadius: 7 * intensity)
+        ring.fillColor = .clear
+        ring.strokeColor = SKColor.systemOrange.withAlphaComponent(0.9)
+        ring.lineWidth = 2
+        container.addChild(ring)
+        if accessibilityReduceMotion {
+            core.run(.fadeOut(withDuration: 0.16))
+            ring.run(.fadeOut(withDuration: 0.18))
+        } else {
+            core.run(.group([.fadeOut(withDuration: 0.18), .scale(to: 1.4, duration: 0.18)]))
+            ring.run(.group([.fadeOut(withDuration: 0.3), .scale(to: 1.9, duration: 0.3)]))
+        }
+        addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.2 : 0.34)
+    }
+
+    private func addBoundedEffect(_ effect: SKNode, lifetime: TimeInterval) {
+        while effectNode.children.count >= maximumActiveEffects {
+            effectNode.children.first?.removeFromParent()
+        }
+        effectNode.addChild(effect)
+        effect.run(.sequence([.wait(forDuration: lifetime), .removeFromParent()]))
     }
 
     private func drawFog(visibility: VisibilitySnapshot, explored: VisibilitySnapshot) {
@@ -269,45 +630,33 @@ final class BattlefieldScene: SKScene {
 
     private func drawBuilding(
         _ building: BuildingSnapshot,
-        selectedIDs: Set<String>,
-        state: GameState,
-        playerVisibility: VisibilitySnapshot
+        selectedIDs: Set<String>
     ) {
         let definition = GameDefinitions.building(for: building)
         let isSelected = selectedIDs.contains(building.id)
         if isSelected, building.team == .player, !definition.produces.isEmpty {
             drawRally(from: building.position, to: building.rally)
         }
-        if definition.damage > 0,
-           building.buildProgress >= 1,
-           building.weaponCooldown > 0,
-           let targetPosition = nearestBuildingWeaponTargetPosition(
-                for: building,
-                definition: definition,
-                in: state,
-                playerVisibility: playerVisibility
-           ) {
-            drawTurretFire(from: building.position, to: targetPosition, reloadFraction: building.weaponCooldown / definition.reloadTime)
-        }
-
-        let rect = CGRect(x: -definition.size / 2, y: -definition.size / 2, width: definition.size, height: definition.size)
-        let node = SKShapeNode(rect: rect, cornerRadius: 6)
+        let node = SKNode()
         node.position = spritePoint(for: building.position)
-        node.fillColor = teamColor(building.team).withAlphaComponent(building.buildProgress < 1 ? 0.58 : 0.88)
-        node.strokeColor = isSelected ? .systemYellow : .black.withAlphaComponent(0.5)
-        node.lineWidth = isSelected ? 5 : 2
-
-        let label = SKLabelNode(text: definition.icon)
-        label.fontName = "AvenirNext-Bold"
-        label.fontSize = 18
-        label.fontColor = .white
-        label.verticalAlignmentMode = .center
-        node.addChild(label)
-        drawHealthBar(current: building.hitPoints, max: building.maxHitPoints, width: definition.size, yOffset: definition.size / 2 + 8, on: node)
+        addBuildingShadow(size: definition.size, to: node)
+        let body = buildingBody(
+            for: building,
+            size: definition.size,
+            turretHeading: turretHeadings[building.id] ?? defaultHeading(for: building.team)
+        )
+        node.addChild(body)
         if building.buildProgress < 1 {
-            drawBuildProgressBar(progress: building.buildProgress, width: definition.size, yOffset: -definition.size / 2 - 11, on: node)
+            addConstructionFrame(size: definition.size, to: node)
+        }
+        if isSelected {
+            addSelectionCorners(halfExtent: definition.size / 2 + 5, to: node)
+        }
+        drawHealthBar(current: building.hitPoints, max: building.maxHitPoints, width: definition.size, yOffset: definition.size / 2 + 9, on: node)
+        if building.buildProgress < 1 {
+            drawBuildProgressBar(progress: building.buildProgress, width: definition.size, yOffset: -definition.size / 2 - 12, on: node)
         } else if let upgradeProgress = building.upgradeProgress {
-            drawBuildProgressBar(progress: upgradeProgress, width: definition.size, yOffset: -definition.size / 2 - 11, on: node)
+            drawBuildProgressBar(progress: upgradeProgress, width: definition.size, yOffset: -definition.size / 2 - 12, on: node)
         }
         entityNode.addChild(node)
     }
@@ -351,20 +700,528 @@ final class BattlefieldScene: SKScene {
             break
         }
 
-        let node = SKShapeNode(circleOfRadius: definition.radius)
+        let node = SKNode()
         node.position = spritePoint(for: unit.position)
-        node.fillColor = teamColor(unit.team)
-        node.strokeColor = isSelected ? .systemYellow : .white.withAlphaComponent(0.55)
-        node.lineWidth = isSelected ? 4 : 1.5
-
-        let label = SKLabelNode(text: definition.icon)
-        label.fontName = "AvenirNext-Bold"
-        label.fontSize = 10
-        label.fontColor = .black
-        label.verticalAlignmentMode = .center
-        node.addChild(label)
-        drawHealthBar(current: unit.hitPoints, max: unit.maxHitPoints, width: definition.radius * 2.4, yOffset: definition.radius + 7, on: node)
+        addUnitShadow(radius: definition.radius, to: node)
+        let body = unitBody(for: unit, radius: definition.radius)
+        body.zRotation = unitHeadings[unit.id] ?? defaultHeading(for: unit.team)
+        node.addChild(body)
+        if isSelected {
+            addSelectionRing(radius: definition.radius + 4, to: node)
+        }
+        drawHealthBar(current: unit.hitPoints, max: unit.maxHitPoints, width: definition.radius * 2.4, yOffset: definition.radius + 8, on: node)
         entityNode.addChild(node)
+    }
+
+    private func unitBody(for unit: UnitSnapshot, radius: Double) -> SKNode {
+        let body = SKNode()
+        switch unit.type {
+        case .builder:
+            body.addChild(polygonNode([
+                CGPoint(x: -radius * 0.75, y: -radius * 0.58),
+                CGPoint(x: radius * 0.24, y: -radius * 0.66),
+                CGPoint(x: radius * 0.66, y: -radius * 0.34),
+                CGPoint(x: radius * 0.66, y: radius * 0.34),
+                CGPoint(x: radius * 0.24, y: radius * 0.66),
+                CGPoint(x: -radius * 0.75, y: radius * 0.58)
+            ], fill: armorMidColor, stroke: outlineColor))
+            body.addChild(rectNode(
+                CGRect(x: -radius * 0.58, y: -radius * 0.35, width: radius * 0.55, height: radius * 0.7),
+                cornerRadius: 2,
+                fill: armorDarkColor,
+                stroke: outlineColor
+            ))
+            for y in [-radius * 0.42, radius * 0.42] {
+                let arm = lineNode(
+                    from: CGPoint(x: radius * 0.28, y: y),
+                    to: CGPoint(x: radius * 0.95, y: y * 1.25),
+                    color: highlightColor,
+                    width: 3
+                )
+                body.addChild(arm)
+                body.addChild(rectNode(
+                    CGRect(x: radius * 0.78, y: y * 1.25 - 2, width: radius * 0.28, height: 4),
+                    cornerRadius: 1,
+                    fill: teamColor(unit.team),
+                    stroke: outlineColor
+                ))
+            }
+        case .scout:
+            body.addChild(polygonNode([
+                CGPoint(x: radius, y: 0),
+                CGPoint(x: -radius * 0.38, y: radius * 0.72),
+                CGPoint(x: -radius * 0.78, y: radius * 0.32),
+                CGPoint(x: -radius * 0.78, y: -radius * 0.32),
+                CGPoint(x: -radius * 0.38, y: -radius * 0.72)
+            ], fill: armorMidColor, stroke: outlineColor))
+            body.addChild(polygonNode([
+                CGPoint(x: radius * 0.52, y: 0),
+                CGPoint(x: -radius * 0.22, y: radius * 0.34),
+                CGPoint(x: -radius * 0.22, y: -radius * 0.34)
+            ], fill: highlightColor, stroke: outlineColor, lineWidth: 1))
+            body.addChild(lineNode(
+                from: CGPoint(x: radius * 0.35, y: 0),
+                to: CGPoint(x: radius * 0.92, y: 0),
+                color: armorDarkColor,
+                width: 2
+            ))
+        case .tank:
+            addTracks(radius: radius, length: 1.55, to: body)
+            body.addChild(rectNode(
+                CGRect(x: -radius * 0.62, y: -radius * 0.52, width: radius * 1.2, height: radius * 1.04),
+                cornerRadius: 3,
+                fill: armorMidColor,
+                stroke: outlineColor
+            ))
+            body.addChild(circleNode(radius: radius * 0.38, fill: armorLightColor, stroke: outlineColor))
+            body.addChild(rectNode(
+                CGRect(x: radius * 0.15, y: -radius * 0.09, width: radius * 0.86, height: radius * 0.18),
+                cornerRadius: 1,
+                fill: highlightColor,
+                stroke: outlineColor
+            ))
+        case .hover:
+            for y in [-radius * 0.55, radius * 0.55] {
+                body.addChild(ellipseNode(
+                    CGRect(x: -radius * 0.58, y: y - radius * 0.2, width: radius * 1.18, height: radius * 0.4),
+                    fill: SKColor.systemCyan.withAlphaComponent(0.44),
+                    stroke: outlineColor
+                ))
+            }
+            body.addChild(polygonNode([
+                CGPoint(x: radius * 0.9, y: 0),
+                CGPoint(x: 0, y: radius * 0.7),
+                CGPoint(x: -radius * 0.78, y: 0),
+                CGPoint(x: 0, y: -radius * 0.7)
+            ], fill: armorMidColor, stroke: outlineColor))
+            body.addChild(ellipseNode(
+                CGRect(x: -radius * 0.28, y: -radius * 0.31, width: radius * 0.7, height: radius * 0.62),
+                fill: armorLightColor,
+                stroke: outlineColor
+            ))
+        case .aaTank:
+            addTracks(radius: radius, length: 1.45, to: body)
+            body.addChild(rectNode(
+                CGRect(x: -radius * 0.62, y: -radius * 0.5, width: radius * 1.15, height: radius),
+                cornerRadius: 3,
+                fill: armorMidColor,
+                stroke: outlineColor
+            ))
+            body.addChild(circleNode(radius: radius * 0.34, fill: armorLightColor, stroke: outlineColor))
+            for y in [-radius * 0.22, radius * 0.22] {
+                body.addChild(rectNode(
+                    CGRect(x: radius * 0.05, y: y - radius * 0.07, width: radius * 0.92, height: radius * 0.14),
+                    cornerRadius: 1,
+                    fill: highlightColor,
+                    stroke: outlineColor
+                ))
+            }
+        case .artillery:
+            addTracks(radius: radius, length: 1.6, to: body)
+            body.addChild(rectNode(
+                CGRect(x: -radius * 0.74, y: -radius * 0.54, width: radius * 1.18, height: radius * 1.08),
+                cornerRadius: 2,
+                fill: armorMidColor,
+                stroke: outlineColor
+            ))
+            body.addChild(circleNode(radius: radius * 0.35, fill: armorLightColor, stroke: outlineColor))
+            body.addChild(rectNode(
+                CGRect(x: radius * 0.02, y: -radius * 0.1, width: radius * 1.2, height: radius * 0.2),
+                cornerRadius: 1,
+                fill: highlightColor,
+                stroke: outlineColor
+            ))
+            for y in [-radius * 0.42, radius * 0.42] {
+                body.addChild(lineNode(
+                    from: CGPoint(x: -radius * 0.5, y: y),
+                    to: CGPoint(x: -radius * 0.98, y: y * 1.3),
+                    color: armorDarkColor,
+                    width: 3
+                ))
+            }
+        case .gunboat:
+            body.addChild(polygonNode([
+                CGPoint(x: radius, y: 0),
+                CGPoint(x: radius * 0.48, y: radius * 0.52),
+                CGPoint(x: -radius * 0.78, y: radius * 0.44),
+                CGPoint(x: -radius, y: radius * 0.23),
+                CGPoint(x: -radius, y: -radius * 0.23),
+                CGPoint(x: -radius * 0.78, y: -radius * 0.44),
+                CGPoint(x: radius * 0.48, y: -radius * 0.52)
+            ], fill: armorMidColor, stroke: outlineColor))
+            for y in [-radius * 0.38, radius * 0.38] {
+                body.addChild(lineNode(
+                    from: CGPoint(x: -radius * 0.65, y: y),
+                    to: CGPoint(x: radius * 0.55, y: y),
+                    color: SKColor.systemCyan.withAlphaComponent(0.8),
+                    width: 2
+                ))
+            }
+            body.addChild(circleNode(radius: radius * 0.3, fill: armorLightColor, stroke: outlineColor))
+            body.addChild(rectNode(
+                CGRect(x: radius * 0.05, y: -radius * 0.07, width: radius * 0.72, height: radius * 0.14),
+                cornerRadius: 1,
+                fill: highlightColor,
+                stroke: outlineColor
+            ))
+        }
+        addUnitFactionMarking(team: unit.team, radius: radius, to: body)
+        return body
+    }
+
+    private func buildingBody(
+        for building: BuildingSnapshot,
+        size: Double,
+        turretHeading: CGFloat
+    ) -> SKNode {
+        let body = SKNode()
+        let half = size / 2
+        switch building.type {
+        case .command:
+            body.addChild(polygonNode([
+                CGPoint(x: -half * 0.72, y: -half),
+                CGPoint(x: half * 0.72, y: -half),
+                CGPoint(x: half, y: -half * 0.72),
+                CGPoint(x: half, y: half * 0.72),
+                CGPoint(x: half * 0.72, y: half),
+                CGPoint(x: -half * 0.72, y: half),
+                CGPoint(x: -half, y: half * 0.72),
+                CGPoint(x: -half, y: -half * 0.72)
+            ], fill: armorDarkColor, stroke: outlineColor, lineWidth: 2.4))
+            body.addChild(polygonNode([
+                CGPoint(x: -half * 0.46, y: -half * 0.62),
+                CGPoint(x: half * 0.46, y: -half * 0.62),
+                CGPoint(x: half * 0.66, y: 0),
+                CGPoint(x: half * 0.46, y: half * 0.62),
+                CGPoint(x: -half * 0.46, y: half * 0.62),
+                CGPoint(x: -half * 0.66, y: 0)
+            ], fill: armorMidColor, stroke: outlineColor))
+            body.addChild(circleNode(radius: half * 0.3, fill: armorLightColor, stroke: teamColor(building.team), lineWidth: 2.5))
+            for x in [-half * 0.73, half * 0.73] {
+                for y in [-half * 0.73, half * 0.73] {
+                    body.addChild(rectNode(
+                        CGRect(x: x - half * 0.11, y: y - half * 0.11, width: half * 0.22, height: half * 0.22),
+                        cornerRadius: 2,
+                        fill: armorLightColor,
+                        stroke: outlineColor
+                    ))
+                }
+            }
+        case .extractor:
+            body.addChild(circleNode(radius: half * 0.88, fill: armorDarkColor, stroke: outlineColor, lineWidth: 2.2))
+            body.addChild(circleNode(radius: half * 0.64, fill: armorMidColor, stroke: highlightColor, lineWidth: 2))
+            let spokes = CGMutablePath()
+            for angle in stride(from: 0.0, to: Double.pi * 2, by: Double.pi / 3) {
+                spokes.move(to: CGPoint(x: cos(angle) * half * 0.25, y: sin(angle) * half * 0.25))
+                spokes.addLine(to: CGPoint(x: cos(angle) * half * 0.72, y: sin(angle) * half * 0.72))
+            }
+            let spokeNode = SKShapeNode(path: spokes)
+            spokeNode.strokeColor = teamColor(building.team).withAlphaComponent(0.84)
+            spokeNode.lineWidth = 3
+            body.addChild(spokeNode)
+            body.addChild(circleNode(radius: half * 0.25, fill: armorLightColor, stroke: outlineColor))
+            if building.upgradeLevel >= 2 {
+                body.addChild(circleNode(radius: half * 0.76, fill: .clear, stroke: .systemCyan, lineWidth: 2.2))
+            }
+            if building.upgradeLevel >= 3 {
+                for angle in stride(from: 0.0, to: Double.pi * 2, by: Double.pi / 4) {
+                    let segment = circleNode(radius: half * 0.09, fill: .systemCyan, stroke: .white, lineWidth: 0.8)
+                    segment.position = CGPoint(x: cos(angle) * half * 0.72, y: sin(angle) * half * 0.72)
+                    body.addChild(segment)
+                }
+            }
+        case .landFactory:
+            body.addChild(rectNode(
+                CGRect(x: -half, y: -half * 0.8, width: size, height: half * 1.6),
+                cornerRadius: 3,
+                fill: armorDarkColor,
+                stroke: outlineColor,
+                lineWidth: 2.2
+            ))
+            body.addChild(rectNode(
+                CGRect(x: -half * 0.38, y: -half * 0.66, width: half * 1.15, height: half * 1.32),
+                cornerRadius: 2,
+                fill: armorMidColor,
+                stroke: highlightColor
+            ))
+            for y in [-half * 0.7, half * 0.7] {
+                body.addChild(rectNode(
+                    CGRect(x: -half * 0.82, y: y - half * 0.16, width: half * 0.58, height: half * 0.32),
+                    cornerRadius: 2,
+                    fill: armorLightColor,
+                    stroke: outlineColor
+                ))
+            }
+            for y in [-half * 0.28, half * 0.28] {
+                body.addChild(lineNode(
+                    from: CGPoint(x: -half * 0.28, y: y),
+                    to: CGPoint(x: half * 0.68, y: y),
+                    color: teamColor(building.team),
+                    width: 3
+                ))
+            }
+        case .turret:
+            body.addChild(circleNode(radius: half * 0.9, fill: armorDarkColor, stroke: outlineColor, lineWidth: 2.2))
+            body.addChild(circleNode(radius: half * 0.62, fill: armorMidColor, stroke: teamColor(building.team), lineWidth: 2.4))
+            let cannon = SKNode()
+            cannon.zRotation = turretHeading
+            cannon.addChild(polygonNode([
+                CGPoint(x: -half * 0.32, y: -half * 0.34),
+                CGPoint(x: half * 0.34, y: -half * 0.28),
+                CGPoint(x: half * 0.45, y: 0),
+                CGPoint(x: half * 0.34, y: half * 0.28),
+                CGPoint(x: -half * 0.32, y: half * 0.34)
+            ], fill: armorLightColor, stroke: outlineColor))
+            cannon.addChild(rectNode(
+                CGRect(x: half * 0.18, y: -half * 0.08, width: half * 0.72, height: half * 0.16),
+                cornerRadius: 1,
+                fill: highlightColor,
+                stroke: outlineColor
+            ))
+            body.addChild(cannon)
+        case .radar:
+            body.addChild(polygonNode([
+                CGPoint(x: -half * 0.76, y: -half * 0.68),
+                CGPoint(x: half * 0.76, y: -half * 0.68),
+                CGPoint(x: half * 0.9, y: 0),
+                CGPoint(x: half * 0.76, y: half * 0.68),
+                CGPoint(x: -half * 0.76, y: half * 0.68),
+                CGPoint(x: -half * 0.9, y: 0)
+            ], fill: armorDarkColor, stroke: outlineColor, lineWidth: 2.2))
+            body.addChild(circleNode(radius: half * 0.24, fill: armorLightColor, stroke: teamColor(building.team), lineWidth: 2))
+            body.addChild(rectNode(
+                CGRect(x: -half * 0.07, y: -half * 0.08, width: half * 0.14, height: half * 0.65),
+                cornerRadius: 1,
+                fill: highlightColor,
+                stroke: outlineColor
+            ))
+            let dish = ellipseNode(
+                CGRect(x: -half * 0.55, y: half * 0.16, width: half * 1.1, height: half * 0.48),
+                fill: teamColor(building.team).withAlphaComponent(0.72),
+                stroke: .white.withAlphaComponent(0.78),
+                lineWidth: 1.8
+            )
+            body.addChild(dish)
+            if building.upgradeLevel >= 2 {
+                body.addChild(circleNode(radius: half * 0.74, fill: .clear, stroke: .systemCyan, lineWidth: 2))
+                let secondDish = ellipseNode(
+                    CGRect(x: -half * 0.38, y: -half * 0.56, width: half * 0.76, height: half * 0.3),
+                    fill: .systemCyan.withAlphaComponent(0.6),
+                    stroke: .white.withAlphaComponent(0.7),
+                    lineWidth: 1.4
+                )
+                body.addChild(secondDish)
+            }
+        }
+        addBuildingFactionMarking(team: building.team, size: size, to: body)
+        return body
+    }
+
+    private func addTracks(radius: Double, length: Double, to node: SKNode) {
+        for y in [-radius * 0.62, radius * 0.62] {
+            node.addChild(rectNode(
+                CGRect(x: -radius * length / 2, y: y - radius * 0.18, width: radius * length, height: radius * 0.36),
+                cornerRadius: radius * 0.12,
+                fill: armorDarkColor,
+                stroke: outlineColor
+            ))
+        }
+    }
+
+    private func addUnitFactionMarking(team: Team, radius: Double, to node: SKNode) {
+        if team == .player {
+            node.addChild(rectNode(
+                CGRect(x: -radius * 0.48, y: -radius * 0.1, width: radius * 0.72, height: radius * 0.2),
+                cornerRadius: 1,
+                fill: teamColor(team),
+                stroke: .white.withAlphaComponent(0.65),
+                lineWidth: 0.8
+            ))
+        } else {
+            for y in [-radius * 0.23, radius * 0.23] {
+                node.addChild(rectNode(
+                    CGRect(x: -radius * 0.42, y: y - radius * 0.07, width: radius * 0.62, height: radius * 0.14),
+                    cornerRadius: 1,
+                    fill: teamColor(team),
+                    stroke: .white.withAlphaComponent(0.65),
+                    lineWidth: 0.8
+                ))
+            }
+        }
+    }
+
+    private func addBuildingFactionMarking(team: Team, size: Double, to node: SKNode) {
+        let half = size / 2
+        if team == .player {
+            let marker = polygonNode([
+                CGPoint(x: -half * 0.12, y: 0),
+                CGPoint(x: 0, y: half * 0.12),
+                CGPoint(x: half * 0.12, y: 0),
+                CGPoint(x: 0, y: -half * 0.12)
+            ], fill: teamColor(team), stroke: .white.withAlphaComponent(0.72), lineWidth: 1)
+            marker.position = CGPoint(x: -half * 0.62, y: 0)
+            node.addChild(marker)
+        } else {
+            for y in [-half * 0.12, half * 0.12] {
+                node.addChild(rectNode(
+                    CGRect(x: -half * 0.75, y: y - half * 0.045, width: half * 0.28, height: half * 0.09),
+                    cornerRadius: 1,
+                    fill: teamColor(team),
+                    stroke: .white.withAlphaComponent(0.7),
+                    lineWidth: 0.8
+                ))
+            }
+        }
+    }
+
+    private func addUnitShadow(radius: Double, to node: SKNode) {
+        let shadow = ellipseNode(
+            CGRect(x: -radius * 0.9, y: -radius * 0.62, width: radius * 1.8, height: radius * 1.24),
+            fill: .black.withAlphaComponent(0.3),
+            stroke: .clear,
+            lineWidth: 0
+        )
+        shadow.position = CGPoint(x: -2, y: -2)
+        shadow.zPosition = -2
+        node.addChild(shadow)
+    }
+
+    private func addBuildingShadow(size: Double, to node: SKNode) {
+        let shadow = rectNode(
+            CGRect(x: -size * 0.48, y: -size * 0.42, width: size * 0.96, height: size * 0.84),
+            cornerRadius: 5,
+            fill: .black.withAlphaComponent(0.32),
+            stroke: .clear,
+            lineWidth: 0
+        )
+        shadow.position = CGPoint(x: -3, y: -3)
+        shadow.zPosition = -2
+        node.addChild(shadow)
+    }
+
+    private func addSelectionRing(radius: Double, to node: SKNode) {
+        let path = CGMutablePath()
+        for quadrant in 0..<4 {
+            let start = CGFloat(quadrant) * .pi / 2 + 0.18
+            path.addArc(center: .zero, radius: radius, startAngle: start, endAngle: start + .pi / 2 - 0.36, clockwise: false)
+        }
+        let ring = SKShapeNode(path: path)
+        ring.strokeColor = .systemYellow
+        ring.lineWidth = 3
+        ring.lineCap = .round
+        node.addChild(ring)
+    }
+
+    private func addSelectionCorners(halfExtent: Double, to node: SKNode) {
+        let length = Swift.max(7, halfExtent * 0.3)
+        let path = CGMutablePath()
+        for x in [-halfExtent, halfExtent] {
+            for y in [-halfExtent, halfExtent] {
+                let xDirection = x > 0 ? 1.0 : -1.0
+                let yDirection = y > 0 ? 1.0 : -1.0
+                path.move(to: CGPoint(x: x, y: y - yDirection * length))
+                path.addLine(to: CGPoint(x: x, y: y))
+                path.addLine(to: CGPoint(x: x - xDirection * length, y: y))
+            }
+        }
+        let corners = SKShapeNode(path: path)
+        corners.strokeColor = .systemYellow
+        corners.lineWidth = 3.2
+        corners.lineCap = .round
+        node.addChild(corners)
+    }
+
+    private func addConstructionFrame(size: Double, to node: SKNode) {
+        let half = size / 2 + 3
+        let length = size * 0.28
+        let path = CGMutablePath()
+        for x in [-half, half] {
+            for y in [-half, half] {
+                let xDirection = x > 0 ? 1.0 : -1.0
+                let yDirection = y > 0 ? 1.0 : -1.0
+                path.move(to: CGPoint(x: x, y: y - yDirection * length))
+                path.addLine(to: CGPoint(x: x, y: y))
+                path.addLine(to: CGPoint(x: x - xDirection * length, y: y))
+            }
+        }
+        path.move(to: CGPoint(x: -half * 0.7, y: -half * 0.7))
+        path.addLine(to: CGPoint(x: half * 0.7, y: half * 0.7))
+        let frame = SKShapeNode(path: path)
+        frame.strokeColor = SKColor.systemOrange.withAlphaComponent(0.9)
+        frame.lineWidth = 2
+        frame.lineCap = .round
+        node.addChild(frame)
+    }
+
+    private func polygonNode(
+        _ points: [CGPoint],
+        fill: SKColor,
+        stroke: SKColor,
+        lineWidth: Double = 1.5
+    ) -> SKShapeNode {
+        let path = CGMutablePath()
+        if let first = points.first {
+            path.move(to: first)
+            for point in points.dropFirst() {
+                path.addLine(to: point)
+            }
+            path.closeSubpath()
+        }
+        let node = SKShapeNode(path: path)
+        style(node, fill: fill, stroke: stroke, lineWidth: lineWidth)
+        return node
+    }
+
+    private func rectNode(
+        _ rect: CGRect,
+        cornerRadius: Double,
+        fill: SKColor,
+        stroke: SKColor,
+        lineWidth: Double = 1.5
+    ) -> SKShapeNode {
+        let node = SKShapeNode(rect: rect, cornerRadius: cornerRadius)
+        style(node, fill: fill, stroke: stroke, lineWidth: lineWidth)
+        return node
+    }
+
+    private func circleNode(
+        radius: Double,
+        fill: SKColor,
+        stroke: SKColor,
+        lineWidth: Double = 1.5
+    ) -> SKShapeNode {
+        let node = SKShapeNode(circleOfRadius: radius)
+        style(node, fill: fill, stroke: stroke, lineWidth: lineWidth)
+        return node
+    }
+
+    private func ellipseNode(
+        _ rect: CGRect,
+        fill: SKColor,
+        stroke: SKColor,
+        lineWidth: Double = 1.5
+    ) -> SKShapeNode {
+        let node = SKShapeNode(ellipseIn: rect)
+        style(node, fill: fill, stroke: stroke, lineWidth: lineWidth)
+        return node
+    }
+
+    private func lineNode(from start: CGPoint, to end: CGPoint, color: SKColor, width: Double) -> SKShapeNode {
+        let path = CGMutablePath()
+        path.move(to: start)
+        path.addLine(to: end)
+        let node = SKShapeNode(path: path)
+        node.strokeColor = color
+        node.lineWidth = width
+        node.lineCap = .round
+        return node
+    }
+
+    private func style(_ node: SKShapeNode, fill: SKColor, stroke: SKColor, lineWidth: Double) {
+        node.fillColor = fill
+        node.strokeColor = stroke
+        node.lineWidth = lineWidth
+        node.lineJoin = .round
     }
 
     private func drawWreck(_ wreck: WreckSnapshot) {
@@ -611,19 +1468,6 @@ final class BattlefieldScene: SKScene {
         entityNode.addChild(marker)
     }
 
-    private func drawTurretFire(from start: WorldPoint, to destination: WorldPoint, reloadFraction: Double) {
-        let alpha = CGFloat(Swift.max(0.18, Swift.min(0.72, reloadFraction)))
-        let path = CGMutablePath()
-        path.move(to: spritePoint(for: start))
-        path.addLine(to: spritePoint(for: destination))
-
-        let line = SKShapeNode(path: path)
-        line.strokeColor = SKColor.systemRed.withAlphaComponent(alpha)
-        line.lineWidth = 2.5
-        line.lineCap = .round
-        entityNode.addChild(line)
-    }
-
     private func drawRally(from start: WorldPoint, to destination: WorldPoint) {
         let color = SKColor.systemCyan
         let path = CGMutablePath()
@@ -774,10 +1618,30 @@ final class BattlefieldScene: SKScene {
     private func teamColor(_ team: Team) -> SKColor {
         switch team {
         case .player:
-            SKColor(red: 0.38, green: 0.84, blue: 0.42, alpha: 1)
+            SKColor(red: 0.24, green: 0.92, blue: 0.48, alpha: 1)
         case .enemy:
-            SKColor(red: 0.89, green: 0.35, blue: 0.35, alpha: 1)
+            SKColor(red: 0.96, green: 0.27, blue: 0.25, alpha: 1)
         }
+    }
+
+    private var armorDarkColor: SKColor {
+        SKColor(red: 0.12, green: 0.15, blue: 0.17, alpha: 1)
+    }
+
+    private var armorMidColor: SKColor {
+        SKColor(red: 0.29, green: 0.34, blue: 0.37, alpha: 1)
+    }
+
+    private var armorLightColor: SKColor {
+        SKColor(red: 0.48, green: 0.55, blue: 0.58, alpha: 1)
+    }
+
+    private var highlightColor: SKColor {
+        SKColor(red: 0.72, green: 0.79, blue: 0.8, alpha: 1)
+    }
+
+    private var outlineColor: SKColor {
+        SKColor(red: 0.035, green: 0.045, blue: 0.05, alpha: 0.92)
     }
 
     private func healthColor(_ fraction: Double) -> SKColor {

@@ -56,7 +56,7 @@ flowchart TD
   E --> C["GameController @Observable<br/>中文注释：持有 engine、camera、当前地图、HUD、暂停/速度、Enemy AI 开关、Replace/Add 选择模式、批量选择入口、Select Area 单位优先框选和建筑 fallback 等待态、Screen Combat 当前屏幕作战单位选择、Same Type 全图同类型选择、双击附近同类型选择、控制编队保存/召回、移动命令、攻击、攻击移动、护航、维修、回收、建造、生产、生产取消、重复生产、集结点和 Save/Load 入口；Move/Attack/Attack Move/Patrol/Guard/Repair/Reclaim/Build Extractor/Stop 复用多选集合"]
   C --> H["SwiftUI RootGameView / GameHUDView<br/>中文注释：显示资源、收入、人口和选择反馈"]
   C --> TM["SwiftUI TacticalMapView<br/>中文注释：绘制资源、残骸、双方单位建筑、多选高亮、主战场视口矩形、相机中心和等待命令反馈，并复用点位、Builder 目标和实体目标命令"]
-  C --> B["SpriteView + BattlefieldScene<br/>中文注释：渲染地形、资源点、己方实体、当前可见敌方实体、多选高亮、移动目标和当前玩家视野雾层"]
+  C --> B["SpriteView + BattlefieldScene snapshot reader<br/>中文注释：只读 Core 快照，维护 scene-only heading / cooldown / HP 历史；map revision 变化时重置播种，不回写玩法状态"]
   T["SpatialTap / LongPress / Drag / Magnify<br/>中文注释：iOS 触摸选择、移动落点、长按上下文命令、Select Area 框选、拖拽平移和捏合缩放"] --> C
   TT["TacticalMap DragTap / DragCamera / LongPress<br/>中文注释：点按小地图换算世界坐标；等待点位、Builder 目标或实体目标命令时显示反馈并下令，否则点按居中相机、拖动连续移动相机；无等待命令时长按复用上下文命令"] --> C
   CTX["Battlefield long press context command<br/>中文注释：非等待态长按主战场，按敌方 Attack、受损友方 Repair、健康友方 Guard、残骸 Reclaim、资源点 Build Extractor、空点 Rally 或 Move 的顺序复用已有命令"] --> C
@@ -140,7 +140,11 @@ flowchart TD
   AIUP --> E
   AI --> E
   C --> E
-  B --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html，显示血条、建造进度、残骸、移动线、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线和红方行动"]
+  B --> PV["Procedural entity visuals<br/>中文注释：7 类单位和 5 类建筑使用复合几何剪影、局部队伍标识、朝向、施工框架和升级结构，不使用实体字母占位"]
+  PV --> FX["Bounded transient effect layer<br/>中文注释：cooldown / HP 跃迁只触发一次短炮口焰、可见目标弹丸或受击闪光；Reduce Motion 改为透明度反馈"]
+  FX --> FOG["Current / explored fog overlay<br/>中文注释：effect layer 位于雾下，不可见敌方不会泄漏真实剪影、精确 tracer 或攻击关系"]
+  FOG --> RR["Radar signal overlay<br/>中文注释：雷达 contact 仍只在雾上显示青色信号点和覆盖圈，不升级为真实敌方模型"]
+  RR --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html，显示程序化实体、血条、建造/升级进度、短战斗反馈、残骸、订单线、战争迷雾和红方行动"]
   H --> O
   TM --> O
 ```

@@ -3434,3 +3434,40 @@
 遗留事项：
 
 - v1.87 只新增红方 AI 使用既有 Extractor T2/T3 升级；仍无 Resource Fabricator、通用升级选择器、其它建筑升级、雾内敌方残影、正式模型特效精细化、iOS 操作手感深度优化或完整 Web economy upgrade parity。
+
+### v1.88 / iOS battlefield visual identity
+
+日期：2026-07-10
+
+核心变更：
+
+- `BattlefieldScene` 用程序化 `SKShapeNode` 复合几何替换实体字母占位。Builder、Scout、Light Tank、Hover Tank、AA Tank、Artillery、Gunboat 七类单位分别使用工程臂、楔形车身、履带炮塔、悬浮荚、双防空炮、长炮架和船体剪影；Command Center、Extractor、Land Factory、Turret、Radar Station 五类建筑分别使用堡垒、采集环、工业厂房、固定炮座和雷达阵列结构。
+- 主体装甲改为钢灰层级，玩家/敌方只在局部使用高对比队伍色，并分别使用单条/单徽记与双条结构区分；多选选择环或角标、HP 条、建造/升级进度继续独立显示。Extractor T2/T3、Radar T2 增加可见结构层级，未完成建筑增加施工框架。
+- 单位方向只存在 Scene：优先读取相邻快照位移，再读取当前可见攻击目标或 Move / Attack-Move / Patrol / Guard / Build / Repair / Reclaim 订单方向，最后保留上次有效方向；世界坐标转 SpriteKit 时显式翻转 y。炮塔同样保存最近可见目标方向，不向 Core 或存档新增 heading。
+- Scene 保存上一快照 cooldown 与 HP，只有 cooldown 从低值上跳到 reload 附近才生成一次短炮口焰和可见精确目标弹丸，只有 HP 下降才生成一次受击闪光；移除整个 reload 周期常亮炮塔线。效果节点最多 48 个，通过短 `SKAction` 自行移除。
+- `effectNode` 固定在实体层上、雾层下；敌方实体、精确目标和 tracer 继续走现有当前可见性过滤，玩家实体受到不可见来源伤害时只在自身位置显示闪光，雷达 contact 仍是雾上青色信号点。
+- Map 切换、Restart 和 Load 推进 `mapRenderRevision` 后会清空效果与所有视觉历史并从当前快照重新播种；每帧裁剪已死亡实体历史，同一快照重复 `renderNow()` 不会重复触发事件。
+- `BattlefieldView` 读取 SwiftUI `accessibilityReduceMotion` 并同步给 Scene；Reduce Motion 开启时不生成跨屏弹丸或缩放动画，只保留短 opacity 炮口/命中反馈。
+- 本轮未修改 `RustwarCore`、存档形状、玩法数值、伤害时机、目标选择、Web 行为或 Xcode project；程序化几何仍是第一轮视觉地基，不是正式 sprite atlas 或完整 projectile 事件模型。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.88-ios-battlefield-visual-identity.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地通过：`git diff --check`、`node --check app.js`、`swiftc -parse ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`。
+- 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 均未进入项目检查：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，原始错误为 `xcodebuild requires Xcode`。
+- 额外 Swift typecheck 探针也受本机工具链阻塞：Swift 6.2.4 compiler 与由 Swift 6.2.3 构建的 Command Line Tools SDK 不匹配，并且默认 module cache 在沙箱内不可写；这不改变独立 `swiftc -parse` 已通过的结果。
+- 本机没有完整 Xcode 和可用 Simulator，未运行人工视觉 smoke，也未把编译检查写成视觉运行通过。完整 SwiftPM 回归、iOS target build 和 artifact 复判等待本轮 `origin/main` push 后的 GitHub Actions macOS runner 与 Agent C。
+
+遗留事项：
+
+- v1.88 仍使用运行时程序化几何，没有正式 sprite atlas、地形贴图、音效/震动、Core projectile event、屏幕震动、昼夜天气或自动化视觉回归；下一轮可继续优化地形材质、正式资源管线、战斗音画反馈和 iOS 操作手感。

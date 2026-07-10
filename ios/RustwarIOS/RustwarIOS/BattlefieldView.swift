@@ -4,6 +4,7 @@ import SwiftUI
 struct BattlefieldView: View {
     private static let contextTapSuppressionDuration: TimeInterval = 0.18
 
+    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     let controller: GameController
     @State private var scene = BattlefieldScene()
     @State private var lastDragTranslation = CGSize.zero
@@ -20,6 +21,7 @@ struct BattlefieldView: View {
                     .accessibilityLabel("Rustwar battlefield")
                     .task {
                         scene.controller = controller
+                        scene.accessibilityReduceMotion = accessibilityReduceMotion
                         scene.scaleMode = .resizeFill
                         scene.size = proxy.size
                         controller.updateBattlefieldViewportSize(proxy.size)
@@ -32,6 +34,9 @@ struct BattlefieldView: View {
                     }
                     .onChange(of: controller.renderRevision) { _, _ in
                         scene.renderNow()
+                    }
+                    .onChange(of: accessibilityReduceMotion) { _, reduceMotion in
+                        scene.accessibilityReduceMotion = reduceMotion
                     }
                     .simultaneousGesture(tapGesture(in: proxy.size))
                     .simultaneousGesture(contextLocationGesture())
