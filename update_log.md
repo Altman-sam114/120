@@ -3466,7 +3466,8 @@
 - 本地通过：`git diff --check`、`node --check app.js`、`swiftc -parse ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`。
 - 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 均未进入项目检查：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，原始错误为 `xcodebuild requires Xcode`。
 - 额外 Swift typecheck 探针也受本机工具链阻塞：Swift 6.2.4 compiler 与由 Swift 6.2.3 构建的 Command Line Tools SDK 不匹配，并且默认 module cache 在沙箱内不可写；这不改变独立 `swiftc -parse` 已通过的结果。
-- 本机没有完整 Xcode 和可用 Simulator，未运行人工视觉 smoke，也未把编译检查写成视觉运行通过。完整 SwiftPM 回归、iOS target build 和 artifact 复判等待本轮 `origin/main` push 后的 GitHub Actions macOS runner 与 Agent C。
+- 本机没有完整 Xcode 和可用 Simulator，未运行人工视觉 smoke，也未把编译检查写成视觉运行通过。
+- 实现提交 `a0381f1256e2c89d9f8f35821c426724221f1495` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29099936608`，attempt `1`，artifact `rustwar-ci-v1.0-main-a0381f1-run29099936608-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29099936608/`，目录大小 `300K`。manifest 确认 `branch=main`、`commitSha=a0381f1256e2c89d9f8f35821c426724221f1495`、`runId=29099936608`、`runAttempt=1`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`；JUnit 为 6 checks、0 failures、1 skipped browser smoke；`build.log` 确认 Swift Testing 303 tests passed，iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
@@ -3504,7 +3505,8 @@
 
 - 本地通过：`git diff --check`、`node --check app.js`、`swiftc -parse ios/RustwarIOS/RustwarIOS/RootGameView.swift ios/RustwarIOS/RustwarIOS/GameHUDView.swift ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`。
 - 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 均未进入项目检查：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，原始错误为 `xcodebuild requires Xcode`。
-- 本机没有完整 Xcode 和可用 Simulator，未实际渲染 Preview，也未运行 iPhone/iPad UI smoke、VoiceOver、accessibility Dynamic Type、Differentiate Without Color、Reduce Motion、旋转/resize、触摸穿透或离屏快捷键人工验证；没有把 parse 写成 UI 运行通过。完整 SwiftPM 回归、iOS target build 和 artifact 复判等待本轮 `origin/main` push 后的 GitHub Actions macOS runner 与 Agent C。
+- 本机没有完整 Xcode 和可用 Simulator，未实际渲染 Preview，也未运行 iPhone/iPad UI smoke、VoiceOver、accessibility Dynamic Type、Differentiate Without Color、Reduce Motion、旋转/resize、触摸穿透或离屏快捷键人工验证；没有把 parse 写成 UI 运行通过。
+- 实现提交 `daa0c9f1f81cf35f5ce53efccab8e416a0432766` 已通过主线程云端 artifact 复判：GitHub Actions run `29102336120`，attempt `1`，artifact `rustwar-ci-v1.0-main-daa0c9f-run29102336120-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29102336120/`，目录大小 `300K`。manifest 确认 `branch=main`、`commitSha=daa0c9f1f81cf35f5ce53efccab8e416a0432766`、`runId=29102336120`、`runAttempt=1`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`；JUnit 为 6 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`build.log` 确认 Swift Testing 303 tests passed，iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
