@@ -3611,7 +3611,7 @@
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 通过，输出 `BUILD SUCCEEDED`。
 - iPhone 17 Pro Simulator 的 v1.91 before 截图为 `/private/tmp/rustwar-v191-iphone17pro-initial.png`，v1.92 after 截图为 `/private/tmp/rustwar-v192-iphone17pro-initial.png`；方向校正副本也只位于 `/private/tmp`。人工检查首屏静态布局通过。
 - `node --check app.js` 通过；`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 通过并识别 `RustwarCore` / `RustwarIOS` schemes。
-- 最新 `origin/main` Actions artifact 状态将在 push 后补录。
+- 实现提交 `97b791acc0c5f0a577f199afd57fc4c648e9c29a` 已通过主线程 Agent C 云端 artifact 复判：GitHub Actions run `29116633794`，attempt `1`，artifact `rustwar-ci-v1.0-main-97b791a-run29116633794-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29116633794/`，目录大小 `300K`。manifest 确认 `branch=main`、`commitSha=97b791acc0c5f0a577f199afd57fc4c648e9c29a`、`runId=29116633794`、`runAttempt=1`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`；JUnit 为 6 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`repo-state.txt` 确认最新提交为 v1.92；`build.log` 确认 Swift Testing 303 tests passed，iOS build `BUILD SUCCEEDED`。
 - 未运行实际触摸滚动、全部 section 到底、VoiceOver、Dynamic Type、旋转状态保持、等待命令交互、战斗特效或帧率采样。
 
 遗留事项：
