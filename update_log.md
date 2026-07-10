@@ -3762,7 +3762,10 @@
 验证状态：
 
 - 按用户要求未运行任何本地测试、构建、parse、Simulator、Preview 或浏览器验证。
-- 实现提交将 push 到 `origin/main`，仅以精确 commit SHA 对应的 GitHub Actions run 和下载 artifact 作为验收依据。
+- 实现提交 `2675b91b756bef4cd378de1ce347d941f7fa77cf` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29121094007`，attempt `1`，artifact `rustwar-ci-v1.0-main-2675b91-run29121094007-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29121094007/`，目录大小 `276K`。
+- manifest 确认 `branch=main`、`commitSha=2675b91b756bef4cd378de1ce347d941f7fa77cf`、`runId=29121094007`、`runAttempt=1`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`、`testOutcome=success`。
+- JUnit 为 6 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`repo-state.txt` 确认最新提交为 v1.96；`build.log` 确认 Swift Testing 303 tests passed，TacticalMapView、CommandConfirmation 和 BattlefieldScene 完成 arm64/x86_64 编译，原生 iOS build `BUILD SUCCEEDED`。
+- 云端 runner 本轮对 iOS 26.0 deployment target 给出“平台仅识别到 iOS 18.5 / 支持范围到 18.5.99”的工具链警告，并保留无 AppIntents dependency 的 metadata extraction skipped；这些没有导致本轮失败，但反映 `macos-latest` / Xcode 选择不稳定，CI 后续应固定明确 Xcode 版本。
 
 遗留事项：
 
