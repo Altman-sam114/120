@@ -24,6 +24,7 @@
 - v1.88 起，原生 iOS 主战场用程序化复合几何替换单位/建筑字母占位：7 类单位与 5 类建筑拥有可辨识俯视剪影、局部队伍标识、移动/订单朝向，Extractor T2/T3 与 Radar T2 有额外结构层级，未完成建筑显示施工框架。Scene 只读 Core 快照，以 cooldown/HP 跃迁生成有界、短生命周期炮口焰、弹丸和受击闪光；效果位于雾层下，并通过 SwiftUI Reduce Motion 在辅助功能开启时退化为短透明度反馈。本轮仍是程序化视觉地基，不是正式 sprite atlas、完整 projectile 事件模型或最终美术素材；仍不包含雾内敌方残影。
 - v1.89 起，原生 iOS HUD 改为 safe-area 贴边战术布局：Metal / Income / Pop / Radar / Pause / Speed 固定在顶部状态栏；宽度 `>= 700pt` 使用 268-320pt trailing command dock，560-699pt 横屏使用 232-276pt trailing dock，其余使用 216-320pt bottom dock，极短容器最低 180pt。dock 顶部固定显示选择、升级/姿态摘要、命令状态和 Replace/Add，下面可连续滚动 Commands、Build & Upgrade、Production、Selection、Groups、Session 六组控件。战术小地图位于独立战场区域并按 176x118、144x96 或 120x80 缩放，不与 dock 重叠；所有旧 action、disabled 条件、快捷键、VoiceOver 和 44pt 触控目标保持不变。
 - v1.90 起，原生 iOS 主战场把约 6,000 个纯色 tile 节点改为按 8 种地形和 3 档确定性色差聚合的 compound path，并增加低对比草痕、砂土颗粒、岩石裂线、水面波纹、熔岩裂隙、海岸泡沫、深浅水分界和熔岩焦岸。整张地图的基础/细节/边界层上限约 36 个节点；材质只在地图重建时生成，仍位于资源、实体、特效、雾和雷达之下，不改变 Core 地形、通行、存档或玩法。
+- v1.91 起，原生 iOS 战斗反馈参考 Rusted Warfare 官方 Steam 截图/视频中的高可读性层级，把单一圆点弹丸扩展为轻型 tracer、坦克/舰炮尾迹、Hover 青色能量束、AA 双联弹道和 Artillery 重炮弹；HP 下降会产生高亮核心、火球、冲击环、确定性火花和烟尘，连续快照中的可见实体摧毁会生成更强爆炸及短寿命地表灼痕。Scene 仍只读 Core cooldown/HP/实体历史，瞬态效果最多 64 个、灼痕最多 32 个并自动移除；精确目标和敌方死亡必须通过当前可见性门控，所有特效与灼痕仍位于雾层下，Reduce Motion 下不播放跨屏弹道、扩张冲击波或碎片飞散。
 
 本机验证命令：
 
@@ -130,7 +131,7 @@ xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -dest
 - Cancel Production：选中完成状态己方生产建筑且队列不为空时显示；点按后取消队尾生产项，并按未完成进度返还金属。
 - Repeat：选中完成状态己方生产建筑时显示；点按会在该建筑支持的生产列表内循环 Repeat 目标，队列清空后自动尝试续造当前重复单位；金属或人口不足时保留重复目标但不会追加队列。
 - Rally：选中完成状态己方生产建筑时显示；点按后进入集结点模式，再 tap 主战场设置新集结点，后续完成生产的单位会在该点生成；选中生产建筑时战场会显示集结线和标记。
-- 炮塔：完成状态的 Turret 会自动攻击射程内敌方单位或建筑；iOS 主战场只在 cooldown 上跳时显示短促炮口焰和当前可见目标弹丸，不再把整个冷却周期画成常亮火力线。
+- 炮塔：完成状态的 Turret 会自动攻击射程内敌方单位或建筑；iOS 主战场只在 cooldown 上跳时显示短促炮口焰和当前可见目标的高亮尾迹炮弹，不再把整个冷却周期画成常亮火力线。单位与建筑受击/摧毁会显示有界爆炸、烟尘和短寿命灼痕，地图切换、Restart 或 Load 会清理旧战场特效。
 - 红方 AI：会用空闲 Builder 维修受损友军单位或建筑、在空闲资源点建造 Extractor、在缺少陆军工厂或已有基础经济后建造未完成 Land Factory、在基地周边建造未完成 Turret、在基础经济/工厂/炮塔成型后建造 1 座未完成 Radar Station，并在该 Radar Station 完成、经济和防御门槛仍满足且金属足够时排队 T2 升级；当建厂、防御和雷达优先级不再阻塞且金属保留一个 Extractor 建造费用缓冲时，还会自动排队 Extractor T2/T3 经济升级，同 tick 的 Command Center / Land Factory 生产只会使用缓冲以上的金属；红方也会回收附近战斗残骸，用已有资源在完成状态红方 Command Center 排队生产 Builder、在完成状态红方 Land Factory 排队生产 Scout / Light Tank / Hover Tank / Artillery / AA Tank，并让空闲战斗单位按 Web-lite 目标评分主动攻击玩家目标；评分会偏向 Command Center、Extractor、Land Factory、Turret 和低血单位/建筑，Artillery 对建筑有更强偏好。
 - Map：在 Coast / Islands / Lava 三张原生预设地图之间切换；切图会重建战场状态、重置相机并清除待选命令。
 - Restart：重开当前原生地图，保留当前 Pause/Play 和速度设置。

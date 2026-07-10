@@ -3545,3 +3545,38 @@
 遗留事项：
 
 - v1.90 仍是程序化矢量材质，没有正式 tile atlas、地形过渡贴图、植被/环境物件、动态水面、地形高度、昼夜或自动化截图回归；后续应在完整 Xcode/真机上先做三图像素与帧率检查，再继续正式资源管线。
+
+### v1.91 / iOS layered combat effects
+
+日期：2026-07-11
+
+核心变更：
+
+- 通过 Rusted Warfare 官方 Steam 页面核对 10 张截图和 2 段视频资源；本轮只借鉴短弹道、武器颜色/几何区分、多层爆炸、烟尘和地面灼痕的战斗信息层级，没有把原作素材加入仓库。
+- `BattlefieldScene` 把同构圆点弹丸扩展为短 tracer、坦克/舰炮/Turret 尾迹炮弹、Hover 青色双层能量束、AA 双联 tracer 和 Artillery 较慢重炮弹；可见显式目标与自动索敌目标都只用于只读视觉，不改变 Core 命中、伤害或目标选择。
+- HP 下降反馈增加白热核心、火球、冲击环、确定性火花和烟尘；Scene 保存上一快照 unit/building id 字典，实体消失时为玩家实体或旧位置仍当前可见的敌方实体生成更强摧毁爆炸和短寿命灼痕。
+- 新增 `decalNode`，层级位于资源之上、实体之下；灼痕最多 32 个并在 7.5 秒后淡出。`effectNode` 仍在实体之上、雾之下，顶层容器上限从 48 提高到 64，所有瞬态反馈自动移除。
+- map id / `mapRenderRevision` 变化会同时清理 effect、decal 和历史快照，避免切图、Restart、Load 误报死亡或残留旧战场反馈；重复 `renderNow()` 仍受 cooldown/HP/id 差分门控。
+- Reduce Motion 开启时会清理正在播放的瞬态效果，新开火不生成跨屏弹道，受击/摧毁不执行扩张缩放、火花飞散或移动烟尘，只保留短透明度反馈和静态短寿命灼痕。
+- 本轮没有修改 `RustwarCore`、战斗数值、订单、AI、存档、HUD、Tactical Map、Web、资源文件或 Xcode project。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.91-ios-layered-combat-effects.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地通过：`git diff --check`、`node --check app.js`、`swiftc -parse ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift ios/RustwarIOS/RustwarIOS/BattlefieldView.swift ios/RustwarIOS/RustwarIOS/RootGameView.swift ios/RustwarIOS/RustwarIOS/GameHUDView.swift ios/RustwarIOS/RustwarIOS/TacticalMapView.swift ios/RustwarIOS/RustwarIOS/GameController.swift`。
+- 默认 `xcodebuild` 因 active developer directory 是 `/Library/Developer/CommandLineTools` 而失败；确认 `/Applications/Xcode.app` 为 Xcode 26.6 后，没有修改全局 `xcode-select`，改用 `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` 运行。沙箱内首次尝试受 DerivedData、SourcePackages 和 CoreSimulator 权限阻塞；提升权限后，`xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 成功识别 `RustwarCore` / `RustwarIOS` schemes，`xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 完成双架构编译并输出 `BUILD SUCCEEDED`。
+- 最新 `origin/main` Actions artifact 状态将在 push 后补录。
+- 本机 Simulator 视觉 smoke、不同武器逐项观察、雾边界死亡检查、Reduce Motion、像素对比和性能采样尚未运行。
+
+遗留事项：
+
+- v1.91 仍由 cooldown/HP/id 快照差分推导视觉事件，不是 Core projectile/event 模型；没有音效、触觉、屏幕震动、正式 sprite/VFX atlas、地形法线/光照或自动化 SpriteKit 像素回归。后续需要在完整 Xcode/真机上先做密集战斗帧率与雾边界验证，再决定 Core projectile 事件化或正式特效资源管线。

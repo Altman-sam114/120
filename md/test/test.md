@@ -118,7 +118,9 @@ git diff --check
 - v1.89 还应在 dock 滚离对应按钮后验证 P/R/E/F/Control+A/Option+A/A/G/H/C/S/Z/X/V、Shift+1-9、Shift+E/T/F/D/C/P/R、Control+1-9、1-9、Space 和 WASD/方向键；检查 VoiceOver 顺序/label/value/hint、Differentiate Without Color、Reduce Motion、旋转/resize 保持状态，以及 Tactical Map/Battlefield 的 tap、drag、long press、pinch 和 area selection 手势没有被透明 HUD 区拦截。
 - v1.90 地形回归应分别进入 Coast、Islands、Lava：确认 grass/grass2/dirt/sand/rock/water/deep/lava 维持可辨识色阶，海岸泡沫连续，water/deep 分界克制，熔岩焦岸和亮裂隙清楚，正常相机 zoom 没有明显 tile 裂缝。单位、建筑、选择环、HP/进度条、命令线和雷达信号必须继续比地表细节醒目，浅雾/深雾仍覆盖全部材质层。
 - v1.90 代码验收还要确认 `drawTerrain` 的基础节点按 8 种地形 x 3 色阶聚合，细节/边界节点数量固定，不为每个 tile 新增节点；稳定 hash 不使用随机数、时间或 `Hasher`，相邻边界只检查右/下且先验证 bounds，地图外不产生 grass fallback 假海岸。地图切换、Restart、Load 才通过既有 map revision 路径重建地形，普通 `renderNow()` 不重复生成路径。
-- 当前 CI 只验证源码检查、Swift core 和 iOS build，没有自动化 SpriteKit/SwiftUI 截图、像素对比、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸或离屏快捷键 UI 测试；v1.88-v1.90 人工视觉与交互 smoke 仅在本机有完整 Xcode 和可用 Simulator 时执行，不能用 parse/build 代替真实 UI 运行结论。
+- v1.91 战斗视觉回归应分别观察 Scout/Builder 短 tracer、Tank/Gunboat/Turret 尾迹炮弹、Hover 青色光束、AA Tank 双联 tracer 和 Artillery 重炮弹；颜色不可作为唯一差异，还要确认双联、尾迹、光束和尺寸轮廓可辨。HP 单次下降只生成一次分层受击反馈，实体消失只生成一次更强摧毁爆炸和灼痕；同一快照重复 render 不刷屏，地图切换、Restart、Load 不误报全图死亡或残留旧效果。
+- v1.91 可见性与性能回归必须确认：显式/自动火力只对当前可见目标生成精确弹道；雾外敌方死亡不生成精确爆炸/灼痕；`decalNode`、`effectNode` 均在 `fogNode` 下；瞬态顶层容器最多 64、灼痕最多 32，超限淘汰最旧节点且生命周期结束自动移除。Reduce Motion 下不生成跨屏 projectile、扩张冲击波、火花飞散或移动烟尘，只保留短 opacity 反馈和静态短寿命灼痕。
+- 当前 CI 只验证源码检查、Swift core 和 iOS build，没有自动化 SpriteKit/SwiftUI 截图、像素对比、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸或离屏快捷键 UI 测试；v1.88-v1.91 人工视觉与交互 smoke 仅在本机有完整 Xcode 和可用 Simulator 时执行，不能用 parse/build 代替真实 UI 运行结论。
 - 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
 
 ## 云端重验证

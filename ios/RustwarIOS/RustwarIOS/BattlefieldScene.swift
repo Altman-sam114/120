@@ -15,11 +15,13 @@ final class BattlefieldScene: SKScene {
     private let worldNode = SKNode()
     private let terrainNode = SKNode()
     private let resourceNode = SKNode()
+    private let decalNode = SKNode()
     private let entityNode = SKNode()
     private let effectNode = SKNode()
     private let fogNode = SKNode()
     private let radarNode = SKNode()
-    private let maximumActiveEffects = 48
+    private let maximumActiveEffects = 64
+    private let maximumActiveDecals = 32
     private var lastUpdateTime: TimeInterval?
     private var renderedMapID: MapID?
     private var renderedMapRevision = -1
@@ -30,6 +32,11 @@ final class BattlefieldScene: SKScene {
     private var previousBuildingCooldowns: [String: Double] = [:]
     private var previousUnitHitPoints: [String: Double] = [:]
     private var previousBuildingHitPoints: [String: Double] = [:]
+    private var previousUnitTypes: [String: UnitType] = [:]
+    private var previousUnitTeams: [String: Team] = [:]
+    private var previousBuildingPositions: [String: WorldPoint] = [:]
+    private var previousBuildingTypes: [String: BuildingType] = [:]
+    private var previousBuildingTeams: [String: Team] = [:]
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -85,6 +92,7 @@ final class BattlefieldScene: SKScene {
         addChild(worldNode)
         worldNode.addChild(terrainNode)
         worldNode.addChild(resourceNode)
+        worldNode.addChild(decalNode)
         worldNode.addChild(entityNode)
         worldNode.addChild(effectNode)
         worldNode.addChild(fogNode)
@@ -339,6 +347,7 @@ final class BattlefieldScene: SKScene {
 
     private func resetVisualHistory(with state: GameState) {
         effectNode.removeAllChildren()
+        decalNode.removeAllChildren()
         previousUnitPositions = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, $0.position) })
         unitHeadings = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, defaultHeading(for: $0.team)) })
         turretHeadings = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, defaultHeading(for: $0.team)) })
@@ -346,18 +355,53 @@ final class BattlefieldScene: SKScene {
         previousBuildingCooldowns = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.weaponCooldown) })
         previousUnitHitPoints = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, $0.hitPoints) })
         previousBuildingHitPoints = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.hitPoints) })
+        previousUnitTypes = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, $0.type) })
+        previousUnitTeams = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, $0.team) })
+        previousBuildingPositions = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.position) })
+        previousBuildingTypes = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.type) })
+        previousBuildingTeams = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.team) })
     }
 
     private func updateVisualHistoryAndEffects(_ state: GameState, playerVisibility: VisibilitySnapshot) {
         let liveUnitIDs = Set(state.units.map(\.id))
         let liveBuildingIDs = Set(state.buildings.map(\.id))
+
+        for (id, position) in previousUnitPositions where !liveUnitIDs.contains(id) {
+            guard let type = previousUnitTypes[id], let team = previousUnitTeams[id],
+                  team == .player || playerVisibility.isVisible(at: position) else {
+                continue
+            }
+            spawnDestructionEffect(
+                at: position,
+                intensity: impactIntensity(for: type) * 1.25,
+                accent: teamColor(team)
+            )
+        }
+        for (id, position) in previousBuildingPositions where !liveBuildingIDs.contains(id) {
+            guard let type = previousBuildingTypes[id], let team = previousBuildingTeams[id],
+                  team == .player || playerVisibility.isVisible(at: position) else {
+                continue
+            }
+            let size = GameDefinitions.building(type).size
+            spawnDestructionEffect(
+                at: position,
+                intensity: Swift.min(2.3, Swift.max(1.25, size / 38)),
+                accent: teamColor(team)
+            )
+        }
+
         previousUnitPositions = previousUnitPositions.filter { liveUnitIDs.contains($0.key) }
         unitHeadings = unitHeadings.filter { liveUnitIDs.contains($0.key) }
         previousUnitCooldowns = previousUnitCooldowns.filter { liveUnitIDs.contains($0.key) }
         previousUnitHitPoints = previousUnitHitPoints.filter { liveUnitIDs.contains($0.key) }
+        previousUnitTypes = previousUnitTypes.filter { liveUnitIDs.contains($0.key) }
+        previousUnitTeams = previousUnitTeams.filter { liveUnitIDs.contains($0.key) }
         turretHeadings = turretHeadings.filter { liveBuildingIDs.contains($0.key) }
         previousBuildingCooldowns = previousBuildingCooldowns.filter { liveBuildingIDs.contains($0.key) }
         previousBuildingHitPoints = previousBuildingHitPoints.filter { liveBuildingIDs.contains($0.key) }
+        previousBuildingPositions = previousBuildingPositions.filter { liveBuildingIDs.contains($0.key) }
+        previousBuildingTypes = previousBuildingTypes.filter { liveBuildingIDs.contains($0.key) }
+        previousBuildingTeams = previousBuildingTeams.filter { liveBuildingIDs.contains($0.key) }
 
         for unit in state.units {
             let definition = GameDefinitions.unit(unit.type)
@@ -373,7 +417,12 @@ final class BattlefieldScene: SKScene {
                     heading: heading,
                     radius: definition.radius,
                     type: unit.type,
-                    target: visibleAttackTargetPosition(for: unit, in: state, playerVisibility: playerVisibility)
+                    target: visibleAttackTargetPosition(
+                        for: unit,
+                        definition: definition,
+                        in: state,
+                        playerVisibility: playerVisibility
+                    )
                 )
             }
             if let previousHitPoints = previousUnitHitPoints[unit.id],
@@ -385,6 +434,8 @@ final class BattlefieldScene: SKScene {
             previousUnitPositions[unit.id] = unit.position
             previousUnitCooldowns[unit.id] = unit.weaponCooldown
             previousUnitHitPoints[unit.id] = unit.hitPoints
+            previousUnitTypes[unit.id] = unit.type
+            previousUnitTeams[unit.id] = unit.team
         }
 
         for building in state.buildings {
@@ -423,6 +474,9 @@ final class BattlefieldScene: SKScene {
 
             previousBuildingCooldowns[building.id] = building.weaponCooldown
             previousBuildingHitPoints[building.id] = building.hitPoints
+            previousBuildingPositions[building.id] = building.position
+            previousBuildingTypes[building.id] = building.type
+            previousBuildingTeams[building.id] = building.team
         }
     }
 
@@ -466,13 +520,19 @@ final class BattlefieldScene: SKScene {
 
     private func visibleAttackTargetPosition(
         for unit: UnitSnapshot,
+        definition: UnitDefinition,
         in state: GameState,
         playerVisibility: VisibilitySnapshot
     ) -> WorldPoint? {
-        guard case let .attack(targetID)? = unit.order else {
-            return nil
+        if case let .attack(targetID)? = unit.order {
+            return targetPosition(for: targetID, in: state, playerVisibility: playerVisibility)
         }
-        return targetPosition(for: targetID, in: state, playerVisibility: playerVisibility)
+        return nearestUnitWeaponTargetPosition(
+            for: unit,
+            definition: definition,
+            in: state,
+            playerVisibility: playerVisibility
+        )
     }
 
     private func didStartFiring(previous: Double, current: Double, reloadTime: Double) -> Bool {
@@ -518,42 +578,66 @@ final class BattlefieldScene: SKScene {
         let projectileRadius: Double
         let flashRadius: Double
         let shotCount: Int
+        let trailLength: Double
+        let beamWidth: Double
+        let travelSpeed: Double
         switch type {
         case .builder:
             color = .systemMint
             projectileRadius = 1.8
             flashRadius = 3.2
             shotCount = 1
+            trailLength = 6
+            beamWidth = 0
+            travelSpeed = 940
         case .scout:
             color = .systemYellow
             projectileRadius = 1.8
             flashRadius = 3.4
             shotCount = 1
+            trailLength = 9
+            beamWidth = 0
+            travelSpeed = 1_180
         case .tank:
             color = .systemOrange
-            projectileRadius = 2.4
-            flashRadius = 4.4
+            projectileRadius = 2.7
+            flashRadius = 4.8
             shotCount = 1
+            trailLength = 12
+            beamWidth = 0
+            travelSpeed = 860
         case .hover:
             color = .systemCyan
             projectileRadius = 2.2
             flashRadius = 4
             shotCount = 1
+            trailLength = 0
+            beamWidth = 3
+            travelSpeed = 0
         case .aaTank:
             color = SKColor(red: 1, green: 0.84, blue: 0.38, alpha: 1)
             projectileRadius = 1.6
             flashRadius = 3.2
             shotCount = 2
+            trailLength = 11
+            beamWidth = 0
+            travelSpeed = 1_280
         case .artillery:
             color = SKColor(red: 1, green: 0.55, blue: 0.22, alpha: 1)
-            projectileRadius = 3.2
-            flashRadius = 5.6
+            projectileRadius = 3.8
+            flashRadius = 6.2
             shotCount = 1
+            trailLength = 18
+            beamWidth = 0
+            travelSpeed = 620
         case .gunboat:
             color = SKColor(red: 0.45, green: 0.9, blue: 1, alpha: 1)
-            projectileRadius = 2.5
-            flashRadius = 4.6
+            projectileRadius = 2.9
+            flashRadius = 5
             shotCount = 1
+            trailLength = 14
+            beamWidth = 0
+            travelSpeed = 780
         }
         spawnFireEffect(
             from: source,
@@ -563,7 +647,10 @@ final class BattlefieldScene: SKScene {
             color: color,
             projectileRadius: projectileRadius,
             flashRadius: flashRadius,
-            shotCount: shotCount
+            shotCount: shotCount,
+            trailLength: trailLength,
+            beamWidth: beamWidth,
+            travelSpeed: travelSpeed
         )
     }
 
@@ -579,9 +666,12 @@ final class BattlefieldScene: SKScene {
             muzzleDistance: size * 0.44,
             target: target,
             color: .systemOrange,
-            projectileRadius: 2.5,
-            flashRadius: 4.8,
-            shotCount: 1
+            projectileRadius: 3,
+            flashRadius: 5.2,
+            shotCount: 1,
+            trailLength: 14,
+            beamWidth: 0,
+            travelSpeed: 820
         )
     }
 
@@ -593,7 +683,10 @@ final class BattlefieldScene: SKScene {
         color: SKColor,
         projectileRadius: Double,
         flashRadius: Double,
-        shotCount: Int
+        shotCount: Int,
+        trailLength: Double,
+        beamWidth: Double,
+        travelSpeed: Double
     ) {
         let container = SKNode()
         let sourcePoint = spritePoint(for: source)
@@ -613,61 +706,278 @@ final class BattlefieldScene: SKScene {
             let flash = SKShapeNode(circleOfRadius: flashRadius)
             flash.position = origin
             flash.fillColor = color
-            flash.strokeColor = .white.withAlphaComponent(0.9)
+            flash.strokeColor = .white.withAlphaComponent(0.95)
             flash.lineWidth = 1
             container.addChild(flash)
+
+            let flarePath = CGMutablePath()
+            let flareLength = flashRadius * 2.2
+            flarePath.move(to: CGPoint(x: origin.x - direction.dx * flareLength, y: origin.y - direction.dy * flareLength))
+            flarePath.addLine(to: CGPoint(x: origin.x + direction.dx * flareLength, y: origin.y + direction.dy * flareLength))
+            flarePath.move(to: CGPoint(x: origin.x - normal.dx * flashRadius, y: origin.y - normal.dy * flashRadius))
+            flarePath.addLine(to: CGPoint(x: origin.x + normal.dx * flashRadius, y: origin.y + normal.dy * flashRadius))
+            let flare = SKShapeNode(path: flarePath)
+            flare.strokeColor = color.withAlphaComponent(0.86)
+            flare.lineWidth = 1.4
+            flare.lineCap = .round
+            container.addChild(flare)
             let flashFade = SKAction.fadeOut(withDuration: accessibilityReduceMotion ? 0.12 : 0.1)
             if accessibilityReduceMotion {
                 flash.run(flashFade)
+                flare.run(.fadeOut(withDuration: 0.12))
             } else {
                 flash.run(.group([flashFade, .scale(to: 1.65, duration: 0.1)]))
+                flare.run(.fadeOut(withDuration: 0.12))
             }
 
             guard !accessibilityReduceMotion, let target else {
                 continue
             }
             let targetPoint = spritePoint(for: target)
-            let distance = sqrt(
-                (targetPoint.x - origin.x) * (targetPoint.x - origin.x)
-                    + (targetPoint.y - origin.y) * (targetPoint.y - origin.y)
-            )
-            let duration = Swift.min(0.28, Swift.max(0.08, distance / 900))
-            let projectile = SKShapeNode(circleOfRadius: projectileRadius)
-            projectile.position = origin
-            projectile.fillColor = color
-            projectile.strokeColor = .white.withAlphaComponent(0.8)
-            projectile.lineWidth = 0.8
-            container.addChild(projectile)
-            projectile.run(.group([
-                .move(to: targetPoint, duration: duration),
-                .sequence([.wait(forDuration: duration * 0.7), .fadeOut(withDuration: duration * 0.3)])
-            ]))
+            if beamWidth > 0 {
+                addBeamEffect(
+                    from: origin,
+                    to: targetPoint,
+                    color: color,
+                    width: beamWidth,
+                    to: container
+                )
+            } else {
+                addProjectileEffect(
+                    from: origin,
+                    to: targetPoint,
+                    color: color,
+                    radius: projectileRadius,
+                    trailLength: trailLength,
+                    travelSpeed: travelSpeed,
+                    to: container
+                )
+            }
         }
-        addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.14 : 0.32)
+        addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.14 : 0.5)
+    }
+
+    private func addProjectileEffect(
+        from origin: CGPoint,
+        to target: CGPoint,
+        color: SKColor,
+        radius: Double,
+        trailLength: Double,
+        travelSpeed: Double,
+        to container: SKNode
+    ) {
+        let dx = target.x - origin.x
+        let dy = target.y - origin.y
+        let distance = sqrt(dx * dx + dy * dy)
+        let duration = Swift.min(0.42, Swift.max(0.08, distance / travelSpeed))
+        let projectile = SKNode()
+        projectile.position = origin
+        projectile.zRotation = atan2(dy, dx)
+
+        let glow = SKShapeNode(circleOfRadius: radius * 2.1)
+        glow.fillColor = color.withAlphaComponent(0.22)
+        glow.strokeColor = .clear
+        glow.lineWidth = 0
+        projectile.addChild(glow)
+
+        if trailLength > 0 {
+            let trail = SKShapeNode(rect: CGRect(
+                x: -trailLength - radius,
+                y: -radius * 0.55,
+                width: trailLength,
+                height: radius * 1.1
+            ), cornerRadius: radius * 0.5)
+            trail.fillColor = color.withAlphaComponent(0.58)
+            trail.strokeColor = .clear
+            trail.lineWidth = 0
+            projectile.addChild(trail)
+        }
+
+        let core = SKShapeNode(circleOfRadius: radius)
+        core.fillColor = .white.withAlphaComponent(0.92)
+        core.strokeColor = color
+        core.lineWidth = 1.2
+        projectile.addChild(core)
+        container.addChild(projectile)
+        projectile.run(.group([
+            .move(to: target, duration: duration),
+            .sequence([.wait(forDuration: duration * 0.76), .fadeOut(withDuration: duration * 0.24)])
+        ]))
+    }
+
+    private func addBeamEffect(
+        from origin: CGPoint,
+        to target: CGPoint,
+        color: SKColor,
+        width: Double,
+        to container: SKNode
+    ) {
+        let path = CGMutablePath()
+        path.move(to: origin)
+        path.addLine(to: target)
+
+        let glow = SKShapeNode(path: path)
+        glow.strokeColor = color.withAlphaComponent(0.36)
+        glow.lineWidth = width * 3
+        glow.lineCap = .round
+        container.addChild(glow)
+
+        let core = SKShapeNode(path: path)
+        core.strokeColor = .white.withAlphaComponent(0.92)
+        core.lineWidth = width
+        core.lineCap = .round
+        container.addChild(core)
+        glow.run(.fadeOut(withDuration: 0.16))
+        core.run(.fadeOut(withDuration: 0.12))
     }
 
     private func spawnImpactEffect(at position: WorldPoint, intensity: Double) {
         let container = SKNode()
         container.position = spritePoint(for: position)
-        let core = SKShapeNode(circleOfRadius: 3.5 * intensity)
+        let core = SKShapeNode(circleOfRadius: 4 * intensity)
         core.fillColor = .white.withAlphaComponent(0.94)
         core.strokeColor = SKColor.systemOrange
         core.lineWidth = 1.2
         container.addChild(core)
 
-        let ring = SKShapeNode(circleOfRadius: 7 * intensity)
+        let fire = SKShapeNode(circleOfRadius: 6.2 * intensity)
+        fire.fillColor = SKColor.systemOrange.withAlphaComponent(0.76)
+        fire.strokeColor = SKColor.systemYellow.withAlphaComponent(0.9)
+        fire.lineWidth = 1.2
+        fire.zPosition = -1
+        container.addChild(fire)
+
+        let ring = SKShapeNode(circleOfRadius: 8 * intensity)
         ring.fillColor = .clear
         ring.strokeColor = SKColor.systemOrange.withAlphaComponent(0.9)
         ring.lineWidth = 2
         container.addChild(ring)
+
+        addImpactSparks(intensity: intensity, color: .systemOrange, to: container)
+        addSmokePuffs(intensity: intensity * 0.72, count: 2, to: container)
         if accessibilityReduceMotion {
             core.run(.fadeOut(withDuration: 0.16))
+            fire.run(.fadeOut(withDuration: 0.18))
             ring.run(.fadeOut(withDuration: 0.18))
         } else {
             core.run(.group([.fadeOut(withDuration: 0.18), .scale(to: 1.4, duration: 0.18)]))
-            ring.run(.group([.fadeOut(withDuration: 0.3), .scale(to: 1.9, duration: 0.3)]))
+            fire.run(.group([.fadeOut(withDuration: 0.28), .scale(to: 1.55, duration: 0.28)]))
+            ring.run(.group([.fadeOut(withDuration: 0.38), .scale(to: 2.1, duration: 0.38)]))
         }
-        addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.2 : 0.34)
+        addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.26 : 0.72)
+    }
+
+    private func spawnDestructionEffect(at position: WorldPoint, intensity: Double, accent: SKColor) {
+        addScorchMark(at: position, radius: 12 * intensity)
+
+        let container = SKNode()
+        container.position = spritePoint(for: position)
+
+        let outerFire = SKShapeNode(circleOfRadius: 11 * intensity)
+        outerFire.fillColor = SKColor.systemOrange.withAlphaComponent(0.72)
+        outerFire.strokeColor = accent.withAlphaComponent(0.9)
+        outerFire.lineWidth = 2
+        container.addChild(outerFire)
+
+        let core = SKShapeNode(circleOfRadius: 6.5 * intensity)
+        core.fillColor = .white.withAlphaComponent(0.96)
+        core.strokeColor = SKColor.systemYellow
+        core.lineWidth = 1.4
+        container.addChild(core)
+
+        let shockwave = SKShapeNode(circleOfRadius: 14 * intensity)
+        shockwave.fillColor = .clear
+        shockwave.strokeColor = SKColor.systemOrange.withAlphaComponent(0.82)
+        shockwave.lineWidth = 2.6
+        container.addChild(shockwave)
+
+        addImpactSparks(intensity: intensity * 1.45, color: accent, to: container)
+        addSmokePuffs(intensity: intensity * 1.35, count: 4, to: container)
+
+        if accessibilityReduceMotion {
+            outerFire.run(.fadeOut(withDuration: 0.22))
+            core.run(.fadeOut(withDuration: 0.18))
+            shockwave.run(.fadeOut(withDuration: 0.24))
+        } else {
+            outerFire.run(.group([.fadeOut(withDuration: 0.46), .scale(to: 1.75, duration: 0.46)]))
+            core.run(.group([.fadeOut(withDuration: 0.28), .scale(to: 1.42, duration: 0.28)]))
+            shockwave.run(.group([.fadeOut(withDuration: 0.62), .scale(to: 2.35, duration: 0.62)]))
+        }
+        addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.28 : 0.92)
+    }
+
+    private func addImpactSparks(intensity: Double, color: SKColor, to container: SKNode) {
+        let sparkCount = accessibilityReduceMotion ? 0 : 6
+        for index in 0..<sparkCount {
+            let angle = Double(index) * Double.pi / Double(sparkCount) + 0.24
+            let distance = (11 + Double(index % 3) * 3.5) * intensity
+            let spark = SKShapeNode(rectOf: CGSize(width: 4.5 * intensity, height: 1.6 * intensity), cornerRadius: 0.8)
+            spark.fillColor = color
+            spark.strokeColor = .white.withAlphaComponent(0.7)
+            spark.lineWidth = 0.6
+            spark.zRotation = CGFloat(angle)
+            container.addChild(spark)
+            spark.run(.group([
+                .moveBy(
+                    x: CGFloat(cos(angle) * distance),
+                    y: CGFloat(sin(angle) * distance),
+                    duration: 0.34
+                ),
+                .fadeOut(withDuration: 0.34)
+            ]))
+        }
+    }
+
+    private func addSmokePuffs(intensity: Double, count: Int, to container: SKNode) {
+        for index in 0..<count {
+            let angle = Double(index) * 2.1 + 0.7
+            let offset = Double(index % 2) * 3.5 * intensity
+            let puff = SKShapeNode(circleOfRadius: (4.8 + Double(index) * 1.1) * intensity)
+            puff.position = CGPoint(x: CGFloat(cos(angle) * offset), y: CGFloat(sin(angle) * offset))
+            puff.fillColor = SKColor(red: 0.13, green: 0.14, blue: 0.14, alpha: 0.5)
+            puff.strokeColor = SKColor(red: 0.32, green: 0.31, blue: 0.29, alpha: 0.34)
+            puff.lineWidth = 1
+            puff.zPosition = -2
+            container.addChild(puff)
+            if accessibilityReduceMotion {
+                puff.run(.fadeOut(withDuration: 0.24))
+            } else {
+                puff.run(.group([
+                    .moveBy(
+                        x: CGFloat(cos(angle) * 5 * intensity),
+                        y: CGFloat(9 * intensity + sin(angle) * 3),
+                        duration: 0.68
+                    ),
+                    .fadeOut(withDuration: 0.68),
+                    .scale(to: 1.45, duration: 0.68)
+                ]))
+            }
+        }
+    }
+
+    private func addScorchMark(at position: WorldPoint, radius: Double) {
+        while decalNode.children.count >= maximumActiveDecals {
+            decalNode.children.first?.removeFromParent()
+        }
+
+        let scorch = SKNode()
+        scorch.position = spritePoint(for: position)
+        let outer = SKShapeNode(ellipseOf: CGSize(width: radius * 2, height: radius * 1.45))
+        outer.fillColor = SKColor(red: 0.05, green: 0.045, blue: 0.04, alpha: 0.38)
+        outer.strokeColor = SKColor(red: 0.22, green: 0.11, blue: 0.045, alpha: 0.32)
+        outer.lineWidth = 1.4
+        scorch.addChild(outer)
+        let inner = SKShapeNode(circleOfRadius: radius * 0.42)
+        inner.fillColor = .black.withAlphaComponent(0.22)
+        inner.strokeColor = .clear
+        inner.lineWidth = 0
+        scorch.addChild(inner)
+        decalNode.addChild(scorch)
+        scorch.run(.sequence([
+            .wait(forDuration: 7.5),
+            .fadeOut(withDuration: 2.5),
+            .removeFromParent()
+        ]))
     }
 
     private func addBoundedEffect(_ effect: SKNode, lifetime: TimeInterval) {
@@ -1738,6 +2048,50 @@ final class BattlefieldScene: SKScene {
             return wreck.position
         }
         return nil
+    }
+
+    private func nearestUnitWeaponTargetPosition(
+        for unit: UnitSnapshot,
+        definition: UnitDefinition,
+        in state: GameState,
+        playerVisibility: VisibilitySnapshot
+    ) -> WorldPoint? {
+        guard definition.damage > 0, definition.attackRange > 0 else {
+            return nil
+        }
+
+        var bestPosition: WorldPoint?
+        var bestDistance = Double.infinity
+        for targetUnit in state.units {
+            guard targetUnit.team != unit.team, targetUnit.hitPoints > 0,
+                  isVisibleToPlayer(targetUnit, visibility: playerVisibility) else {
+                continue
+            }
+            let targetDefinition = GameDefinitions.unit(targetUnit.type)
+            let effectiveRange = definition.attackRange + targetDefinition.radius
+            let distance = unit.position.distanceSquared(to: targetUnit.position)
+            guard distance <= effectiveRange * effectiveRange, distance < bestDistance else {
+                continue
+            }
+            bestPosition = targetUnit.position
+            bestDistance = distance
+        }
+
+        for targetBuilding in state.buildings {
+            guard targetBuilding.team != unit.team, targetBuilding.hitPoints > 0,
+                  isVisibleToPlayer(targetBuilding, visibility: playerVisibility) else {
+                continue
+            }
+            let targetDefinition = GameDefinitions.building(targetBuilding.type)
+            let effectiveRange = definition.attackRange + targetDefinition.size / 2
+            let distance = unit.position.distanceSquared(to: targetBuilding.position)
+            guard distance <= effectiveRange * effectiveRange, distance < bestDistance else {
+                continue
+            }
+            bestPosition = targetBuilding.position
+            bestDistance = distance
+        }
+        return bestPosition
     }
 
     private func nearestBuildingWeaponTargetPosition(
