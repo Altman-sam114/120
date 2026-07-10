@@ -3798,7 +3798,11 @@
 验证状态：
 
 - 按用户要求未运行本地 YAML 解析、测试、构建、Swift、Xcode、Simulator、Preview 或浏览器验证。
-- 实现提交将 push 到 `origin/main`；只有 GitHub 成功解析 workflow、创建 `macos-26` job，并生成可下载 v1.1 artifact 后才进入 Agent C 复判。
+- 实现提交 `0a295d1f27e54c0312541432bc04ca4aabfaf6f1` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29121921492`，attempt `1`，artifact `rustwar-ci-v1.1-main-0a295d1-run29121921492-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29121921492/`，目录大小 `308K`。
+- manifest 确认 `version=v1.1`、`branch=main`、`commitSha=0a295d1f27e54c0312541432bc04ca4aabfaf6f1`、`runId=29121921492`、`runAttempt=1`、`toolchainOutcome=success`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`、`testOutcome=success`。
+- `toolchain-info.txt` 确认 GitHub Actions ARM64 runner 使用 macOS 26.4、`/Applications/Xcode_26.5.app/Contents/Developer`、Xcode 26.5 build 17F42、iOS Simulator SDK 26.5 和 Apple Swift 6.3.2，工具链门禁 exit 0。
+- JUnit 为 7 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 和 `overall-status.txt` 为 success；`build.log` 确认 Swift Testing 303 tests passed，原生 iOS build `BUILD SUCCEEDED`。
+- Actions 注释显示 `actions/upload-artifact@v5` 声明的 Node 20 runtime 被 runner 强制切换到 Node 24；本轮上传与 artifact 校验成功，不构成失败，但后续应随官方 action 版本继续更新。
 
 遗留事项：
 
