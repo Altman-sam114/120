@@ -3429,7 +3429,7 @@
 - 本轮未改 `ios/RustwarIOS/`，未在本机继续运行 iOS build；完整 SwiftPM 和 iOS build 等待 GitHub Actions macOS runner 复判。
 - 首次实现提交 `c1422c15807cd12185ac01d8d86e8e1a07a40831` 的云端 run `28881301589` 未通过：artifact `rustwar-ci-v1.0-main-c1422c1-run28881301589-attempt1` 已下载到 `/private/tmp/rustwar-c-review-28881301589/`，目录大小 `300K`；manifest 与 `main` / commit / run / attempt 匹配。失败项为 Swift test `enemyRadarUpgradeAIWaitsForInvalidStates`，原因是新增 Extractor AI 在旧雷达无效状态测试中合法触发了 Extractor 升级，使旧测试的金属断言不再成立。修复提交把 `enemyRadarUpgradeReadyState` 中的敌方 Extractor 隔离为满级，并让新的雷达优先级测试显式降级一个 Extractor 作为竞争目标。
 - 隔离测试提交 `a9cd5128f7d933bf96bb261d46ef9d14143ee5a2` 的云端 run `28881692792`、attempt `1` 为 success，artifact 名为 `rustwar-ci-v1.0-main-a9cd512-run28881692792-attempt1`；Agent C 代码审阅发现升级扣款后同 tick 的空闲生产建筑仍会立即消耗 260 metal 缓冲，因此验收不通过。该 artifact 因本机 `Altman-sam114` GitHub CLI 凭证失效而未下载复判。
-- 本次缓冲回退修复的最新云端 artifact 待新提交 push 后由 Agent C 下载复判。
+- 缓冲回退修复提交 `b034f5e4e8c3cd9c6cff48f56733b938347910a9` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29096880612`，attempt `1`，artifact `rustwar-ci-v1.0-main-b034f5e-run29096880612-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29096880612/`，目录大小 `300K`。manifest 确认 `branch=main`、`commitSha=b034f5e4e8c3cd9c6cff48f56733b938347910a9`、`runId=29096880612`、`runAttempt=1`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`；JUnit 为 6 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`build.log` 确认 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore`、`xcodebuild -list` 和 `xcodebuild RustwarIOS` 均为 exit 0，Swift Testing 303 tests passed，iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
