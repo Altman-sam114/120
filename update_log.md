@@ -3723,7 +3723,11 @@
 验证状态：
 
 - 按用户要求未运行任何本地测试、构建、parse、Simulator、Preview 或浏览器验证。
-- 实现提交将 push 到 `origin/main`，仅以精确 commit SHA 对应的 GitHub Actions run 和下载 artifact 作为验收依据。
+- 初始实现提交 `79d60ea13793488683c4fa3c1201ef75059165ea` 的 GitHub Actions run `29120054298`、attempt `1` 未通过；失败 artifact `rustwar-ci-v1.0-main-79d60ea-run29120054298-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29120054298/`。manifest 显示静态检查、Swift package 和 project list 成功，但 iOS build 失败；日志确认唯一代码错误是 Swift 保留字 `guard` 被直接用作 enum case。
+- 追加修复提交 `c3c399262b8aa3654ea303bd0b9e7e5fa46f67bc` 将该 presentation case 重命名为 `guardTarget`，没有改变命令或视觉语义。
+- 修复提交已通过 Agent C 云端 artifact 复判：GitHub Actions run `29120313908`，attempt `1`，artifact `rustwar-ci-v1.0-main-c3c3992-run29120313908-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29120313908/`，目录大小 `300K`。
+- manifest 确认 `branch=main`、`commitSha=c3c399262b8aa3654ea303bd0b9e7e5fa46f67bc`、`runId=29120313908`、`runAttempt=1`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`、`testOutcome=success`。
+- JUnit 为 6 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`repo-state.txt` 确认 v1.95 实现与修复提交；`build.log` 确认 Swift Testing 303 tests passed，`CommandConfirmation.swift` / `BattlefieldScene.swift` 完成 arm64 和 x86_64 编译，原生 iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
