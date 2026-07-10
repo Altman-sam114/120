@@ -3580,3 +3580,40 @@
 遗留事项：
 
 - v1.91 仍由 cooldown/HP/id 快照差分推导视觉事件，不是 Core projectile/event 模型；没有音效、触觉、屏幕震动、正式 sprite/VFX atlas、地形法线/光照或自动化 SpriteKit 像素回归。后续需要在完整 Xcode/真机上先做密集战斗帧率与雾边界验证，再决定 Core projectile 事件化或正式特效资源管线。
+
+### v1.92 / iOS short landscape tactical layout
+
+日期：2026-07-11
+
+核心变更：
+
+- 使用 Xcode 26.6 在独立 iPhone 17 Pro、iOS 26.5 Simulator 安装并启动 v1.91 `origin/main` 原生 App；真实横屏容器约 874x402pt，截图确认旧断点因先判断 `width >= 700` 而误用 regular trailing。
+- before 截图显示 320pt regular dock、176x118 Tactical Map 和双列命令共同压缩战场，`Idle Builders`、`Combat Units` 等按钮标题被截断；截图仅保存在 `/private/tmp`，没有加入仓库或 artifact。
+- `TacticalHUDLayoutRole` 改为优先识别 `width > height && height < 520pt` 的 short landscape 并返回 compact trailing；高度足够时才按 `width >= 700` 使用 regular trailing。650x390、844x390、874x402 都走 compact，700x520 和 1024x768 仍走 regular。
+- compact trailing dock 从容器宽度 34%、232-276pt 调整为 30%、224-260pt；既有 `GameHUDView` 根据 compact role 自动使用单列命令网格，短高度 Tactical Map 继续使用 120x80。
+- 新增 874x402 iPhone 17 Pro Preview，并重命名 844x390 Phone Landscape Preview，明确两者都应走 compact trailing；运行时仍只读取真实 `GeometryReader` 容器尺寸。
+- v1.92 增量 build 后重新安装并截图；after 画面确认战场横向空间增加、dock 单列、Tactical Map 缩小，`Select Area`、`Idle Builders (2)`、`Combat Units (2)`、`Screen Combat (2)` 完整显示，顶栏、选择模式和 command section 无重叠。
+- 本轮没有修改 `GameHUDView` action、`GameController`、`BattlefieldView`、`TacticalMapView`、`BattlefieldScene`、`RustwarCore`、Web、资源或 Xcode project。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/RootGameView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.92-ios-short-landscape-layout.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地通过：`git diff --check`、`swiftc -parse ios/RustwarIOS/RustwarIOS/RootGameView.swift ios/RustwarIOS/RustwarIOS/GameHUDView.swift ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`。
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 通过，输出 `BUILD SUCCEEDED`。
+- iPhone 17 Pro Simulator 的 v1.91 before 截图为 `/private/tmp/rustwar-v191-iphone17pro-initial.png`，v1.92 after 截图为 `/private/tmp/rustwar-v192-iphone17pro-initial.png`；方向校正副本也只位于 `/private/tmp`。人工检查首屏静态布局通过。
+- `node --check app.js` 通过；`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 通过并识别 `RustwarCore` / `RustwarIOS` schemes。
+- 最新 `origin/main` Actions artifact 状态将在 push 后补录。
+- 未运行实际触摸滚动、全部 section 到底、VoiceOver、Dynamic Type、旋转状态保持、等待命令交互、战斗特效或帧率采样。
+
+遗留事项：
+
+- v1.92 只修复短高度横屏断点与占用比例；仍没有可折叠/半透明命令 dock、手势快捷命令轮、触觉反馈、用户布局偏好、XCUITest 或自动化截图矩阵。后续应继续用真实 Simulator/真机验证触摸滚动和战斗中的命令可达性。

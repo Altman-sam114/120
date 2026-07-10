@@ -5,8 +5,13 @@ enum TacticalHUDLayoutRole: Equatable {
     case compactTrailing
     case compactBottom
 
+    private static let shortLandscapeMaximumHeight = 520.0
+
     init(containerSize: CGSize) {
-        if containerSize.width >= 700 {
+        if containerSize.width > containerSize.height,
+           containerSize.height < Self.shortLandscapeMaximumHeight {
+            self = .compactTrailing
+        } else if containerSize.width >= 700 {
             self = .regularTrailing
         } else if containerSize.width >= 560, containerSize.width > containerSize.height {
             self = .compactTrailing
@@ -23,7 +28,7 @@ enum TacticalHUDLayoutRole: Equatable {
 struct RootGameView: View {
     private enum Layout {
         static let regularDockWidthRange = 268.0...320.0
-        static let compactDockWidthRange = 232.0...276.0
+        static let compactDockWidthRange = 224.0...260.0
         static let bottomDockHeightRange = 216.0...320.0
         static let minimumCompactDockHeight = 180.0
         static let mapPadding = 12.0
@@ -122,7 +127,7 @@ struct RootGameView: View {
         case .compactTrailing:
             min(
                 Layout.compactDockWidthRange.upperBound,
-                max(Layout.compactDockWidthRange.lowerBound, containerSize.width * 0.34)
+                max(Layout.compactDockWidthRange.lowerBound, containerSize.width * 0.3)
             )
         case .compactBottom:
             0
@@ -199,9 +204,14 @@ struct RootGameView: View {
         .frame(width: 390, height: 844)
 }
 
-#Preview("Phone Landscape") {
+#Preview("Phone Landscape Compact") {
     RootGameView(controller: GameController())
         .frame(width: 844, height: 390)
+}
+
+#Preview("iPhone 17 Pro Landscape") {
+    RootGameView(controller: GameController())
+        .frame(width: 874, height: 402)
 }
 
 #Preview("Compact Trailing") {

@@ -25,6 +25,7 @@
 - v1.89 起，原生 iOS HUD 改为 safe-area 贴边战术布局：Metal / Income / Pop / Radar / Pause / Speed 固定在顶部状态栏；宽度 `>= 700pt` 使用 268-320pt trailing command dock，560-699pt 横屏使用 232-276pt trailing dock，其余使用 216-320pt bottom dock，极短容器最低 180pt。dock 顶部固定显示选择、升级/姿态摘要、命令状态和 Replace/Add，下面可连续滚动 Commands、Build & Upgrade、Production、Selection、Groups、Session 六组控件。战术小地图位于独立战场区域并按 176x118、144x96 或 120x80 缩放，不与 dock 重叠；所有旧 action、disabled 条件、快捷键、VoiceOver 和 44pt 触控目标保持不变。
 - v1.90 起，原生 iOS 主战场把约 6,000 个纯色 tile 节点改为按 8 种地形和 3 档确定性色差聚合的 compound path，并增加低对比草痕、砂土颗粒、岩石裂线、水面波纹、熔岩裂隙、海岸泡沫、深浅水分界和熔岩焦岸。整张地图的基础/细节/边界层上限约 36 个节点；材质只在地图重建时生成，仍位于资源、实体、特效、雾和雷达之下，不改变 Core 地形、通行、存档或玩法。
 - v1.91 起，原生 iOS 战斗反馈参考 Rusted Warfare 官方 Steam 截图/视频中的高可读性层级，把单一圆点弹丸扩展为轻型 tracer、坦克/舰炮尾迹、Hover 青色能量束、AA 双联弹道和 Artillery 重炮弹；HP 下降会产生高亮核心、火球、冲击环、确定性火花和烟尘，连续快照中的可见实体摧毁会生成更强爆炸及短寿命地表灼痕。Scene 仍只读 Core cooldown/HP/实体历史，瞬态效果最多 64 个、灼痕最多 32 个并自动移除；精确目标和敌方死亡必须通过当前可见性门控，所有特效与灼痕仍位于雾层下，Reduce Motion 下不播放跨屏弹道、扩张冲击波或碎片飞散。
+- v1.92 起，原生 iOS HUD 会先把 `width > height && height < 520pt` 的短高度横屏识别为 compact trailing，即使宽度超过 700pt 也不再误用 iPad regular dock。iPhone 17 Pro、iOS 26.5 Simulator 的真实 874x402pt 对照确认：command dock 上限从 320pt 降为 260pt、命令区改用单列、Tactical Map 从 176x118 缩为 120x80，战场横向视野增加且 `Idle Builders` / `Combat Units` / `Screen Combat` 标题不再因双列而截断。1024x768 等高度足够的大容器仍使用 regular trailing，portrait bottom dock 保持不变。
 
 本机验证命令：
 
