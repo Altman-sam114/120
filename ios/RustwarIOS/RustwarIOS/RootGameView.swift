@@ -72,6 +72,9 @@ struct RootGameView: View {
         }
         .onKeyPress(phases: .all, action: handleKeyPress)
         .background(.black)
+        .sensoryFeedback(.selection, trigger: controller.selectionFeedbackRevision)
+        .sensoryFeedback(.success, trigger: controller.commandSuccessFeedbackRevision)
+        .sensoryFeedback(.warning, trigger: controller.warningFeedbackRevision)
     }
 
     private func battlefieldRegion(

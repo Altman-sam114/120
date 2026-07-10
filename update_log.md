@@ -3656,3 +3656,37 @@
 
 - 当前 CI 没有 SwiftUI screenshot/XCUITest，云端 build 不能证明实际滚动、触摸、VoiceOver 或像素层级；后续应增加云端 UI 自动化矩阵，再继续触觉反馈、命令手势和正式 HUD 图标资源。
 - 云端日志保留一个 v1.90 既有 Swift warning：`BattlefieldScene.swift:149` 的 `case .grass, .grass2 where ...` 只把 `where` 应用到第二个 pattern，可能让 `.grass` 细节不受 gate 限制；下一轮应改为显式共享条件并走新的云端验证。Actions 还提示 `actions/checkout@v4` / `upload-artifact@v4` 的 Node 20 运行时弃用，workflow 后续需要升级 action major version。
+
+### v1.94 / iOS native command sensory feedback
+
+日期：2026-07-11
+
+核心变更：
+
+- `GameController` 新增 selection、command success、warning 三个事件 revision；`RootGameView` 用 SwiftUI `.sensoryFeedback(.selection/.success/.warning)` 直接消费，不使用 UIKit feedback generator。
+- 选择、批量/同类/框选、编队召回、Replace/Add、等待目标模式和 Pause/AI 等离散切换触发 selection；命令、建造、生产、升级、取消、Repeat、存读档按明确成功 case 触发 success；无效目标、空选择、资源/人口不足和存读档失败触发 warning。
+- Core `UnitCommandResult`、`RallyCommandResult`、生产和升级结果通过类型化 helper 分类，不解析 `commandStatus` 文本。`advance`、AI、pan、zoom、Tactical Map drag、keyboard repeat、render/map revision 和战斗特效不写反馈 revision。
+- `BattlefieldScene` 的 grass/grass2 detail switch 改为共享 case 内显式 `detailGate > 0.44` guard，两种草地都受稳定噪声 gate 控制，并移除 Swift pattern `where` 作用域警告。
+- 没有修改 Core、存档 schema、命令语义、战斗数值、HUD 布局、Web、素材或第三方依赖。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/RootGameView.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.94-ios-native-command-feedback.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、parse、Simulator、Preview 或浏览器验证。
+- 实现提交将 push 到 `origin/main`，仅以精确 commit SHA 对应的 GitHub Actions run 和下载 artifact 作为验收依据。
+
+遗留事项：
+
+- CI 没有真机触觉或 XCUITest，云端 build 不能验证设备振感、系统触觉设置、触觉强度和密集手动操作体验；需要后续云端 UI 自动化及真机人工验收。
+- Actions 的 Node 20 action runtime 弃用预警仍待单独升级 workflow。

@@ -27,6 +27,7 @@
 - v1.91 起，原生 iOS 战斗反馈参考 Rusted Warfare 官方 Steam 截图/视频中的高可读性层级，把单一圆点弹丸扩展为轻型 tracer、坦克/舰炮尾迹、Hover 青色能量束、AA 双联弹道和 Artillery 重炮弹；HP 下降会产生高亮核心、火球、冲击环、确定性火花和烟尘，连续快照中的可见实体摧毁会生成更强爆炸及短寿命地表灼痕。Scene 仍只读 Core cooldown/HP/实体历史，瞬态效果最多 64 个、灼痕最多 32 个并自动移除；精确目标和敌方死亡必须通过当前可见性门控，所有特效与灼痕仍位于雾层下，Reduce Motion 下不播放跨屏弹道、扩张冲击波或碎片飞散。
 - v1.92 起，原生 iOS HUD 会先把 `width > height && height < 520pt` 的短高度横屏识别为 compact trailing，即使宽度超过 700pt 也不再误用 iPad regular dock。iPhone 17 Pro、iOS 26.5 Simulator 的真实 874x402pt 对照确认：command dock 上限从 320pt 降为 260pt、命令区改用单列、Tactical Map 从 176x118 缩为 120x80，战场横向视野增加且 `Idle Builders` / `Combat Units` / `Screen Combat` 标题不再因双列而截断。1024x768 等高度足够的大容器仍使用 regular trailing，portrait bottom dock 保持不变。
 - v1.93 起，原生 iOS HUD 把三档断点、dock 尺寸和 Tactical Map 尺寸集中到 `TacticalHUDLayoutMetrics`，`RootGameView` 只负责组合区域；资源指标、命令状态、六组带图标分区标题、eager 命令网格和 8pt 按钮样式集中到 `TacticalHUDComponents`。重构保持 v1.92 的全部容器结果、action、disabled 条件、快捷键、VoiceOver 和 44pt 触控目标，并用低干扰战术指标块和更清晰的分区层级统一视觉。
+- v1.94 起，原生 iOS 使用 SwiftUI `sensoryFeedback` 区分三类离散操作结果：选择、编队召回和等待目标模式切换提供 selection 反馈；成功移动、攻击、建造、维修、回收、生产、升级及存读档提供 success 反馈；空选择、无效目标、资源/人口不足和存读档失败提供 warning 反馈。触觉由显式 enum 结果和事件 revision 驱动，不解析状态文字，也不会由模拟帧、AI、相机拖动/缩放、Tactical Map 连续拖动或键盘 repeat 触发。
 
 当前验证制度：
 

@@ -146,7 +146,10 @@ final class BattlefieldScene: SKScene {
                 let detailX = rect.minX + 7 + terrainUnitNoise(column: column, row: row, salt: 53) * 30
                 let detailY = rect.minY + 7 + terrainUnitNoise(column: column, row: row, salt: 67) * 30
                 switch kind {
-                case .grass, .grass2 where detailGate > 0.44:
+                case .grass, .grass2:
+                    guard detailGate > 0.44 else {
+                        break
+                    }
                     grassDetailPath.move(to: CGPoint(x: detailX - 3, y: detailY - 2))
                     grassDetailPath.addLine(to: CGPoint(x: detailX, y: detailY + 3))
                     grassDetailPath.addLine(to: CGPoint(x: detailX + 3, y: detailY - 1))

@@ -31,11 +31,14 @@ v1.92 修正 iOS 短高度横屏 HUD 分类：先判断横屏且高度低于 520
 
 v1.93 重构 iOS 战术 HUD 组件边界：`TacticalHUDLayoutMetrics` 由真实容器尺寸和 accessibility Dynamic Type 一次计算 role、dock 和 Tactical Map 尺寸，`RootGameView` 只消费结果并组合区域；`TacticalHUDComponents` 集中资源指标、命令状态、分区标题、eager 命令网格和按钮样式。`GameHUDView` 继续拥有 action/条件编排，控制器与 Core 不变。
 
+v1.94 新增原生命令触觉反馈：`GameController` 在离散用户 action 的明确结果处分流 selection / success / warning revision，`RootGameView` 用三个 SwiftUI `sensoryFeedback` modifier 消费；结果分类读取 Core enum case，不解析状态文本。帧循环、AI、渲染 revision 和所有连续相机输入不写触觉 revision。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
   -> RootGameView geometry -> TacticalHUDLayoutMetrics -> 三档 safe-area 分区
   -> TacticalHUDComponents -> GameHUD top status bar + fixed dock header + continuous command sections
+  -> explicit selection / command result -> feedback revisions -> SwiftUI sensoryFeedback
   -> reserved Battlefield region + non-overlapping TacticalMapView
   -> TerrainGrid stable hash + compound fill/detail/boundary paths -> terrainNode
   -> SpriteKit BattlefieldScene 只读快照，维护 scene-only 朝向 / cooldown / HP / entity-id 历史
@@ -411,6 +414,8 @@ RustwarCore MapPreset / GameState / GameEngine
 - v1.91 起，`BattlefieldScene` 在 v1.88 cooldown/HP 历史之外保存上一快照的 unit/building id 字典：当前 id 消失时，玩家实体或旧位置仍在当前玩家视野中的敌方实体才触发摧毁反馈；map revision 变化会先 reset history，因此切图、Restart 和 Load 不会把整张旧地图误判为死亡。显式 Attack 继续读取合法可见目标；Attack-Move/Patrol/Guard/自动索敌开火时，Scene 只在武器射程内扫描当前可见敌方单位/建筑，推导一个最近视觉目标，目标不可见则只画源点炮口焰。Scout/Builder 使用短 tracer，Tank/Gunboat/Turret 使用不同尺寸尾迹炮弹，Hover 使用青色双层光束，AA Tank 使用双联 tracer，Artillery 使用更慢更大的重炮弹；这些只读样式不改变 Core 命中或伤害时机。HP 下降生成白热核心、橙色火球、冲击环、确定性火花和烟尘；摧毁反馈更强，并在 `resourceNode` 之上、`entityNode` 之下的 `decalNode` 留下最多 32 个自动淡出的灼痕。`effectNode` 最多 64 个顶层容器，超过上限先移除最旧项；effect/decal 都在 `fogNode` 下。Reduce Motion 会停止正在播放的移动效果，新反馈跳过跨屏 projectile、碎片移动和扩张缩放，只保留短 opacity 反馈与静态灼痕。
 - v1.92 的 HUD 分类优先级是 short landscape compact trailing -> regular trailing -> 560pt landscape compact trailing -> compact bottom。short landscape 定义为 `width > height && height < 520`；因此 844x390、874x402 使用 compact trailing，而 700x520、1024x768 保持 regular trailing。compact trailing 的 `dockWidth` 从 34%、232-276pt 收紧为 30%、224-260pt，既有 `GameHUDView.commandColumnCount` 因 layout role 自动改为单列，短高度 Tactical Map 继续使用 120x80；无需复制按钮、改变 action/disabled 条件或读取设备型号。Xcode 26.6 在 iOS 26.5 iPhone 17 Pro Simulator 的真实首屏对照显示，战场可用宽度增加，小地图缩小，Selection 区长标题从截断的双列变为完整单列；顶栏、选择模式和触控目标仍参与原 safe-area 布局。
 - v1.93 起，`TacticalHUDLayoutMetrics` 把 v1.89-v1.92 分散在 `RootGameView` 的断点、dock width、bottom dock height 和 Tactical Map size 计算集中为单一不可变值；`RootGameView` 每次 geometry 更新只创建一次 metrics，不再分别重复推导 role 和尺寸。`TacticalHUDComponents` 集中 `TacticalMetricView`、`TacticalCommandStatusView`、`TacticalSectionHeader`、`TacticalCommandGrid` 与统一按钮 modifier；`GameHUDView` 只保留状态栏/command dock 编排和 controller action 绑定。指标块、分区图标/分隔线和普通/等待命令状态边界强化扫描层级，但六组顺序、eager layout、快捷键、辅助功能语义、44pt 目标和 v1.92 尺寸矩阵不变。
+- v1.94 起，`GameController` 暴露三个只增不减的反馈 revision：selection 覆盖选择集合变化、批量/同类/框选/编队召回、Replace/Add 和等待命令模式；command success 覆盖 Core `.issued` / `.queued` / `.cancelled` / `.updated` 等成功 case；warning 覆盖其它拒绝 case、无存档和编码解码失败。`RootGameView` 分别绑定 `.selection`、`.success`、`.warning`，没有 UIKit generator。`advance`、pan/zoom、Tactical Map drag、keyboard repeat、render/map revision 和 AI 都不调用反馈 helper，因此持续模拟和相机操作不会产生触觉风暴。
+- v1.94 同时把 terrain switch 的 `.grass, .grass2 where detailGate > 0.44` 改为共享 case 内的显式 guard，使两种草地都受相同稳定噪声 gate 控制，并消除 Swift 只对第二个 pattern 应用 `where` 的警告；其它地形材质和节点边界不变。
 - v1.7 起，`RootGameView` 叠加原生 `TacticalMapView`；小地图用 SwiftUI `Canvas` 从 `GameState.resources`、`units`、`buildings` 和 `CameraState.center` 绘制资源、双方实体和相机中心，点按/拖放小地图会调用 `GameController.centerCamera(on:)`，再由 `CameraState.center(on:)` 夹到地图边界。
 - v1.8 起，选中己方单位时 HUD 显示 Stop 命令；点按 Stop 会调用 `GameEngine.issueStop()` 清除当前选中玩家单位的 `UnitSnapshot.order`，并由 `GameController` 取消待选 Move/Attack Move/Patrol/Guard/Repair/Reclaim/Build Extractor/Attack 目标模式。SpriteKit 订单线会随 `order == nil` 自然消失。
 - v1.9 起，选中己方生产建筑时 HUD 显示 Rally 命令；Rally 模式下一次主战场 tap 会调用 `GameEngine.setRally(to:)` 更新 `BuildingSnapshot.rally`，后续生产完成的单位在新集结点生成。SpriteKit 在选中己方生产建筑时显示建筑到集结点的线和标记。
