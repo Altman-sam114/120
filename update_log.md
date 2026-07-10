@@ -3684,7 +3684,10 @@
 验证状态：
 
 - 按用户要求未运行任何本地测试、构建、parse、Simulator、Preview 或浏览器验证。
-- 实现提交将 push 到 `origin/main`，仅以精确 commit SHA 对应的 GitHub Actions run 和下载 artifact 作为验收依据。
+- 实现提交 `83fac982ccc59451d1c0dbb03ce7d9b1255076ce` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29119273027`，attempt `1`，artifact `rustwar-ci-v1.0-main-83fac98-run29119273027-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29119273027/`，目录大小 `300K`。
+- manifest 确认 `branch=main`、`commitSha=83fac982ccc59451d1c0dbb03ce7d9b1255076ce`、`runId=29119273027`、`runAttempt=1`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`、`testOutcome=success`。
+- JUnit 为 6 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`repo-state.txt` 确认最新提交为 v1.94；`build.log` 确认 Swift Testing 303 tests passed，原生 iOS build `BUILD SUCCEEDED`。
+- `build.log` 不再出现 `BattlefieldScene.swift:149` 的 `where only applies to the second pattern` warning；只保留无 AppIntents dependency 时 metadata extraction skipped 的工具链提示。
 
 遗留事项：
 
