@@ -30,6 +30,7 @@
 - v1.94 起，原生 iOS 使用 SwiftUI `sensoryFeedback` 区分三类离散操作结果：选择、编队召回和等待目标模式切换提供 selection 反馈；成功移动、攻击、建造、维修、回收、生产、升级及存读档提供 success 反馈；空选择、无效目标、资源/人口不足和存读档失败提供 warning 反馈。触觉由显式 enum 结果和事件 revision 驱动，不解析状态文字，也不会由模拟帧、AI、相机拖动/缩放、Tactical Map 连续拖动或键盘 repeat 触发。
 - v1.95 起，成功的世界坐标命令会在当前可见战场显示一次短目标环：Move、Attack、Attack Move、Patrol、Guard、Repair、Reclaim、Build 和 Rally 分别使用不同颜色与程序化符号，配合 v1.94 触觉提供双通道确认。目标环位于实体之上、战争迷雾之下，只在目标点当前真实可见时生成，并以逆 zoom 保持稳定屏幕尺寸；普通模式轻微扩张淡出，Reduce Motion 只做短静态淡出。
 - v1.96 起，同一个成功命令事件也会在 Tactical Map 显示短落点脉冲，让离屏 Move、Attack Move、Patrol、Build 和 Rally 等命令仍有可见确认。小地图用共享颜色和不同微型符号区分九类命令；普通模式从约 5pt 扩至 9pt 并在 0.78 秒内淡出，Reduce Motion 固定约 7pt、仅淡出 0.3 秒。动画只在新 revision 到来时运行，旧事件按 monotonic uptime 过期，不会让静态小地图永久刷新或在旋转后重放。
+- v1.97 起，云端唯一验证固定使用 `macos-26`、Xcode 26.5 和 iOS Simulator SDK 26.5，不再接受 `macos-latest` 随机落到 Xcode 16.4/iOS 18.5。CI artifact schema 升级为 v1.1，新增独立 toolchain JUnit gate、`toolchain-info.txt` 及 runner/macOS/Xcode/SDK/Swift manifest 字段；工具链不匹配会整体失败，不能回退默认 Xcode 冒充有效 iOS 26 build。
 
 当前验证制度：
 
@@ -163,4 +164,4 @@
 
 ## 协作与云端验证
 
-后续 Agent A/B/C 迭代使用 `main` 直推和 GitHub Actions 云端唯一验证：Agent B 提交并 push 到 `origin/main`，Actions 执行检查并上传未加密 CI 结果包，Agent C 下载并核对 manifest、JUnit、日志和失败摘要后再给出验收结论；当前用户制度禁止本地测试。`agentx:` 用于主控循环：Agent X 接收总目标并推进小轮次，但不得跳过 Agent C 云端 artifact 验收。v1.0 起 CI 结果包除 Web 轻量检查外，也记录 `swift test --package-path swift/RustwarCore` 和 `xcodebuild` iOS 构建结果。详细规则见 `AGENTS.md`、`md/test/test.md` 和 `md/flow/flow.md`。
+后续 Agent A/B/C 迭代使用 `main` 直推和 GitHub Actions 云端唯一验证：Agent B 提交并 push 到 `origin/main`，Actions 执行检查并上传未加密 CI 结果包，Agent C 下载并核对 manifest、JUnit、工具链信息、日志和失败摘要后再给出验收结论；当前用户制度禁止本地测试。`agentx:` 用于主控循环：Agent X 接收总目标并推进小轮次，但不得跳过 Agent C 云端 artifact 验收。v1.97 起 CI flow v1.1 还会强制核对 Xcode 26.5 / iOS Simulator SDK 26.5，避免 runner 漂移。详细规则见 `AGENTS.md`、`md/test/test.md` 和 `md/flow/flow.md`。

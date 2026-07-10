@@ -159,8 +159,9 @@ git push origin main
 
 `.github/workflows/ci-results.yml` 在 `main` push 和 `workflow_dispatch` 时运行。
 
-当前 Rustwar CI 在 `macos-latest` 上做轻量重验证：
+v1.97 起 Rustwar CI 固定在 `macos-26`、Xcode 26.5、iOS Simulator SDK 26.5 上做云端重验证：
 
+- 独立 toolchain gate：检查固定 `DEVELOPER_DIR`、Xcode、Simulator SDK、macOS 与 Swift 元数据；不匹配整体失败。
 - `git diff --check`：检查本次提交差异。
 - `node --check app.js`：检查核心脚本语法。
 - `swift test --package-path swift/RustwarCore`：检查共享 Swift core。
@@ -171,6 +172,9 @@ git push origin main
 - 生成 `ci-results/ci-failure-summary.md`：失败或跳过说明。
 - 生成 `ci-results/ci-artifact-manifest.json`：Agent C 核对用 manifest。
 - 生成 `ci-results/repo-state.txt`：分支、状态和最近提交记录。
+- 生成 `ci-results/toolchain-info.txt`：runner、macOS、DEVELOPER_DIR、Xcode build、Simulator SDK、Swift 与 gate exit。
+
+JUnit 从 v1.97 起为 7 checks：toolchain、diff、Node、Swift package、Xcode list、iOS build 和 browser smoke；仅 browser smoke 预期 skipped。artifact schema/name 为 v1.1。
 
 当前不在 CI 中跑浏览器 Smoke、Stage Regression 或 Full，也不跑 iOS UI 自动化。需要这些验证时，由人工明确要求本机验证，或后续新增 headless browser / XCUITest workflow 后再更新本文件。
 
@@ -193,6 +197,13 @@ rustwar-ci-${version}-${branch_slug}-${short_sha}-run${run_id}-attempt${run_atte
 - `workflowName`
 - `createdAt`
 - `projectName`
+- `runnerOS` / `runnerArch` / `runnerName`
+- `macOSVersion`
+- `developerDir`
+- `xcodeVersion` / `xcodeBuildVersion`
+- `iOSSimulatorSDKVersion`
+- `swiftVersion`
+- `toolchainOutcome`
 - `junitPath`
 - `buildLogPath`
 - `failureSummaryPath`
@@ -223,6 +234,7 @@ Agent C 必须核对：
 - `junit.xml` 中失败、跳过和通过项与 `ci-failure-summary.md` 一致。
 - 主日志包含实际命令输出，而不是旧 artifact 或 checkout 自带报告。
 - v1.0 起还要确认 manifest 中 `scheme=RustwarIOS`、`destination=generic/platform=iOS Simulator`，并核对 Swift/iOS 检查项真实执行或真实失败。
+- v1.97 起还要确认 `version=v1.1`、`toolchainOutcome=success`、`developerDir=/Applications/Xcode_26.5.app/Contents/Developer`、`xcodeVersion=Xcode 26.5`、`iOSSimulatorSDKVersion=26.5`，并逐项对照 `toolchain-info.txt`；JUnit 必须为 7 项、0 failures、1 skipped。
 
 CI 失败时：
 

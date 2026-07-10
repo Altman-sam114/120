@@ -37,6 +37,8 @@ v1.95 新增战场命令确认 marker：成功的点位/实体命令由 `GameCon
 
 v1.96 把同一 `CommandConfirmation` 扩展到 Tactical Map：事件增加 monotonic uptime，Canvas 只在新 revision 时启动可取消的短时 SwiftUI animation task，并按事件真实年龄恢复/过期。小地图 marker 绘制在 fog 后，表示玩家自己的命令坐标而不暴露敌方状态；九类 RGB 调色板集中在 confirmation kind，由 SpriteKit/SwiftUI 分别转换。
 
+v1.97 固定云端 Apple 工具链：workflow 从 `macos-latest` 改为 `macos-26`，显式选择 Xcode 26.5 / iOS Simulator SDK 26.5，并把工具链作为 overall/JUnit 独立 gate。CI flow artifact 升到 v1.1，manifest 和 `toolchain-info.txt` 记录 runner、macOS、DEVELOPER_DIR、Xcode build、SDK 与 Swift；不匹配时禁止回退默认 Xcode。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
@@ -536,7 +538,7 @@ RustwarCore MapPreset / GameState / GameEngine
 5. Agent B 读取提示词和必读文档，执行 `git fetch origin`、`git switch main`、`git pull --ff-only origin main`、`git status --short --branch`；若没有 `origin` 或权限不足，停止远端步骤并说明阻塞。
 6. Agent B 小步实现，运行本地轻量检查，提交本轮相关文件。
 7. Agent B `git push origin main` 触发 `Rustwar CI Results` workflow。
-8. GitHub Actions 运行 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore` 和 iOS `xcodebuild` 检查，生成 manifest、JUnit、主日志、失败摘要和仓库状态文件。
+8. GitHub Actions 在固定 `macos-26` / Xcode 26.5 / iOS Simulator SDK 26.5 上先验证工具链，再运行 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore` 和 iOS `xcodebuild`，生成 manifest、7 项 JUnit、toolchain info、主日志、失败摘要和仓库状态文件。
 9. Agent C 定位 `origin/main` 最新 commit 对应 run，用 `gh auth login` 后下载 artifact 到 `/private/tmp/rustwar-c-review-<run_id>/`，并检查下载目录大小，避免拉取大体积无关产物。
 10. Agent C 核对 manifest 的 `branch`、`commitSha`、run id、run attempt 与 `origin/main` 最新 commit 和下载结果一致。
 11. 若 CI 或验收失败，Agent C 输出退回清单；Agent X 判断是否退回 Agent B 追加修复、暂停等待人工确认，或因重复阻塞停止。
@@ -557,7 +559,7 @@ RustwarCore MapPreset / GameState / GameEngine
 ## 4. 测试映射
 
 - 文档-only：本地至少 `git diff --check`，再通过 `main` push 触发 CI artifact。
-- 改 `.github/workflows/ci-results.yml`：本地 YAML 解析检查 + `git diff --check`，再通过云端 workflow 自检 artifact。
+- 改 `.github/workflows/ci-results.yml`：当前用户制度禁止本地 YAML/测试命令，直接 push 后以 GitHub 创建 run、执行固定工具链 gate 并生成可下载 artifact 作为验证；失败时下载 artifact 读取真实原因。
 - 改 `app.js` 语法或逻辑：本地至少 `node --check app.js` 和 `git diff --check`，CI 重跑同类检查。
 - 改 `swift/RustwarCore/`：本地尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 阻塞，至少尝试 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 并记录工具链错误；当前 Swift tests 覆盖初始化、经济 tick、选择、当前玩家可见敌方命中过滤、世界矩形框选、区域选择建筑 fallback、屏幕范围作战单位选择、全图同类型选择、半径附近同类型选择、控制编队保存/召回/过滤/JSON 兼容、玩家当前视野 tile 计算、单位攻击姿态 JSON 兼容与 Attack-Move / Patrol / Guard / 手动 Attack 行为、单单位和多单位 Move / Attack-Move / Patrol 队形落点、单单位和多单位 Attack、单单位和多单位 Guard、单 Builder 和多 Builder Repair/Reclaim/Build 分散接近点、单单位和多单位 Stop、生产、生产取消/退款、重复生产、生产建筑集结点、炮塔防御开火/死亡残骸清理、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI、红方 AI Web-lite 目标评分、`GameState` JSON 往返和恢复后继续模拟；Attack 覆盖多单位共享目标、混合选择、失败不覆盖旧订单和目标摧毁清理，Build Turret 和 Build Land Factory 覆盖多 Builder 共享目标、单次扣费、协同加速、混合选择、失败不覆盖旧订单和 Stop 选中范围。
 - 改 `ios/RustwarIOS/`：本地尽量跑 `xcodebuild -list` 和 iOS build；若只有 Command Line Tools 或 Swift/SDK 不匹配，记录阻塞并由云端 macOS artifact 复验；涉及战术小地图时还要确认新 Swift 文件已加入 Xcode target。

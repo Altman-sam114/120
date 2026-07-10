@@ -3771,3 +3771,36 @@
 
 - CI 没有 SwiftUI Canvas screenshot/XCUITest，不能证明脉冲实际颜色、形状、动画时长、雾上层级、快速连续命令取消效果或手势不受影响。
 - 主战场和小地图路径仍分别使用 SpriteKit CGPath 与 SwiftUI Path；只共享语义和调色板，后续如增加更多命令类型应继续保持两个 renderer 的穷尽 switch。
+
+### v1.97 / pinned cloud Apple toolchain
+
+日期：2026-07-11
+
+核心变更：
+
+- `.github/workflows/ci-results.yml` 从 `macos-latest` 固定为 `macos-26`，job 级 `DEVELOPER_DIR` 固定 `/Applications/Xcode_26.5.app/Contents/Developer`；Xcode 或 iOS Simulator SDK 不是 26.5 时整体失败且不回退默认工具链。
+- 新增 pinned Apple toolchain gate，记录 runner OS/arch/name、macOS、DEVELOPER_DIR、Xcode version/build、Simulator SDK、Swift version 和 gate exit 到主日志及 `toolchain-info.txt`。
+- CI flow / artifact schema 从 v1.0 升到 v1.1；manifest 新增结构化 runner/toolchain 字段和 `toolchainOutcome`，project-specific reports 增加 toolchain info。
+- JUnit 增加 `pinned Xcode 26.5 toolchain`，从 6 项变为 7 项；toolchain gate 同时进入 failure summary 和 overall success 条件，browser smoke 仍是唯一预期 skipped。
+- `actions/checkout@v4` / `actions/upload-artifact@v4` 升级为 v5，迁移到 Node 24 action runtime，移除已知 Node 20 弃用路径。
+- 本轮没有修改游戏运行时、Core、Xcode project、deployment target、存档、UI、特效或素材。
+
+关键文件：
+
+- `.github/workflows/ci-results.yml`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.97-pinned-cloud-apple-toolchain.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行本地 YAML 解析、测试、构建、Swift、Xcode、Simulator、Preview 或浏览器验证。
+- 实现提交将 push 到 `origin/main`；只有 GitHub 成功解析 workflow、创建 `macos-26` job，并生成可下载 v1.1 artifact 后才进入 Agent C 复判。
+
+遗留事项：
+
+- 精确 Xcode 26.5 image 最终会被 GitHub runner 淘汰；届时必须通过显式版本升级 commit 同步 workflow、manifest 预期和测试文档，不能静默漂移。
+- CI 仍未运行 iOS Simulator App、XCUITest 或截图/像素对比；本轮只让编译验证工具链可复判。

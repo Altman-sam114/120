@@ -200,10 +200,11 @@ flowchart TD
 flowchart TD
   P["push 到 origin/main<br/>中文注释：Agent B 或必要时 Agent C 推送最新 main"] --> W["Rustwar CI Results workflow<br/>中文注释：GitHub Actions 在 main push 或手动触发时运行"]
   M["workflow_dispatch<br/>中文注释：人工或 Agent 可手动重跑"] --> W
+  W --> TC["Pinned macos-26 + Xcode 26.5 gate<br/>中文注释：核对 DEVELOPER_DIR、Xcode build、iOS Simulator SDK、macOS 和 Swift，不匹配即失败"]
   W --> D["git diff --check<br/>中文注释：检查本次提交差异的空白和冲突标记"]
   W --> N["node --check app.js<br/>中文注释：检查 Web 核心脚本语法"]
-  W --> SW["swift test --package-path swift/RustwarCore<br/>中文注释：检查共享 Swift core"]
-  W --> XB["xcodebuild RustwarIOS<br/>中文注释：检查原生 iOS target 构建"]
+  TC --> SW["swift test --package-path swift/RustwarCore<br/>中文注释：使用固定 Apple toolchain 检查共享 Swift core"]
+  TC --> XB["xcodebuild RustwarIOS<br/>中文注释：使用固定 Xcode/SDK 检查原生 iOS target 构建"]
   D --> L["ci-results/build.log<br/>中文注释：记录实际命令输出"]
   N --> L
   SW --> L
@@ -211,9 +212,11 @@ flowchart TD
   L --> J["ci-results/junit.xml<br/>中文注释：机器可读通过、失败和跳过摘要"]
   L --> F["ci-results/ci-failure-summary.md<br/>中文注释：人工可读失败或跳过说明"]
   L --> S["ci-results/repo-state.txt<br/>中文注释：记录分支、状态和最近提交"]
+  L --> T["ci-results/toolchain-info.txt<br/>中文注释：记录 runner、macOS、DEVELOPER_DIR、Xcode/SDK/Swift 和 gate exit"]
   J --> A["ci-artifact-manifest.json<br/>中文注释：记录版本、branch、commitSha、run id、run attempt 和文件路径"]
   F --> A
   S --> A
-  A --> U["upload-artifact<br/>中文注释：上传 rustwar-ci-version-branch-sha-run-attempt 未加密结果包"]
+  T --> A
+  A --> U["upload-artifact v1.1<br/>中文注释：上传 manifest、7 项 JUnit、toolchain-info、日志和仓库状态的未加密结果包"]
   U --> C["Agent C 下载复判<br/>中文注释：只验收 origin/main 最新 commit 对应 artifact"]
 ```

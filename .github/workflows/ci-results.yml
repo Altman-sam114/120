@@ -12,11 +12,12 @@ permissions:
 jobs:
   ci-results:
     name: Build CI result package
-    runs-on: macos-latest
+    runs-on: macos-26
     env:
-      CI_FLOW_VERSION: v1.0
+      CI_FLOW_VERSION: v1.1
       PROJECT_NAME: Rustwar
       WORKFLOW_DISPLAY_NAME: Rustwar CI Results
+      DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
       IOS_PROJECT: ios/RustwarIOS/RustwarIOS.xcodeproj
       IOS_SCHEME: RustwarIOS
       IOS_DESTINATION: generic/platform=iOS Simulator
@@ -24,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -64,8 +65,56 @@ jobs:
             echo "ios_project=${IOS_PROJECT}"
             echo "ios_scheme=${IOS_SCHEME}"
             echo "ios_destination=${IOS_DESTINATION}"
+            echo "runner_os=${RUNNER_OS:-unknown}"
+            echo "runner_arch=${RUNNER_ARCH:-unknown}"
+            echo "runner_name=${RUNNER_NAME:-unknown}"
+            echo "developer_dir=${DEVELOPER_DIR}"
             echo
           } > "$build_log"
+
+          echo "== pinned Apple toolchain ==" >> "$build_log"
+          toolchain_status=0
+          xcode_version="unavailable"
+          xcode_build_version="unavailable"
+          ios_simulator_sdk_version="unavailable"
+          macos_version="unavailable"
+          swift_version="unavailable"
+          if [[ ! -d "$DEVELOPER_DIR" ]]; then
+            echo "Missing pinned DEVELOPER_DIR: ${DEVELOPER_DIR}" >> "$build_log"
+            toolchain_status=1
+          else
+            xcode_version_output="$(xcodebuild -version 2>> "$build_log")"
+            xcode_version_status=$?
+            xcode_version="$(printf '%s\n' "$xcode_version_output" | sed -n '1p')"
+            xcode_build_version="$(printf '%s\n' "$xcode_version_output" | sed -n '2p')"
+            ios_simulator_sdk_version="$(xcrun --sdk iphonesimulator --show-sdk-version 2>> "$build_log")"
+            ios_sdk_status=$?
+            macos_version="$(sw_vers -productVersion 2>> "$build_log")"
+            macos_status=$?
+            swift_version_output="$(swift --version 2>> "$build_log")"
+            swift_version_status=$?
+            swift_version="$(printf '%s\n' "$swift_version_output" | sed -n '1p')"
+            if [[ "$xcode_version_status" -ne 0 || "$ios_sdk_status" -ne 0 || "$macos_status" -ne 0 || "$swift_version_status" -ne 0 ]]; then
+              toolchain_status=1
+            fi
+            if [[ "$xcode_version" != "Xcode 26.5" || "$ios_simulator_sdk_version" != "26.5" ]]; then
+              echo "Pinned toolchain mismatch: expected Xcode 26.5 / iOS Simulator SDK 26.5." >> "$build_log"
+              toolchain_status=1
+            fi
+          fi
+          {
+            echo "runner_os=${RUNNER_OS:-unknown}"
+            echo "runner_arch=${RUNNER_ARCH:-unknown}"
+            echo "runner_name=${RUNNER_NAME:-unknown}"
+            echo "macos_version=${macos_version}"
+            echo "developer_dir=${DEVELOPER_DIR}"
+            echo "xcode_version=${xcode_version}"
+            echo "xcode_build_version=${xcode_build_version}"
+            echo "ios_simulator_sdk_version=${ios_simulator_sdk_version}"
+            echo "swift_version=${swift_version}"
+            echo "toolchain_check_exit=${toolchain_status}"
+          } | tee ci-results/toolchain-info.txt >> "$build_log"
+          echo >> "$build_log"
 
           diff_base=""
           zero_sha="0000000000000000000000000000000000000000"
@@ -98,7 +147,10 @@ jobs:
           echo >> "$build_log"
 
           echo "== xcodebuild -list ==" >> "$build_log"
-          if [[ -d "$IOS_PROJECT" ]]; then
+          if [[ "$toolchain_status" -ne 0 ]]; then
+            echo "Skipped: pinned Apple toolchain check did not succeed." >> "$build_log"
+            xcode_list_status=77
+          elif [[ -d "$IOS_PROJECT" ]]; then
             xcodebuild -list -project "$IOS_PROJECT" >> "$build_log" 2>&1
             xcode_list_status=$?
           else
@@ -127,12 +179,12 @@ jobs:
 
           {
             echo "## CI Failure Summary"
-            echo
-            if [[ "$diff_status" -eq 0 && "$node_status" -eq 0 && "$swift_status" -eq 0 && "$xcode_list_status" -eq 0 && "$xcode_build_status" -eq 0 ]]; then
+            if [[ "$toolchain_status" -eq 0 && "$diff_status" -eq 0 && "$node_status" -eq 0 && "$swift_status" -eq 0 && "$xcode_list_status" -eq 0 && "$xcode_build_status" -eq 0 ]]; then
               echo "- Result: success"
             else
               echo "- Result: failure"
             fi
+            echo "- pinned Xcode 26.5 / iOS Simulator SDK 26.5: $([[ "$toolchain_status" -eq 0 ]] && echo success || echo failure)"
             echo "- git diff --check: $([[ "$diff_status" -eq 0 ]] && echo success || echo failure)"
             echo "- node --check app.js: $([[ "$node_status" -eq 0 ]] && echo success || echo failure)"
             echo "- swift test --package-path ${SWIFT_PACKAGE_PATH}: $([[ "$swift_status" -eq 0 ]] && echo success || echo failure)"
@@ -149,18 +201,24 @@ jobs:
             git log --oneline -5
           } > ci-results/repo-state.txt
 
-          if [[ "$diff_status" -eq 0 && "$node_status" -eq 0 && "$swift_status" -eq 0 && "$xcode_list_status" -eq 0 && "$xcode_build_status" -eq 0 ]]; then
+          if [[ "$toolchain_status" -eq 0 && "$diff_status" -eq 0 && "$node_status" -eq 0 && "$swift_status" -eq 0 && "$xcode_list_status" -eq 0 && "$xcode_build_status" -eq 0 ]]; then
             overall="success"
           else
             overall="failure"
           fi
           echo "$overall" > ci-results/overall-status.txt
 
+          CHECK_TOOLCHAIN_STATUS="$toolchain_status" \
           CHECK_DIFF_STATUS="$diff_status" \
           CHECK_NODE_STATUS="$node_status" \
           CHECK_SWIFT_STATUS="$swift_status" \
           CHECK_XCODE_LIST_STATUS="$xcode_list_status" \
           CHECK_XCODE_BUILD_STATUS="$xcode_build_status" \
+          XCODE_VERSION="$xcode_version" \
+          XCODE_BUILD_VERSION="$xcode_build_version" \
+          IOS_SIMULATOR_SDK_VERSION="$ios_simulator_sdk_version" \
+          MACOS_VERSION="$macos_version" \
+          SWIFT_VERSION="$swift_version" \
           OVERALL_STATUS="$overall" \
           node <<'NODE'
           const fs = require("fs");
@@ -173,6 +231,11 @@ jobs:
             .replace(/'/g, "&apos;");
 
           const checks = [
+            {
+              name: "pinned Xcode 26.5 toolchain",
+              ok: process.env.CHECK_TOOLCHAIN_STATUS === "0",
+              message: "Pinned Xcode 26.5 and iOS Simulator SDK 26.5 metadata check."
+            },
             {
               name: "git diff --check",
               ok: process.env.CHECK_DIFF_STATUS === "0",
@@ -242,6 +305,16 @@ jobs:
             projectName: process.env.PROJECT_NAME,
             scheme: process.env.IOS_SCHEME,
             destination: process.env.IOS_DESTINATION,
+            runnerOS: process.env.RUNNER_OS || null,
+            runnerArch: process.env.RUNNER_ARCH || null,
+            runnerName: process.env.RUNNER_NAME || null,
+            macOSVersion: process.env.MACOS_VERSION,
+            developerDir: process.env.DEVELOPER_DIR,
+            xcodeVersion: process.env.XCODE_VERSION,
+            xcodeBuildVersion: process.env.XCODE_BUILD_VERSION,
+            iOSSimulatorSDKVersion: process.env.IOS_SIMULATOR_SDK_VERSION,
+            swiftVersion: process.env.SWIFT_VERSION,
+            toolchainOutcome: process.env.CHECK_TOOLCHAIN_STATUS === "0" ? "success" : "failure",
             resultBundlePath: null,
             junitPath: "ci-results/junit.xml",
             buildLogPath: "ci-results/build.log",
@@ -254,14 +327,15 @@ jobs:
             xcodeProject: process.env.IOS_PROJECT,
             xcodeListOutcome: process.env.CHECK_XCODE_LIST_STATUS === "0" ? "success" : "failure",
             projectSpecificReports: [
-              "ci-results/repo-state.txt"
+              "ci-results/repo-state.txt",
+              "ci-results/toolchain-info.txt"
             ]
           };
           fs.writeFileSync("ci-results/ci-artifact-manifest.json", `${JSON.stringify(manifest, null, 2)}\n`);
           NODE
 
       - name: Upload CI result package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: ${{ env.ARTIFACT_NAME }}
