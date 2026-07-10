@@ -3539,7 +3539,8 @@
 
 - 本地通过：`git diff --check`、`node --check app.js`、`swiftc -parse ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`。
 - 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 iOS Simulator build 均未进入项目检查：active developer directory 是 `/Library/Developer/CommandLineTools`，`xcodebuild` 要求完整 Xcode。
-- 本机没有完整 Xcode 和可用 Simulator，未运行 Coast / Islands / Lava 人工视觉 smoke、tile 裂缝检查或节点性能采样；云端 SwiftPM、iOS build 和 artifact 复判等待本轮 push。
+- 本机没有完整 Xcode 和可用 Simulator，未运行 Coast / Islands / Lava 人工视觉 smoke、tile 裂缝检查或节点性能采样。
+- 实现提交 `f8255f05abb6c9a6adf742b88ee8f124251ec22a` 已通过主线程云端 artifact 复判：GitHub Actions run `29110699690`，attempt `1`，artifact `rustwar-ci-v1.0-main-f8255f0-run29110699690-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29110699690/`，目录大小 `300K`。manifest 确认 `branch=main`、`commitSha=f8255f05abb6c9a6adf742b88ee8f124251ec22a`、`runId=29110699690`、`runAttempt=1`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`；JUnit 为 6 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`build.log` 确认 Swift Testing 303 tests passed，iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
