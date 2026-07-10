@@ -101,7 +101,7 @@ git diff --check
 命令：
 
 ```sh
-swiftc -parse ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift ios/RustwarIOS/RustwarIOS/BattlefieldView.swift
+swiftc -parse ios/RustwarIOS/RustwarIOS/RootGameView.swift ios/RustwarIOS/RustwarIOS/GameHUDView.swift ios/RustwarIOS/RustwarIOS/TacticalMapView.swift
 xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj
 xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
 git diff --check
@@ -114,7 +114,9 @@ git diff --check
 - iOS 原生 HUD / App 当前覆盖三地图切换、当前地图重开、选择、主战场长按上下文 Move / Attack / Guard / Repair / Reclaim / Build Extractor / Rally、战术小地图无等待命令长按上下文 Move / Attack / Guard / Repair / Reclaim / Build Extractor / Rally、Replace / Add 选择模式、Idle Builders / Combat Units / Screen Combat 批量选择入口、Select Area 显式框选己方单位并在无框内己方单位时 fallback 选择己方建筑、Same Type 全图同类型选择、双击附近同类型选择、1-9 号控制编队保存/召回、外接键盘 Control+1-9 保存编队和 1-9 召回编队、外接键盘 WASD / 方向键移动视野、Base / Space 回到己方 Command Center、外接键盘 P / R / E / F / Control+A / Option+A / A / G / H / C / S / Z / X / V 触发已迁移的 Pause、Restart、批量选择、战术命令和攻击姿态切换，Shift+1-9 / Shift+E/T/F/D/C/P/R 触发生产、建造和生产建筑管理按钮、单单位 Move、多单位 Move / Attack Move / Patrol 队形落点、多单位 Guard 方阵护航偏移、单单位和多单位 Attack、Aggressive / Defensive / Hold Fire 姿态按钮、多 Builder Repair 分散接近点、单 Builder Reclaim 和多 Builder Reclaim 分散接近点、单 Builder Build 和多 Builder Build 分散接近点、玩家当前视野与已探索记忆主战场雾层、Radar Station 雷达信号点、选中完成玩家 Radar Station 覆盖圈、Upgrade Radar 按钮、Upgrade Extractor 按钮、Cancel Upgrade 按钮和升级进度、HUD 雷达站/已升级数/contact 情报摘要、红方 AI Radar Station 建造、Radar Station T2 升级和 Extractor T2/T3 升级、当前视野外敌方单位/建筑隐藏和不可见敌方目标线过滤、玩家交互实体命中过滤不可见敌方单位/建筑、战术小地图当前视野与已探索记忆雾层、雷达覆盖范围、雷达信号点和敌方单位/建筑过滤、战术小地图当前主战场视口矩形、战术小地图无等待命令拖动相机、单单位和多单位 Stop、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款、Repeat 生产建筑重复生产、Rally 集结点、Save/Load 单槽本地存档、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off 开关、Reset 相机，以及战术小地图点按居中、Move / Attack Move / Patrol / Rally / Turret / Factory / Radar 点位命令、Reclaim / Build Extractor Builder 目标命令、Attack / Guard / Repair 实体目标命令和等待命令反馈等基础控制；若修改这些控制，应至少跑 iOS build 或记录本机 Xcode 阻塞。
 - v1.83 的红方 AI Radar Station T2 升级是 Core-only 行为，不新增 iOS HUD 控件；iOS 侧通过已有 Core 状态、升级进度和有效 radar coverage 读取升级结果。
 - v1.88 起，iOS 视觉回归应确认 7 类单位与 5 类建筑不依赖实体字母即可区分，单位移动/订单朝向正确，Extractor T2/T3、Radar T2 和施工中建筑有额外结构，玩家/敌方除颜色外还有不同标识形状，选择/HP/进度/订单线仍清晰。战斗反馈只在 cooldown 上跳和 HP 下降时短促触发，同一快照重复 render 不刷屏，地图切换/Restart/Load 不残留历史；不可见敌方不产生真实剪影或精确 tracer，效果层受浅雾/深雾遮盖，Reduce Motion 下无跨屏弹丸或缩放动画。
-- 当前 CI 只验证源码检查、Swift core 和 iOS build，没有自动化 SpriteKit 截图、像素对比或 Reduce Motion UI 测试；v1.88 人工视觉 smoke 仅在本机有完整 Xcode 和可用 Simulator 时执行，不能用编译通过代替视觉运行结论。
+- v1.89 HUD 回归矩阵必须覆盖约 390x844 compact bottom、560-699pt 横屏 compact trailing、844x390 phone landscape、1024x768 regular trailing，以及至少一个 accessibility Dynamic Type 容器。逐档确认顶栏 safe area、dock clamp、固定 header、六组滚动到底、44pt 控件、长标题换行和 Tactical Map frame 不重叠；选择 Builder、战斗单位、Command Center、Land Factory、Extractor、Radar 后核对上下文控件 inventory。
+- v1.89 还应在 dock 滚离对应按钮后验证 P/R/E/F/Control+A/Option+A/A/G/H/C/S/Z/X/V、Shift+1-9、Shift+E/T/F/D/C/P/R、Control+1-9、1-9、Space 和 WASD/方向键；检查 VoiceOver 顺序/label/value/hint、Differentiate Without Color、Reduce Motion、旋转/resize 保持状态，以及 Tactical Map/Battlefield 的 tap、drag、long press、pinch 和 area selection 手势没有被透明 HUD 区拦截。
+- 当前 CI 只验证源码检查、Swift core 和 iOS build，没有自动化 SpriteKit/SwiftUI 截图、像素对比、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸或离屏快捷键 UI 测试；v1.88/v1.89 人工视觉与交互 smoke 仅在本机有完整 Xcode 和可用 Simulator 时执行，不能用 parse/build 代替真实 UI 运行结论。
 - 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
 
 ## 云端重验证

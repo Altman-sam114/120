@@ -22,6 +22,7 @@
 - v1.69 起，多 Builder Build 同一未完成建筑时会动态分散接近建筑周边；Build 订单和存档形状保持兼容。
 - v1.70 起，原生 core 会按己方存活单位和完成建筑计算玩家当前可见 tile，iOS 主战场会用暗色雾层覆盖当前不可见 tile；v1.71 起，iOS 主战场会隐藏当前视野外的敌方单位和建筑，并避免相关攻击线或炮塔火力线泄露不可见敌方目标；v1.72 起，战术小地图也会用当前视野雾层遮盖不可见 tile，并隐藏不可见敌方单位和建筑；v1.73 起，主战场 tap / 长按上下文命令、Attack / Guard / Repair 实体目标等待态和战术小地图实体目标命令都会过滤当前不可见敌方单位和建筑；v1.74 起，战术小地图无等待命令长按也复用同一上下文命令和可见性过滤；v1.75 起，战术小地图会绘制当前主战场视口矩形；v1.76 起，无等待命令时可在战术小地图上拖动连续移动主战场相机；v1.77 起，原生 core 会保存双方已探索 tile 记忆，iOS 主战场和战术小地图会用浅雾显示已探索但当前不可见区域、用深雾显示从未探索区域；v1.78 起，主战场和战术小地图会以青色信号点显示当前不可见但被雷达检测到的敌方位置；v1.79 起，完成状态 Radar Station 才提供原生雷达范围，Command Center 不再作为雷达来源；v1.80 起，红方 AI 会在基础经济、工厂和炮塔成型后自动建造 1 座 Radar Station；v1.81 起，原生 core 提供雷达覆盖 snapshot，iOS HUD 和战术小地图会显示玩家雷达站/contact 摘要，选中完成状态己方 Radar Station 时主战场会显示雷达覆盖圈，战术小地图会显示玩家雷达覆盖范围；v1.82 起，选中完成状态己方 Radar Station 可用 Upgrade Radar 消耗金属启动 T2 升级，完成后提高 HP、真实视野和雷达范围；v1.83 起，红方 AI 在经济、工厂、炮塔和完成状态 Radar Station 都就绪且金属足够时会自动排队 Radar Station T2 升级；v1.84 起，玩家选中正在升级的完成状态 Radar Station 时可用 Cancel Upgrade 取消 T2 进度并按未完成进度退款；v1.85 起，玩家选中完成状态 Extractor 可用 Upgrade Extractor 消耗金属启动 T2 经济升级，完成后提高收入、HP 和视野，也可取消进度并退款；v1.86 起，Extractor 可继续升级到 T3，完成后收入、HP 和真实视野进一步提高；v1.87 起，红方 AI 在经济、防御和雷达升级优先级满足后，会保留一个 Extractor 建造费用缓冲并自动排队 Extractor T2/T3，同 tick 后续生产也不会消耗这笔缓冲。
 - v1.88 起，原生 iOS 主战场用程序化复合几何替换单位/建筑字母占位：7 类单位与 5 类建筑拥有可辨识俯视剪影、局部队伍标识、移动/订单朝向，Extractor T2/T3 与 Radar T2 有额外结构层级，未完成建筑显示施工框架。Scene 只读 Core 快照，以 cooldown/HP 跃迁生成有界、短生命周期炮口焰、弹丸和受击闪光；效果位于雾层下，并通过 SwiftUI Reduce Motion 在辅助功能开启时退化为短透明度反馈。本轮仍是程序化视觉地基，不是正式 sprite atlas、完整 projectile 事件模型或最终美术素材；仍不包含雾内敌方残影。
+- v1.89 起，原生 iOS HUD 改为 safe-area 贴边战术布局：Metal / Income / Pop / Radar / Pause / Speed 固定在顶部状态栏；宽度 `>= 700pt` 使用 268-320pt trailing command dock，560-699pt 横屏使用 232-276pt trailing dock，其余使用 216-320pt bottom dock，极短容器最低 180pt。dock 顶部固定显示选择、升级/姿态摘要、命令状态和 Replace/Add，下面可连续滚动 Commands、Build & Upgrade、Production、Selection、Groups、Session 六组控件。战术小地图位于独立战场区域并按 176x118、144x96 或 120x80 缩放，不与 dock 重叠；所有旧 action、disabled 条件、快捷键、VoiceOver 和 44pt 触控目标保持不变。
 
 本机验证命令：
 
@@ -93,6 +94,7 @@ xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -dest
 
 ### 原生 iOS 迁移地基
 
+- HUD：顶部 safe-area 状态栏持续显示资源、雷达、Pause/Play 和速度；右侧或底部 command dock 的固定 header 显示当前选择、摘要、命令状态和 Replace/Add，下方可连续滚动六组操作。Tactical Map 始终位于独立战场区域；旋转或 Split View resize 会按容器宽高自动切换布局，不会改变当前选择、等待命令或编队。
 - Tap：选择单位或建筑；Move、Attack Move 和 Patrol 模式下作为目的地；Guard 模式下作为友方护航目标点选；Repair 模式下作为受损友方维修目标点选；Reclaim 模式下作为残骸目标点选；Build Extractor 模式下作为资源点目标点选；Attack 模式下作为敌方目标点选。
 - Long press：无等待命令时执行上下文命令；长按敌方单位或建筑会 Attack，长按受损友方单位或建筑会让 Builder Repair，长按健康友方目标会 Guard，长按残骸会 Reclaim，长按空闲资源点会 Build Extractor，长按空地点会对生产建筑设置 Rally 或让己方单位 Move。
 - Selection mode：Replace / Add 分段控件决定主战场 tap、Select Area、Same Type 和双击附近同类的选择方式；Replace 会替换当前选择，Add 会追加命中的存活己方单位或建筑，空点或空框不会清空旧选择。

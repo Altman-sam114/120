@@ -3471,3 +3471,41 @@
 遗留事项：
 
 - v1.88 仍使用运行时程序化几何，没有正式 sprite atlas、地形贴图、音效/震动、Core projectile event、屏幕震动、昼夜天气或自动化视觉回归；下一轮可继续优化地形材质、正式资源管线、战斗音画反馈和 iOS 操作手感。
+
+### v1.89 / iOS compact tactical HUD
+
+日期：2026-07-10
+
+核心变更：
+
+- `RootGameView` 改用真实 `GeometryReader` 容器尺寸选择三档 view-only layout role：宽度 `>= 700pt` 使用 regular trailing dock，dock 为容器宽度 28% 并 clamp 到 268-320pt；宽度 560-699pt、宽大于高时使用 compact trailing dock，dock 为 34% 并 clamp 到 232-276pt；其余使用 compact bottom dock，高度为 34% 并 clamp 到 216-320pt，极短容器最低 180pt，accessibility Dynamic Type 下目标比例提高到 42%。
+- safe-area 顶栏、Battlefield、command dock 通过 `VStack` / `HStack` 真实参与布局，不再把完整 HUD 浮盖在战场上；Battlefield 的实际 viewport 会随 dock 改变并继续通过现有 `BattlefieldView` geometry 更新 Screen Combat 和 Tactical Map 视口框。
+- Tactical Map 只 overlay 在独立 Battlefield 区域：regular trailing 使用约 176x118 bottom-leading，compact trailing 使用 144x96 或短高度 120x80 bottom-leading，compact bottom 使用 144x96 或极窄/极矮 120x80 top-trailing；map 与顶栏/dock 的 layout frame 不相交。`TacticalMapView.swift` 未修改，点按、拖动、长按、等待态命令、world mapping、雾和雷达语义保持原样。
+- `GameHUDView` 拆分为顶部 status bar 和 command dock 两种展示角色。顶栏只保留 Metal、Income、Pop、Radar、Pause/Play 与 Speed；metrics 可横向滚动，但 Pause 和 Speed 位于固定 controls 区，窄宽时 Speed 通过 `ViewThatFits` 从 segmented picker 回退为 menu picker。
+- dock header 固定显示最多两行 Selected、当前攻击姿态/Radar/Extractor 升级摘要、commandStatus 和 Replace/Add；等待命令使用图标、文字、填充与描边组合，Differentiate Without Color 下加粗描边，不只依赖黄色。
+- header 下方只有一个纵向 `ScrollView`，依次显示 Commands、Build & Upgrade、Production、Selection、Groups、Session 六个无嵌套卡片 section。命令网格使用 eager 自定义 `Layout`，普通 regular/bottom 为两列，compact trailing 或 accessibility Dynamic Type 为一列；离屏按钮仍在视图层级，原 keyboard shortcut 不因滚动被 lazy 回收。
+- Metal/Income/Pop/Radar metric 分别作为完整 VoiceOver element；所有旧按钮、Picker、action、disabled 条件、动态标题、生产顺序、control group Save/Recall、accessibility label/value/hint 与 44pt hit target 保持。active stance 使用 checkmark icon 和 accessibility value，Repeat/Enemy AI/等待命令继续同时使用动态文字与图标。
+- `RootGameView` 保留 `.focusable()`、`FocusState`、`.onKeyPress(phases: .all)` 和 WASD/方向键相机逻辑；P/R/E/F/Control+A/Option+A/A/G/H/C/S/Z/X/V、Shift+1-9、Shift+E/T/F/D/C/P/R、Control+1-9、1-9 和 Space 仍附着在原 Button action。布局没有新增 transition/animation，Reduce Motion 下还会清除可能的隐式 layout animation。
+- 新增 390x844 compact portrait、844x390 phone landscape、650x390 compact trailing、1024x768 regular trailing 和 accessibility Dynamic Type portrait 轻量 Preview 定义；runtime 断点不读取 Preview frame、`UIScreen`、设备型号或方向通知。
+- 本轮未修改 `GameController`、`TacticalMapView`、`BattlefieldScene`、`RustwarCore`、存档、玩法、Web 或 Xcode project。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/RootGameView.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.89-ios-compact-tactical-hud.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地通过：`git diff --check`、`node --check app.js`、`swiftc -parse ios/RustwarIOS/RustwarIOS/RootGameView.swift ios/RustwarIOS/RustwarIOS/GameHUDView.swift ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`。
+- 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` 均未进入项目检查：当前 active developer directory 是 `/Library/Developer/CommandLineTools`，原始错误为 `xcodebuild requires Xcode`。
+- 本机没有完整 Xcode 和可用 Simulator，未实际渲染 Preview，也未运行 iPhone/iPad UI smoke、VoiceOver、accessibility Dynamic Type、Differentiate Without Color、Reduce Motion、旋转/resize、触摸穿透或离屏快捷键人工验证；没有把 parse 写成 UI 运行通过。完整 SwiftPM 回归、iOS target build 和 artifact 复判等待本轮 `origin/main` push 后的 GitHub Actions macOS runner 与 Agent C。
+
+遗留事项：
+
+- v1.89 只完成响应式 HUD 信息架构和布局地基，仍没有 XCUITest/自动化截图/VoiceOver 回归、触觉/音效、正式图标资源、手势命令确认或用户可配置 dock；后续若设计折叠 dock，必须另轮验证所有显式按钮和离屏快捷键不会被移出视图层级。
