@@ -3648,8 +3648,11 @@
 验证状态：
 
 - 按用户要求未运行任何本地测试、构建、parse、Simulator、Preview 或浏览器验证。
-- 实现提交将 push 到 `origin/main`，仅以对应精确 commit SHA 的 GitHub Actions run 和下载 artifact 作为验收依据。
+- 实现提交 `b11387229767f357739c40f409c2df3ae43a9e25` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29118047637`，attempt `1`，artifact `rustwar-ci-v1.0-main-b113872-run29118047637-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29118047637/`，目录大小 `304K`。
+- manifest 确认 `branch=main`、`commitSha=b11387229767f357739c40f409c2df3ae43a9e25`、`runId=29118047637`、`runAttempt=1`、`staticChecksOutcome=success`、`swiftPackageOutcome=success`、`xcodeListOutcome=success`、`buildOutcome=success`、`testOutcome=success`。
+- JUnit 为 6 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`repo-state.txt` 确认最新提交为 v1.93；`build.log` 确认 Swift Testing 303 tests passed，原生 iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
 - 当前 CI 没有 SwiftUI screenshot/XCUITest，云端 build 不能证明实际滚动、触摸、VoiceOver 或像素层级；后续应增加云端 UI 自动化矩阵，再继续触觉反馈、命令手势和正式 HUD 图标资源。
+- 云端日志保留一个 v1.90 既有 Swift warning：`BattlefieldScene.swift:149` 的 `case .grass, .grass2 where ...` 只把 `where` 应用到第二个 pattern，可能让 `.grass` 细节不受 gate 限制；下一轮应改为显式共享条件并走新的云端验证。Actions 还提示 `actions/checkout@v4` / `upload-artifact@v4` 的 Node 20 运行时弃用，workflow 后续需要升级 action major version。
