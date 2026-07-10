@@ -26,16 +26,11 @@
 - v1.90 起，原生 iOS 主战场把约 6,000 个纯色 tile 节点改为按 8 种地形和 3 档确定性色差聚合的 compound path，并增加低对比草痕、砂土颗粒、岩石裂线、水面波纹、熔岩裂隙、海岸泡沫、深浅水分界和熔岩焦岸。整张地图的基础/细节/边界层上限约 36 个节点；材质只在地图重建时生成，仍位于资源、实体、特效、雾和雷达之下，不改变 Core 地形、通行、存档或玩法。
 - v1.91 起，原生 iOS 战斗反馈参考 Rusted Warfare 官方 Steam 截图/视频中的高可读性层级，把单一圆点弹丸扩展为轻型 tracer、坦克/舰炮尾迹、Hover 青色能量束、AA 双联弹道和 Artillery 重炮弹；HP 下降会产生高亮核心、火球、冲击环、确定性火花和烟尘，连续快照中的可见实体摧毁会生成更强爆炸及短寿命地表灼痕。Scene 仍只读 Core cooldown/HP/实体历史，瞬态效果最多 64 个、灼痕最多 32 个并自动移除；精确目标和敌方死亡必须通过当前可见性门控，所有特效与灼痕仍位于雾层下，Reduce Motion 下不播放跨屏弹道、扩张冲击波或碎片飞散。
 - v1.92 起，原生 iOS HUD 会先把 `width > height && height < 520pt` 的短高度横屏识别为 compact trailing，即使宽度超过 700pt 也不再误用 iPad regular dock。iPhone 17 Pro、iOS 26.5 Simulator 的真实 874x402pt 对照确认：command dock 上限从 320pt 降为 260pt、命令区改用单列、Tactical Map 从 176x118 缩为 120x80，战场横向视野增加且 `Idle Builders` / `Combat Units` / `Screen Combat` 标题不再因双列而截断。1024x768 等高度足够的大容器仍使用 regular trailing，portrait bottom dock 保持不变。
+- v1.93 起，原生 iOS HUD 把三档断点、dock 尺寸和 Tactical Map 尺寸集中到 `TacticalHUDLayoutMetrics`，`RootGameView` 只负责组合区域；资源指标、命令状态、六组带图标分区标题、eager 命令网格和 8pt 按钮样式集中到 `TacticalHUDComponents`。重构保持 v1.92 的全部容器结果、action、disabled 条件、快捷键、VoiceOver 和 44pt 触控目标，并用低干扰战术指标块和更清晰的分区层级统一视觉。
 
-本机验证命令：
+当前验证制度：
 
-```sh
-swift test --package-path swift/RustwarCore
-xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj
-xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
-```
-
-如果本机只有 Command Line Tools 或 Swift/SDK 版本不匹配，iOS 构建可能需要完整 Xcode 或 GitHub Actions 的 macOS runner 复验。
+用户已要求后续全部测试只在 GitHub Actions 运行，禁止本机执行 Node、Swift、Xcode、Simulator、Preview 或浏览器测试。实现提交直接 push 到 `origin/main`，再下载与精确 commit SHA 对应的最新未加密 CI artifact，核对 manifest、JUnit、build log、failure summary 和 repo state；本地 Git 状态、diff 范围和提交范围检查不作为测试结果。
 
 ## 已实现
 
@@ -165,4 +160,4 @@ xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -dest
 
 ## 协作与云端验证
 
-后续 Agent A/B/C 迭代默认使用 `main` 直推和 GitHub Actions 重验证：Agent B 本地只跑轻量检查后提交并 push 到 `origin/main`，Actions 上传未加密 CI 结果包，Agent C 下载并核对 manifest、JUnit、日志和失败摘要后再给出验收结论。`agentx:` 用于未来启动主控循环：Agent X 接收总目标并调度 A -> B -> C 多轮迭代，但不直接替代 A/B/C，也不得跳过 Agent C 云端 artifact 验收。v1.0 起 CI 结果包除 Web 轻量检查外，也记录 `swift test --package-path swift/RustwarCore` 和 `xcodebuild` iOS 构建结果。详细规则见 `AGENTS.md`、`md/test/test.md` 和 `md/flow/flow.md`。
+后续 Agent A/B/C 迭代使用 `main` 直推和 GitHub Actions 云端唯一验证：Agent B 提交并 push 到 `origin/main`，Actions 执行检查并上传未加密 CI 结果包，Agent C 下载并核对 manifest、JUnit、日志和失败摘要后再给出验收结论；当前用户制度禁止本地测试。`agentx:` 用于主控循环：Agent X 接收总目标并推进小轮次，但不得跳过 Agent C 云端 artifact 验收。v1.0 起 CI 结果包除 Web 轻量检查外，也记录 `swift test --package-path swift/RustwarCore` 和 `xcodebuild` iOS 构建结果。详细规则见 `AGENTS.md`、`md/test/test.md` 和 `md/flow/flow.md`。

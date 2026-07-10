@@ -1,6 +1,14 @@
 # 测试规范
 
-本文指导 Agent B、Agent C 和未来 Agent X 为 Rustwar RTS Prototype 选择本地轻量检查、云端重验证和结果包复判范围。
+本文指导 Agent B、Agent C 和未来 Agent X 为 Rustwar RTS Prototype 选择验证范围和结果包复判方式。
+
+## 当前强制制度：云端唯一验证
+
+- 2026-07-11 起，用户明确要求后续全部测试在云端运行并禁止本地测试；本节覆盖下方保留的历史本地命令说明，直到用户明确改变制度。
+- 禁止本机运行 `git diff --check`、`node --check`、Swift parse/typecheck、`swift test`、`xcodebuild`、Simulator、Preview、浏览器 smoke 或任何测试脚本。
+- 允许读取文件、检查 `git status` / `git diff` / 提交范围、编辑、commit 和 push；这些只用于控制变更范围，不能写成测试通过。
+- 每个实现提交必须 push 到 `origin/main`，以精确 commit SHA 定位 `Rustwar CI Results` run；Agent C 下载唯一 artifact 后核对 manifest、JUnit、主日志、失败摘要和 repo state。
+- CI 失败时只能追加修复 commit 并重新走云端验证，不得用本机结果替代。
 
 ## 固定前缀 / 环境要求
 
@@ -10,10 +18,10 @@
 - 运行目录：仓库根目录 `/Users/a114514/Desktop/codex/Rustwar`。
 - Web 默认无需启动服务；直接打开 `index.html` 即可运行。iOS App 通过 Xcode 或 `xcodebuild` 构建运行。
 - 如果需要本地 HTTP 访问，可临时使用静态服务器，但不要把服务依赖写入项目运行前提。
-- 默认云端重验证：Agent B 本地只跑轻量检查，commit 后 push 到 `origin/main`，由 GitHub Actions 上传未加密 CI 结果包。
-- Agent X 主控循环不改变验证等级：每一轮仍以 Agent B 本地轻量检查 + GitHub Actions artifact + Agent C 下载复判为准。
+- 默认云端唯一验证：Agent B commit 后 push 到 `origin/main`，由 GitHub Actions 执行检查并上传未加密 CI 结果包。
+- Agent X 主控循环不改变验证等级：每一轮都以 GitHub Actions artifact + Agent C 下载复判为准。
 
-## 本地轻量检查
+## 历史本地轻量检查参考（当前禁止执行）
 
 ### 1. 文档 / 流程-only
 
@@ -122,6 +130,7 @@ git diff --check
 - v1.91 可见性与性能回归必须确认：显式/自动火力只对当前可见目标生成精确弹道；雾外敌方死亡不生成精确爆炸/灼痕；`decalNode`、`effectNode` 均在 `fogNode` 下；瞬态顶层容器最多 64、灼痕最多 32，超限淘汰最旧节点且生命周期结束自动移除。Reduce Motion 下不生成跨屏 projectile、扩张冲击波、火花飞散或移动烟尘，只保留短 opacity 反馈和静态短寿命灼痕。
 - v1.92 HUD 断点回归必须覆盖：390x844 compact bottom；650x390 compact trailing + 224pt 单列 dock；844x390 compact trailing + 约 253pt 单列 dock；874x402 compact trailing + 260pt 单列 dock；700x520 regular trailing；1024x768 regular trailing。短高度横屏必须在 `width >= 700` 之前被识别，Tactical Map 为 120x80，`Idle Builders` / `Combat Units` / `Screen Combat` 等动态标题不得因双列截断；iPad regular 的双列、176x118 map 和 portrait bottom 规则不得回退。
 - v1.92 已在 Xcode 26.6、iOS 26.5 iPhone 17 Pro Simulator 运行当前原生 App并保存 before/after 临时截图；after 首屏确认战场变宽、dock 单列、map 缩小且标题完整。该证据只覆盖首屏静态布局，不覆盖触摸滚动、全部 dock section、VoiceOver、Dynamic Type、旋转状态保持、等待命令、战斗特效或帧率。
+- v1.93 云端代码验收必须确认 `TacticalHUDLayout.swift` 和 `TacticalHUDComponents.swift` 已加入 `RustwarIOS` target，`RootGameView` 只消费一次 `TacticalHUDLayoutMetrics`，且 v1.92 六组尺寸矩阵、eager command layout、action、快捷键和辅助功能语义未被重构改写。当前 workflow 没有 SwiftUI 截图或 UI 自动化，因此视觉层级、真实滚动和触摸仍是剩余风险，禁止用 build 成功替代 UI 运行结论。
 - 当前 CI 只验证源码检查、Swift core 和 iOS build，没有自动化 SpriteKit/SwiftUI 截图、像素对比、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸或离屏快捷键 UI 测试；v1.88-v1.92 人工视觉与交互 smoke 仅在本机有完整 Xcode 和可用 Simulator 时执行，不能用 parse/build 代替真实 UI 运行结论。
 - 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
 
@@ -286,7 +295,7 @@ du -sh /private/tmp/rustwar-c-review-<run_id>
 ## 规则
 
 - 每次实现前先读本文件。
-- 默认本地轻量检查 + 云端重验证，不默认本机完整回归。
+- 当前默认且强制为云端唯一验证，不运行任何本地轻量或完整回归。
 - 文档-only 修改可只跑本地轻量检查，但仍应通过 main push 触发云端结果包。
 - Swift/iOS 修改可因本机缺少完整 Xcode 或工具链不匹配而无法本机全量构建，但必须记录命令、错误和云端 artifact 复验要求。
 - Agent X 主控循环不得跳过 Agent C 下载和核对 artifact。

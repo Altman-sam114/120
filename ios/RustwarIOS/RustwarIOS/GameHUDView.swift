@@ -52,23 +52,23 @@ struct GameHUDView: View {
     private var metricsStrip: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 14) {
-                metric(
+                TacticalMetricView(
                     label: "Metal",
                     value: controller.playerEconomy.metal.formatted(.number.precision(.fractionLength(0)))
                 )
-                metric(
+                TacticalMetricView(
                     label: "Income",
                     value: controller.playerEconomy.income.formatted(.number.precision(.fractionLength(1)))
                 )
-                metric(
+                TacticalMetricView(
                     label: "Pop",
                     value: "\(controller.playerEconomy.supplyUsed)/\(controller.playerEconomy.supplyCap)"
                 )
-                metric(
+                TacticalMetricView(
                     label: "Radar",
                     value: "\(controller.playerRadarStationCount)/\(controller.playerRadarContactCount)",
-                    accessibilityLabel: "Radar intelligence",
-                    accessibilityValue: controller.radarIntelAccessibilitySummary
+                    spokenLabel: "Radar intelligence",
+                    spokenValue: controller.radarIntelAccessibilitySummary
                 )
             }
             .padding(.vertical, 1)
@@ -156,31 +156,10 @@ struct GameHUDView: View {
                     .lineLimit(2)
             }
             if let commandStatus = controller.commandStatus {
-                Label(
-                    commandStatus,
-                    systemImage: controller.isAwaitingTargetCommand ? "scope" : "info.circle"
+                TacticalCommandStatusView(
+                    text: commandStatus,
+                    isAwaitingTarget: controller.isAwaitingTargetCommand
                 )
-                .font(.footnote)
-                .foregroundStyle(controller.isAwaitingTargetCommand ? .primary : .secondary)
-                .lineLimit(2)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 5)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    controller.isAwaitingTargetCommand ? Color.yellow.opacity(0.17) : Color.clear,
-                    in: RoundedRectangle(cornerRadius: 6)
-                )
-                .overlay {
-                    if controller.isAwaitingTargetCommand {
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(
-                                .yellow,
-                                lineWidth: differentiateWithoutColor ? 2.5 : 1.5
-                            )
-                    }
-                }
-                .accessibilityLabel("Command status")
-                .accessibilityValue(commandStatus)
             }
 
             Picker("Selection mode", selection: $controller.selectionMutation) {
@@ -200,7 +179,7 @@ struct GameHUDView: View {
 
     private var commandsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Commands")
+            TacticalSectionHeader(section: .commands)
             TacticalCommandGrid(columns: commandColumnCount) {
                 if controller.canIssueAreaSelection || controller.isAwaitingAreaSelection {
                     Button(
@@ -300,7 +279,7 @@ struct GameHUDView: View {
 
     private var buildSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Build & Upgrade")
+            TacticalSectionHeader(section: .build)
             TacticalCommandGrid(columns: commandColumnCount) {
                 if controller.canIssueBuildExtractor || controller.isAwaitingBuildExtractorTarget {
                     Button(
@@ -380,7 +359,7 @@ struct GameHUDView: View {
 
     private var productionSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Production")
+            TacticalSectionHeader(section: .production)
             if !controller.productionOptions.isEmpty {
                 TacticalCommandGrid(columns: commandColumnCount) {
                     ForEach(controller.productionOptions.indices, id: \.self) { index in
@@ -430,7 +409,7 @@ struct GameHUDView: View {
 
     private var selectionSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Selection")
+            TacticalSectionHeader(section: .selection)
             TacticalCommandGrid(columns: commandColumnCount) {
                 Button(
                     controller.idleBuildersButtonTitle,
@@ -470,7 +449,7 @@ struct GameHUDView: View {
 
     private var groupsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Groups")
+            TacticalSectionHeader(section: .groups)
             TacticalCommandGrid(columns: commandColumnCount) {
                 ForEach(GameController.visibleControlGroupSlots, id: \.self) { slot in
                     controlGroupCell(slot: slot)
@@ -482,7 +461,7 @@ struct GameHUDView: View {
 
     private var sessionSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Session")
+            TacticalSectionHeader(section: .session)
             TacticalCommandGrid(columns: commandColumnCount) {
                 Button("Base", systemImage: "house.fill", action: controller.focusPlayerCommandCenter)
                     .tacticalControl()
@@ -573,26 +552,6 @@ struct GameHUDView: View {
             controller.isAwaitingAreaSelection
     }
 
-    private func metric(
-        label: String,
-        value: String,
-        accessibilityLabel: String? = nil,
-        accessibilityValue: String? = nil
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.headline)
-                .monospacedDigit()
-                .fixedSize(horizontal: true, vertical: false)
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel ?? label)
-        .accessibilityValue(accessibilityValue ?? value)
-    }
-
     private enum SpeedPickerStyle {
         case segmented
         case menu
@@ -615,16 +574,6 @@ struct GameHUDView: View {
         case .menu:
             picker.pickerStyle(.menu)
         }
-    }
-
-    private func sectionHeader(_ title: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption.bold())
-                .foregroundStyle(.secondary)
-            Divider()
-        }
-        .accessibilityAddTraits(.isHeader)
     }
 
     @ViewBuilder
@@ -733,92 +682,6 @@ struct GameHUDView: View {
 
     private func commandKey(_ value: String) -> KeyEquivalent {
         KeyEquivalent(Character(value))
-    }
-}
-
-private struct TacticalCommandGrid: Layout {
-    let columns: Int
-    var spacing: CGFloat = 8
-
-    func sizeThatFits(
-        proposal: ProposedViewSize,
-        subviews: Subviews,
-        cache: inout Void
-    ) -> CGSize {
-        guard !subviews.isEmpty else {
-            return .zero
-        }
-        let columnCount = max(1, columns)
-        let availableWidth = proposal.width ?? subviews.map { $0.sizeThatFits(.unspecified).width }.max() ?? 0
-        let columnWidth = max(0, (availableWidth - spacing * CGFloat(columnCount - 1)) / CGFloat(columnCount))
-        let rowHeights = measuredRowHeights(subviews: subviews, columnWidth: columnWidth, columnCount: columnCount)
-        return CGSize(
-            width: availableWidth,
-            height: rowHeights.reduce(0, +) + spacing * CGFloat(max(0, rowHeights.count - 1))
-        )
-    }
-
-    func placeSubviews(
-        in bounds: CGRect,
-        proposal: ProposedViewSize,
-        subviews: Subviews,
-        cache: inout Void
-    ) {
-        guard !subviews.isEmpty else {
-            return
-        }
-        let columnCount = max(1, columns)
-        let columnWidth = max(0, (bounds.width - spacing * CGFloat(columnCount - 1)) / CGFloat(columnCount))
-        let rowHeights = measuredRowHeights(subviews: subviews, columnWidth: columnWidth, columnCount: columnCount)
-        var rowOriginY = bounds.minY
-
-        for index in subviews.indices {
-            let row = index / columnCount
-            let column = index % columnCount
-            if column == 0, row > 0 {
-                rowOriginY += rowHeights[row - 1] + spacing
-            }
-            subviews[index].place(
-                at: CGPoint(
-                    x: bounds.minX + CGFloat(column) * (columnWidth + spacing),
-                    y: rowOriginY
-                ),
-                anchor: .topLeading,
-                proposal: ProposedViewSize(width: columnWidth, height: rowHeights[row])
-            )
-        }
-    }
-
-    private func measuredRowHeights(
-        subviews: Subviews,
-        columnWidth: CGFloat,
-        columnCount: Int
-    ) -> [CGFloat] {
-        let rowCount = (subviews.count + columnCount - 1) / columnCount
-        var heights = Array(repeating: CGFloat.zero, count: rowCount)
-        for index in subviews.indices {
-            let size = subviews[index].sizeThatFits(ProposedViewSize(width: columnWidth, height: nil))
-            heights[index / columnCount] = max(heights[index / columnCount], size.height)
-        }
-        return heights
-    }
-}
-
-private extension View {
-    func tacticalControl() -> some View {
-        buttonStyle(.bordered)
-            .controlSize(.regular)
-            .frame(maxWidth: .infinity, minHeight: 44)
-            .lineLimit(2)
-            .multilineTextAlignment(.leading)
-    }
-
-    func tacticalProminentControl() -> some View {
-        buttonStyle(.borderedProminent)
-            .controlSize(.regular)
-            .frame(maxWidth: .infinity, minHeight: 44)
-            .lineLimit(2)
-            .multilineTextAlignment(.leading)
     }
 }
 

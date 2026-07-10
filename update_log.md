@@ -3617,3 +3617,39 @@
 遗留事项：
 
 - v1.92 只修复短高度横屏断点与占用比例；仍没有可折叠/半透明命令 dock、手势快捷命令轮、触觉反馈、用户布局偏好、XCUITest 或自动化截图矩阵。后续应继续用真实 Simulator/真机验证触摸滚动和战斗中的命令可达性。
+
+### v1.93 / iOS tactical HUD component refactor
+
+日期：2026-07-11
+
+核心变更：
+
+- 新增 `TacticalHUDLayoutMetrics`，集中三档响应式 role、dock width、bottom dock height 和 Tactical Map size；`RootGameView` 每次 geometry 更新只计算一次并消费不可变结果。
+- 新增 `TacticalHUDComponents`，集中资源指标、普通/等待命令状态、六组带 SF Symbols 的分区标题、eager command grid 和统一 8pt 按钮样式；`GameHUDView` 保留 controller action、条件渲染和快捷键编排。
+- 顶栏指标增加低干扰深色底和青色细描边，分区使用图标、文字和细分隔线共同建立扫描层级；普通状态与等待目标状态都有明确边界，等待态仍不只依赖颜色。
+- v1.92 的短横屏优先级、30%/224-260pt compact dock、120x80 map、regular/bottom 尺寸矩阵、单/双列规则、44pt 触控目标、VoiceOver、Dynamic Type、Differentiate Without Color 和 Reduce Motion 语义保持。
+- 两个新 Swift 文件已显式加入 `RustwarIOS.xcodeproj` target；没有修改 `GameController`、`RustwarCore`、战斗、输入、存档、Web 或素材。
+- 用户要求从本轮起全部测试只在云端运行；README、测试规范和提示词已记录禁止本地测试的覆盖规则。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDLayout.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDComponents.swift`
+- `ios/RustwarIOS/RustwarIOS/RootGameView.swift`
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `ios/RustwarIOS/RustwarIOS.xcodeproj/project.pbxproj`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.93-ios-tactical-hud-refactor.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、parse、Simulator、Preview 或浏览器验证。
+- 实现提交将 push 到 `origin/main`，仅以对应精确 commit SHA 的 GitHub Actions run 和下载 artifact 作为验收依据。
+
+遗留事项：
+
+- 当前 CI 没有 SwiftUI screenshot/XCUITest，云端 build 不能证明实际滚动、触摸、VoiceOver 或像素层级；后续应增加云端 UI 自动化矩阵，再继续触觉反馈、命令手势和正式 HUD 图标资源。
