@@ -141,11 +141,12 @@ flowchart TD
   AIUP --> E
   AI --> E
   C --> E
-  B --> PV["Procedural entity visuals<br/>中文注释：7 类单位和 5 类建筑使用复合几何剪影、局部队伍标识、朝向、施工框架和升级结构，不使用实体字母占位"]
+  B --> TERR["Aggregated procedural terrain<br/>中文注释：TerrainGrid 经稳定 hash 聚合为 8 类 x 3 色阶基础 path、低对比材质 path 和海岸/深水/熔岩边界；只在地图重建时生成，位于雾下"]
+  TERR --> PV["Procedural entity visuals<br/>中文注释：7 类单位和 5 类建筑使用复合几何剪影、局部队伍标识、朝向、施工框架和升级结构，不使用实体字母占位"]
   PV --> FX["Bounded transient effect layer<br/>中文注释：cooldown / HP 跃迁只触发一次短炮口焰、可见目标弹丸或受击闪光；Reduce Motion 改为透明度反馈"]
   FX --> FOG["Current / explored fog overlay<br/>中文注释：effect layer 位于雾下，不可见敌方不会泄漏真实剪影、精确 tracer 或攻击关系"]
   FOG --> RR["Radar signal overlay<br/>中文注释：雷达 contact 仍只在雾上显示青色信号点和覆盖圈，不升级为真实敌方模型"]
-  RR --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html，显示程序化实体、血条、建造/升级进度、短战斗反馈、残骸、订单线、战争迷雾和红方行动"]
+  RR --> O["原生 iOS 战场画面<br/>中文注释：不是 WKWebView，不加载 index.html，显示聚合程序化地形、程序化实体、血条、建造/升级进度、短战斗反馈、残骸、订单线、战争迷雾和红方行动"]
   H --> O
   TM --> O
 ```

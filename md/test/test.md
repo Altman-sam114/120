@@ -116,7 +116,9 @@ git diff --check
 - v1.88 起，iOS 视觉回归应确认 7 类单位与 5 类建筑不依赖实体字母即可区分，单位移动/订单朝向正确，Extractor T2/T3、Radar T2 和施工中建筑有额外结构，玩家/敌方除颜色外还有不同标识形状，选择/HP/进度/订单线仍清晰。战斗反馈只在 cooldown 上跳和 HP 下降时短促触发，同一快照重复 render 不刷屏，地图切换/Restart/Load 不残留历史；不可见敌方不产生真实剪影或精确 tracer，效果层受浅雾/深雾遮盖，Reduce Motion 下无跨屏弹丸或缩放动画。
 - v1.89 HUD 回归矩阵必须覆盖约 390x844 compact bottom、560-699pt 横屏 compact trailing、844x390 phone landscape、1024x768 regular trailing，以及至少一个 accessibility Dynamic Type 容器。逐档确认顶栏 safe area、dock clamp、固定 header、六组滚动到底、44pt 控件、长标题换行和 Tactical Map frame 不重叠；选择 Builder、战斗单位、Command Center、Land Factory、Extractor、Radar 后核对上下文控件 inventory。
 - v1.89 还应在 dock 滚离对应按钮后验证 P/R/E/F/Control+A/Option+A/A/G/H/C/S/Z/X/V、Shift+1-9、Shift+E/T/F/D/C/P/R、Control+1-9、1-9、Space 和 WASD/方向键；检查 VoiceOver 顺序/label/value/hint、Differentiate Without Color、Reduce Motion、旋转/resize 保持状态，以及 Tactical Map/Battlefield 的 tap、drag、long press、pinch 和 area selection 手势没有被透明 HUD 区拦截。
-- 当前 CI 只验证源码检查、Swift core 和 iOS build，没有自动化 SpriteKit/SwiftUI 截图、像素对比、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸或离屏快捷键 UI 测试；v1.88/v1.89 人工视觉与交互 smoke 仅在本机有完整 Xcode 和可用 Simulator 时执行，不能用 parse/build 代替真实 UI 运行结论。
+- v1.90 地形回归应分别进入 Coast、Islands、Lava：确认 grass/grass2/dirt/sand/rock/water/deep/lava 维持可辨识色阶，海岸泡沫连续，water/deep 分界克制，熔岩焦岸和亮裂隙清楚，正常相机 zoom 没有明显 tile 裂缝。单位、建筑、选择环、HP/进度条、命令线和雷达信号必须继续比地表细节醒目，浅雾/深雾仍覆盖全部材质层。
+- v1.90 代码验收还要确认 `drawTerrain` 的基础节点按 8 种地形 x 3 色阶聚合，细节/边界节点数量固定，不为每个 tile 新增节点；稳定 hash 不使用随机数、时间或 `Hasher`，相邻边界只检查右/下且先验证 bounds，地图外不产生 grass fallback 假海岸。地图切换、Restart、Load 才通过既有 map revision 路径重建地形，普通 `renderNow()` 不重复生成路径。
+- 当前 CI 只验证源码检查、Swift core 和 iOS build，没有自动化 SpriteKit/SwiftUI 截图、像素对比、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸或离屏快捷键 UI 测试；v1.88-v1.90 人工视觉与交互 smoke 仅在本机有完整 Xcode 和可用 Simulator 时执行，不能用 parse/build 代替真实 UI 运行结论。
 - 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
 
 ## 云端重验证

@@ -102,19 +102,206 @@ final class BattlefieldScene: SKScene {
 
     private func drawTerrain(_ terrain: TerrainGrid) {
         terrainNode.removeAllChildren()
+
+        // Keep node count fixed by collecting all tiles into material and boundary paths.
+        let variationCount = 3
+        var fillPaths: [TerrainKind: [CGMutablePath]] = [:]
+        for kind in TerrainKind.allCases {
+            fillPaths[kind] = (0..<variationCount).map { _ in CGMutablePath() }
+        }
+
+        let grassDetailPath = CGMutablePath()
+        let dirtDetailPath = CGMutablePath()
+        let sandDetailPath = CGMutablePath()
+        let rockDetailPath = CGMutablePath()
+        let waterDetailPath = CGMutablePath()
+        let deepDetailPath = CGMutablePath()
+        let lavaDetailPath = CGMutablePath()
+        let coastPath = CGMutablePath()
+        let depthPath = CGMutablePath()
+        let lavaBankPath = CGMutablePath()
+        let tileSize = GameConstants.tileSize
+
         for row in 0..<terrain.rows {
             for column in 0..<terrain.columns {
-                let tile = SKShapeNode(rect: CGRect(
-                    x: Double(column) * GameConstants.tileSize,
-                    y: -Double(row + 1) * GameConstants.tileSize,
-                    width: GameConstants.tileSize,
-                    height: GameConstants.tileSize
-                ))
-                tile.fillColor = color(for: terrain.terrain(column: column, row: row))
-                tile.strokeColor = tile.fillColor
-                terrainNode.addChild(tile)
+                let kind = terrain.terrain(column: column, row: row)
+                let rect = CGRect(
+                    x: Double(column) * tileSize,
+                    y: -Double(row + 1) * tileSize,
+                    width: tileSize,
+                    height: tileSize
+                )
+                let variationBucket = terrainVariationBucket(column: column, row: row)
+                fillPaths[kind]?[variationBucket].addRect(rect.insetBy(dx: -0.22, dy: -0.22))
+
+                let detailGate = terrainUnitNoise(column: column, row: row, salt: 41)
+                let detailX = rect.minX + 7 + terrainUnitNoise(column: column, row: row, salt: 53) * 30
+                let detailY = rect.minY + 7 + terrainUnitNoise(column: column, row: row, salt: 67) * 30
+                switch kind {
+                case .grass, .grass2 where detailGate > 0.44:
+                    grassDetailPath.move(to: CGPoint(x: detailX - 3, y: detailY - 2))
+                    grassDetailPath.addLine(to: CGPoint(x: detailX, y: detailY + 3))
+                    grassDetailPath.addLine(to: CGPoint(x: detailX + 3, y: detailY - 1))
+                case .dirt where detailGate > 0.38:
+                    let radius = 1.1 + terrainUnitNoise(column: column, row: row, salt: 79) * 1.2
+                    dirtDetailPath.addEllipse(in: CGRect(
+                        x: detailX - radius,
+                        y: detailY - radius,
+                        width: radius * 2,
+                        height: radius * 2
+                    ))
+                case .sand where detailGate > 0.34:
+                    let length = 6 + terrainUnitNoise(column: column, row: row, salt: 83) * 9
+                    sandDetailPath.move(to: CGPoint(x: detailX - length / 2, y: detailY))
+                    sandDetailPath.addLine(to: CGPoint(x: detailX + length / 2, y: detailY + 1))
+                case .rock where detailGate > 0.28:
+                    let length = 5 + terrainUnitNoise(column: column, row: row, salt: 97) * 8
+                    rockDetailPath.move(to: CGPoint(x: detailX - length / 2, y: detailY - 2))
+                    rockDetailPath.addLine(to: CGPoint(x: detailX - 1, y: detailY + 2))
+                    rockDetailPath.addLine(to: CGPoint(x: detailX + length / 2, y: detailY - 1))
+                case .water where detailGate > 0.24:
+                    let length = 8 + terrainUnitNoise(column: column, row: row, salt: 101) * 12
+                    waterDetailPath.move(to: CGPoint(x: detailX - length / 2, y: detailY))
+                    waterDetailPath.addLine(to: CGPoint(x: detailX + length / 2, y: detailY))
+                case .deep where detailGate > 0.30:
+                    let length = 7 + terrainUnitNoise(column: column, row: row, salt: 107) * 11
+                    deepDetailPath.move(to: CGPoint(x: detailX - length / 2, y: detailY))
+                    deepDetailPath.addLine(to: CGPoint(x: detailX + length / 2, y: detailY))
+                case .lava where detailGate > 0.26:
+                    let length = 7 + terrainUnitNoise(column: column, row: row, salt: 109) * 10
+                    lavaDetailPath.move(to: CGPoint(x: detailX - length / 2, y: detailY - 2))
+                    lavaDetailPath.addLine(to: CGPoint(x: detailX - 1, y: detailY + 2))
+                    lavaDetailPath.addLine(to: CGPoint(x: detailX + length / 2, y: detailY - 1))
+                default:
+                    break
+                }
+
+                if column + 1 < terrain.columns {
+                    appendTerrainBoundary(
+                        first: kind,
+                        second: terrain.terrain(column: column + 1, row: row),
+                        start: CGPoint(x: rect.maxX, y: rect.minY),
+                        end: CGPoint(x: rect.maxX, y: rect.maxY),
+                        coastPath: coastPath,
+                        depthPath: depthPath,
+                        lavaBankPath: lavaBankPath
+                    )
+                }
+                if row + 1 < terrain.rows {
+                    appendTerrainBoundary(
+                        first: kind,
+                        second: terrain.terrain(column: column, row: row + 1),
+                        start: CGPoint(x: rect.minX, y: rect.minY),
+                        end: CGPoint(x: rect.maxX, y: rect.minY),
+                        coastPath: coastPath,
+                        depthPath: depthPath,
+                        lavaBankPath: lavaBankPath
+                    )
+                }
             }
         }
+
+        for kind in TerrainKind.allCases {
+            for bucket in 0..<variationCount {
+                guard let path = fillPaths[kind]?[bucket], !path.isEmpty else {
+                    continue
+                }
+                let node = SKShapeNode(path: path)
+                node.fillColor = terrainColor(for: kind, variationBucket: bucket)
+                node.strokeColor = node.fillColor
+                node.lineWidth = 0
+                node.isAntialiased = false
+                terrainNode.addChild(node)
+            }
+        }
+
+        addTerrainStroke(path: grassDetailPath, color: SKColor(red: 0.62, green: 0.76, blue: 0.45, alpha: 0.24), lineWidth: 1.1)
+        addTerrainFill(path: dirtDetailPath, color: SKColor(red: 0.22, green: 0.17, blue: 0.13, alpha: 0.24))
+        addTerrainStroke(path: sandDetailPath, color: SKColor(red: 0.92, green: 0.82, blue: 0.63, alpha: 0.24), lineWidth: 1.1)
+        addTerrainStroke(path: rockDetailPath, color: SKColor(red: 0.19, green: 0.21, blue: 0.21, alpha: 0.34), lineWidth: 1.3)
+        addTerrainStroke(path: waterDetailPath, color: SKColor(red: 0.54, green: 0.83, blue: 0.96, alpha: 0.28), lineWidth: 1.1)
+        addTerrainStroke(path: deepDetailPath, color: SKColor(red: 0.35, green: 0.67, blue: 0.86, alpha: 0.22), lineWidth: 1)
+        addTerrainStroke(path: lavaDetailPath, color: SKColor(red: 1, green: 0.56, blue: 0.16, alpha: 0.48), lineWidth: 1.4)
+
+        addTerrainStroke(path: coastPath, color: SKColor(red: 0.02, green: 0.12, blue: 0.16, alpha: 0.62), lineWidth: 5)
+        addTerrainStroke(path: coastPath, color: SKColor(red: 0.72, green: 0.91, blue: 0.92, alpha: 0.46), lineWidth: 1.35)
+        addTerrainStroke(path: depthPath, color: SKColor(red: 0.27, green: 0.62, blue: 0.84, alpha: 0.34), lineWidth: 1.4)
+        addTerrainStroke(path: lavaBankPath, color: SKColor(red: 0.09, green: 0.035, blue: 0.025, alpha: 0.78), lineWidth: 5.5)
+        addTerrainStroke(path: lavaBankPath, color: SKColor(red: 1, green: 0.42, blue: 0.08, alpha: 0.58), lineWidth: 1.5)
+    }
+
+    private func appendTerrainBoundary(
+        first: TerrainKind,
+        second: TerrainKind,
+        start: CGPoint,
+        end: CGPoint,
+        coastPath: CGMutablePath,
+        depthPath: CGMutablePath,
+        lavaBankPath: CGMutablePath
+    ) {
+        guard first != second else {
+            return
+        }
+        if (first == .lava) != (second == .lava) {
+            lavaBankPath.move(to: start)
+            lavaBankPath.addLine(to: end)
+            return
+        }
+
+        let firstIsWater = isWaterTerrain(first)
+        let secondIsWater = isWaterTerrain(second)
+        if firstIsWater != secondIsWater {
+            coastPath.move(to: start)
+            coastPath.addLine(to: end)
+        } else if firstIsWater, secondIsWater {
+            depthPath.move(to: start)
+            depthPath.addLine(to: end)
+        }
+    }
+
+    private func isWaterTerrain(_ terrain: TerrainKind) -> Bool {
+        terrain == .water || terrain == .deep
+    }
+
+    private func addTerrainStroke(path: CGPath, color: SKColor, lineWidth: CGFloat) {
+        guard !path.isEmpty else {
+            return
+        }
+        let node = SKShapeNode(path: path)
+        node.fillColor = .clear
+        node.strokeColor = color
+        node.lineWidth = lineWidth
+        node.lineCap = .round
+        node.lineJoin = .round
+        terrainNode.addChild(node)
+    }
+
+    private func addTerrainFill(path: CGPath, color: SKColor) {
+        guard !path.isEmpty else {
+            return
+        }
+        let node = SKShapeNode(path: path)
+        node.fillColor = color
+        node.strokeColor = .clear
+        node.lineWidth = 0
+        terrainNode.addChild(node)
+    }
+
+    private func terrainVariationBucket(column: Int, row: Int) -> Int {
+        Int(stableTerrainHash(column: column, row: row, salt: 17) % 3)
+    }
+
+    private func terrainUnitNoise(column: Int, row: Int, salt: Int) -> CGFloat {
+        CGFloat(stableTerrainHash(column: column, row: row, salt: salt) % 10_001) / 10_000
+    }
+
+    private func stableTerrainHash(column: Int, row: Int, salt: Int) -> UInt64 {
+        let mixed = column &* 374_761_393 &+ row &* 668_265_263 &+ salt &* 1_442_695_041
+        var value = UInt64(truncatingIfNeeded: mixed)
+        value ^= value >> 13
+        value &*= 1_274_126_177
+        value ^= value >> 16
+        return value
     }
 
     private func drawResources(_ resources: [ResourceNode]) {
@@ -1654,24 +1841,33 @@ final class BattlefieldScene: SKScene {
         }
     }
 
-    private func color(for terrain: TerrainKind) -> SKColor {
+    private func terrainColor(for terrain: TerrainKind, variationBucket: Int) -> SKColor {
+        let base: (red: CGFloat, green: CGFloat, blue: CGFloat)
         switch terrain {
         case .grass:
-            SKColor(red: 0.22, green: 0.45, blue: 0.24, alpha: 1)
+            base = (0.20, 0.43, 0.22)
         case .grass2:
-            SKColor(red: 0.25, green: 0.5, blue: 0.26, alpha: 1)
+            base = (0.24, 0.49, 0.25)
         case .dirt:
-            SKColor(red: 0.51, green: 0.42, blue: 0.33, alpha: 1)
+            base = (0.49, 0.39, 0.30)
         case .sand:
-            SKColor(red: 0.71, green: 0.58, blue: 0.47, alpha: 1)
+            base = (0.72, 0.60, 0.45)
         case .rock:
-            SKColor(red: 0.47, green: 0.48, blue: 0.45, alpha: 1)
+            base = (0.43, 0.45, 0.43)
         case .water:
-            SKColor(red: 0.11, green: 0.41, blue: 0.71, alpha: 1)
+            base = (0.09, 0.39, 0.69)
         case .deep:
-            SKColor(red: 0.08, green: 0.33, blue: 0.56, alpha: 1)
+            base = (0.055, 0.27, 0.50)
         case .lava:
-            SKColor(red: 0.61, green: 0.17, blue: 0.13, alpha: 1)
+            base = (0.58, 0.12, 0.075)
         }
+
+        let offset = CGFloat(variationBucket - 1) * 0.026
+        return SKColor(
+            red: min(1, max(0, base.red + offset)),
+            green: min(1, max(0, base.green + offset)),
+            blue: min(1, max(0, base.blue + offset)),
+            alpha: 1
+        )
     }
 }

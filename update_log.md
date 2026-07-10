@@ -3511,3 +3511,36 @@
 遗留事项：
 
 - v1.89 只完成响应式 HUD 信息架构和布局地基，仍没有 XCUITest/自动化截图/VoiceOver 回归、触觉/音效、正式图标资源、手势命令确认或用户可配置 dock；后续若设计折叠 dock，必须另轮验证所有显式按钮和离屏快捷键不会被移出视图层级。
+
+### v1.90 / iOS procedural terrain materials
+
+日期：2026-07-11
+
+核心变更：
+
+- `BattlefieldScene.drawTerrain` 不再为约 6,000 个 44pt tile 分别创建 `SKShapeNode`，而是按 8 种 `TerrainKind` 和 3 档稳定色差聚合为最多 24 个基础 compound path。
+- 稳定整数 hash 只读取 column、row 和固定 salt；同一 `TerrainGrid` 每次加载产生相同色差和细节位置，不依赖随机数、时间或 Swift `Hasher`。
+- grass/grass2、dirt、sand、rock、water、deep、lava 分别获得低对比草痕、颗粒/划痕、岩石裂线、短水纹和熔岩亮裂隙；7 类细节各自聚合为单一 path，不按 tile 增加 SpriteKit node。
+- 相邻边界只检查右侧和下侧并显式验证 bounds：水域/陆地生成深色岸脚和浅色泡沫，water/deep 生成深度分界，lava/非 lava 生成焦岸和橙色热边；地图外不会借用 `TerrainGrid` grass fallback 生成假海岸。
+- 基础、细节和双层边界合计上限约 36 个 terrain node，只在 map id 或 `mapRenderRevision` 变化时重建；地形仍位于资源、实体、短战斗特效、浅雾/深雾和雷达下方。
+- 本轮没有修改 `RustwarCore`、`TerrainKind`、通行、命中、存档、HUD、Tactical Map、Web 或 Xcode project，也没有新增图片、第三方依赖或网络素材。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.90-ios-procedural-terrain-materials.md`
+- `update_log.md`
+
+验证结果：
+
+- 本地通过：`git diff --check`、`node --check app.js`、`swiftc -parse ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`。
+- 本地 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 iOS Simulator build 均未进入项目检查：active developer directory 是 `/Library/Developer/CommandLineTools`，`xcodebuild` 要求完整 Xcode。
+- 本机没有完整 Xcode 和可用 Simulator，未运行 Coast / Islands / Lava 人工视觉 smoke、tile 裂缝检查或节点性能采样；云端 SwiftPM、iOS build 和 artifact 复判等待本轮 push。
+
+遗留事项：
+
+- v1.90 仍是程序化矢量材质，没有正式 tile atlas、地形过渡贴图、植被/环境物件、动态水面、地形高度、昼夜或自动化截图回归；后续应在完整 Xcode/真机上先做三图像素与帧率检查，再继续正式资源管线。

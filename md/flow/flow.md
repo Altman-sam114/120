@@ -23,12 +23,15 @@ v1.0 起新增原生 iOS 迁移链路。它不是 Web 版替代品，当前覆�
 
 v1.89 新增 iOS compact tactical HUD：`RootGameView` 按真实容器 geometry 选择 regular trailing、compact trailing 或 compact bottom 三档展示角色，把 safe-area 顶栏、Battlefield、command dock 和 Tactical Map 分成不相交区域；`GameHUDView` 把固定选择 header 与 Commands / Build & Upgrade / Production / Selection / Groups / Session 六组连续滚动内容分开。该链路只读现有 controller 派生状态并调用原 action，不修改玩法、存档或快捷键语义。
 
+v1.90 新增 iOS 程序化地形材质：`BattlefieldScene` 只读既有 `TerrainGrid`，用稳定整数 hash 把每种 `TerrainKind` 分成 3 档色差并聚合为 compound fill path，再聚合草痕、砂土/岩石细节、水面/熔岩纹理和海岸/深水/熔岩边界。地形路径只在 map id 或 `mapRenderRevision` 变化时重建，节点数由地形/色阶/细节类别决定，不随 tile 数量线性增长，也不回写 Core。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
   -> RootGameView geometry -> TacticalHUDLayoutRole 三档 safe-area 分区
   -> GameHUD top status bar + fixed dock header + continuous command sections
   -> reserved Battlefield region + non-overlapping TacticalMapView
+  -> TerrainGrid stable hash + compound fill/detail/boundary paths -> terrainNode
   -> SpriteKit BattlefieldScene 只读快照，维护 scene-only 朝向 / cooldown / HP 历史
   -> 程序化单位与建筑复合几何 + 短生命周期有界火力/受击效果
   -> effect layer 位于当前可见/已探索战争迷雾下，radar signal 语义保持不变
@@ -398,6 +401,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v1.6 起，`GameController.currentMapID` 由 HUD Map picker 绑定，切换地图或 Restart 会重建 `GameEngine(mapID:)`、重置 `CameraState`、清除待选 Move/Attack/Attack Move/Patrol 模式，并推进 `mapRenderRevision` 让 `BattlefieldScene` 在同图重开时也刷新地形和资源层。
 - v1.88 起，`BattlefieldScene` 只读 `GameState` / unit / building definition，把 7 类单位和 5 类建筑渲染为无字母的程序化复合几何。单位的 scene-only heading 优先取相邻快照位移，其次取合法可见攻击目标或订单方向，再回退到上次有效值；炮塔朝向同样只保存在 Scene，不回写 Core 或存档。Scene 以 cooldown 从低值跃迁到 reload 附近判定一次开火、以 HP 下降判定一次受击；短炮口焰、弹丸和命中闪光放在 `entityNode` 之上、`fogNode` 之下的有界 `effectNode`，同一快照重复 render 不会重复触发，死亡实体历史会裁剪，`mapRenderRevision` 变化会清空效果并从当前快照重新播种。`BattlefieldView` 只把 SwiftUI `accessibilityReduceMotion` 同步给 Scene；开启时跳过跨屏弹丸运动和缩放，仅保留短透明度反馈。敌方真实剪影和精确 tracer 仍要求当前可见，雷达 contact 继续只显示青色信号点；整个渲染链不推进伤害、AI、资源或订单。
 - v1.89 起，`RootGameView` 用 `GeometryReader` 的真实容器宽高选择三档 `TacticalHUDLayoutRole`：`>= 700pt` 使用 28% 且 clamp 268-320pt 的 regular trailing dock；560-699pt 横屏使用 34% 且 clamp 232-276pt 的 compact trailing dock；其余使用 34% 且 clamp 216-320pt 的 compact bottom dock，极短容器最低 180pt，accessibility Dynamic Type 会提高 bottom dock 目标比例。顶栏、Battlefield、dock 通过 `VStack` / `HStack` 真实分区，Tactical Map 只 overlay 在 Battlefield 自身区域，因此 map 和 dock frame 不相交，Battlefield viewport 改变会继续经现有路径更新 Screen Combat 与小地图视口框。`GameHUDView` 顶栏只读 Metal / Income / Pop / Radar / Pause / Speed；dock header 固定显示 Selected、姿态/升级摘要、commandStatus 与 Replace/Add，下面用 eager `TacticalCommandGrid` 在同一 `ScrollView` 中按 Commands、Build & Upgrade、Production、Selection、Groups、Session 顺序展示全部原控件。eager layout 让滚离屏幕的原 Button 及其 keyboard shortcut 仍保留在视图层级；所有 action、disabled 条件、VoiceOver label/value/hint 仍直接复用 controller，waiting/active/Repeat/AI 同时使用文字与图标而非只靠颜色。布局本身不增加动画，Reduce Motion 下禁用可能的隐式 layout animation。
+- v1.90 起，`BattlefieldScene.drawTerrain` 不再给每个 44pt tile 创建独立节点。Scene 用稳定整数 hash 为 8 种 `TerrainKind` 选择 3 档轻微色差，把基础矩形聚合进最多 24 个 compound `CGMutablePath`；草地、砂土、岩石、水/深水和熔岩细节分别聚合成 7 个低对比路径。相邻边界只检查右侧和下侧且先做 bounds 门控，水域/陆地生成岸脚与泡沫，water/deep 生成深度线，lava/非 lava 生成焦岸与热边，避免重复线段和地图外 grass fallback 假边界。基础、细节和边界合计上限约 36 个 terrain node，只在既有地图重建路径运行；`terrainNode` 仍位于资源、实体、`effectNode`、`fogNode` 和雷达层下方，Core 地形、通行、雾和存档不变。
 - v1.7 起，`RootGameView` 叠加原生 `TacticalMapView`；小地图用 SwiftUI `Canvas` 从 `GameState.resources`、`units`、`buildings` 和 `CameraState.center` 绘制资源、双方实体和相机中心，点按/拖放小地图会调用 `GameController.centerCamera(on:)`，再由 `CameraState.center(on:)` 夹到地图边界。
 - v1.8 起，选中己方单位时 HUD 显示 Stop 命令；点按 Stop 会调用 `GameEngine.issueStop()` 清除当前选中玩家单位的 `UnitSnapshot.order`，并由 `GameController` 取消待选 Move/Attack Move/Patrol/Guard/Repair/Reclaim/Build Extractor/Attack 目标模式。SpriteKit 订单线会随 `order == nil` 自然消失。
 - v1.9 起，选中己方生产建筑时 HUD 显示 Rally 命令；Rally 模式下一次主战场 tap 会调用 `GameEngine.setRally(to:)` 更新 `BuildingSnapshot.rally`，后续生产完成的单位在新集结点生成。SpriteKit 在选中己方生产建筑时显示建筑到集结点的线和标记。
