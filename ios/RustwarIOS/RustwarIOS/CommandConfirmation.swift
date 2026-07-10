@@ -5,7 +5,7 @@ enum CommandConfirmationKind: Equatable, Sendable {
     case attack
     case attackMove
     case patrol
-    case guard
+    case guardTarget
     case repair
     case reclaim
     case build

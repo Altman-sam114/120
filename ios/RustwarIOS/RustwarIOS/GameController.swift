@@ -1504,7 +1504,7 @@ final class GameController {
 
         let result = engine.issueGuard(targetID: target.id)
         commandStatus = statusText(forGuard: result)
-        reportCommandFeedback(for: result, confirmation: .guard, at: target.position)
+        reportCommandFeedback(for: result, confirmation: .guardTarget, at: target.position)
     }
 
     private func isDamagedPlayerTarget(_ target: SelectionTarget) -> Bool {
@@ -1612,7 +1612,7 @@ final class GameController {
             }
             isAwaitingGuardTarget = false
             commandStatus = statusText(forGuard: result)
-            reportCommandFeedback(for: result, confirmation: .guard, at: target?.position ?? point)
+            reportCommandFeedback(for: result, confirmation: .guardTarget, at: target?.position ?? point)
         } else if isAwaitingRepairTarget {
             let target = engine.state.selectionTargetVisibleToPlayer(at: point, includeEnemies: true)
             let result: UnitCommandResult

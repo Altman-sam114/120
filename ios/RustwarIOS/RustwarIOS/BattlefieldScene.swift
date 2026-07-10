@@ -1059,7 +1059,7 @@ final class BattlefieldScene: SKScene {
             SKColor(red: 1, green: 0.55, blue: 0.12, alpha: 1)
         case .patrol:
             SKColor(red: 0.20, green: 0.84, blue: 0.98, alpha: 1)
-        case .guard:
+        case .guardTarget:
             SKColor(red: 0.30, green: 0.58, blue: 1, alpha: 1)
         case .repair:
             SKColor(red: 0.42, green: 0.98, blue: 0.72, alpha: 1)
@@ -1103,7 +1103,7 @@ final class BattlefieldScene: SKScene {
             path.move(to: CGPoint(x: 13, y: -6))
             path.addLine(to: CGPoint(x: 17, y: -12))
             path.addLine(to: CGPoint(x: 9, y: -12))
-        case .guard:
+        case .guardTarget:
             path.move(to: CGPoint(x: 0, y: 18))
             path.addLine(to: CGPoint(x: 14, y: 11))
             path.addLine(to: CGPoint(x: 11, y: -7))
