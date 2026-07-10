@@ -33,12 +33,15 @@ v1.93 重构 iOS 战术 HUD 组件边界：`TacticalHUDLayoutMetrics` 由真实�
 
 v1.94 新增原生命令触觉反馈：`GameController` 在离散用户 action 的明确结果处分流 selection / success / warning revision，`RootGameView` 用三个 SwiftUI `sensoryFeedback` modifier 消费；结果分类读取 Core enum case，不解析状态文本。帧循环、AI、渲染 revision 和所有连续相机输入不写触觉 revision。
 
+v1.95 新增战场命令确认 marker：成功的点位/实体命令由 `GameController` 发布 presentation-only `CommandConfirmation(kind, position, revision)`，`BattlefieldScene` 只消费新 revision，并在当前真实视野内的世界坐标生成类型化目标环。marker 复用有界 `effectNode`、位于雾层下、使用逆 zoom 保持屏幕尺寸，且 Reduce Motion 不执行缩放。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
   -> RootGameView geometry -> TacticalHUDLayoutMetrics -> 三档 safe-area 分区
   -> TacticalHUDComponents -> GameHUD top status bar + fixed dock header + continuous command sections
   -> explicit selection / command result -> feedback revisions -> SwiftUI sensoryFeedback
+  -> successful world command -> CommandConfirmation -> bounded SpriteKit marker under fog
   -> reserved Battlefield region + non-overlapping TacticalMapView
   -> TerrainGrid stable hash + compound fill/detail/boundary paths -> terrainNode
   -> SpriteKit BattlefieldScene 只读快照，维护 scene-only 朝向 / cooldown / HP / entity-id 历史
@@ -416,6 +419,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v1.93 起，`TacticalHUDLayoutMetrics` 把 v1.89-v1.92 分散在 `RootGameView` 的断点、dock width、bottom dock height 和 Tactical Map size 计算集中为单一不可变值；`RootGameView` 每次 geometry 更新只创建一次 metrics，不再分别重复推导 role 和尺寸。`TacticalHUDComponents` 集中 `TacticalMetricView`、`TacticalCommandStatusView`、`TacticalSectionHeader`、`TacticalCommandGrid` 与统一按钮 modifier；`GameHUDView` 只保留状态栏/command dock 编排和 controller action 绑定。指标块、分区图标/分隔线和普通/等待命令状态边界强化扫描层级，但六组顺序、eager layout、快捷键、辅助功能语义、44pt 目标和 v1.92 尺寸矩阵不变。
 - v1.94 起，`GameController` 暴露三个只增不减的反馈 revision：selection 覆盖选择集合变化、批量/同类/框选/编队召回、Replace/Add 和等待命令模式；command success 覆盖 Core `.issued` / `.queued` / `.cancelled` / `.updated` 等成功 case；warning 覆盖其它拒绝 case、无存档和编码解码失败。`RootGameView` 分别绑定 `.selection`、`.success`、`.warning`，没有 UIKit generator。`advance`、pan/zoom、Tactical Map drag、keyboard repeat、render/map revision 和 AI 都不调用反馈 helper，因此持续模拟和相机操作不会产生触觉风暴。
 - v1.94 同时把 terrain switch 的 `.grass, .grass2 where detailGate > 0.44` 改为共享 case 内的显式 guard，使两种草地都受相同稳定噪声 gate 控制，并消除 Swift 只对第二个 pattern 应用 `where` 的警告；其它地形材质和节点边界不变。
+- v1.95 起，`CommandConfirmation` 与九类 `CommandConfirmationKind` 留在 iOS presentation target。Controller 的类型化 result helper 只在 `.issued` 后附带目标坐标发布事件；context、等待点位和等待实体命令都使用真实 target/resource/wreck 或 clamp 后的 build position，失败只触发 warning sensory feedback。Scene 在收到未消费 revision 时先更新已消费值，再检查 `VisibilitySnapshot`，因此不可见事件不会在以后开视野时重放。marker 进入既有 `effectNode` 64 上限，颜色和路径同时区分类型；逆 camera zoom 维持约 60pt 外环，普通生命周期 0.78 秒，Reduce Motion 为 0.3 秒静态淡出。
 - v1.7 起，`RootGameView` 叠加原生 `TacticalMapView`；小地图用 SwiftUI `Canvas` 从 `GameState.resources`、`units`、`buildings` 和 `CameraState.center` 绘制资源、双方实体和相机中心，点按/拖放小地图会调用 `GameController.centerCamera(on:)`，再由 `CameraState.center(on:)` 夹到地图边界。
 - v1.8 起，选中己方单位时 HUD 显示 Stop 命令；点按 Stop 会调用 `GameEngine.issueStop()` 清除当前选中玩家单位的 `UnitSnapshot.order`，并由 `GameController` 取消待选 Move/Attack Move/Patrol/Guard/Repair/Reclaim/Build Extractor/Attack 目标模式。SpriteKit 订单线会随 `order == nil` 自然消失。
 - v1.9 起，选中己方生产建筑时 HUD 显示 Rally 命令；Rally 模式下一次主战场 tap 会调用 `GameEngine.setRally(to:)` 更新 `BuildingSnapshot.rally`，后续生产完成的单位在新集结点生成。SpriteKit 在选中己方生产建筑时显示建筑到集结点的线和标记。

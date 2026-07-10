@@ -132,6 +132,7 @@ git diff --check
 - v1.92 已在 Xcode 26.6、iOS 26.5 iPhone 17 Pro Simulator 运行当前原生 App并保存 before/after 临时截图；after 首屏确认战场变宽、dock 单列、map 缩小且标题完整。该证据只覆盖首屏静态布局，不覆盖触摸滚动、全部 dock section、VoiceOver、Dynamic Type、旋转状态保持、等待命令、战斗特效或帧率。
 - v1.93 云端代码验收必须确认 `TacticalHUDLayout.swift` 和 `TacticalHUDComponents.swift` 已加入 `RustwarIOS` target，`RootGameView` 只消费一次 `TacticalHUDLayoutMetrics`，且 v1.92 六组尺寸矩阵、eager command layout、action、快捷键和辅助功能语义未被重构改写。当前 workflow 没有 SwiftUI 截图或 UI 自动化，因此视觉层级、真实滚动和触摸仍是剩余风险，禁止用 build 成功替代 UI 运行结论。
 - v1.94 云端代码验收必须确认三个 feedback revision 能被 Observation/SwiftUI 编译，`RootGameView` 分别绑定 `.selection` / `.success` / `.warning`；成功/失败分类读取具体 Core enum case，且 `advance`、pan、zoom、Tactical Map drag、keyboard repeat、render/map revision 和 AI 路径没有 feedback helper。`BattlefieldScene` 云端日志不得继续出现 `where only applies to the second pattern` warning。当前 workflow 没有真机触觉/XCUITest，build 成功只能证明 API 和代码路径可编译，不能证明实际振感强度或设备支持。
+- v1.95 云端代码验收必须确认 `CommandConfirmation.swift` 已加入 iOS target，九类 kind 完整处理且 switch 穷尽；只有成功 Unit/Rally command overload 发布事件，失败仍只走 warning。Scene 必须先消费 revision 再做 current visibility gate，marker 位于 `effectNode` 且不超过其 64 节点上限，普通/Reduce Motion 生命周期分别不超过 0.8/0.3 秒，并使用逆 zoom 稳定尺寸。当前 workflow 没有 SpriteKit screenshot/像素测试，云端 build 不能证明颜色、形状、遮挡、缩放或动画实际观感。
 - 当前 CI 只验证源码检查、Swift core 和 iOS build，没有自动化 SpriteKit/SwiftUI 截图、像素对比、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸或离屏快捷键 UI 测试；v1.88-v1.92 人工视觉与交互 smoke 仅在本机有完整 Xcode 和可用 Simulator 时执行，不能用 parse/build 代替真实 UI 运行结论。
 - 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
 

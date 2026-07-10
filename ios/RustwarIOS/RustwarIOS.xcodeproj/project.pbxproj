@@ -21,6 +21,7 @@
 		A00100000000000000000012 /* KeyboardCameraDirection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000012 /* KeyboardCameraDirection.swift */; };
 		A00100000000000000000013 /* TacticalHUDLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000013 /* TacticalHUDLayout.swift */; };
 		A00100000000000000000014 /* TacticalHUDComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000014 /* TacticalHUDComponents.swift */; };
+		A00100000000000000000015 /* CommandConfirmation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000015 /* CommandConfirmation.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +39,7 @@
 		A00200000000000000000012 /* KeyboardCameraDirection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardCameraDirection.swift; sourceTree = "<group>"; };
 		A00200000000000000000013 /* TacticalHUDLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalHUDLayout.swift; sourceTree = "<group>"; };
 		A00200000000000000000014 /* TacticalHUDComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalHUDComponents.swift; sourceTree = "<group>"; };
+		A00200000000000000000015 /* CommandConfirmation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandConfirmation.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +72,7 @@
 				A00200000000000000000004 /* RootGameView.swift */,
 				A00200000000000000000013 /* TacticalHUDLayout.swift */,
 				A00200000000000000000014 /* TacticalHUDComponents.swift */,
+				A00200000000000000000015 /* CommandConfirmation.swift */,
 				A00200000000000000000005 /* GameHUDView.swift */,
 				A00200000000000000000006 /* BattlefieldView.swift */,
 				A00200000000000000000007 /* BattlefieldScene.swift */,
@@ -170,6 +173,7 @@
 				A00100000000000000000004 /* RootGameView.swift in Sources */,
 				A00100000000000000000013 /* TacticalHUDLayout.swift in Sources */,
 				A00100000000000000000014 /* TacticalHUDComponents.swift in Sources */,
+				A00100000000000000000015 /* CommandConfirmation.swift in Sources */,
 				A00100000000000000000005 /* GameHUDView.swift in Sources */,
 				A00100000000000000000006 /* BattlefieldView.swift in Sources */,
 				A00100000000000000000007 /* BattlefieldScene.swift in Sources */,

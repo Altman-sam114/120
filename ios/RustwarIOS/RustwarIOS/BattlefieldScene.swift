@@ -3,7 +3,11 @@ import RustwarCore
 
 @MainActor
 final class BattlefieldScene: SKScene {
-    weak var controller: GameController?
+    weak var controller: GameController? {
+        didSet {
+            renderedCommandConfirmationRevision = controller?.commandConfirmation?.revision ?? 0
+        }
+    }
     var accessibilityReduceMotion = false {
         didSet {
             if accessibilityReduceMotion {
@@ -25,6 +29,7 @@ final class BattlefieldScene: SKScene {
     private var lastUpdateTime: TimeInterval?
     private var renderedMapID: MapID?
     private var renderedMapRevision = -1
+    private var renderedCommandConfirmationRevision = 0
     private var previousUnitPositions: [String: WorldPoint] = [:]
     private var unitHeadings: [String: CGFloat] = [:]
     private var turretHeadings: [String: CGFloat] = [:]
@@ -80,6 +85,7 @@ final class BattlefieldScene: SKScene {
         let playerRadarContacts = state.radarContacts(for: .player)
         let selectedIDs = selectedEntityIDs(in: state)
         updateVisualHistoryAndEffects(state, playerVisibility: playerVisibility)
+        showCommandConfirmationIfNeeded(controller.commandConfirmation, visibility: playerVisibility)
         drawResources(state.resources)
         drawEntities(state, playerVisibility: playerVisibility, selectedIDs: selectedIDs)
         drawFog(visibility: playerVisibility, explored: playerExplored)
@@ -989,6 +995,166 @@ final class BattlefieldScene: SKScene {
         }
         effectNode.addChild(effect)
         effect.run(.sequence([.wait(forDuration: lifetime), .removeFromParent()]))
+    }
+
+    private func showCommandConfirmationIfNeeded(
+        _ confirmation: CommandConfirmation?,
+        visibility: VisibilitySnapshot
+    ) {
+        guard let confirmation,
+              confirmation.revision != renderedCommandConfirmationRevision else {
+            return
+        }
+        renderedCommandConfirmationRevision = confirmation.revision
+        guard visibility.isVisible(at: confirmation.position) else {
+            return
+        }
+
+        let marker = SKNode()
+        marker.position = spritePoint(for: confirmation.position)
+        let screenScale = 1 / max(0.01, CGFloat(controller?.camera.zoom ?? 1))
+        marker.setScale(screenScale)
+
+        let color = commandConfirmationColor(for: confirmation.kind)
+        let outerRing = SKShapeNode(circleOfRadius: 30)
+        outerRing.fillColor = color.withAlphaComponent(0.08)
+        outerRing.strokeColor = color.withAlphaComponent(0.92)
+        outerRing.lineWidth = 2.4
+        outerRing.glowWidth = 2
+        marker.addChild(outerRing)
+
+        let symbol = SKShapeNode(path: commandConfirmationPath(for: confirmation.kind))
+        symbol.fillColor = .clear
+        symbol.strokeColor = color
+        symbol.lineWidth = 3
+        symbol.lineCap = .round
+        symbol.lineJoin = .round
+        marker.addChild(symbol)
+
+        if accessibilityReduceMotion {
+            marker.alpha = 0.92
+            marker.run(.fadeOut(withDuration: 0.28))
+            addBoundedEffect(marker, lifetime: 0.3)
+        } else {
+            marker.alpha = 0
+            marker.setScale(screenScale * 0.82)
+            marker.run(.sequence([
+                .fadeIn(withDuration: 0.07),
+                .group([
+                    .scale(to: screenScale * 1.08, duration: 0.48),
+                    .fadeAlpha(to: 0.06, duration: 0.68)
+                ])
+            ]))
+            addBoundedEffect(marker, lifetime: 0.78)
+        }
+    }
+
+    private func commandConfirmationColor(for kind: CommandConfirmationKind) -> SKColor {
+        switch kind {
+        case .move:
+            SKColor(red: 0.28, green: 0.94, blue: 0.53, alpha: 1)
+        case .attack:
+            SKColor(red: 1, green: 0.24, blue: 0.18, alpha: 1)
+        case .attackMove:
+            SKColor(red: 1, green: 0.55, blue: 0.12, alpha: 1)
+        case .patrol:
+            SKColor(red: 0.20, green: 0.84, blue: 0.98, alpha: 1)
+        case .guard:
+            SKColor(red: 0.30, green: 0.58, blue: 1, alpha: 1)
+        case .repair:
+            SKColor(red: 0.42, green: 0.98, blue: 0.72, alpha: 1)
+        case .reclaim:
+            SKColor(red: 0.98, green: 0.82, blue: 0.24, alpha: 1)
+        case .build:
+            SKColor(red: 1, green: 0.68, blue: 0.24, alpha: 1)
+        case .rally:
+            SKColor(red: 0.88, green: 0.94, blue: 1, alpha: 1)
+        }
+    }
+
+    private func commandConfirmationPath(for kind: CommandConfirmationKind) -> CGPath {
+        let path = CGMutablePath()
+        switch kind {
+        case .move:
+            path.move(to: CGPoint(x: -18, y: 0))
+            path.addLine(to: CGPoint(x: -5, y: 0))
+            path.move(to: CGPoint(x: 18, y: 0))
+            path.addLine(to: CGPoint(x: 5, y: 0))
+            path.move(to: CGPoint(x: 0, y: -18))
+            path.addLine(to: CGPoint(x: 0, y: -5))
+            path.move(to: CGPoint(x: 0, y: 18))
+            path.addLine(to: CGPoint(x: 0, y: 5))
+        case .attack:
+            path.addEllipse(in: CGRect(x: -10, y: -10, width: 20, height: 20))
+            addCrosshair(to: path, radius: 18, inset: 7)
+        case .attackMove:
+            addCrosshair(to: path, radius: 18, inset: 8)
+            path.move(to: CGPoint(x: -10, y: -10))
+            path.addLine(to: CGPoint(x: 10, y: 10))
+            path.addLine(to: CGPoint(x: 2, y: 9))
+            path.move(to: CGPoint(x: 10, y: 10))
+            path.addLine(to: CGPoint(x: 9, y: 2))
+        case .patrol:
+            path.addArc(center: .zero, radius: 14, startAngle: 0.15, endAngle: 2.75, clockwise: false)
+            path.addArc(center: .zero, radius: 14, startAngle: 3.3, endAngle: 5.9, clockwise: false)
+            path.move(to: CGPoint(x: -13, y: 6))
+            path.addLine(to: CGPoint(x: -17, y: 12))
+            path.addLine(to: CGPoint(x: -9, y: 12))
+            path.move(to: CGPoint(x: 13, y: -6))
+            path.addLine(to: CGPoint(x: 17, y: -12))
+            path.addLine(to: CGPoint(x: 9, y: -12))
+        case .guard:
+            path.move(to: CGPoint(x: 0, y: 18))
+            path.addLine(to: CGPoint(x: 14, y: 11))
+            path.addLine(to: CGPoint(x: 11, y: -7))
+            path.addLine(to: CGPoint(x: 0, y: -18))
+            path.addLine(to: CGPoint(x: -11, y: -7))
+            path.addLine(to: CGPoint(x: -14, y: 11))
+            path.closeSubpath()
+        case .repair:
+            path.move(to: CGPoint(x: -15, y: 0))
+            path.addLine(to: CGPoint(x: 15, y: 0))
+            path.move(to: CGPoint(x: 0, y: -15))
+            path.addLine(to: CGPoint(x: 0, y: 15))
+        case .reclaim:
+            addCornerBrackets(to: path, radius: 17, length: 8)
+            path.addEllipse(in: CGRect(x: -5, y: -5, width: 10, height: 10))
+        case .build:
+            addCornerBrackets(to: path, radius: 16, length: 10)
+            path.move(to: CGPoint(x: -8, y: -8))
+            path.addLine(to: CGPoint(x: 8, y: 8))
+            path.move(to: CGPoint(x: -8, y: 8))
+            path.addLine(to: CGPoint(x: 8, y: -8))
+        case .rally:
+            path.move(to: CGPoint(x: -9, y: -17))
+            path.addLine(to: CGPoint(x: -9, y: 17))
+            path.addLine(to: CGPoint(x: 11, y: 10))
+            path.addLine(to: CGPoint(x: -9, y: 3))
+        }
+        return path
+    }
+
+    private func addCrosshair(to path: CGMutablePath, radius: CGFloat, inset: CGFloat) {
+        path.move(to: CGPoint(x: -radius, y: 0))
+        path.addLine(to: CGPoint(x: -inset, y: 0))
+        path.move(to: CGPoint(x: radius, y: 0))
+        path.addLine(to: CGPoint(x: inset, y: 0))
+        path.move(to: CGPoint(x: 0, y: -radius))
+        path.addLine(to: CGPoint(x: 0, y: -inset))
+        path.move(to: CGPoint(x: 0, y: radius))
+        path.addLine(to: CGPoint(x: 0, y: inset))
+    }
+
+    private func addCornerBrackets(to path: CGMutablePath, radius: CGFloat, length: CGFloat) {
+        for x in [-radius, radius] {
+            for y in [-radius, radius] {
+                let inwardX = x < 0 ? length : -length
+                let inwardY = y < 0 ? length : -length
+                path.move(to: CGPoint(x: x, y: y + inwardY))
+                path.addLine(to: CGPoint(x: x, y: y))
+                path.addLine(to: CGPoint(x: x + inwardX, y: y))
+            }
+        }
     }
 
     private func drawFog(visibility: VisibilitySnapshot, explored: VisibilitySnapshot) {

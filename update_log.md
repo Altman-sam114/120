@@ -3693,3 +3693,39 @@
 
 - CI 没有真机触觉或 XCUITest，云端 build 不能验证设备振感、系统触觉设置、触觉强度和密集手动操作体验；需要后续云端 UI 自动化及真机人工验收。
 - Actions 的 Node 20 action runtime 弃用预警仍待单独升级 workflow。
+
+### v1.95 / iOS battlefield command confirmation markers
+
+日期：2026-07-11
+
+核心变更：
+
+- 新增 presentation-only `CommandConfirmation` / `CommandConfirmationKind`，用 revision、命令类型和世界坐标描述一次成功落点反馈；文件显式加入 `RustwarIOS` target，不进入 Core 或存档。
+- `GameController` 的 Unit/Rally result helper 增加带 marker 的成功 overload。Move、Attack、Attack Move、Patrol、Guard、Repair、Reclaim、Build、Rally 只在 `.issued` 后发布；失败仍只触发 v1.94 warning 触觉，无坐标的 Stop/生产/升级/存档不伪造 marker。
+- `BattlefieldScene` 为九类命令绘制程序化目标环和不同符号：绿色落点、红色准星、橙色攻击移动、青色巡逻、蓝色盾、绿色维修十字、黄色回收框、橙色施工框和浅色 Rally 旗。
+- Scene 先消费新 revision，再用玩家当前 `VisibilitySnapshot` 门控；不可见事件不会生成，也不会在以后开视野时重放。marker 位于 `effectNode`，因此在实体之上、雾和雷达层之下，并复用 64 节点硬上限及自动移除。
+- marker 以 camera zoom 的倒数保持约 60pt 屏幕尺寸。普通模式从 0.82 扩至 1.08 并在 0.78 秒内淡出；Reduce Motion 不缩放/移动，仅在 0.3 秒内静态淡出。
+- 没有修改 Core 命令、AI、战斗、存档、HUD 布局、Web、素材或第三方依赖。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/CommandConfirmation.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS.xcodeproj/project.pbxproj`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.95-ios-command-confirmation-markers.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、parse、Simulator、Preview 或浏览器验证。
+- 实现提交将 push 到 `origin/main`，仅以精确 commit SHA 对应的 GitHub Actions run 和下载 artifact 作为验收依据。
+
+遗留事项：
+
+- 当前 CI 没有 SpriteKit screenshot/XCUITest，不能证明 marker 的实际颜色、形状、雾遮挡、缩放稳定性、密集操作节奏或与爆炸特效的视觉优先级；后续仍需云端视觉自动化和真机人工验收。
+- Tactical Map 暂不绘制 marker；离屏命令仍有触觉和 HUD 状态，但没有小地图落点闪烁。

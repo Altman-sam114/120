@@ -28,6 +28,7 @@
 - v1.92 起，原生 iOS HUD 会先把 `width > height && height < 520pt` 的短高度横屏识别为 compact trailing，即使宽度超过 700pt 也不再误用 iPad regular dock。iPhone 17 Pro、iOS 26.5 Simulator 的真实 874x402pt 对照确认：command dock 上限从 320pt 降为 260pt、命令区改用单列、Tactical Map 从 176x118 缩为 120x80，战场横向视野增加且 `Idle Builders` / `Combat Units` / `Screen Combat` 标题不再因双列而截断。1024x768 等高度足够的大容器仍使用 regular trailing，portrait bottom dock 保持不变。
 - v1.93 起，原生 iOS HUD 把三档断点、dock 尺寸和 Tactical Map 尺寸集中到 `TacticalHUDLayoutMetrics`，`RootGameView` 只负责组合区域；资源指标、命令状态、六组带图标分区标题、eager 命令网格和 8pt 按钮样式集中到 `TacticalHUDComponents`。重构保持 v1.92 的全部容器结果、action、disabled 条件、快捷键、VoiceOver 和 44pt 触控目标，并用低干扰战术指标块和更清晰的分区层级统一视觉。
 - v1.94 起，原生 iOS 使用 SwiftUI `sensoryFeedback` 区分三类离散操作结果：选择、编队召回和等待目标模式切换提供 selection 反馈；成功移动、攻击、建造、维修、回收、生产、升级及存读档提供 success 反馈；空选择、无效目标、资源/人口不足和存读档失败提供 warning 反馈。触觉由显式 enum 结果和事件 revision 驱动，不解析状态文字，也不会由模拟帧、AI、相机拖动/缩放、Tactical Map 连续拖动或键盘 repeat 触发。
+- v1.95 起，成功的世界坐标命令会在当前可见战场显示一次短目标环：Move、Attack、Attack Move、Patrol、Guard、Repair、Reclaim、Build 和 Rally 分别使用不同颜色与程序化符号，配合 v1.94 触觉提供双通道确认。目标环位于实体之上、战争迷雾之下，只在目标点当前真实可见时生成，并以逆 zoom 保持稳定屏幕尺寸；普通模式轻微扩张淡出，Reduce Motion 只做短静态淡出。
 
 当前验证制度：
 

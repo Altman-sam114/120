@@ -22,6 +22,8 @@ final class GameController {
     private(set) var selectionFeedbackRevision = 0
     private(set) var commandSuccessFeedbackRevision = 0
     private(set) var warningFeedbackRevision = 0
+    private(set) var commandConfirmation: CommandConfirmation?
+    private var commandConfirmationRevision = 0
     var selectionMutation: SelectionMutation = .replace {
         didSet {
             guard selectionMutation != oldValue else {
@@ -1380,8 +1382,32 @@ final class GameController {
         reportCommandFeedback(succeeded: result == .issued)
     }
 
+    private func reportCommandFeedback(
+        for result: UnitCommandResult,
+        confirmation kind: CommandConfirmationKind,
+        at position: WorldPoint
+    ) {
+        reportCommandFeedback(for: result)
+        guard result == .issued else {
+            return
+        }
+        publishCommandConfirmation(kind: kind, at: position)
+    }
+
     private func reportCommandFeedback(for result: RallyCommandResult) {
         reportCommandFeedback(succeeded: result == .issued)
+    }
+
+    private func reportCommandFeedback(
+        for result: RallyCommandResult,
+        confirmation kind: CommandConfirmationKind,
+        at position: WorldPoint
+    ) {
+        reportCommandFeedback(for: result)
+        guard result == .issued else {
+            return
+        }
+        publishCommandConfirmation(kind: kind, at: position)
     }
 
     private func reportCommandFeedback(for result: ProductionCommandResult) {
@@ -1416,6 +1442,15 @@ final class GameController {
         }
     }
 
+    private func publishCommandConfirmation(kind: CommandConfirmationKind, at position: WorldPoint) {
+        commandConfirmationRevision &+= 1
+        commandConfirmation = CommandConfirmation(
+            revision: commandConfirmationRevision,
+            kind: kind,
+            position: position
+        )
+    }
+
     private func pluralized(_ text: String, count: Int) -> String {
         count == 1 ? text : "\(text)s"
     }
@@ -1429,47 +1464,47 @@ final class GameController {
         if !selectedPlayerBuilders.isEmpty, let wreck = engine.state.wreckTarget(at: point) {
             let result = engine.issueReclaim(wreckID: wreck.id)
             commandStatus = statusText(forReclaim: result, wreckID: wreck.id)
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .reclaim, at: wreck.position)
             return
         }
 
         if !selectedPlayerBuilders.isEmpty, let resource = engine.state.resourceTarget(at: point) {
             let result = engine.issueBuildExtractor(on: resource.id)
             commandStatus = statusText(forBuildExtractor: result, nodeID: resource.id)
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .build, at: resource.position)
             return
         }
 
         let rallyResult = engine.setRally(to: point)
         if case .issued = rallyResult {
             commandStatus = statusText(forRally: rallyResult)
-            reportCommandFeedback(for: rallyResult)
+            reportCommandFeedback(for: rallyResult, confirmation: .rally, at: point)
             return
         }
 
         let moveResult = engine.issueMove(to: point)
         commandStatus = statusText(for: moveResult)
-        reportCommandFeedback(for: moveResult)
+        reportCommandFeedback(for: moveResult, confirmation: .move, at: point)
     }
 
     private func issueContextEntityCommand(_ target: SelectionTarget) {
         if target.team != .player {
             let result = engine.issueAttack(targetID: target.id)
             commandStatus = statusText(forAttack: result)
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .attack, at: target.position)
             return
         }
 
         if !selectedPlayerBuilders.isEmpty, isDamagedPlayerTarget(target) {
             let result = engine.issueRepair(targetID: target.id)
             commandStatus = statusText(forRepair: result, targetID: target.id)
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .repair, at: target.position)
             return
         }
 
         let result = engine.issueGuard(targetID: target.id)
         commandStatus = statusText(forGuard: result)
-        reportCommandFeedback(for: result)
+        reportCommandFeedback(for: result, confirmation: .guard, at: target.position)
     }
 
     private func isDamagedPlayerTarget(_ target: SelectionTarget) -> Bool {
@@ -1492,37 +1527,37 @@ final class GameController {
             let result = engine.issueMove(to: point)
             isAwaitingMoveTarget = false
             commandStatus = statusText(for: result)
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .move, at: point)
         } else if isAwaitingAttackMoveTarget {
             let result = engine.issueAttackMove(to: point)
             isAwaitingAttackMoveTarget = false
             commandStatus = statusText(forAttackMove: result)
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .attackMove, at: point)
         } else if isAwaitingPatrolTarget {
             let result = engine.issuePatrol(to: point)
             isAwaitingPatrolTarget = false
             commandStatus = statusText(forPatrol: result)
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .patrol, at: point)
         } else if isAwaitingRallyTarget {
             let result = engine.setRally(to: point)
             isAwaitingRallyTarget = false
             commandStatus = statusText(forRally: result)
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .rally, at: point)
         } else if isAwaitingBuildTurretTarget {
             let result = engine.issueBuildTurret(at: point)
             isAwaitingBuildTurretTarget = false
             commandStatus = statusText(forBuildTurret: result, position: clampedMapPoint(point))
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .build, at: clampedMapPoint(point))
         } else if isAwaitingBuildFactoryTarget {
             let result = engine.issueBuildLandFactory(at: point)
             isAwaitingBuildFactoryTarget = false
             commandStatus = statusText(forBuildFactory: result, position: clampedMapPoint(point))
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .build, at: clampedMapPoint(point))
         } else if isAwaitingBuildRadarTarget {
             let result = engine.issueBuildRadar(at: point)
             isAwaitingBuildRadarTarget = false
             commandStatus = statusText(forBuildRadar: result, position: clampedMapPoint(point))
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .build, at: clampedMapPoint(point))
         } else {
             return false
         }
@@ -1544,7 +1579,7 @@ final class GameController {
             }
             isAwaitingReclaimTarget = false
             commandStatus = statusText(forReclaim: result, wreckID: wreckID)
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .reclaim, at: wreck?.position ?? point)
         } else if isAwaitingBuildExtractorTarget {
             let resource = engine.state.resourceTarget(at: point)
             let result: UnitCommandResult
@@ -1558,7 +1593,7 @@ final class GameController {
             }
             isAwaitingBuildExtractorTarget = false
             commandStatus = statusText(forBuildExtractor: result, nodeID: nodeID)
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .build, at: resource?.position ?? point)
         } else {
             return false
         }
@@ -1577,7 +1612,7 @@ final class GameController {
             }
             isAwaitingGuardTarget = false
             commandStatus = statusText(forGuard: result)
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .guard, at: target?.position ?? point)
         } else if isAwaitingRepairTarget {
             let target = engine.state.selectionTargetVisibleToPlayer(at: point, includeEnemies: true)
             let result: UnitCommandResult
@@ -1591,7 +1626,7 @@ final class GameController {
             }
             isAwaitingRepairTarget = false
             commandStatus = statusText(forRepair: result, targetID: targetID)
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .repair, at: target?.position ?? point)
         } else if isAwaitingAttackTarget {
             let target = engine.state.selectionTargetVisibleToPlayer(at: point, includeEnemies: true)
             let result: UnitCommandResult
@@ -1602,7 +1637,7 @@ final class GameController {
             }
             isAwaitingAttackTarget = false
             commandStatus = statusText(forAttack: result)
-            reportCommandFeedback(for: result)
+            reportCommandFeedback(for: result, confirmation: .attack, at: target?.position ?? point)
         } else {
             return false
         }
