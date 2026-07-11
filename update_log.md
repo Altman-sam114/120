@@ -3964,7 +3964,9 @@
 验证状态：
 
 - 按用户要求未运行任何本地测试、构建、YAML/Swift 解析、Simulator、Preview 或浏览器验证。
-- 等待实现提交 push 到 `origin/main` 后，由 GitHub Actions 生成精确 SHA 的 v1.2 artifact；在 run、artifact、PNG 和 metrics 完成 Agent C 复判前，本版本不得标记通过。
+- 初始实现提交 `8aba923e5d32f35674ea53e742709100787be5bb` 的 GitHub Actions run `29139052625`、attempt `1` 未通过；失败 artifact `rustwar-ci-v1.2-main-8aba923-run29139052625-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29139052625/`，目录大小 `300K`。
+- manifest/JUnit/log 确认 toolchain、diff、Node、303 项 Swift tests、Xcode list、arm64/x86_64 universal iOS build、Simulator create/boot/install/launch 均成功；唯一失败是进程存活探针把宿主机 `/bin/kill` 交给 iOS Simulator 执行，dyld 因 macOS binary 与 iOS-simulator runtime 不兼容退出 134，截图因此未执行。这不是 App crash。
+- 修复改用 Simulator runtime 自身的 `launchctl print pid/<pid>` 查询 launch PID；等待修复提交的精确 SHA v1.2 artifact、PNG 和 metrics 完成 Agent C 复判前，本版本不得标记通过。
 
 遗留事项：
 
