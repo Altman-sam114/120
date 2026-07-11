@@ -5,7 +5,7 @@ struct TacticalGroupsSectionView: View {
     let columns: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             TacticalSectionHeader(section: .groups)
             TacticalCommandGrid(columns: columns) {
                 ForEach(GameController.visibleControlGroupSlots, id: \.self) { slot in
@@ -17,11 +17,11 @@ struct TacticalGroupsSectionView: View {
     }
 
     private func controlGroupCell(slot: Int) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: TacticalHUDTheme.denseSpacing) {
             Text("\(slot)")
                 .font(.headline)
                 .monospacedDigit()
-                .frame(width: 22, height: 44)
+                .frame(width: 22, height: TacticalHUDTheme.controlMinimumHeight)
 
             Button(
                 "Save control group \(slot)",
@@ -31,7 +31,10 @@ struct TacticalGroupsSectionView: View {
             .labelStyle(.iconOnly)
             .buttonStyle(.bordered)
             .controlSize(.regular)
-            .frame(width: 44, height: 44)
+            .frame(
+                width: TacticalHUDTheme.controlMinimumHeight,
+                height: TacticalHUDTheme.controlMinimumHeight
+            )
             .keyboardShortcut(controlGroupKey(for: slot), modifiers: .control)
             .disabled(!controller.canStoreControlGroup)
             .accessibilityHint("Stores the current player selection in control group \(slot).")
@@ -44,13 +47,20 @@ struct TacticalGroupsSectionView: View {
             .labelStyle(.iconOnly)
             .buttonStyle(.bordered)
             .controlSize(.regular)
-            .frame(width: 44, height: 44)
+            .frame(
+                width: TacticalHUDTheme.controlMinimumHeight,
+                height: TacticalHUDTheme.controlMinimumHeight
+            )
             .keyboardShortcut(controlGroupKey(for: slot), modifiers: [])
             .disabled(!controller.canRecallControlGroup(slot))
             .accessibilityValue(controller.controlGroupAccessibilityValue(for: slot))
             .accessibilityHint("Selects the saved player units or buildings in control group \(slot).")
         }
-        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: TacticalHUDTheme.controlMinimumHeight,
+            alignment: .leading
+        )
     }
 
     private func controlGroupKey(for slot: Int) -> KeyEquivalent {

@@ -15,7 +15,7 @@ struct TacticalCommandDockView: View {
             TacticalCommandDockHeaderView(controller: controller)
             Divider()
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: TacticalHUDTheme.sectionSpacing) {
                     if hasCommandControls {
                         TacticalCommandsSectionView(
                             controller: controller,
@@ -33,7 +33,7 @@ struct TacticalCommandDockView: View {
                     TacticalGroupsSectionView(controller: controller, columns: commandColumnCount)
                     TacticalSessionSectionView(controller: controller, columns: commandColumnCount)
                 }
-                .padding(10)
+                .padding(TacticalHUDTheme.contentPadding)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollIndicators(.visible)

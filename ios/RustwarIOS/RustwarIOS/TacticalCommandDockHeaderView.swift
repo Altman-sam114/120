@@ -5,30 +5,13 @@ struct TacticalCommandDockHeaderView: View {
     @Bindable var controller: GameController
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Selected: \(controller.selectedSummary)")
-                .font(.subheadline)
-                .lineLimit(2)
-                .foregroundStyle(.primary)
-
-            if let selectedAttackStanceSummary = controller.selectedAttackStanceSummary {
-                Text(selectedAttackStanceSummary)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
-            if let selectedRadarUpgradeSummary = controller.selectedRadarUpgradeSummary {
-                Text(selectedRadarUpgradeSummary)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
-            if let selectedExtractorUpgradeSummary = controller.selectedExtractorUpgradeSummary {
-                Text(selectedExtractorUpgradeSummary)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
+        VStack(alignment: .leading, spacing: TacticalHUDTheme.compactSpacing) {
+            TacticalSelectionSummaryView(
+                selectedSummary: controller.selectedSummary,
+                attackStanceSummary: controller.selectedAttackStanceSummary,
+                radarUpgradeSummary: controller.selectedRadarUpgradeSummary,
+                extractorUpgradeSummary: controller.selectedExtractorUpgradeSummary
+            )
             if let commandStatus = controller.commandStatus {
                 TacticalCommandStatusView(
                     text: commandStatus,
@@ -42,12 +25,12 @@ struct TacticalCommandDockHeaderView: View {
             }
             .pickerStyle(.segmented)
             .controlSize(.regular)
-            .frame(maxWidth: .infinity, minHeight: 44)
+            .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
             .accessibilityLabel("Selection mode")
             .accessibilityValue(controller.selectionMutationAccessibilityValue)
             .accessibilityHint("Choose whether battlefield selection replaces or adds to the current selection.")
         }
-        .padding(10)
+        .padding(TacticalHUDTheme.contentPadding)
         .background(.ultraThinMaterial)
     }
 }

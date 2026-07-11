@@ -9,7 +9,7 @@ struct TacticalCommandsSectionView: View {
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             TacticalSectionHeader(section: .commands)
             TacticalCommandGrid(columns: columns) {
                 if controller.canIssueAreaSelection || controller.isAwaitingAreaSelection {
@@ -121,11 +121,11 @@ struct TacticalCommandsSectionView: View {
         )
         .buttonStyle(.bordered)
         .controlSize(.regular)
-        .frame(maxWidth: .infinity, minHeight: 44)
+        .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
         .lineLimit(2)
         .overlay {
             if isActive {
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
                     .stroke(
                         .primary,
                         lineWidth: differentiateWithoutColor ? 2.5 : 1.5

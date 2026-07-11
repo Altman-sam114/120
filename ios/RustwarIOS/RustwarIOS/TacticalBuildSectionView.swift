@@ -5,7 +5,7 @@ struct TacticalBuildSectionView: View {
     let columns: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             TacticalSectionHeader(section: .build)
             TacticalCommandGrid(columns: columns) {
                 if controller.canIssueBuildExtractor || controller.isAwaitingBuildExtractorTarget {

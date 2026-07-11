@@ -60,7 +60,7 @@ flowchart TD
   C --> CF["CommandConfirmation(kind, WorldPoint, revision)<br/>中文注释：仅成功的世界坐标命令发布，失败和无坐标操作不发布"]
   CF --> CM["Bounded command marker under fog<br/>中文注释：当前真实可见才生成，类型化颜色/符号、逆 zoom 稳定尺寸，Reduce Motion 只淡出"]
   CF --> TMP["Short Tactical Map command pulse<br/>中文注释：复用同一事件和共享调色板；revision task 按 monotonic age 动画/过期，不永久刷新 Canvas"]
-  LAY --> H["GameHUD presentation dispatcher<br/>中文注释：分派独立 StatusBar / CommandDock；dock shell 计算 1/2 列与 section gates，固定 header 和六个 section View 各自拥有本域 action、快捷键与 VoiceOver"]
+  LAY --> H["GameHUD presentation dispatcher + TacticalHUDTheme<br/>中文注释：分派独立 StatusBar / CommandDock；共享 spacing/radius/hit-target/status tokens，Selection Summary 只读派生文本，六个 section 各自拥有本域 action、快捷键与 VoiceOver"]
   LAY --> TM["Reserved TacticalMapView region<br/>中文注释：只放在 Battlefield 自身区域，按 176x118、144x96 或 120x80 缩放，与顶栏和 dock frame 不相交；原手势和世界换算不变"]
   LAY --> B["SpriteView + BattlefieldScene snapshot reader<br/>中文注释：只读 Core 快照，维护 scene-only heading / cooldown / HP / entity-id 历史；当前 HP 还派生受损烟柱/危急火焰，每实体最多两个额外 path 节点，不回写玩法状态"]
   T["SpatialTap / LongPress / Drag / Magnify<br/>中文注释：iOS 触摸选择、移动落点、长按上下文命令、Select Area 框选、拖拽平移和捏合缩放"] --> C

@@ -43,6 +43,8 @@ v1.98 新增 iOS 分级持续损伤外观：`BattlefieldScene.drawUnit` 和完�
 
 v1.99 重构 iOS HUD ownership：`GameHUDView` 只按 presentation 分派 `TacticalStatusBarView` 或 `TacticalCommandDockView`；dock 固定 header 与六个条件 section 各自成为独立 View 文件。dock shell 继续统一计算 Dynamic Type/compact role 的 1/2 列数和三个 section visibility gate，各 section 只拥有本域按钮、快捷键和可访问性语义；controller action、Core、布局尺寸矩阵和触摸区域不变。生产列表直接消费 iOS 26 的 `enumerated()` sequence，避免 indices + 二次下标读取。
 
+v2.0 新增 iOS 战术 UI design tokens 与 Selection Summary：`TacticalHUDTheme` 集中常用 spacing/padding/radius/minimum hit target 和状态颜色，状态栏、dock shell/header、六个 section、command status/control styles 与 Tactical Map chrome 共同消费。`TacticalSelectionSummaryView` 只接收派生字符串 value，用图标和 Dynamic Type 文本组织 selection、stance、Radar/Extractor upgrade 信息；不持有 controller、不写状态，也不改变 v1.99 section ownership 或命令流。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

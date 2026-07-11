@@ -34,12 +34,13 @@ enum TacticalHUDSection {
 struct TacticalMetricView: View {
     let label: String
     let value: String
+    let systemImage: String
     var spokenLabel: String?
     var spokenValue: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(label.uppercased())
+        VStack(alignment: .leading, spacing: 2) {
+            Label(label.uppercased(), systemImage: systemImage)
                 .font(.caption.bold())
                 .foregroundStyle(.secondary)
             Text(value)
@@ -47,12 +48,15 @@ struct TacticalMetricView: View {
                 .monospacedDigit()
                 .fixedSize(horizontal: true, vertical: false)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color.black.opacity(0.16), in: RoundedRectangle(cornerRadius: 7))
+        .padding(.horizontal, TacticalHUDTheme.compactPadding)
+        .padding(.vertical, TacticalHUDTheme.denseSpacing)
+        .background(
+            TacticalHUDTheme.metricBackground,
+            in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
+        )
         .overlay {
-            RoundedRectangle(cornerRadius: 7)
-                .stroke(Color.cyan.opacity(0.22), lineWidth: 1)
+            RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
+                .stroke(TacticalHUDTheme.accent.opacity(0.24), lineWidth: 1)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spokenLabel ?? label)
@@ -64,12 +68,12 @@ struct TacticalSectionHeader: View {
     let section: TacticalHUDSection
 
     var body: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: TacticalHUDTheme.compactSpacing) {
             Label(section.title, systemImage: section.systemImage)
                 .font(.caption.bold())
                 .foregroundStyle(.secondary)
             Rectangle()
-                .fill(Color.cyan.opacity(0.42))
+                .fill(TacticalHUDTheme.accent.opacity(0.42))
                 .frame(height: 1)
         }
         .accessibilityElement(children: .ignore)
@@ -92,17 +96,21 @@ struct TacticalCommandStatusView: View {
         .font(.footnote)
         .foregroundStyle(isAwaitingTarget ? .primary : .secondary)
         .lineLimit(2)
-        .padding(.horizontal, 7)
-        .padding(.vertical, 5)
+        .padding(.horizontal, TacticalHUDTheme.compactPadding)
+        .padding(.vertical, TacticalHUDTheme.compactSpacing)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            isAwaitingTarget ? Color.yellow.opacity(0.17) : Color.black.opacity(0.10),
-            in: RoundedRectangle(cornerRadius: 6)
+            isAwaitingTarget
+                ? TacticalHUDTheme.awaitingStatusBackground
+                : TacticalHUDTheme.neutralStatusBackground,
+            in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
         )
         .overlay {
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
                 .stroke(
-                    isAwaitingTarget ? Color.yellow : Color.cyan.opacity(0.16),
+                    isAwaitingTarget
+                        ? TacticalHUDTheme.attention
+                        : TacticalHUDTheme.accent.opacity(0.16),
                     lineWidth: isAwaitingTarget
                         ? (differentiateWithoutColor ? 2.5 : 1.5)
                         : 1
@@ -115,7 +123,7 @@ struct TacticalCommandStatusView: View {
 
 struct TacticalCommandGrid: Layout {
     let columns: Int
-    var spacing: CGFloat = 8
+    var spacing: CGFloat = TacticalHUDTheme.controlSpacing
 
     func sizeThatFits(
         proposal: ProposedViewSize,
@@ -184,18 +192,18 @@ struct TacticalCommandGrid: Layout {
 extension View {
     func tacticalControl() -> some View {
         buttonStyle(.bordered)
-            .buttonBorderShape(.roundedRectangle(radius: 8))
+            .buttonBorderShape(.roundedRectangle(radius: TacticalHUDTheme.cornerRadius))
             .controlSize(.regular)
-            .frame(maxWidth: .infinity, minHeight: 44)
+            .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
             .lineLimit(2)
             .multilineTextAlignment(.leading)
     }
 
     func tacticalProminentControl() -> some View {
         buttonStyle(.borderedProminent)
-            .buttonBorderShape(.roundedRectangle(radius: 8))
+            .buttonBorderShape(.roundedRectangle(radius: TacticalHUDTheme.cornerRadius))
             .controlSize(.regular)
-            .frame(maxWidth: .infinity, minHeight: 44)
+            .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
             .lineLimit(2)
             .multilineTextAlignment(.leading)
     }

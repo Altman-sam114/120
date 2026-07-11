@@ -95,18 +95,21 @@ struct TacticalMapView: View {
                     .font(.caption.bold())
                     .lineLimit(1)
                     .labelStyle(.titleAndIcon)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, TacticalHUDTheme.compactSpacing)
+                    .padding(.vertical, TacticalHUDTheme.denseSpacing)
                     .background(.black.opacity(0.62), in: Capsule())
                     .foregroundStyle(.yellow)
-                    .padding(6)
+                    .padding(TacticalHUDTheme.compactSpacing)
                 }
             }
         }
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .background(
+            .thinMaterial,
+            in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
+        )
+        .clipShape(.rect(cornerRadius: TacticalHUDTheme.cornerRadius))
         .overlay {
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
                 .stroke(
                     controller.isAwaitingTargetCommand ? .yellow.opacity(0.82) : .white.opacity(0.24),
                     lineWidth: controller.isAwaitingTargetCommand ? 1.8 : 1

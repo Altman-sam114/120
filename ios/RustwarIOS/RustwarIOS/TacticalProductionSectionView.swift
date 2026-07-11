@@ -6,7 +6,7 @@ struct TacticalProductionSectionView: View {
     let columns: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             TacticalSectionHeader(section: .production)
             if !controller.productionOptions.isEmpty {
                 TacticalCommandGrid(columns: columns) {

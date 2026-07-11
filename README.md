@@ -33,6 +33,7 @@
 - v1.97 起，云端唯一验证固定使用 `macos-26`、Xcode 26.5 和 iOS Simulator SDK 26.5，不再接受 `macos-latest` 随机落到 Xcode 16.4/iOS 18.5。CI artifact schema 升级为 v1.1，新增独立 toolchain JUnit gate、`toolchain-info.txt` 及 runner/macOS/Xcode/SDK/Swift manifest 字段；工具链不匹配会整体失败，不能回退默认 Xcode 冒充有效 iOS 26 build。
 - v1.98 起，原生 iOS 主战场参考 Rusted Warfare 官方战斗截图，为完成状态建筑和可见单位增加分级持续损伤外观：低于 55% HP 显示紧凑黑烟轮廓，低于 25% HP 再叠加独立火焰形状和更浓烟柱。该状态直接由当前 Core HP snapshot 派生，不使用计时器、随机数、持久 effect、额外玩法状态或存档字段；每个受损实体最多增加两个 compound path 节点，施工中建筑不显示损伤烟火，颜色之外仍有烟柱/火焰几何差异。
 - v1.99 起，原生 iOS HUD 把 695 行单体 `GameHUDView` 重构为轻量 presentation dispatcher、独立状态栏、command dock、固定 header，以及 Commands / Build & Upgrade / Production / Selection / Groups / Session 六个独立 section。所有 action、显示条件、1/2 列规则、键盘快捷键、VoiceOver、44pt 触控目标、三档 HUD 布局和 eager command hierarchy 保持；生产选项改为直接遍历 `enumerated()`，资源与 section 标签改用更易读的 Dynamic Type `caption.bold()`，为后续继续精修 Rusted Warfare 风格 UI 降低修改耦合。
+- v2.0 起，原生 iOS HUD 使用集中式 `TacticalHUDTheme` 统一 4/6/8/14pt 间距层级、10pt 内容边距、6pt 圆角、44pt 触控高度和青/黄/中性色状态调色；状态栏资源增加 Metal / Income / Pop / Radar 的 SF Symbols，command dock 使用独立 Selection Summary 汇总当前选择、攻击姿态与 Radar/Extractor 升级状态。命令等待态继续以 scope 图标、黄描边和文字共同表达，Tactical Map 外壳复用同一圆角/间距 token；没有新增第二套状态、渐变装饰或第三方资源。
 
 当前验证制度：
 

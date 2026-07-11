@@ -3888,3 +3888,49 @@
 遗留事项：
 
 - 当前 CI 没有 SwiftUI screenshot/XCUITest，不能证明重构后各断点的实际滚动、触控命中、VoiceOver 顺序或像素层级；云端 build 仅证明类型、target membership 和编译链路。
+
+### v2.0 / iOS tactical UI design system
+
+日期：2026-07-11
+
+核心变更：
+
+- 新增 `TacticalHUDTheme`，集中 4/6/8/14pt spacing、10pt content padding、6pt corner radius、44pt minimum hit target，以及 cyan accent、yellow attention 和中性 status background。
+- 状态栏 Metal / Income / Pop / Radar 指标增加 `hexagon.fill`、`arrow.up.right`、`person.3.fill`、`dot.radiowaves.left.and.right` SF Symbols，保留 Dynamic Type、monospaced digits 和原 VoiceOver label/value。
+- 新增纯 value `TacticalSelectionSummaryView`，用 `viewfinder.circle` 建立 selection 层级，并用不同图标呈现 attack stance、Radar upgrade 和 Extractor upgrade；组件不持有 controller 或可变状态。
+- command dock header 改为 Selection Summary + command status + selection mode，避免多个无结构平铺文本；等待目标继续通过 scope 图标、文字、yellow background/stroke 同时表达。
+- 状态栏、dock shell/header、六个 section、command grid/control styles 和 Tactical Map chrome 统一消费 theme；Tactical Map 改用现代 `.rect(cornerRadius:)` background/clipShape。
+- 没有修改 controller action、disabled 条件、keyboard shortcuts、三档 layout metrics、Tactical Map 手势、Core、战斗、AI、存档、SpriteKit 或 Web。
+- `swiftui-pro` 直接影响本轮：共享 design constants、Dynamic Type、44pt hit target、Label/SF Symbols、`foregroundStyle`、现代 clipShape，以及颜色之外的图标/文字差异。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDTheme.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalSelectionSummaryView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDComponents.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalStatusBarView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockHeaderView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandsSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalBuildSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalSelectionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalGroupsSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalSessionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`
+- `ios/RustwarIOS/RustwarIOS.xcodeproj/project.pbxproj`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.0-ios-tactical-ui-design-system.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、parse、Simulator、Preview 或浏览器验证。
+- 实现提交将 push 到 `origin/main`；由固定 Xcode 26.5 云端 workflow 生成精确 SHA 对应的 v1.1 artifact 后再进入 Agent C 复判。
+
+遗留事项：
+
+- 当前 CI 没有 SwiftUI screenshot/XCUITest，不能证明真实颜色对比、Selection Summary 换行、Dynamic Type、Tactical Map chrome 或不同设备的触控观感；必须保留云端 UI 视觉基线与真机人工验收需求。

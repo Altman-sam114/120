@@ -12,42 +12,46 @@ struct TacticalStatusBarView: View {
     var body: some View {
         Group {
             if layoutRole == .compactBottom {
-                VStack(spacing: 6) {
+                VStack(spacing: TacticalHUDTheme.compactSpacing) {
                     metricsStrip
                     statusControls
                 }
             } else {
-                HStack(spacing: 8) {
+                HStack(spacing: TacticalHUDTheme.controlSpacing) {
                     metricsStrip
                     Spacer(minLength: 4)
                     statusControls
                 }
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, TacticalHUDTheme.statusHorizontalPadding)
+        .padding(.vertical, TacticalHUDTheme.statusVerticalPadding)
         .background(.ultraThinMaterial)
         .accessibilityElement(children: .contain)
     }
 
     private var metricsStrip: some View {
         ScrollView(.horizontal) {
-            HStack(spacing: 14) {
+            HStack(spacing: TacticalHUDTheme.sectionSpacing) {
                 TacticalMetricView(
                     label: "Metal",
-                    value: controller.playerEconomy.metal.formatted(.number.precision(.fractionLength(0)))
+                    value: controller.playerEconomy.metal.formatted(.number.precision(.fractionLength(0))),
+                    systemImage: "hexagon.fill"
                 )
                 TacticalMetricView(
                     label: "Income",
-                    value: controller.playerEconomy.income.formatted(.number.precision(.fractionLength(1)))
+                    value: controller.playerEconomy.income.formatted(.number.precision(.fractionLength(1))),
+                    systemImage: "arrow.up.right"
                 )
                 TacticalMetricView(
                     label: "Pop",
-                    value: "\(controller.playerEconomy.supplyUsed)/\(controller.playerEconomy.supplyCap)"
+                    value: "\(controller.playerEconomy.supplyUsed)/\(controller.playerEconomy.supplyCap)",
+                    systemImage: "person.3.fill"
                 )
                 TacticalMetricView(
                     label: "Radar",
                     value: "\(controller.playerRadarStationCount)/\(controller.playerRadarContactCount)",
+                    systemImage: "dot.radiowaves.left.and.right",
                     spokenLabel: "Radar intelligence",
                     spokenValue: controller.radarIntelAccessibilitySummary
                 )
@@ -60,7 +64,7 @@ struct TacticalStatusBarView: View {
     }
 
     private var statusControls: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: TacticalHUDTheme.controlSpacing) {
             Button(
                 controller.pauseButtonTitle,
                 systemImage: controller.pauseButtonSystemImage,
@@ -68,7 +72,7 @@ struct TacticalStatusBarView: View {
             )
             .buttonStyle(.borderedProminent)
             .controlSize(.regular)
-            .frame(minHeight: 44)
+            .frame(minHeight: TacticalHUDTheme.controlMinimumHeight)
             .keyboardShortcut(commandKey("p"), modifiers: [])
             .accessibilityInputLabels(["Pause", "Play"])
 
@@ -91,7 +95,7 @@ struct TacticalStatusBarView: View {
             }
         }
         .controlSize(.regular)
-        .frame(minHeight: 44)
+        .frame(minHeight: TacticalHUDTheme.controlMinimumHeight)
         .accessibilityLabel("Simulation speed")
 
         switch style {

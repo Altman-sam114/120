@@ -31,6 +31,8 @@
 		A00100000000000000000022 /* TacticalSelectionSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000022 /* TacticalSelectionSectionView.swift */; };
 		A00100000000000000000023 /* TacticalGroupsSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000023 /* TacticalGroupsSectionView.swift */; };
 		A00100000000000000000024 /* TacticalSessionSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000024 /* TacticalSessionSectionView.swift */; };
+		A00100000000000000000025 /* TacticalHUDTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000025 /* TacticalHUDTheme.swift */; };
+		A00100000000000000000026 /* TacticalSelectionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000026 /* TacticalSelectionSummaryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -58,6 +60,8 @@
 		A00200000000000000000022 /* TacticalSelectionSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalSelectionSectionView.swift; sourceTree = "<group>"; };
 		A00200000000000000000023 /* TacticalGroupsSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalGroupsSectionView.swift; sourceTree = "<group>"; };
 		A00200000000000000000024 /* TacticalSessionSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalSessionSectionView.swift; sourceTree = "<group>"; };
+		A00200000000000000000025 /* TacticalHUDTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalHUDTheme.swift; sourceTree = "<group>"; };
+		A00200000000000000000026 /* TacticalSelectionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalSelectionSummaryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,6 +105,8 @@
 				A00200000000000000000022 /* TacticalSelectionSectionView.swift */,
 				A00200000000000000000023 /* TacticalGroupsSectionView.swift */,
 				A00200000000000000000024 /* TacticalSessionSectionView.swift */,
+				A00200000000000000000025 /* TacticalHUDTheme.swift */,
+				A00200000000000000000026 /* TacticalSelectionSummaryView.swift */,
 				A00200000000000000000006 /* BattlefieldView.swift */,
 				A00200000000000000000007 /* BattlefieldScene.swift */,
 				A00200000000000000000010 /* TacticalMapView.swift */,
@@ -211,6 +217,8 @@
 				A00100000000000000000022 /* TacticalSelectionSectionView.swift in Sources */,
 				A00100000000000000000023 /* TacticalGroupsSectionView.swift in Sources */,
 				A00100000000000000000024 /* TacticalSessionSectionView.swift in Sources */,
+				A00100000000000000000025 /* TacticalHUDTheme.swift in Sources */,
+				A00100000000000000000026 /* TacticalSelectionSummaryView.swift in Sources */,
 				A00100000000000000000006 /* BattlefieldView.swift in Sources */,
 				A00100000000000000000007 /* BattlefieldScene.swift in Sources */,
 				A00100000000000000000010 /* TacticalMapView.swift in Sources */,

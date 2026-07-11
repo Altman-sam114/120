@@ -6,7 +6,7 @@ struct TacticalSessionSectionView: View {
     let columns: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             TacticalSectionHeader(section: .session)
             TacticalCommandGrid(columns: columns) {
                 Button("Base", systemImage: "house.fill", action: controller.focusPlayerCommandCenter)
@@ -25,7 +25,7 @@ struct TacticalSessionSectionView: View {
                 }
                 .pickerStyle(.menu)
                 .controlSize(.regular)
-                .frame(maxWidth: .infinity, minHeight: 44)
+                .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
                 .accessibilityLabel("Map")
 
                 Button("Restart", systemImage: "arrow.clockwise", action: controller.restartBattle)
