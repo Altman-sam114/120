@@ -291,4 +291,36 @@ extension View {
                 height: TacticalHUDTheme.controlMinimumHeight
             )
     }
+
+    func tacticalSegmentedPicker() -> some View {
+        self
+            .tint(TacticalHUDTheme.accent)
+            .foregroundStyle(TacticalHUDTheme.pickerForeground)
+            .frame(minHeight: TacticalHUDTheme.controlMinimumHeight)
+            .padding(2)
+            .background(
+                TacticalHUDTheme.pickerBackground,
+                in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
+                    .stroke(TacticalHUDTheme.pickerStroke, lineWidth: 1)
+            }
+    }
+
+    func tacticalMenuPicker() -> some View {
+        self
+            .tint(TacticalHUDTheme.accent)
+            .foregroundStyle(TacticalHUDTheme.pickerForeground)
+            .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
+            .padding(.horizontal, TacticalHUDTheme.compactPadding)
+            .background(
+                TacticalHUDTheme.pickerBackground,
+                in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
+                    .stroke(TacticalHUDTheme.pickerStroke, lineWidth: 1)
+            }
+    }
 }

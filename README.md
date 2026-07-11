@@ -37,6 +37,7 @@
 - v2.1 起，GitHub Actions 会在固定 iPhone 17 Pro / iOS 26.5 Simulator 中构建、安装并以专用参数暂停初始战局后真实启动原生 App，等待首屏稳定后抓取并规范化为可直接查看的横屏 PNG。普通玩家启动仍默认运行，不受该参数影响。无第三方依赖的 ImageIO 探针会校验横屏方向、图片尺寸、透明像素比例、亮度标准差和亮度范围，拒绝侧向图、空图、透明图和近似黑屏；CI artifact schema 升为 v1.2，并包含首屏 PNG、像素 metrics 和 simulator 生命周期记录。该 smoke 只证明固定设备首屏可启动且非空，不替代触摸、滚动、VoiceOver、Dynamic Type、旋转、战斗动画或真机验收。
 - v2.2 起，原生 iOS 战术 HUD 使用更高对比的 `TacticalHUDTheme` 文本/面板 token 替代系统灰 secondary 与过淡 material；状态栏、dock header 与 dock shell 叠加深战术底色。主战场水平铺满 leading/trailing safe area，相机按 viewport 夹紧中心并在需要时提高最小 fill zoom，减少地图外黑色留边。不改变命令语义、Core、存档或玩法。
 - v2.3 起，command dock 与状态栏主按钮改用 theme 驱动的战术 `ButtonStyle`：深青底、青描边、高对比前景，激活态黄描边；替代系统灰 `.bordered` 外观，同时保持 44pt 触控、action、快捷键和 VoiceOver。
+- v2.4 起，Speed segmented、Selection mode segmented 与 Map menu 使用共享战术 picker 外壳（深青底、青描边、accent tint），避免在深色 HUD 上系统灰洗白；binding 与选项语义不变。
 
 当前验证制度：
 

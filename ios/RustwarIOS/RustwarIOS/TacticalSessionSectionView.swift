@@ -25,7 +25,7 @@ struct TacticalSessionSectionView: View {
                 }
                 .pickerStyle(.menu)
                 .controlSize(.regular)
-                .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
+                .tacticalMenuPicker()
                 .accessibilityLabel("Map")
 
                 Button("Restart", systemImage: "arrow.clockwise", action: controller.restartBattle)

@@ -32,4 +32,7 @@ enum TacticalHUDTheme {
     static let prominentControlBackground = Color.cyan.opacity(0.86)
     static let prominentControlForeground = Color(red: 0.02, green: 0.08, blue: 0.10)
     static let activeControlStroke = Color.yellow.opacity(0.92)
+    static let pickerBackground = Color(red: 0.06, green: 0.14, blue: 0.18).opacity(0.94)
+    static let pickerStroke = Color.cyan.opacity(0.38)
+    static let pickerForeground = Color.white.opacity(0.94)
 }

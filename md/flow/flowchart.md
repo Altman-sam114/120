@@ -246,3 +246,16 @@ flowchart LR
   BS --> Dock["Commands / Build / Production / Groups"]
   PS --> Pause["Status Pause / prominent actions"]
 ```
+
+## v2.4 战术 picker
+
+读图说明：v2.4 只包装 picker 外壳，不改选项绑定。
+
+```mermaid
+flowchart LR
+  PT["Theme picker tokens"] --> SP["tacticalSegmentedPicker"]
+  PT --> MP["tacticalMenuPicker"]
+  SP --> Speed["Status Speed"]
+  SP --> Mode["Dock Selection mode"]
+  MP --> Map["Session Map"]
+```

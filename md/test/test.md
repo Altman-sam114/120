@@ -140,6 +140,7 @@ git diff --check
 - v2.1 云端验收必须确认固定 iPhone 17 Pro / iOS 26.5 Simulator 的 create、boot、arm64/x86_64 build、install、`--rustwar-ci-visual-smoke` paused launch、launch PID 存活、screenshot、landscape normalization 和 ImageIO probe 均为 exit 0；PNG 必须 `width > height` 且至少 640x300，透明像素不超过 1%、亮度标准差至少 8、亮度范围至少 40。Agent C 除核对 metrics 外还必须人工查看云端 PNG 方向正确、初始单位/建筑仍存在且确实是 Rustwar 首屏，像素统计通过不能替代内容核对。默认 `GameController()` 仍必须 `isPaused=false`。
 - v2.2 云端验收在 v2.1 基础上额外人工核对：`ios-home.png` 中状态栏/dock 文字对比应明显高于系统灰 secondary；metric 标签与主值应清晰可读；战场左右不应再出现大块无内容黑边（允许极窄设备 inset）。Theme token 与 CameraState viewport clamp/fill zoom 必须进入 arm64/x86_64 编译；不得修改命令语义、Core 或默认非 CI 启动仍运行。
 - v2.3 云端验收额外确认 dock 主按钮不再呈现系统灰 `.bordered` 洗白：应看到深青战术底与青描边；Pause 使用 prominent cyan style；`TacticalBorderedButtonStyle` / `TacticalProminentButtonStyle` 进入 arm64/x86_64 编译。action、disabled、快捷键、44pt 最小高度与 layout metrics 不得回归。
+- v2.4 云端验收额外确认 Speed/Selection mode segmented 与 Map menu 带有 theme picker 外壳（深青底与青描边/accent tint），且 binding 行为不变；`tacticalSegmentedPicker` / `tacticalMenuPicker` 进入 arm64/x86_64 编译。
 - 当前 CI 覆盖源码检查、Swift core、iOS build，以及单一固定设备的首屏启动/截图/非空像素探针；仍没有 XCUITest、像素基线差异、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸、滚动、离屏快捷键或战斗帧率自动化。v2.1 首屏 smoke 不能冒充完整 UI 回归。
 - 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
 

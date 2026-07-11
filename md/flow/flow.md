@@ -51,6 +51,8 @@ v2.2 精修战术 HUD 对比与战场 letterbox：`TacticalHUDTheme` 增加 prim
 
 v2.3 继续收紧控件对比：`TacticalBorderedButtonStyle` / `TacticalProminentButtonStyle` 通过 theme control token 渲染 dock 命令、Groups icon 与 Pause 按钮；`tacticalControl(isActive:)` 用黄描边表达 attack stance 激活态。不改变命令派发、disabled 条件或布局档位。
 
+v2.4 收紧 picker 对比：`tacticalSegmentedPicker` / `tacticalMenuPicker` 用 theme picker token 包装 status Speed、dock Selection mode 与 session Map；只改视觉外壳，不改 selection binding 或命令流。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

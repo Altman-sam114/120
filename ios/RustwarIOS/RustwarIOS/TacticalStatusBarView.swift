@@ -105,14 +105,18 @@ struct TacticalStatusBarView: View {
             }
         }
         .controlSize(.regular)
-        .frame(minHeight: TacticalHUDTheme.controlMinimumHeight)
         .accessibilityLabel("Simulation speed")
 
         switch style {
         case .segmented:
-            picker.pickerStyle(.segmented)
+            picker
+                .pickerStyle(.segmented)
+                .tacticalSegmentedPicker()
         case .menu:
-            picker.pickerStyle(.menu)
+            picker
+                .pickerStyle(.menu)
+                .tacticalMenuPicker()
+                .frame(minWidth: 88)
         }
     }
 

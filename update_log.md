@@ -4069,3 +4069,37 @@
 
 - visual smoke 不能证明每个 disabled/active 状态或 Dynamic Type 大字重排下的按钮换行。
 - 后续可继续优化 picker/segmented 控件对比与真机 safe-area 触感。
+
+### v2.4 / iOS tactical picker contrast
+
+日期：2026-07-12
+
+核心变更：
+
+- `TacticalHUDTheme` 增加 picker 背景/描边/前景 token。
+- 新增 `tacticalSegmentedPicker()` / `tacticalMenuPicker()`，包装 Speed segmented、Selection mode segmented 与 Map menu。
+- 保持 picker binding、选项、accessibility 与布局档位；不改命令、Core、存档或 Web。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDTheme.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDComponents.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalStatusBarView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockHeaderView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalSessionSectionView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.4-ios-tactical-picker-contrast.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、Simulator、Preview 或浏览器验证。
+- 等待 push `origin/main` 后由 GitHub Actions v1.2 artifact 完成 Agent C 复判。
+
+遗留事项：
+
+- visual smoke 不能证明 menu 展开态与 Dynamic Type 下 segmented 挤压。
+- 后续可继续玩法 parity 或更细的等待命令视觉。

@@ -25,7 +25,8 @@ struct TacticalCommandDockHeaderView: View {
             }
             .pickerStyle(.segmented)
             .controlSize(.regular)
-            .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
+            .frame(maxWidth: .infinity)
+            .tacticalSegmentedPicker()
             .accessibilityLabel("Selection mode")
             .accessibilityValue(controller.selectionMutationAccessibilityValue)
             .accessibilityHint("Choose whether battlefield selection replaces or adds to the current selection.")
