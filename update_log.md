@@ -4097,7 +4097,10 @@
 验证状态：
 
 - 按用户要求未运行任何本地测试、构建、Simulator、Preview 或浏览器验证。
-- 等待 push `origin/main` 后由 GitHub Actions v1.2 artifact 完成 Agent C 复判。
+- 实现提交 `9e902ccbca10f37061341f102b81f315101000bd` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29164713524`，attempt `1`，artifact `rustwar-ci-v1.2-main-9e902cc-run29164713524-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29164713524/`，目录大小 `716K`。
+- manifest 确认 `version=v1.2`、`branch=main`、`commitSha=9e902ccbca10f37061341f102b81f315101000bd`、`runId=29164713524`、`runAttempt=1`，toolchain/static/Swift package/Xcode list/build/simulator visual/screenshot probe/test outcomes 全部 success。
+- JUnit 为 8 checks、0 failures、1 skipped；metrics 2622x1206、透明 0、亮度均值 86.321、标准差 44.905、范围 255。
+- build 确认 `TacticalHUDComponents` arm64/x86_64 编译与 `BUILD SUCCEEDED`；横屏 `ios-home.png` 首屏稳定，picker 外壳进入深战术 HUD 视觉体系。
 
 遗留事项：
 
