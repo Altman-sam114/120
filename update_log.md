@@ -4038,6 +4038,7 @@
 - `TacticalHUDTheme` 增加 control 背景/描边/前景与 prominent control token。
 - 新增 `TacticalBorderedButtonStyle` / `TacticalProminentButtonStyle`；`tacticalControl` / `tacticalProminentControl` / `tacticalIconControl` 统一使用战术样式，替代系统灰 `.bordered`。
 - attack stance 激活态改用 theme yellow stroke；Groups icon 按钮与 status Pause 共用同一 control 视觉语言。
+- 初版 `773d00d` 因 `View.frame` 参数顺序（`minWidth` 必须在 `maxWidth` 前）云端编译失败；修复提交 `6805881` 通过。
 - 不改 action、disabled、快捷键、VoiceOver 语义、layout metrics、Core、存档或 Web。
 - 补记 v2.2 Agent C 云端通过证据。
 
@@ -4058,7 +4059,11 @@
 验证状态：
 
 - 按用户要求未运行任何本地测试、构建、Simulator、Preview 或浏览器验证。
-- 等待 push `origin/main` 后由 GitHub Actions v1.2 artifact 完成 Agent C 复判。
+- 失败提交 `773d00db0703e0e6b80a4142c5e720c28f89426c` run `29164137716`：iOS build 因 `TacticalHUDComponents.swift` frame 参数顺序失败；artifact `rustwar-ci-v1.2-main-773d00d-run29164137716-attempt1`。
+- 修复提交 `6805881b7f999526292b77b3253c2cdaf5060ded` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29164295591`，attempt `1`，artifact `rustwar-ci-v1.2-main-6805881-run29164295591-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29164295591/`，目录大小 `720K`。
+- manifest 确认 `version=v1.2`、`branch=main`、`commitSha=6805881b7f999526292b77b3253c2cdaf5060ded`、`runId=29164295591`、`runAttempt=1`，toolchain/static/Swift package/Xcode list/build/simulator launch/screenshot/orientation/probe outcomes 全部 success。
+- JUnit 为 8 checks、0 failures、1 skipped；metrics 2622x1206、透明 0、亮度均值 86.913、标准差 44.440、范围 255。
+- build 确认 `TacticalHUDComponents` arm64/x86_64 编译与 `BUILD SUCCEEDED`；人工查看 `ios-home.png` 横屏首屏稳定，左右无纯黑 letterbox，dock 区域为深战术控件底而非系统灰 wash。
 
 遗留事项：
 
