@@ -3970,7 +3970,12 @@
 - 存活探针修复提交 `db51505283a9a8cca3858bc324c29848b6e4a639` 的 run `29142224497`、attempt `1` 全部结构化检查通过；artifact `rustwar-ci-v1.2-main-db51505-run29142224497-attempt1` 下载到 `/private/tmp/rustwar-c-review-29142224497/`，大小 `1.3M`，并首次包含真实 `ios-home.png`。
 - manifest、JUnit、simulator info 和 metrics 均成功，但人工查看发现固定 Simulator 输出为 `1206x2622` portrait pixel buffer，横屏 Rustwar UI 整体侧向保存。该 artifact 证明 App 已真实运行和渲染，却不满足可直接审阅的横屏视觉证据要求，因此不作为 v2.1 最终通过依据。
 - 后续修复在云端用 `sips` 把该固定输出规范化为 landscape PNG，并让 ImageIO probe 强制 `width > height`；等待新精确 SHA artifact 复判。
+- 横屏规范化提交 `b19384588aaa978ba8250d558b340ae5ca33a46d` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29144340206`，attempt `1`，artifact `rustwar-ci-v1.2-main-b193845-run29144340206-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29144340206/`，目录大小 `888K`。
+- manifest 确认 `version=v1.2`、`branch=main`、`commitSha=b19384588aaa978ba8250d558b340ae5ca33a46d`、`runId=29144340206`、`runAttempt=1`，toolchain/static/Swift package/Xcode list/build/simulator launch/screenshot/orientation/probe outcomes 全部为 success；destination UDID 与 `ios-simulator-info.txt` 一致。
+- JUnit 为 8 checks、0 failures、1 skipped browser smoke；主日志确认 Swift Testing 303 tests passed、arm64/x86_64 universal iOS build `BUILD SUCCEEDED`，Simulator create/boot/install/launch/process/screenshot/orientation/probe/shutdown/delete 全部 exit 0。
+- 最终 metrics 为 2622x1206、透明比例 0、平均亮度 119.086、亮度标准差 64.708、亮度范围 255。人工查看 `ios-home.png` 确认方向正确，真实显示 Rustwar 战场、程序化单位/建筑、状态栏、Tactical Map 和 command dock，不是 SpringBoard、启动占位或黑屏。
 
 遗留事项：
 
 - 首屏非空探针不是像素基线、布局断言或交互自动化；仍不能证明 dock 滚动、触摸命中、VoiceOver、Dynamic Type、Reduce Motion、旋转、等待命令、战斗特效或帧率。
+- 云端首屏同时显示 HUD 仍偏系统灰、弱对比文字较多，战场左右存在明显黑色留边；这些是 v2.2 战术界面精修的首要视觉目标。
