@@ -440,7 +440,7 @@ struct TacticalMapView: View {
         context.fill(path, with: .color(color(for: building.team).opacity(0.92)))
         if isSelected {
             let outer = rect.insetBy(dx: -1.8, dy: -1.8)
-            context.stroke(Path(rect: outer), with: .color(.black.opacity(0.55)), lineWidth: 2.4)
+            context.stroke(Path(outer), with: .color(.black.opacity(0.55)), lineWidth: 2.4)
             context.stroke(path, with: .color(.yellow), lineWidth: 2.0)
         } else {
             context.stroke(path, with: .color(.white.opacity(0.42)), lineWidth: 0.8)
