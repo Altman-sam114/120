@@ -213,6 +213,7 @@ jobs:
           simulator_launch_status=77
           simulator_process_status=77
           simulator_screenshot_status=77
+          screenshot_orientation_status=77
           screenshot_probe_status=77
           app_path="${derived_data_path}/Build/Products/Debug-iphonesimulator/RustwarIOS.app"
           screenshot_path="ci-results/ios-home.png"
@@ -241,6 +242,10 @@ jobs:
               simulator_screenshot_status=$?
             fi
             if [[ "$simulator_screenshot_status" -eq 0 ]]; then
+              sips --rotate 270 "$screenshot_path" >> "$build_log" 2>&1
+              screenshot_orientation_status=$?
+            fi
+            if [[ "$screenshot_orientation_status" -eq 0 ]]; then
               xcrun swift ci/validate-ios-screenshot.swift \
                 "$screenshot_path" \
                 "$screenshot_metrics_path" >> "$build_log" 2>&1
@@ -251,6 +256,7 @@ jobs:
           echo "simulator launch exit=$simulator_launch_status" >> "$build_log"
           echo "simulator process alive exit=$simulator_process_status" >> "$build_log"
           echo "simulator screenshot exit=$simulator_screenshot_status" >> "$build_log"
+          echo "screenshot landscape normalization exit=$screenshot_orientation_status" >> "$build_log"
           echo "screenshot pixel probe exit=$screenshot_probe_status" >> "$build_log"
           echo >> "$build_log"
 
@@ -266,6 +272,7 @@ jobs:
             echo "launch_exit=${simulator_launch_status}"
             echo "process_alive_exit=${simulator_process_status}"
             echo "screenshot_exit=${simulator_screenshot_status}"
+            echo "orientation_normalize_exit=${screenshot_orientation_status}"
             echo "pixel_probe_exit=${screenshot_probe_status}"
           } > ci-results/ios-simulator-info.txt
 
@@ -278,7 +285,7 @@ jobs:
             echo >> "$build_log"
           fi
 
-          if [[ "$simulator_create_status" -eq 0 && "$simulator_boot_status" -eq 0 && "$simulator_install_status" -eq 0 && "$simulator_launch_status" -eq 0 && "$simulator_process_status" -eq 0 && "$simulator_screenshot_status" -eq 0 && "$screenshot_probe_status" -eq 0 ]]; then
+          if [[ "$simulator_create_status" -eq 0 && "$simulator_boot_status" -eq 0 && "$simulator_install_status" -eq 0 && "$simulator_launch_status" -eq 0 && "$simulator_process_status" -eq 0 && "$simulator_screenshot_status" -eq 0 && "$screenshot_orientation_status" -eq 0 && "$screenshot_probe_status" -eq 0 ]]; then
             simulator_visual_status=0
           else
             simulator_visual_status=1
@@ -325,6 +332,7 @@ jobs:
           CHECK_SIMULATOR_VISUAL_STATUS="$simulator_visual_status" \
           CHECK_SIMULATOR_LAUNCH_STATUS="$([[ "$simulator_launch_status" -eq 0 && "$simulator_process_status" -eq 0 ]] && echo 0 || echo 1)" \
           CHECK_SIMULATOR_SCREENSHOT_STATUS="$simulator_screenshot_status" \
+          CHECK_SCREENSHOT_ORIENTATION_STATUS="$screenshot_orientation_status" \
           CHECK_SCREENSHOT_PROBE_STATUS="$screenshot_probe_status" \
           IOS_SIMULATOR_UDID="$simulator_udid" \
           XCODE_VERSION="$xcode_version" \
@@ -446,6 +454,7 @@ jobs:
             simulatorVisualOutcome: process.env.CHECK_SIMULATOR_VISUAL_STATUS === "0" ? "success" : "failure",
             simulatorLaunchOutcome: process.env.CHECK_SIMULATOR_LAUNCH_STATUS === "0" ? "success" : "failure",
             screenshotOutcome: process.env.CHECK_SIMULATOR_SCREENSHOT_STATUS === "0" ? "success" : "failure",
+            screenshotOrientationOutcome: process.env.CHECK_SCREENSHOT_ORIENTATION_STATUS === "0" ? "success" : "failure",
             screenshotProbeOutcome: process.env.CHECK_SCREENSHOT_PROBE_STATUS === "0" ? "success" : "failure",
             screenshotPath: process.env.CHECK_SIMULATOR_SCREENSHOT_STATUS === "0" ? "ci-results/ios-home.png" : null,
             screenshotMetricsPath: process.env.CHECK_SCREENSHOT_PROBE_STATUS === "0" ? "ci-results/ios-screenshot-metrics.txt" : null,

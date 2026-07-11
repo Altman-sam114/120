@@ -133,6 +133,9 @@ do {
     if metrics.width < 640 || metrics.height < 300 {
         failures.append("dimensions are below 640x300")
     }
+    if metrics.width <= metrics.height {
+        failures.append("the screenshot is not normalized to landscape orientation")
+    }
     if metrics.transparentRatio > 0.01 {
         failures.append("more than 1% of pixels are transparent")
     }
