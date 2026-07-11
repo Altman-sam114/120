@@ -59,6 +59,8 @@ v2.6 强化命令确认落点视觉：`BattlefieldScene` 与 `TacticalMapView` �
 
 v2.7 强化战术小地图等待命令 chrome：`TacticalMapView` 背景与边框消费 theme map chrome tokens；存在 pending command 时 badge 使用 attention 黄前景/描边，外框切换到更粗 attention stroke。不改 pending label 来源、手势或命令派发。
 
+v2.8 强化选中高亮对比：`BattlefieldScene` 的 selection ring/corners 增加 halo 与黑底描边，线宽更粗；`TacticalMapView` 对选中单位/建筑使用外黑内黄双描边。只改绘制，不改 selectedIDs 语义。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

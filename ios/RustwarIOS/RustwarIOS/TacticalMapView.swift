@@ -433,12 +433,18 @@ struct TacticalMapView: View {
         differentiateWithoutColor: Bool
     ) {
         let point = mapPoint(for: building.position, size: size)
-        let side: CGFloat = isSelected ? 8 : 6.5
+        let side: CGFloat = isSelected ? 9 : 6.5
         let rect = CGRect(x: point.x - side / 2, y: point.y - side / 2, width: side, height: side)
         let path = Path(rect)
 
         context.fill(path, with: .color(color(for: building.team).opacity(0.92)))
-        context.stroke(path, with: .color(isSelected ? .yellow : .white.opacity(0.42)), lineWidth: isSelected ? 1.6 : 0.8)
+        if isSelected {
+            let outer = rect.insetBy(dx: -1.8, dy: -1.8)
+            context.stroke(Path(rect: outer), with: .color(.black.opacity(0.55)), lineWidth: 2.4)
+            context.stroke(path, with: .color(.yellow), lineWidth: 2.0)
+        } else {
+            context.stroke(path, with: .color(.white.opacity(0.42)), lineWidth: 0.8)
+        }
 
         if building.team == .enemy || differentiateWithoutColor {
             drawSlash(in: &context, rect: rect, color: .white.opacity(0.72), lineWidth: 0.8)
@@ -453,12 +459,18 @@ struct TacticalMapView: View {
         differentiateWithoutColor: Bool
     ) {
         let point = mapPoint(for: unit.position, size: size)
-        let radius: CGFloat = isSelected ? 4.6 : 3.4
+        let radius: CGFloat = isSelected ? 5.2 : 3.4
         let rect = CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2)
         let path = Path(ellipseIn: rect)
 
         context.fill(path, with: .color(color(for: unit.team).opacity(0.95)))
-        context.stroke(path, with: .color(isSelected ? .yellow : .white.opacity(0.46)), lineWidth: isSelected ? 1.4 : 0.7)
+        if isSelected {
+            let outer = rect.insetBy(dx: -1.6, dy: -1.6)
+            context.stroke(Path(ellipseIn: outer), with: .color(.black.opacity(0.55)), lineWidth: 2.2)
+            context.stroke(path, with: .color(.yellow), lineWidth: 1.9)
+        } else {
+            context.stroke(path, with: .color(.white.opacity(0.46)), lineWidth: 0.7)
+        }
 
         if unit.team == .enemy || differentiateWithoutColor {
             drawCross(in: &context, center: point, radius: radius * 0.76, color: .white.opacity(0.72), lineWidth: 0.7)

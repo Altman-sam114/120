@@ -292,3 +292,13 @@ flowchart LR
   P["isAwaitingTargetCommand"] -->|true| B["attention frame + pending badge"]
   P -->|false| N["theme map chrome stroke"]
 ```
+
+## v2.8 选中高亮对比
+
+读图说明：v2.8 只增强选中高亮像素，不改选择状态流。
+
+```mermaid
+flowchart LR
+  S["selectedEntityIDs"] --> B["Battlefield halo/ring/corners"]
+  S --> M["Map dual-stroke markers"]
+```

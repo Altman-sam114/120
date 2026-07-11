@@ -4211,3 +4211,35 @@
 
 - 默认 visual smoke 首屏通常不处于 waiting 命令态，不能单靠 PNG 证明 pending chrome 像素。
 - 后续可做交互驱动截图或玩法 parity 窄轮次。
+
+### v2.8 / iOS selection highlight contrast
+
+日期：2026-07-12
+
+核心变更：
+
+- 主战场单位 selection ring 增加黄 halo、黑底 underlay 与更粗黄描边/glow。
+- 主战场建筑 selection corners 同步加黑底 underlay、更长角标与更粗黄描边。
+- 战术小地图选中单位/建筑使用略大尺寸与外黑内黄双描边。
+- 不改 selectedIDs、选择手势、命令语义、Core 或 Web。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.8-ios-selection-highlight-contrast.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、Simulator、Preview 或浏览器验证。
+- 等待 push `origin/main` 后由 GitHub Actions v1.2 artifact 完成 Agent C 复判。
+
+遗留事项：
+
+- 默认 visual smoke 首屏未必包含选中实体，不能单靠 PNG 证明 selection 高亮像素。
+- 后续可做交互驱动截图或玩法 parity 窄轮次。

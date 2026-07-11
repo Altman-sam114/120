@@ -1844,20 +1844,33 @@ final class BattlefieldScene: SKScene {
     }
 
     private func addSelectionRing(radius: Double, to node: SKNode) {
+        let halo = SKShapeNode(circleOfRadius: radius + 3.5)
+        halo.fillColor = SKColor.systemYellow.withAlphaComponent(0.10)
+        halo.strokeColor = SKColor.systemYellow.withAlphaComponent(0.28)
+        halo.lineWidth = 1.2
+        node.addChild(halo)
+
         let path = CGMutablePath()
         for quadrant in 0..<4 {
-            let start = CGFloat(quadrant) * .pi / 2 + 0.18
-            path.addArc(center: .zero, radius: radius, startAngle: start, endAngle: start + .pi / 2 - 0.36, clockwise: false)
+            let start = CGFloat(quadrant) * .pi / 2 + 0.16
+            path.addArc(center: .zero, radius: radius, startAngle: start, endAngle: start + .pi / 2 - 0.32, clockwise: false)
         }
+        let underlay = SKShapeNode(path: path)
+        underlay.strokeColor = SKColor.black.withAlphaComponent(0.55)
+        underlay.lineWidth = 5.2
+        underlay.lineCap = .round
+        node.addChild(underlay)
+
         let ring = SKShapeNode(path: path)
         ring.strokeColor = .systemYellow
-        ring.lineWidth = 3
+        ring.lineWidth = 3.4
         ring.lineCap = .round
+        ring.glowWidth = 1.6
         node.addChild(ring)
     }
 
     private func addSelectionCorners(halfExtent: Double, to node: SKNode) {
-        let length = Swift.max(7, halfExtent * 0.3)
+        let length = Swift.max(8, halfExtent * 0.34)
         let path = CGMutablePath()
         for x in [-halfExtent, halfExtent] {
             for y in [-halfExtent, halfExtent] {
@@ -1868,10 +1881,17 @@ final class BattlefieldScene: SKScene {
                 path.addLine(to: CGPoint(x: x - xDirection * length, y: y))
             }
         }
+        let underlay = SKShapeNode(path: path)
+        underlay.strokeColor = SKColor.black.withAlphaComponent(0.55)
+        underlay.lineWidth = 5.4
+        underlay.lineCap = .round
+        node.addChild(underlay)
+
         let corners = SKShapeNode(path: path)
         corners.strokeColor = .systemYellow
-        corners.lineWidth = 3.2
+        corners.lineWidth = 3.6
         corners.lineCap = .round
+        corners.glowWidth = 1.4
         node.addChild(corners)
     }
 
