@@ -4237,7 +4237,11 @@
 验证状态：
 
 - 按用户要求未运行任何本地测试、构建、Simulator、Preview 或浏览器验证。
-- 等待 push `origin/main` 后由 GitHub Actions v1.2 artifact 完成 Agent C 复判。
+- 初版提交 `44288bb2fd863a6d62a701b4211ebb3fc1609fdd` 的 run `29166254315` 失败：`TacticalMapView` 使用 `Path(rect: outer)` 导致编译错误。
+- 修复提交 `61526d831377d0e13b9b7be2beb530cae878b590` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29166709882`，attempt `1`，artifact `rustwar-ci-v1.2-main-61526d8-run29166709882-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29166709882/`，目录大小 `696K`。
+- manifest 确认 `version=v1.2`、`branch=main`、`commitSha=61526d831377d0e13b9b7be2beb530cae878b590`、`runId=29166709882`、`runAttempt=1`，toolchain/static/Swift package/Xcode list/build/simulator visual/screenshot probe/test outcomes 全部 success。
+- JUnit 为 8 checks、0 failures、1 skipped；metrics 2622x1206、透明 0、亮度均值 85.418、标准差 45.896、范围 255。
+- build 确认 `BattlefieldScene` / `TacticalMapView` arm64/x86_64 编译与 `BUILD SUCCEEDED`；首屏 smoke 通过。selection 高亮像素依赖是否已有选中实体，默认暂停首屏不保证展示。
 
 遗留事项：
 
