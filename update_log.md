@@ -3937,3 +3937,35 @@
 遗留事项：
 
 - 当前 CI 没有 SwiftUI screenshot/XCUITest，不能证明真实颜色对比、Selection Summary 换行、Dynamic Type、Tactical Map chrome 或不同设备的触控观感；必须保留云端 UI 视觉基线与真机人工验收需求。
+
+### v2.1 / cloud iOS visual smoke
+
+日期：2026-07-11
+
+核心变更：
+
+- GitHub Actions 从 generic build 推进为固定 iPhone 17 Pro / iOS 26.5 Simulator 的按 UDID build、install、launch、进程存活检查和首屏 PNG capture；显式保留 arm64/x86_64 双架构编译。
+- 新增 `ci/validate-ios-screenshot.swift`，使用 CoreGraphics/ImageIO 解码截图，输出尺寸、透明像素比例、平均亮度、亮度标准差和亮度范围；尺寸低于 640x300、透明像素超过 1%、标准差低于 8 或范围低于 40 时失败。
+- CI flow / artifact schema 从 v1.1 升到 v1.2；JUnit 从 7 项升到 8 项，新增 `iOS Simulator launch and screenshot`，browser smoke 仍是唯一预期 skipped。
+- manifest 分别记录 simulator、bundle、launch、capture、probe 和证据路径；artifact 新增必要的 `ios-simulator-info.txt`、`ios-home.png` 与 `ios-screenshot-metrics.txt`，不上传 DerivedData、cache、视频或 xcresult。
+- 模拟器 shutdown/delete 属于 best-effort 清理，不覆盖 create/boot/build/install/launch/capture/probe 的真实状态。
+
+涉及文件：
+
+- `.github/workflows/ci-results.yml`
+- `ci/validate-ios-screenshot.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.1-cloud-ios-visual-smoke.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、YAML/Swift 解析、Simulator、Preview 或浏览器验证。
+- 等待实现提交 push 到 `origin/main` 后，由 GitHub Actions 生成精确 SHA 的 v1.2 artifact；在 run、artifact、PNG 和 metrics 完成 Agent C 复判前，本版本不得标记通过。
+
+遗留事项：
+
+- 首屏非空探针不是像素基线、布局断言或交互自动化；仍不能证明 dock 滚动、触摸命中、VoiceOver、Dynamic Type、Reduce Motion、旋转、等待命令、战斗特效或帧率。

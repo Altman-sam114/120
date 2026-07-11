@@ -14,13 +14,15 @@ jobs:
     name: Build CI result package
     runs-on: macos-26
     env:
-      CI_FLOW_VERSION: v1.1
+      CI_FLOW_VERSION: v1.2
       PROJECT_NAME: Rustwar
       WORKFLOW_DISPLAY_NAME: Rustwar CI Results
       DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
       IOS_PROJECT: ios/RustwarIOS/RustwarIOS.xcodeproj
       IOS_SCHEME: RustwarIOS
-      IOS_DESTINATION: generic/platform=iOS Simulator
+      IOS_BUNDLE_ID: com.rustwar.prototype.ios
+      IOS_SIMULATOR_DEVICE_TYPE: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
+      IOS_SIMULATOR_RUNTIME: com.apple.CoreSimulator.SimRuntime.iOS-26-5
       SWIFT_PACKAGE_PATH: swift/RustwarCore
 
     steps:
@@ -64,7 +66,8 @@ jobs:
             echo "swift_package=${SWIFT_PACKAGE_PATH}"
             echo "ios_project=${IOS_PROJECT}"
             echo "ios_scheme=${IOS_SCHEME}"
-            echo "ios_destination=${IOS_DESTINATION}"
+            echo "ios_simulator_device_type=${IOS_SIMULATOR_DEVICE_TYPE}"
+            echo "ios_simulator_runtime=${IOS_SIMULATOR_RUNTIME}"
             echo "runner_os=${RUNNER_OS:-unknown}"
             echo "runner_arch=${RUNNER_ARCH:-unknown}"
             echo "runner_name=${RUNNER_NAME:-unknown}"
@@ -160,26 +163,130 @@ jobs:
           echo "xcodebuild -list exit=$xcode_list_status" >> "$build_log"
           echo >> "$build_log"
 
-          echo "== xcodebuild iOS build ==" >> "$build_log"
+          echo "== create and boot pinned iOS Simulator ==" >> "$build_log"
+          simulator_udid=""
+          simulator_create_status=77
+          simulator_boot_status=77
           if [[ "$xcode_list_status" -eq 0 ]]; then
+            simulator_udid="$(xcrun simctl create \
+              "Rustwar CI ${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+              "$IOS_SIMULATOR_DEVICE_TYPE" \
+              "$IOS_SIMULATOR_RUNTIME" 2>> "$build_log")"
+            simulator_create_status=$?
+            if [[ "$simulator_create_status" -eq 0 ]]; then
+              echo "simulator_udid=${simulator_udid}" >> "$build_log"
+              xcrun simctl boot "$simulator_udid" >> "$build_log" 2>&1
+              simulator_boot_status=$?
+              if [[ "$simulator_boot_status" -eq 0 ]]; then
+                xcrun simctl bootstatus "$simulator_udid" -b >> "$build_log" 2>&1
+                simulator_boot_status=$?
+              fi
+            fi
+          fi
+          echo "simulator create exit=$simulator_create_status" >> "$build_log"
+          echo "simulator boot exit=$simulator_boot_status" >> "$build_log"
+          echo >> "$build_log"
+
+          echo "== xcodebuild iOS Simulator app ==" >> "$build_log"
+          derived_data_path="${RUNNER_TEMP}/RustwarDerivedData"
+          if [[ "$simulator_boot_status" -eq 0 ]]; then
             xcodebuild \
               -project "$IOS_PROJECT" \
               -scheme "$IOS_SCHEME" \
-              -destination "$IOS_DESTINATION" \
+              -destination "platform=iOS Simulator,id=${simulator_udid}" \
+              -derivedDataPath "$derived_data_path" \
+              ONLY_ACTIVE_ARCH=NO \
+              ARCHS="arm64 x86_64" \
               CODE_SIGNING_ALLOWED=NO \
               CODE_SIGN_IDENTITY="" \
               build >> "$build_log" 2>&1
             xcode_build_status=$?
           else
-            echo "Skipped: xcodebuild -list did not succeed." >> "$build_log"
+            echo "Skipped: pinned iOS Simulator did not boot successfully." >> "$build_log"
             xcode_build_status=77
           fi
           echo "xcodebuild build exit=$xcode_build_status" >> "$build_log"
           echo >> "$build_log"
 
+          echo "== install, launch, and capture iOS app ==" >> "$build_log"
+          simulator_install_status=77
+          simulator_launch_status=77
+          simulator_process_status=77
+          simulator_screenshot_status=77
+          screenshot_probe_status=77
+          app_path="${derived_data_path}/Build/Products/Debug-iphonesimulator/RustwarIOS.app"
+          screenshot_path="ci-results/ios-home.png"
+          screenshot_metrics_path="ci-results/ios-screenshot-metrics.txt"
+          if [[ "$xcode_build_status" -eq 0 ]]; then
+            xcrun simctl install "$simulator_udid" "$app_path" >> "$build_log" 2>&1
+            simulator_install_status=$?
+            if [[ "$simulator_install_status" -eq 0 ]]; then
+              launch_output="$(xcrun simctl launch "$simulator_udid" "$IOS_BUNDLE_ID" 2>&1)"
+              simulator_launch_status=$?
+              printf '%s\n' "$launch_output" >> "$build_log"
+            fi
+            if [[ "$simulator_launch_status" -eq 0 ]]; then
+              app_pid="$(printf '%s\n' "$launch_output" | sed -n 's/.*: \([0-9][0-9]*\)$/\1/p' | tail -1)"
+              sleep 8
+              if [[ "$app_pid" =~ ^[0-9]+$ ]]; then
+                xcrun simctl spawn "$simulator_udid" /bin/kill -0 "$app_pid" >> "$build_log" 2>&1
+                simulator_process_status=$?
+              else
+                echo "Unable to parse launched app PID from simctl output." >> "$build_log"
+                simulator_process_status=1
+              fi
+            fi
+            if [[ "$simulator_process_status" -eq 0 ]]; then
+              xcrun simctl io "$simulator_udid" screenshot --type=png "$screenshot_path" >> "$build_log" 2>&1
+              simulator_screenshot_status=$?
+            fi
+            if [[ "$simulator_screenshot_status" -eq 0 ]]; then
+              xcrun swift ci/validate-ios-screenshot.swift \
+                "$screenshot_path" \
+                "$screenshot_metrics_path" >> "$build_log" 2>&1
+              screenshot_probe_status=$?
+            fi
+          fi
+          echo "simulator install exit=$simulator_install_status" >> "$build_log"
+          echo "simulator launch exit=$simulator_launch_status" >> "$build_log"
+          echo "simulator process alive exit=$simulator_process_status" >> "$build_log"
+          echo "simulator screenshot exit=$simulator_screenshot_status" >> "$build_log"
+          echo "screenshot pixel probe exit=$screenshot_probe_status" >> "$build_log"
+          echo >> "$build_log"
+
+          {
+            echo "device_type=${IOS_SIMULATOR_DEVICE_TYPE}"
+            echo "runtime=${IOS_SIMULATOR_RUNTIME}"
+            echo "udid=${simulator_udid:-unavailable}"
+            echo "bundle_id=${IOS_BUNDLE_ID}"
+            echo "create_exit=${simulator_create_status}"
+            echo "boot_exit=${simulator_boot_status}"
+            echo "build_exit=${xcode_build_status}"
+            echo "install_exit=${simulator_install_status}"
+            echo "launch_exit=${simulator_launch_status}"
+            echo "process_alive_exit=${simulator_process_status}"
+            echo "screenshot_exit=${simulator_screenshot_status}"
+            echo "pixel_probe_exit=${screenshot_probe_status}"
+          } > ci-results/ios-simulator-info.txt
+
+          if [[ -n "$simulator_udid" ]]; then
+            echo "== clean up iOS Simulator ==" >> "$build_log"
+            xcrun simctl shutdown "$simulator_udid" >> "$build_log" 2>&1
+            echo "simulator shutdown exit=$?" >> "$build_log"
+            xcrun simctl delete "$simulator_udid" >> "$build_log" 2>&1
+            echo "simulator delete exit=$?" >> "$build_log"
+            echo >> "$build_log"
+          fi
+
+          if [[ "$simulator_create_status" -eq 0 && "$simulator_boot_status" -eq 0 && "$simulator_install_status" -eq 0 && "$simulator_launch_status" -eq 0 && "$simulator_process_status" -eq 0 && "$simulator_screenshot_status" -eq 0 && "$screenshot_probe_status" -eq 0 ]]; then
+            simulator_visual_status=0
+          else
+            simulator_visual_status=1
+          fi
+
           {
             echo "## CI Failure Summary"
-            if [[ "$toolchain_status" -eq 0 && "$diff_status" -eq 0 && "$node_status" -eq 0 && "$swift_status" -eq 0 && "$xcode_list_status" -eq 0 && "$xcode_build_status" -eq 0 ]]; then
+            if [[ "$toolchain_status" -eq 0 && "$diff_status" -eq 0 && "$node_status" -eq 0 && "$swift_status" -eq 0 && "$xcode_list_status" -eq 0 && "$xcode_build_status" -eq 0 && "$simulator_visual_status" -eq 0 ]]; then
               echo "- Result: success"
             else
               echo "- Result: failure"
@@ -190,6 +297,7 @@ jobs:
             echo "- swift test --package-path ${SWIFT_PACKAGE_PATH}: $([[ "$swift_status" -eq 0 ]] && echo success || echo failure)"
             echo "- xcodebuild -list ${IOS_PROJECT}: $([[ "$xcode_list_status" -eq 0 ]] && echo success || echo failure)"
             echo "- xcodebuild ${IOS_SCHEME}: $([[ "$xcode_build_status" -eq 0 ]] && echo success || echo failure)"
+            echo "- iOS Simulator launch and screenshot: $([[ "$simulator_visual_status" -eq 0 ]] && echo success || echo failure)"
             echo "- Browser smoke/regression: skipped; Rustwar currently has no headless browser CI."
           } > ci-results/ci-failure-summary.md
 
@@ -201,7 +309,7 @@ jobs:
             git log --oneline -5
           } > ci-results/repo-state.txt
 
-          if [[ "$toolchain_status" -eq 0 && "$diff_status" -eq 0 && "$node_status" -eq 0 && "$swift_status" -eq 0 && "$xcode_list_status" -eq 0 && "$xcode_build_status" -eq 0 ]]; then
+          if [[ "$toolchain_status" -eq 0 && "$diff_status" -eq 0 && "$node_status" -eq 0 && "$swift_status" -eq 0 && "$xcode_list_status" -eq 0 && "$xcode_build_status" -eq 0 && "$simulator_visual_status" -eq 0 ]]; then
             overall="success"
           else
             overall="failure"
@@ -214,6 +322,11 @@ jobs:
           CHECK_SWIFT_STATUS="$swift_status" \
           CHECK_XCODE_LIST_STATUS="$xcode_list_status" \
           CHECK_XCODE_BUILD_STATUS="$xcode_build_status" \
+          CHECK_SIMULATOR_VISUAL_STATUS="$simulator_visual_status" \
+          CHECK_SIMULATOR_LAUNCH_STATUS="$([[ "$simulator_launch_status" -eq 0 && "$simulator_process_status" -eq 0 ]] && echo 0 || echo 1)" \
+          CHECK_SIMULATOR_SCREENSHOT_STATUS="$simulator_screenshot_status" \
+          CHECK_SCREENSHOT_PROBE_STATUS="$screenshot_probe_status" \
+          IOS_SIMULATOR_UDID="$simulator_udid" \
           XCODE_VERSION="$xcode_version" \
           XCODE_BUILD_VERSION="$xcode_build_version" \
           IOS_SIMULATOR_SDK_VERSION="$ios_simulator_sdk_version" \
@@ -264,6 +377,11 @@ jobs:
               message: "Native iOS app build with code signing disabled."
             },
             {
+              name: "iOS Simulator launch and screenshot",
+              ok: process.env.CHECK_SIMULATOR_VISUAL_STATUS === "0",
+              message: "Pinned iPhone 17 Pro launch, PNG capture, and nonblank pixel probe."
+            },
+            {
               name: "browser smoke regression",
               skipped: true,
               message: "Skipped: Rustwar currently has no headless browser CI."
@@ -304,7 +422,11 @@ jobs:
             createdAt: new Date().toISOString(),
             projectName: process.env.PROJECT_NAME,
             scheme: process.env.IOS_SCHEME,
-            destination: process.env.IOS_DESTINATION,
+            destination: `platform=iOS Simulator,id=${process.env.IOS_SIMULATOR_UDID}`,
+            simulatorDeviceType: process.env.IOS_SIMULATOR_DEVICE_TYPE,
+            simulatorRuntime: process.env.IOS_SIMULATOR_RUNTIME,
+            simulatorUDID: process.env.IOS_SIMULATOR_UDID,
+            appBundleID: process.env.IOS_BUNDLE_ID,
             runnerOS: process.env.RUNNER_OS || null,
             runnerArch: process.env.RUNNER_ARCH || null,
             runnerName: process.env.RUNNER_NAME || null,
@@ -321,6 +443,12 @@ jobs:
             failureSummaryPath: "ci-results/ci-failure-summary.md",
             staticChecksOutcome: process.env.CHECK_DIFF_STATUS === "0" && process.env.CHECK_NODE_STATUS === "0" ? "success" : "failure",
             buildOutcome: process.env.CHECK_XCODE_BUILD_STATUS === "0" ? "success" : "failure",
+            simulatorVisualOutcome: process.env.CHECK_SIMULATOR_VISUAL_STATUS === "0" ? "success" : "failure",
+            simulatorLaunchOutcome: process.env.CHECK_SIMULATOR_LAUNCH_STATUS === "0" ? "success" : "failure",
+            screenshotOutcome: process.env.CHECK_SIMULATOR_SCREENSHOT_STATUS === "0" ? "success" : "failure",
+            screenshotProbeOutcome: process.env.CHECK_SCREENSHOT_PROBE_STATUS === "0" ? "success" : "failure",
+            screenshotPath: process.env.CHECK_SIMULATOR_SCREENSHOT_STATUS === "0" ? "ci-results/ios-home.png" : null,
+            screenshotMetricsPath: process.env.CHECK_SCREENSHOT_PROBE_STATUS === "0" ? "ci-results/ios-screenshot-metrics.txt" : null,
             testOutcome: process.env.CHECK_SWIFT_STATUS === "0" ? "success" : "failure",
             swiftPackagePath: process.env.SWIFT_PACKAGE_PATH,
             swiftPackageOutcome: process.env.CHECK_SWIFT_STATUS === "0" ? "success" : "failure",
@@ -328,7 +456,8 @@ jobs:
             xcodeListOutcome: process.env.CHECK_XCODE_LIST_STATUS === "0" ? "success" : "failure",
             projectSpecificReports: [
               "ci-results/repo-state.txt",
-              "ci-results/toolchain-info.txt"
+              "ci-results/toolchain-info.txt",
+              "ci-results/ios-simulator-info.txt"
             ]
           };
           fs.writeFileSync("ci-results/ci-artifact-manifest.json", `${JSON.stringify(manifest, null, 2)}\n`);

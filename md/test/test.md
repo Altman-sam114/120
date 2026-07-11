@@ -137,7 +137,8 @@ git diff --check
 - v1.98 云端代码验收必须确认损伤状态只读取当前 `hitPoints/maxHitPoints`，55%/25% 阈值不写回 Core；完成建筑和单位调用同一 helper，施工中建筑跳过。smoke 使用一个 compound path，critical flame 使用第二个 path，每实体不得创建常驻 timer、SKAction、随机源或超过两个损伤节点；敌方实体继续由既有 visibility filter 决定是否进入 `drawEntities`。当前 CI 没有 SpriteKit screenshot/像素/帧率测试，build 不能证明烟火尺寸、对比度或千单位混战性能。
 - v1.99 云端代码验收必须确认九个新 HUD Swift 文件全部加入 `RustwarIOS` target，`GameHUDView` 只分派 status/dock，dock shell 仍集中 1/2 列与 Commands/Build/Production visibility gate。六个 section 的 action、条件、disabled、keyboardShortcut、accessibility label/value/hint inventory 必须与重构前一致；生产 `enumerated()` 必须用稳定 `UnitType` element id，不能依赖可变 index 作为 identity。当前 CI 没有 SwiftUI screenshot/XCUITest，build 成功不能证明滚动、断点、VoiceOver 顺序、触控命中或实际视觉层级。
 - v2.0 云端代码验收必须确认 `TacticalHUDTheme.swift` 与 `TacticalSelectionSummaryView.swift` 加入 target 并进入 arm64/x86_64 编译。Theme 必须集中 44pt minimum hit target 和重复 spacing/radius/status colors；Selection Summary 只接收 value，不持有第二个 controller 或可变状态。资源指标的四个 SF Symbols、等待命令的 icon+text+stroke、stance/Radar/Extractor 的不同图标必须保留非颜色差异；所有 action、快捷键、disabled gate、三档 layout metrics 和 Tactical Map 手势不变。CI 没有 screenshot/XCUITest，build 不能证明对比度、Dynamic Type 换行、触控命中或像素层级。
-- 当前 CI 只验证源码检查、Swift core 和 iOS build，没有自动化 SpriteKit/SwiftUI 截图、像素对比、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸或离屏快捷键 UI 测试；v1.88-v1.92 人工视觉与交互 smoke 仅在本机有完整 Xcode 和可用 Simulator 时执行，不能用 parse/build 代替真实 UI 运行结论。
+- v2.1 云端验收必须确认固定 iPhone 17 Pro / iOS 26.5 Simulator 的 create、boot、arm64/x86_64 build、install、launch、launch PID 存活、screenshot 和 ImageIO probe 均为 exit 0；PNG 至少 640x300、透明像素不超过 1%、亮度标准差至少 8、亮度范围至少 40。Agent C 除核对 metrics 外还必须人工查看云端 PNG 确实是 Rustwar 首屏，像素统计通过不能替代内容核对。
+- 当前 CI 覆盖源码检查、Swift core、iOS build，以及单一固定设备的首屏启动/截图/非空像素探针；仍没有 XCUITest、像素基线差异、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸、滚动、离屏快捷键或战斗帧率自动化。v2.1 首屏 smoke 不能冒充完整 UI 回归。
 - 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
 
 ## 云端重验证
@@ -170,16 +171,19 @@ v1.97 起 Rustwar CI 固定在 `macos-26`、Xcode 26.5、iOS Simulator SDK 26.5 
 - `swift test --package-path swift/RustwarCore`：检查共享 Swift core。
 - `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj`：检查 iOS project / scheme。
 - `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`：检查原生 iOS App 构建。
+- 创建固定 iPhone 17 Pro / iOS 26.5 Simulator，以其 UDID 构建、安装和启动 App，并生成 `ci-results/ios-home.png`。
+- `xcrun swift ci/validate-ios-screenshot.swift ...`：解码 PNG 并检查尺寸、透明像素比例、亮度标准差和亮度范围。
 - 生成 `ci-results/build.log`：主日志。
 - 生成 `ci-results/junit.xml`：CI 可读摘要。
 - 生成 `ci-results/ci-failure-summary.md`：失败或跳过说明。
 - 生成 `ci-results/ci-artifact-manifest.json`：Agent C 核对用 manifest。
 - 生成 `ci-results/repo-state.txt`：分支、状态和最近提交记录。
 - 生成 `ci-results/toolchain-info.txt`：runner、macOS、DEVELOPER_DIR、Xcode build、Simulator SDK、Swift 与 gate exit。
+- 生成 `ci-results/ios-simulator-info.txt`、`ci-results/ios-home.png` 和 `ci-results/ios-screenshot-metrics.txt`：模拟器生命周期、首屏证据与像素指标。
 
-JUnit 从 v1.97 起为 7 checks：toolchain、diff、Node、Swift package、Xcode list、iOS build 和 browser smoke；仅 browser smoke 预期 skipped。artifact schema/name 为 v1.1。
+v2.1 起 JUnit 为 8 checks：toolchain、diff、Node、Swift package、Xcode list、iOS build、iOS Simulator launch/screenshot 和 browser smoke；仅 browser smoke 预期 skipped。artifact schema/name 为 v1.2。
 
-当前不在 CI 中跑浏览器 Smoke、Stage Regression 或 Full，也不跑 iOS UI 自动化。需要这些验证时，由人工明确要求本机验证，或后续新增 headless browser / XCUITest workflow 后再更新本文件。
+当前不在 CI 中跑浏览器 Smoke、Stage Regression 或 Full，也不跑 XCUITest。v2.1 的 Simulator 首屏 smoke 只覆盖启动、截图和非空探针；完整 iOS UI 自动化仍需后续 workflow。
 
 ### 3. 结果包要求
 
@@ -217,6 +221,11 @@ rustwar-ci-${version}-${branch_slug}-${short_sha}-run${run_id}-attempt${run_atte
 - `xcodeProject`
 - `xcodeListOutcome`
 - `projectSpecificReports`
+- `simulatorDeviceType` / `simulatorRuntime` / `simulatorUDID`
+- `appBundleID`
+- `simulatorVisualOutcome` / `simulatorLaunchOutcome`
+- `screenshotOutcome` / `screenshotProbeOutcome`
+- `screenshotPath` / `screenshotMetricsPath`
 
 ## Agent C 结果包复判
 
@@ -236,8 +245,9 @@ Agent C 必须核对：
 - manifest 的 `runId`、`runAttempt` 与下载的 Actions run 一致。
 - `junit.xml` 中失败、跳过和通过项与 `ci-failure-summary.md` 一致。
 - 主日志包含实际命令输出，而不是旧 artifact 或 checkout 自带报告。
-- v1.0 起还要确认 manifest 中 `scheme=RustwarIOS`、`destination=generic/platform=iOS Simulator`，并核对 Swift/iOS 检查项真实执行或真实失败。
+- v1.0 起还要确认 manifest 中 `scheme=RustwarIOS` 和实际 iOS destination，并核对 Swift/iOS 检查项真实执行或真实失败。
 - v1.97 起还要确认 `version=v1.1`、`toolchainOutcome=success`、`developerDir=/Applications/Xcode_26.5.app/Contents/Developer`、`xcodeVersion=Xcode 26.5`、`iOSSimulatorSDKVersion=26.5`，并逐项对照 `toolchain-info.txt`；JUnit 必须为 7 项、0 failures、1 skipped。
+- v2.1 起还要确认 `version=v1.2`，destination 的 UDID 与 manifest / `ios-simulator-info.txt` 一致，launch/capture/probe 均为 success；JUnit 必须为 8 项、0 failures、1 skipped。下载并人工查看 `ios-home.png`，同时核对 metrics 达到阈值。
 
 CI 失败时：
 

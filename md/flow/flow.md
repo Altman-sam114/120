@@ -45,6 +45,8 @@ v1.99 重构 iOS HUD ownership：`GameHUDView` 只按 presentation 分派 `Tacti
 
 v2.0 新增 iOS 战术 UI design tokens 与 Selection Summary：`TacticalHUDTheme` 集中常用 spacing/padding/radius/minimum hit target 和状态颜色，状态栏、dock shell/header、六个 section、command status/control styles 与 Tactical Map chrome 共同消费。`TacticalSelectionSummaryView` 只接收派生字符串 value，用图标和 Dynamic Type 文本组织 selection、stance、Radar/Extractor upgrade 信息；不持有 controller、不写状态，也不改变 v1.99 section ownership 或命令流。
 
+v2.1 新增云端 iOS 首屏视觉 smoke：固定 Xcode 26.5 workflow 创建 iPhone 17 Pro / iOS 26.5 Simulator，用真实 UDID 构建、安装并启动 `com.rustwar.prototype.ios`，随后抓取首屏 PNG。独立 Swift/ImageIO 探针把尺寸、透明比例、平均亮度、亮度标准差和亮度范围写入 metrics，并把 launch/capture/probe 分别写入 v1.2 manifest；任一阶段失败都会进入 overall/JUnit gate，模拟器清理不覆盖真实结果。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
@@ -58,6 +60,7 @@ RustwarCore MapPreset / GameState / GameEngine
   -> SpriteKit BattlefieldScene 只读快照，维护 scene-only 朝向 / cooldown / HP / entity-id 历史
   -> 程序化单位与建筑复合几何 + 武器差异弹道 + 分层受击/摧毁爆炸
   -> bounded decal/entity/effect layers 位于当前可见/已探索战争迷雾下，radar signal 语义保持不变
+  -> GitHub Actions fixed Simulator -> install/launch -> ios-home.png -> ImageIO nonblank metrics gate
   -> SpatialTapGesture / LongPressGesture / DragGesture / MagnifyGesture / TacticalMap drag-tap-long-press
   -> CameraState / KeyboardCameraDirection / UserDefaults save payload / pause-speed gate / SelectionMutation replace/add / Battlefield context command / TacticalMap point commands and pending feedback / WorldRect area selection with building fallback / GameEngine.select / GameEngine.selectIdlePlayerBuilders / GameEngine.selectPlayerCombatUnits / GameEngine.selectPlayerCombatUnits(in:) / GameEngine.selectPlayerUnits(in:) / GameEngine.selectPlayerEntities(in:) / GameEngine.selectPlayerUnitsMatchingPrimarySelection / GameEngine.selectPlayerUnitsMatching(unitID:within:) / GameEngine.storeControlGroup / GameEngine.recallControlGroup / GameEngine.issueMove with formation targets / GameEngine.issueAttackMove with formation targets / GameEngine.issuePatrol with formation targets / GameEngine.issueGuard with formation offsets / GameEngine.issueRepair with dynamic approach points / GameEngine.issueReclaim with dynamic approach points / GameEngine.issueBuild with dynamic approach points / GameEngine.setAttackStance / GameEngine.issueBuildExtractor / GameEngine.issueBuildTurret / GameEngine.issueBuildLandFactory / GameEngine.issueStop / GameEngine.issueAttack / GameEngine.queueUnit / GameEngine.queueBuildingUpgrade / GameEngine.cancelBuildingUpgrade / GameEngine.cancelLastProduction / GameEngine.setRepeatProduction / GameEngine.setRally / GameEngine.setEnemyAIEnabled / GameEngine.update / GameEngine(state:) / GameState.visibility(for:)
   -> GameEngine visible target selection filters unseen enemies for iOS player hit-tests; turret defensive fire targets units/buildings and enemy AI repairs friendly targets, expands resource nodes, builds Land Factories, Turrets and Radar Stations, reclaims nearby wrecks, queues production and assigns attack orders with Web-lite target scoring
@@ -70,7 +73,7 @@ RustwarCore MapPreset / GameState / GameEngine
   -> Agent B 同步 origin/main，在 main 实现和本地轻量检查
   -> git commit + git push origin main
   -> GitHub Actions: ci-results
-  -> 未加密 artifact: manifest / junit.xml / build.log / failure summary
+  -> 未加密 artifact: manifest / junit.xml / build.log / failure summary / iOS home PNG + metrics
   -> Agent C 下载到 /private/tmp/rustwar-c-review-<run_id> 并复判
       -> 失败：退回 Agent B 追加修复 commit
       -> 通过：确认 origin/main 最新 run 与 commit 匹配
