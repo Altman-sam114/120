@@ -39,6 +39,8 @@ v1.96 把同一 `CommandConfirmation` 扩展到 Tactical Map：事件增加 mono
 
 v1.97 固定云端 Apple 工具链：workflow 从 `macos-latest` 改为 `macos-26`，显式选择 Xcode 26.5 / iOS Simulator SDK 26.5，并把工具链作为 overall/JUnit 独立 gate。CI flow artifact 升到 v1.1，manifest 和 `toolchain-info.txt` 记录 runner、macOS、DEVELOPER_DIR、Xcode build、SDK 与 Swift；不匹配时禁止回退默认 Xcode。
 
+v1.98 新增 iOS 分级持续损伤外观：`BattlefieldScene.drawUnit` 和完成状态 `drawBuilding` 从当前 HP/maxHP snapshot 派生 presentation-only damage state。HP 低于 55% 时用单一 compound smoke path 表示受损，低于 25% 时增加火焰 path 和更浓烟柱；无计时器、随机数、SKAction、Core 字段或存档字段，每个受损实体最多两个额外节点，仍随实体可见性和 `entityNode` 重绘边界受雾层约束。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

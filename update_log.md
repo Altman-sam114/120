@@ -3808,3 +3808,34 @@
 
 - 精确 Xcode 26.5 image 最终会被 GitHub runner 淘汰；届时必须通过显式版本升级 commit 同步 workflow、manifest 预期和测试文档，不能静默漂移。
 - CI 仍未运行 iOS Simulator App、XCUITest 或截图/像素对比；本轮只让编译验证工具链可复判。
+
+### v1.98 / iOS persistent damage state
+
+日期：2026-07-11
+
+核心变更：
+
+- 参考 Rusted Warfare 官方 Steam 1920x1080 战斗截图中的持续黑烟和危急火点，`BattlefieldScene` 为当前可见单位与完成状态建筑增加分级战损外观。
+- HP 低于 55% 时显示由单一 compound path 聚合的紧凑黑烟；HP 低于 25% 时增加烟团数量、提高烟雾不透明度，并叠加具有独立轮廓和 glow 的火焰 path。
+- 单位和建筑复用 `addDamageState`；施工中建筑明确跳过，避免把未完成状态误读为战损。
+- damage state 只读取当前 HP/maxHP snapshot，不新增 timer、随机数、SKAction、Core 状态、存档字段或玩法逻辑；每个受损实体最多两个额外节点。
+- 敌方实体仍先经过既有 current visibility filter，烟火和实体同处 `entityNode`、位于 fog/radar 下，不泄露雾外敌方位置。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.98-ios-persistent-damage-state.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、parse、Simulator、Preview 或浏览器验证。
+- 实现提交将 push 到 `origin/main`；由固定 Xcode 26.5 云端 workflow 生成精确 SHA 对应的 v1.1 artifact 后再进入 Agent C 复判。
+
+遗留事项：
+
+- 当前 CI 没有 SpriteKit screenshot、像素对比或帧率测试，不能证明烟柱/火焰在不同 zoom、地形和密集战斗中的实际对比度，也不能证明大量受损实体时的帧率；需后续增加云端 UI 视觉基线和真机人工验收。

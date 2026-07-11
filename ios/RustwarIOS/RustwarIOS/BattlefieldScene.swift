@@ -1301,6 +1301,13 @@ final class BattlefieldScene: SKScene {
         node.addChild(body)
         if building.buildProgress < 1 {
             addConstructionFrame(size: definition.size, to: node)
+        } else {
+            addDamageState(
+                currentHitPoints: building.hitPoints,
+                maximumHitPoints: building.maxHitPoints,
+                visualScale: Swift.max(0.9, definition.size / 38),
+                to: node
+            )
         }
         if isSelected {
             addSelectionCorners(halfExtent: definition.size / 2 + 5, to: node)
@@ -1359,6 +1366,12 @@ final class BattlefieldScene: SKScene {
         let body = unitBody(for: unit, radius: definition.radius)
         body.zRotation = unitHeadings[unit.id] ?? defaultHeading(for: unit.team)
         node.addChild(body)
+        addDamageState(
+            currentHitPoints: unit.hitPoints,
+            maximumHitPoints: unit.maxHitPoints,
+            visualScale: Swift.max(0.72, definition.radius / 13),
+            to: node
+        )
         if isSelected {
             addSelectionRing(radius: definition.radius + 4, to: node)
         }
@@ -1750,6 +1763,70 @@ final class BattlefieldScene: SKScene {
         shadow.position = CGPoint(x: -3, y: -3)
         shadow.zPosition = -2
         node.addChild(shadow)
+    }
+
+    private func addDamageState(
+        currentHitPoints: Double,
+        maximumHitPoints: Double,
+        visualScale: Double,
+        to node: SKNode
+    ) {
+        guard maximumHitPoints > 0 else {
+            return
+        }
+        let healthFraction = Swift.max(0, Swift.min(1, currentHitPoints / maximumHitPoints))
+        guard healthFraction < 0.55 else {
+            return
+        }
+
+        let smokePath = CGMutablePath()
+        let smokeCount = healthFraction < 0.25 ? 4 : 3
+        for index in 0..<smokeCount {
+            let radius = (3.4 + Double(index) * 1.05) * visualScale
+            let xOffset = (index.isMultiple(of: 2) ? -1.6 : 1.8) * visualScale
+            let yOffset = (5.5 + Double(index) * 5.2) * visualScale
+            smokePath.addEllipse(in: CGRect(
+                x: xOffset - radius,
+                y: yOffset - radius,
+                width: radius * 2,
+                height: radius * 2
+            ))
+        }
+        let smoke = SKShapeNode(path: smokePath)
+        smoke.fillColor = SKColor(
+            red: 0.105,
+            green: 0.11,
+            blue: 0.105,
+            alpha: healthFraction < 0.25 ? 0.72 : 0.52
+        )
+        smoke.strokeColor = SKColor(red: 0.3, green: 0.29, blue: 0.27, alpha: 0.28)
+        smoke.lineWidth = 0.8 * visualScale
+        smoke.zPosition = 4
+        node.addChild(smoke)
+
+        guard healthFraction < 0.25 else {
+            return
+        }
+        let flamePath = CGMutablePath()
+        flamePath.move(to: CGPoint(x: -3.8 * visualScale, y: 3 * visualScale))
+        flamePath.addCurve(
+            to: CGPoint(x: 0, y: 15 * visualScale),
+            control1: CGPoint(x: -5.2 * visualScale, y: 9 * visualScale),
+            control2: CGPoint(x: -0.7 * visualScale, y: 10.5 * visualScale)
+        )
+        flamePath.addCurve(
+            to: CGPoint(x: 3.8 * visualScale, y: 3 * visualScale),
+            control1: CGPoint(x: 2.2 * visualScale, y: 10.5 * visualScale),
+            control2: CGPoint(x: 5 * visualScale, y: 8 * visualScale)
+        )
+        flamePath.closeSubpath()
+        let flame = SKShapeNode(path: flamePath)
+        flame.fillColor = SKColor.systemOrange.withAlphaComponent(0.88)
+        flame.strokeColor = SKColor.systemYellow.withAlphaComponent(0.96)
+        flame.lineWidth = 1.1 * visualScale
+        flame.glowWidth = 1.5 * visualScale
+        flame.zPosition = 5
+        node.addChild(flame)
     }
 
     private func addSelectionRing(radius: Double, to node: SKNode) {
