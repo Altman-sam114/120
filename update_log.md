@@ -3842,3 +3842,46 @@
 遗留事项：
 
 - 当前 CI 没有 SpriteKit screenshot、像素对比或帧率测试，不能证明烟柱/火焰在不同 zoom、地形和密集战斗中的实际对比度，也不能证明大量受损实体时的帧率；需后续增加云端 UI 视觉基线和真机人工验收。
+
+### v1.99 / iOS HUD ownership refactor
+
+日期：2026-07-11
+
+核心变更：
+
+- `GameHUDView` 从 695 行单体 View 缩为约 31 行 presentation dispatcher，只选择原生状态栏或 command dock。
+- 新增独立 `TacticalStatusBarView`、`TacticalCommandDockView`、`TacticalCommandDockHeaderView`，以及 Commands / Build / Production / Selection / Groups / Session 六个 section View；九个新文件全部显式加入 Xcode target。
+- command dock shell 继续集中 Dynamic Type/compact role 的 1/2 列计算、Commands/Build/Production visibility gate 和 eager section 顺序；section 只保留各自 action、条件、快捷键与 accessibility 语义。
+- 所有现有 controller action、disabled 条件、键盘快捷键、VoiceOver、44pt 触控目标、三档 HUD 布局、滚动顺序和 Tactical Map 边界保持。
+- Production 从 indices + 下标改为直接遍历 iOS 26 `enumerated()`，以稳定 `UnitType` 为 identity；HUD 资源/section 标签从 `caption2`/manual weight 改为 Dynamic Type `caption.bold()`。
+- `swiftui-pro` 审计直接影响本轮拆分：避免超长 body/computed view ownership、每个新增 top-level View 单独文件、继续使用现代 Observation、`foregroundStyle`、`scrollIndicators`、`sensoryFeedback` 和无 UIKit 路径。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/GameHUDView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalStatusBarView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockHeaderView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandsSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalBuildSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalSelectionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalGroupsSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalSessionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDComponents.swift`
+- `ios/RustwarIOS/RustwarIOS.xcodeproj/project.pbxproj`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v1.99-ios-hud-ownership-refactor.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、parse、Simulator、Preview 或浏览器验证。
+- 实现提交将 push 到 `origin/main`；由固定 Xcode 26.5 云端 workflow 生成精确 SHA 对应的 v1.1 artifact 后再进入 Agent C 复判。
+
+遗留事项：
+
+- 当前 CI 没有 SwiftUI screenshot/XCUITest，不能证明重构后各断点的实际滚动、触控命中、VoiceOver 顺序或像素层级；云端 build 仅证明类型、target membership 和编译链路。

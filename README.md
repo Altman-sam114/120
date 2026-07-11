@@ -32,6 +32,7 @@
 - v1.96 起，同一个成功命令事件也会在 Tactical Map 显示短落点脉冲，让离屏 Move、Attack Move、Patrol、Build 和 Rally 等命令仍有可见确认。小地图用共享颜色和不同微型符号区分九类命令；普通模式从约 5pt 扩至 9pt 并在 0.78 秒内淡出，Reduce Motion 固定约 7pt、仅淡出 0.3 秒。动画只在新 revision 到来时运行，旧事件按 monotonic uptime 过期，不会让静态小地图永久刷新或在旋转后重放。
 - v1.97 起，云端唯一验证固定使用 `macos-26`、Xcode 26.5 和 iOS Simulator SDK 26.5，不再接受 `macos-latest` 随机落到 Xcode 16.4/iOS 18.5。CI artifact schema 升级为 v1.1，新增独立 toolchain JUnit gate、`toolchain-info.txt` 及 runner/macOS/Xcode/SDK/Swift manifest 字段；工具链不匹配会整体失败，不能回退默认 Xcode 冒充有效 iOS 26 build。
 - v1.98 起，原生 iOS 主战场参考 Rusted Warfare 官方战斗截图，为完成状态建筑和可见单位增加分级持续损伤外观：低于 55% HP 显示紧凑黑烟轮廓，低于 25% HP 再叠加独立火焰形状和更浓烟柱。该状态直接由当前 Core HP snapshot 派生，不使用计时器、随机数、持久 effect、额外玩法状态或存档字段；每个受损实体最多增加两个 compound path 节点，施工中建筑不显示损伤烟火，颜色之外仍有烟柱/火焰几何差异。
+- v1.99 起，原生 iOS HUD 把 695 行单体 `GameHUDView` 重构为轻量 presentation dispatcher、独立状态栏、command dock、固定 header，以及 Commands / Build & Upgrade / Production / Selection / Groups / Session 六个独立 section。所有 action、显示条件、1/2 列规则、键盘快捷键、VoiceOver、44pt 触控目标、三档 HUD 布局和 eager command hierarchy 保持；生产选项改为直接遍历 `enumerated()`，资源与 section 标签改用更易读的 Dynamic Type `caption.bold()`，为后续继续精修 Rusted Warfare 风格 UI 降低修改耦合。
 
 当前验证制度：
 

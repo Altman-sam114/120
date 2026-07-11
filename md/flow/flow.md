@@ -41,6 +41,8 @@ v1.97 固定云端 Apple 工具链：workflow 从 `macos-latest` 改为 `macos-2
 
 v1.98 新增 iOS 分级持续损伤外观：`BattlefieldScene.drawUnit` 和完成状态 `drawBuilding` 从当前 HP/maxHP snapshot 派生 presentation-only damage state。HP 低于 55% 时用单一 compound smoke path 表示受损，低于 25% 时增加火焰 path 和更浓烟柱；无计时器、随机数、SKAction、Core 字段或存档字段，每个受损实体最多两个额外节点，仍随实体可见性和 `entityNode` 重绘边界受雾层约束。
 
+v1.99 重构 iOS HUD ownership：`GameHUDView` 只按 presentation 分派 `TacticalStatusBarView` 或 `TacticalCommandDockView`；dock 固定 header 与六个条件 section 各自成为独立 View 文件。dock shell 继续统一计算 Dynamic Type/compact role 的 1/2 列数和三个 section visibility gate，各 section 只拥有本域按钮、快捷键和可访问性语义；controller action、Core、布局尺寸矩阵和触摸区域不变。生产列表直接消费 iOS 26 的 `enumerated()` sequence，避免 indices + 二次下标读取。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

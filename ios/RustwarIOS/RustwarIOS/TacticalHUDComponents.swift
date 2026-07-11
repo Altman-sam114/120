@@ -40,7 +40,7 @@ struct TacticalMetricView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(label.uppercased())
-                .font(.caption2.weight(.semibold))
+                .font(.caption.bold())
                 .foregroundStyle(.secondary)
             Text(value)
                 .font(.headline)
@@ -66,7 +66,7 @@ struct TacticalSectionHeader: View {
     var body: some View {
         HStack(spacing: 7) {
             Label(section.title, systemImage: section.systemImage)
-                .font(.caption.weight(.bold))
+                .font(.caption.bold())
                 .foregroundStyle(.secondary)
             Rectangle()
                 .fill(Color.cyan.opacity(0.42))
