@@ -97,22 +97,42 @@ struct TacticalMapView: View {
                     .labelStyle(.titleAndIcon)
                     .padding(.horizontal, TacticalHUDTheme.compactSpacing)
                     .padding(.vertical, TacticalHUDTheme.denseSpacing)
-                    .background(.black.opacity(0.62), in: Capsule())
-                    .foregroundStyle(.yellow)
+                    .foregroundStyle(TacticalHUDTheme.mapPendingBadgeForeground)
+                    .background(
+                        TacticalHUDTheme.mapPendingBadgeBackground,
+                        in: Capsule()
+                    )
+                    .overlay {
+                        Capsule()
+                            .stroke(
+                                TacticalHUDTheme.mapPendingBadgeStroke,
+                                lineWidth: 1.2
+                            )
+                    }
                     .padding(TacticalHUDTheme.compactSpacing)
+                    .accessibilityHidden(true)
                 }
             }
         }
-        .background(
-            .thinMaterial,
-            in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
-        )
+        .background {
+            ZStack {
+                TacticalHUDTheme.mapChromeBackground
+                if controller.isAwaitingTargetCommand {
+                    TacticalHUDTheme.awaitingStatusBackground.opacity(0.22)
+                }
+                RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
+                    .fill(.thinMaterial.opacity(0.22))
+            }
+            .clipShape(.rect(cornerRadius: TacticalHUDTheme.cornerRadius))
+        }
         .clipShape(.rect(cornerRadius: TacticalHUDTheme.cornerRadius))
         .overlay {
             RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
                 .stroke(
-                    controller.isAwaitingTargetCommand ? .yellow.opacity(0.82) : .white.opacity(0.24),
-                    lineWidth: controller.isAwaitingTargetCommand ? 1.8 : 1
+                    controller.isAwaitingTargetCommand
+                        ? TacticalHUDTheme.attention.opacity(0.92)
+                        : TacticalHUDTheme.mapChromeStroke,
+                    lineWidth: controller.isAwaitingTargetCommand ? 2.2 : 1.1
                 )
         }
         .accessibilityElement(children: .ignore)

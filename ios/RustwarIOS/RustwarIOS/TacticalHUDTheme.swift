@@ -37,4 +37,9 @@ enum TacticalHUDTheme {
     static let pickerBackground = Color(red: 0.06, green: 0.14, blue: 0.18).opacity(0.94)
     static let pickerStroke = Color.cyan.opacity(0.38)
     static let pickerForeground = Color.white.opacity(0.94)
+    static let mapChromeBackground = Color(red: 0.03, green: 0.08, blue: 0.11).opacity(0.92)
+    static let mapChromeStroke = Color.white.opacity(0.28)
+    static let mapPendingBadgeBackground = Color(red: 0.08, green: 0.08, blue: 0.04).opacity(0.88)
+    static let mapPendingBadgeStroke = Color.yellow.opacity(0.86)
+    static let mapPendingBadgeForeground = Color.yellow.opacity(0.98)
 }

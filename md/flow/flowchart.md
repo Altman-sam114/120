@@ -282,3 +282,13 @@ flowchart LR
   V -->|yes| M["Tactical Map dual-ring pulse"]
   V -->|no| X["skip battlefield marker"]
 ```
+
+## v2.7 战术小地图 pending chrome
+
+读图说明：v2.7 只改小地图等待态外壳，不改命令目标选择。
+
+```mermaid
+flowchart LR
+  P["isAwaitingTargetCommand"] -->|true| B["attention frame + pending badge"]
+  P -->|false| N["theme map chrome stroke"]
+```

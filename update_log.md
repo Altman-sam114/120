@@ -4176,3 +4176,35 @@
 
 - 默认 visual smoke 首屏不触发命令确认，不能单靠 PNG 证明 marker 像素。
 - 后续可做交互驱动的云端截图或玩法 parity 窄轮次。
+
+### v2.7 / iOS tactical map pending chrome
+
+日期：2026-07-12
+
+核心变更：
+
+- `TacticalHUDTheme` 增加 map chrome / pending badge tokens。
+- `TacticalMapView` 背景改为深战术底 + 薄 material，idle 外框用 theme stroke，waiting 外框用更粗 attention stroke。
+- pending command badge 改为 theme 胶囊背景、黄前景与黄描边，去掉硬编码黑胶囊。
+- 不改 pending label/symbol 逻辑、小地图手势、命令派发、Core 或 Web。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDTheme.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.7-ios-tactical-map-pending-chrome.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、Simulator、Preview 或浏览器验证。
+- 等待 push `origin/main` 后由 GitHub Actions v1.2 artifact 完成 Agent C 复判。
+
+遗留事项：
+
+- 默认 visual smoke 首屏通常不处于 waiting 命令态，不能单靠 PNG 证明 pending chrome 像素。
+- 后续可做交互驱动截图或玩法 parity 窄轮次。

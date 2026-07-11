@@ -57,6 +57,8 @@ v2.5 强化等待命令状态层级：`TacticalCommandStatusView` 在 `isAwaitin
 
 v2.6 强化命令确认落点视觉：`BattlefieldScene` 与 `TacticalMapView` 对 `CommandConfirmation` 使用更大外环/内环、更粗描边与更高填充对比；仍只在新 revision 且可见时生成，Reduce Motion 保留短淡出。不改 kind 颜色语义、发布路径或 Core。
 
+v2.7 强化战术小地图等待命令 chrome：`TacticalMapView` 背景与边框消费 theme map chrome tokens；存在 pending command 时 badge 使用 attention 黄前景/描边，外框切换到更粗 attention stroke。不改 pending label 来源、手势或命令派发。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
