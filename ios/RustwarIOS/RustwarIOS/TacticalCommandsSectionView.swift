@@ -6,8 +6,6 @@ struct TacticalCommandsSectionView: View {
     let columns: Int
     let showsStop: Bool
 
-    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
-
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             TacticalSectionHeader(section: .commands)
@@ -119,19 +117,7 @@ struct TacticalCommandsSectionView: View {
             systemImage: isActive ? "checkmark.circle.fill" : systemImage,
             action: { controller.setAttackStance(stance) }
         )
-        .buttonStyle(.bordered)
-        .controlSize(.regular)
-        .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
-        .lineLimit(2)
-        .overlay {
-            if isActive {
-                RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
-                    .stroke(
-                        .primary,
-                        lineWidth: differentiateWithoutColor ? 2.5 : 1.5
-                    )
-            }
-        }
+        .tacticalControl(isActive: isActive)
         .keyboardShortcut(commandKey(key), modifiers: [])
         .accessibilityLabel("\(stance.label) attack stance")
         .accessibilityValue(isActive ? "Active" : "Inactive")

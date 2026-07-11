@@ -49,6 +49,8 @@ v2.1 新增云端 iOS 首屏视觉 smoke：固定 Xcode 26.5 workflow 创建 iPh
 
 v2.2 精修战术 HUD 对比与战场 letterbox：`TacticalHUDTheme` 增加 primary/secondary/metricLabel 文本色与 panel/chrome/dock 深色底，metric/section/status/selection 与 dock material 叠加深战术底色；`RootGameView` 水平 `ignoresSafeArea` 铺满左右 inset。`CameraState` 在 viewport 更新时按可见半宽/半高夹紧 center，并在可见区大于地图时提升 fill zoom，避免两侧大块地图外黑底。命令流、Core 与存档不变。
 
+v2.3 继续收紧控件对比：`TacticalBorderedButtonStyle` / `TacticalProminentButtonStyle` 通过 theme control token 渲染 dock 命令、Groups icon 与 Pause 按钮；`tacticalControl(isActive:)` 用黄描边表达 attack stance 激活态。不改变命令派发、disabled 条件或布局档位。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

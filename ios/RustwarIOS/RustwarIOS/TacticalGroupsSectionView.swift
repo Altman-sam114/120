@@ -29,12 +29,7 @@ struct TacticalGroupsSectionView: View {
                 action: { controller.storeControlGroup(slot) }
             )
             .labelStyle(.iconOnly)
-            .buttonStyle(.bordered)
-            .controlSize(.regular)
-            .frame(
-                width: TacticalHUDTheme.controlMinimumHeight,
-                height: TacticalHUDTheme.controlMinimumHeight
-            )
+            .tacticalIconControl()
             .keyboardShortcut(controlGroupKey(for: slot), modifiers: .control)
             .disabled(!controller.canStoreControlGroup)
             .accessibilityHint("Stores the current player selection in control group \(slot).")
@@ -45,12 +40,7 @@ struct TacticalGroupsSectionView: View {
                 action: { controller.recallControlGroup(slot) }
             )
             .labelStyle(.iconOnly)
-            .buttonStyle(.bordered)
-            .controlSize(.regular)
-            .frame(
-                width: TacticalHUDTheme.controlMinimumHeight,
-                height: TacticalHUDTheme.controlMinimumHeight
-            )
+            .tacticalIconControl()
             .keyboardShortcut(controlGroupKey(for: slot), modifiers: [])
             .disabled(!controller.canRecallControlGroup(slot))
             .accessibilityValue(controller.controlGroupAccessibilityValue(for: slot))

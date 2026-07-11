@@ -234,3 +234,15 @@ flowchart LR
   C --> F["fill zoom + clamp center"]
   F --> S["BattlefieldScene 减少左右黑边"]
 ```
+
+## v2.3 战术 control style
+
+读图说明：v2.3 只替换按钮视觉样式，不改命令流。
+
+```mermaid
+flowchart LR
+  CT["Theme control tokens"] --> BS["TacticalBorderedButtonStyle"]
+  CT --> PS["TacticalProminentButtonStyle"]
+  BS --> Dock["Commands / Build / Production / Groups"]
+  PS --> Pause["Status Pause / prominent actions"]
+```

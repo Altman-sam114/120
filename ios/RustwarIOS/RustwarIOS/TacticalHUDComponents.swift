@@ -190,9 +190,82 @@ struct TacticalCommandGrid: Layout {
     }
 }
 
+struct TacticalBorderedButtonStyle: ButtonStyle {
+    var isActive: Bool = false
+    var expandsHorizontally: Bool = true
+
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+
+    func makeBody(configuration: Configuration) -> some View {
+        let label = configuration.label
+            .font(.body.weight(.semibold))
+            .foregroundStyle(
+                isEnabled
+                    ? TacticalHUDTheme.controlForeground
+                    : TacticalHUDTheme.controlForeground.opacity(0.42)
+            )
+            .padding(.horizontal, expandsHorizontally ? TacticalHUDTheme.compactPadding : 0)
+            .padding(.vertical, expandsHorizontally ? TacticalHUDTheme.denseSpacing : 0)
+            .frame(
+                maxWidth: expandsHorizontally ? .infinity : nil,
+                minWidth: expandsHorizontally ? nil : TacticalHUDTheme.controlMinimumHeight,
+                minHeight: TacticalHUDTheme.controlMinimumHeight
+            )
+            .background(
+                (configuration.isPressed
+                    ? TacticalHUDTheme.controlPressedBackground
+                    : TacticalHUDTheme.controlBackground)
+                .opacity(isEnabled ? 1 : 0.55),
+                in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
+                    .stroke(
+                        isActive
+                            ? TacticalHUDTheme.activeControlStroke
+                            : TacticalHUDTheme.controlStroke.opacity(isEnabled ? 1 : 0.45),
+                        lineWidth: isActive
+                            ? (differentiateWithoutColor ? 2.5 : 1.6)
+                            : 1
+                    )
+            }
+        return label
+    }
+}
+
+struct TacticalProminentButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.body.weight(.semibold))
+            .foregroundStyle(
+                isEnabled
+                    ? TacticalHUDTheme.prominentControlForeground
+                    : TacticalHUDTheme.prominentControlForeground.opacity(0.45)
+            )
+            .padding(.horizontal, TacticalHUDTheme.compactPadding)
+            .padding(.vertical, TacticalHUDTheme.denseSpacing)
+            .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
+            .background(
+                TacticalHUDTheme.prominentControlBackground
+                    .opacity(configuration.isPressed ? 0.78 : (isEnabled ? 1 : 0.45)),
+                in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
+                    .stroke(
+                        TacticalHUDTheme.accent.opacity(isEnabled ? 0.85 : 0.35),
+                        lineWidth: 1
+                    )
+            }
+    }
+}
+
 extension View {
-    func tacticalControl() -> some View {
-        buttonStyle(.bordered)
+    func tacticalControl(isActive: Bool = false) -> some View {
+        buttonStyle(TacticalBorderedButtonStyle(isActive: isActive))
             .buttonBorderShape(.roundedRectangle(radius: TacticalHUDTheme.cornerRadius))
             .controlSize(.regular)
             .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
@@ -201,11 +274,21 @@ extension View {
     }
 
     func tacticalProminentControl() -> some View {
-        buttonStyle(.borderedProminent)
+        buttonStyle(TacticalProminentButtonStyle())
             .buttonBorderShape(.roundedRectangle(radius: TacticalHUDTheme.cornerRadius))
             .controlSize(.regular)
             .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
             .lineLimit(2)
             .multilineTextAlignment(.leading)
+    }
+
+    func tacticalIconControl(isActive: Bool = false) -> some View {
+        buttonStyle(TacticalBorderedButtonStyle(isActive: isActive, expandsHorizontally: false))
+            .buttonBorderShape(.roundedRectangle(radius: TacticalHUDTheme.cornerRadius))
+            .controlSize(.regular)
+            .frame(
+                width: TacticalHUDTheme.controlMinimumHeight,
+                height: TacticalHUDTheme.controlMinimumHeight
+            )
     }
 }

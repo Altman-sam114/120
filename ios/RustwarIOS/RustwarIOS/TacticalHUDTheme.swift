@@ -25,4 +25,11 @@ enum TacticalHUDTheme {
     static let neutralStatusBackground = Color(red: 0.05, green: 0.10, blue: 0.14).opacity(0.72)
     static let awaitingStatusBackground = Color.yellow.opacity(0.22)
     static let chromeStroke = Color.cyan.opacity(0.28)
+    static let controlBackground = Color(red: 0.07, green: 0.16, blue: 0.20).opacity(0.96)
+    static let controlPressedBackground = Color(red: 0.10, green: 0.22, blue: 0.28).opacity(0.98)
+    static let controlStroke = Color.cyan.opacity(0.42)
+    static let controlForeground = Color.white.opacity(0.94)
+    static let prominentControlBackground = Color.cyan.opacity(0.86)
+    static let prominentControlForeground = Color(red: 0.02, green: 0.08, blue: 0.10)
+    static let activeControlStroke = Color.yellow.opacity(0.92)
 }

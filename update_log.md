@@ -4019,9 +4019,48 @@
 验证状态：
 
 - 按用户要求未运行任何本地测试、构建、Simulator、Preview 或浏览器验证。
-- 等待 push `origin/main` 后由 GitHub Actions v1.2 artifact 完成 Agent C 复判。
+- 实现提交 `88ef925fcb97d617f20c46de680233f3d7bdf1f6` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29163111701`，attempt `1`，artifact `rustwar-ci-v1.2-main-88ef925-run29163111701-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29163111701/`，目录大小 `764K`。
+- manifest 确认 `version=v1.2`、`branch=main`、`commitSha=88ef925fcb97d617f20c46de680233f3d7bdf1f6`、`runId=29163111701`、`runAttempt=1`，toolchain/static/Swift package/Xcode list/build/simulator launch/screenshot/orientation/probe outcomes 全部 success。
+- JUnit 为 8 checks、0 failures、1 skipped browser smoke；metrics 为 2622x1206、透明 0、亮度均值 81.436、标准差 41.389、范围 255。
+- 人工/量化查看 `ios-home.png`：左右边缘无纯黑 letterbox 条；status/dock 使用深战术底，metric 标签与主值可读；`TacticalHUDTheme` 与 `CameraState` 进入 arm64/x86_64 编译，`BUILD SUCCEEDED`。
 
 遗留事项：
 
 - 云端 visual smoke 仍不是像素基线、滚动/触摸/VoiceOver/Dynamic Type 回归。
-- 后续可继续收紧按钮控件对比、战场内 HUD chrome 与真机 safe-area 观感。
+- dock 命令按钮仍可继续从系统灰 bordered 收紧为更醒目的战术 control style（v2.3）。
+
+### v2.3 / iOS tactical control contrast
+
+日期：2026-07-12
+
+核心变更：
+
+- `TacticalHUDTheme` 增加 control 背景/描边/前景与 prominent control token。
+- 新增 `TacticalBorderedButtonStyle` / `TacticalProminentButtonStyle`；`tacticalControl` / `tacticalProminentControl` / `tacticalIconControl` 统一使用战术样式，替代系统灰 `.bordered`。
+- attack stance 激活态改用 theme yellow stroke；Groups icon 按钮与 status Pause 共用同一 control 视觉语言。
+- 不改 action、disabled、快捷键、VoiceOver 语义、layout metrics、Core、存档或 Web。
+- 补记 v2.2 Agent C 云端通过证据。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDTheme.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDComponents.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandsSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalGroupsSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalStatusBarView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.3-ios-tactical-control-contrast.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、Simulator、Preview 或浏览器验证。
+- 等待 push `origin/main` 后由 GitHub Actions v1.2 artifact 完成 Agent C 复判。
+
+遗留事项：
+
+- visual smoke 不能证明每个 disabled/active 状态或 Dynamic Type 大字重排下的按钮换行。
+- 后续可继续优化 picker/segmented 控件对比与真机 safe-area 触感。

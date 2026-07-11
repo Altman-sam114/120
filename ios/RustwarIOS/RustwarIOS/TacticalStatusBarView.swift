@@ -80,9 +80,9 @@ struct TacticalStatusBarView: View {
                 systemImage: controller.pauseButtonSystemImage,
                 action: controller.togglePause
             )
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(TacticalProminentButtonStyle())
             .controlSize(.regular)
-            .frame(minHeight: TacticalHUDTheme.controlMinimumHeight)
+            .frame(minWidth: 88, minHeight: TacticalHUDTheme.controlMinimumHeight)
             .keyboardShortcut(commandKey("p"), modifiers: [])
             .accessibilityInputLabels(["Pause", "Play"])
 
