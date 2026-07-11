@@ -3984,3 +3984,44 @@
 - 稳定首屏修复提交 `9e32841729be689fdb650d5b39e702888aa9a92b` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29144994249`，attempt `1`，artifact `rustwar-ci-v1.2-main-9e32841-run29144994249-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29144994249/`，目录大小 `872K`。
 - manifest 明确记录 `visualSmokeLaunchArgument=--rustwar-ci-visual-smoke`，toolchain/static/Swift package/Xcode list/build/simulator launch/screenshot/orientation/probe outcomes 全部 success；JUnit 为 8 checks、0 failures、1 skipped，303 项 Swift tests 和 arm64/x86_64 universal iOS build 通过。
 - metrics 为 2622x1206、透明比例 0、平均亮度 119.023、亮度标准差 64.694、亮度范围 255。人工查看最终 PNG 确认顶栏显示 `Play`，Metal 1050、Income 13.0、Pop 5/26，Command Center、Factory、2 Builder、2 Combat Units 与 Tactical Map 全部稳定存在；v2.1 云端首屏视觉 smoke 验收通过。
+
+### v2.2 / iOS tactical UI contrast and letterbox
+
+日期：2026-07-12
+
+核心变更：
+
+- `TacticalHUDTheme` 增加 `primaryText` / `secondaryText` / `metricLabel`、深战术 `panelBackground` / `chromeBackground` / `dockBackground` 与 `chromeStroke`；metric、selection、neutral status 背景提高对比。
+- 状态栏、dock header、dock shell 在深色底上叠极薄 material，替代系统灰 wash；metric/section/status/selection/production 摘要改用 theme 文本色。
+- `RootGameView` 水平铺满 leading/trailing safe area；战场区域使用 theme panel 底。
+- `CameraState` 按 viewport 半宽/半高夹紧 center，并在可见世界大于地图时提升 fill zoom；`GameController` 在 pan/zoom/reset/center/viewport 更新时传入 viewport。
+- 不改命令语义、Core 玩法、AI、存档、Web 或 CI schema。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDTheme.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDComponents.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalSelectionSummaryView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalStatusBarView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockHeaderView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/RootGameView.swift`
+- `ios/RustwarIOS/RustwarIOS/CameraState.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.2-ios-tactical-ui-contrast-and-letterbox.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、Simulator、Preview 或浏览器验证。
+- 等待 push `origin/main` 后由 GitHub Actions v1.2 artifact 完成 Agent C 复判。
+
+遗留事项：
+
+- 云端 visual smoke 仍不是像素基线、滚动/触摸/VoiceOver/Dynamic Type 回归。
+- 后续可继续收紧按钮控件对比、战场内 HUD chrome 与真机 safe-area 观感。

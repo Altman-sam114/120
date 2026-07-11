@@ -31,6 +31,16 @@ struct TacticalCommandDockHeaderView: View {
             .accessibilityHint("Choose whether battlefield selection replaces or adds to the current selection.")
         }
         .padding(TacticalHUDTheme.contentPadding)
-        .background(.ultraThinMaterial)
+        .background {
+            ZStack {
+                TacticalHUDTheme.panelBackground
+                Rectangle().fill(.ultraThinMaterial.opacity(0.30))
+            }
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(TacticalHUDTheme.chromeStroke.opacity(0.55))
+                .frame(height: 1)
+        }
     }
 }

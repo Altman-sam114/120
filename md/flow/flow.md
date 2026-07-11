@@ -47,6 +47,8 @@ v2.0 新增 iOS 战术 UI design tokens 与 Selection Summary：`TacticalHUDThem
 
 v2.1 新增云端 iOS 首屏视觉 smoke：固定 Xcode 26.5 workflow 创建 iPhone 17 Pro / iOS 26.5 Simulator，用真实 UDID 构建、安装并以 `--rustwar-ci-visual-smoke` 暂停初始 `GameController` 后启动 `com.rustwar.prototype.ios`，随后抓取并规范化横屏首屏 PNG；默认 initializer 和普通 App 启动仍保持运行。独立 Swift/ImageIO 探针把方向、尺寸、透明比例、平均亮度、亮度标准差和亮度范围写入 metrics，并把 launch/capture/orientation/probe 分别写入 v1.2 manifest；任一阶段失败都会进入 overall/JUnit gate，模拟器清理不覆盖真实结果。
 
+v2.2 精修战术 HUD 对比与战场 letterbox：`TacticalHUDTheme` 增加 primary/secondary/metricLabel 文本色与 panel/chrome/dock 深色底，metric/section/status/selection 与 dock material 叠加深战术底色；`RootGameView` 水平 `ignoresSafeArea` 铺满左右 inset。`CameraState` 在 viewport 更新时按可见半宽/半高夹紧 center，并在可见区大于地图时提升 fill zoom，避免两侧大块地图外黑底。命令流、Core 与存档不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

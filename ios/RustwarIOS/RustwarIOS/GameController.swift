@@ -1152,7 +1152,7 @@ final class GameController {
     }
 
     func pan(by screenTranslation: CGSize) {
-        camera.pan(by: screenTranslation)
+        camera.pan(by: screenTranslation, viewportSize: battlefieldViewportSize)
         renderRevision += 1
     }
 
@@ -1161,6 +1161,7 @@ final class GameController {
             return
         }
         battlefieldViewportSize = size
+        camera.adapt(to: size)
         renderRevision += 1
     }
 
@@ -1177,12 +1178,12 @@ final class GameController {
     }
 
     func zoom(by magnification: Double) {
-        camera.zoom(by: magnification)
+        camera.zoom(by: magnification, viewportSize: battlefieldViewportSize)
         renderRevision += 1
     }
 
     func resetCamera() {
-        camera.reset(to: engine.state.map.camera)
+        camera.reset(to: engine.state.map.camera, viewportSize: battlefieldViewportSize)
         reportSelectionFeedback()
         renderRevision += 1
     }
@@ -1207,7 +1208,7 @@ final class GameController {
     }
 
     func centerCamera(on point: WorldPoint) {
-        camera.center(on: point)
+        camera.center(on: point, viewportSize: battlefieldViewportSize)
         if !isAwaitingTargetCommand {
             commandStatus = "Camera centered"
         }
@@ -1218,7 +1219,7 @@ final class GameController {
         guard !isAwaitingTargetCommand else {
             return
         }
-        camera.center(on: point)
+        camera.center(on: point, viewportSize: battlefieldViewportSize)
         renderRevision += 1
     }
 
@@ -1246,7 +1247,7 @@ final class GameController {
     private func resetBattle(on mapID: MapID, status: String) {
         let preset = MapPreset.preset(for: mapID)
         engine = GameEngine(mapID: mapID)
-        camera.reset(to: preset.camera)
+        camera.reset(to: preset.camera, viewportSize: battlefieldViewportSize)
         clearPendingTargetCommands()
         commandStatus = status
         mapRenderRevision += 1
@@ -1679,7 +1680,11 @@ final class GameController {
 
         let length = sqrt(dx * dx + dy * dy)
         let worldDistance = Self.keyboardCameraScreenSpeed * deltaTime / camera.zoom
-        camera.panByWorldDelta(x: dx / length * worldDistance, y: dy / length * worldDistance)
+        camera.panByWorldDelta(
+            x: dx / length * worldDistance,
+            y: dy / length * worldDistance,
+            viewportSize: battlefieldViewportSize
+        )
         return true
     }
 

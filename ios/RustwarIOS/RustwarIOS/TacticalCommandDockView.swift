@@ -38,7 +38,17 @@ struct TacticalCommandDockView: View {
             }
             .scrollIndicators(.visible)
         }
-        .background(.regularMaterial)
+        .background {
+            ZStack {
+                TacticalHUDTheme.dockBackground
+                Rectangle().fill(.thinMaterial.opacity(0.28))
+            }
+        }
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(TacticalHUDTheme.chromeStroke.opacity(0.55))
+                .frame(width: 1)
+        }
         .accessibilityElement(children: .contain)
     }
 

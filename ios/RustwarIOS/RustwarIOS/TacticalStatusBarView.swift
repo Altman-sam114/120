@@ -26,7 +26,17 @@ struct TacticalStatusBarView: View {
         }
         .padding(.horizontal, TacticalHUDTheme.statusHorizontalPadding)
         .padding(.vertical, TacticalHUDTheme.statusVerticalPadding)
-        .background(.ultraThinMaterial)
+        .background {
+            ZStack {
+                TacticalHUDTheme.chromeBackground
+                Rectangle().fill(.ultraThinMaterial.opacity(0.35))
+            }
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(TacticalHUDTheme.chromeStroke.opacity(0.7))
+                .frame(height: 1)
+        }
         .accessibilityElement(children: .contain)
     }
 

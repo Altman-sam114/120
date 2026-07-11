@@ -42,10 +42,11 @@ struct TacticalMetricView: View {
         VStack(alignment: .leading, spacing: 2) {
             Label(label.uppercased(), systemImage: systemImage)
                 .font(.caption.bold())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(TacticalHUDTheme.metricLabel)
             Text(value)
                 .font(.headline)
                 .monospacedDigit()
+                .foregroundStyle(TacticalHUDTheme.primaryText)
                 .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.horizontal, TacticalHUDTheme.compactPadding)
@@ -56,7 +57,7 @@ struct TacticalMetricView: View {
         )
         .overlay {
             RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
-                .stroke(TacticalHUDTheme.accent.opacity(0.24), lineWidth: 1)
+                .stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spokenLabel ?? label)
@@ -71,9 +72,9 @@ struct TacticalSectionHeader: View {
         HStack(spacing: TacticalHUDTheme.compactSpacing) {
             Label(section.title, systemImage: section.systemImage)
                 .font(.caption.bold())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(TacticalHUDTheme.metricLabel)
             Rectangle()
-                .fill(TacticalHUDTheme.accent.opacity(0.42))
+                .fill(TacticalHUDTheme.accent.opacity(0.55))
                 .frame(height: 1)
         }
         .accessibilityElement(children: .ignore)
@@ -94,7 +95,7 @@ struct TacticalCommandStatusView: View {
             systemImage: isAwaitingTarget ? "scope" : "info.circle"
         )
         .font(.footnote)
-        .foregroundStyle(isAwaitingTarget ? .primary : .secondary)
+        .foregroundStyle(isAwaitingTarget ? TacticalHUDTheme.primaryText : TacticalHUDTheme.secondaryText)
         .lineLimit(2)
         .padding(.horizontal, TacticalHUDTheme.compactPadding)
         .padding(.vertical, TacticalHUDTheme.compactSpacing)
@@ -110,7 +111,7 @@ struct TacticalCommandStatusView: View {
                 .stroke(
                     isAwaitingTarget
                         ? TacticalHUDTheme.attention
-                        : TacticalHUDTheme.accent.opacity(0.16),
+                        : TacticalHUDTheme.chromeStroke,
                     lineWidth: isAwaitingTarget
                         ? (differentiateWithoutColor ? 2.5 : 1.5)
                         : 1

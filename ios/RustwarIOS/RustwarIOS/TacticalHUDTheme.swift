@@ -14,8 +14,15 @@ enum TacticalHUDTheme {
 
     static let accent = Color.cyan
     static let attention = Color.yellow
-    static let metricBackground = Color.black.opacity(0.18)
-    static let selectionBackground = Color.black.opacity(0.14)
-    static let neutralStatusBackground = Color.black.opacity(0.10)
-    static let awaitingStatusBackground = Color.yellow.opacity(0.17)
+    static let primaryText = Color.white.opacity(0.96)
+    static let secondaryText = Color.white.opacity(0.78)
+    static let metricLabel = Color.cyan.opacity(0.92)
+    static let panelBackground = Color(red: 0.05, green: 0.09, blue: 0.12).opacity(0.94)
+    static let chromeBackground = Color(red: 0.04, green: 0.07, blue: 0.10).opacity(0.90)
+    static let dockBackground = Color(red: 0.04, green: 0.08, blue: 0.11).opacity(0.96)
+    static let metricBackground = Color(red: 0.02, green: 0.12, blue: 0.16).opacity(0.82)
+    static let selectionBackground = Color(red: 0.03, green: 0.10, blue: 0.14).opacity(0.78)
+    static let neutralStatusBackground = Color(red: 0.05, green: 0.10, blue: 0.14).opacity(0.72)
+    static let awaitingStatusBackground = Color.yellow.opacity(0.22)
+    static let chromeStroke = Color.cyan.opacity(0.28)
 }

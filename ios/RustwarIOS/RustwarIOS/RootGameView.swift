@@ -71,7 +71,8 @@ struct RootGameView: View {
             }
         }
         .onKeyPress(phases: .all, action: handleKeyPress)
-        .background(.black)
+        .background(TacticalHUDTheme.chromeBackground.ignoresSafeArea())
+        .ignoresSafeArea(edges: [.leading, .trailing])
         .sensoryFeedback(.selection, trigger: controller.selectionFeedbackRevision)
         .sensoryFeedback(.success, trigger: controller.commandSuccessFeedbackRevision)
         .sensoryFeedback(.warning, trigger: controller.warningFeedbackRevision)
@@ -82,12 +83,14 @@ struct RootGameView: View {
         mapAlignment: Alignment
     ) -> some View {
         return BattlefieldView(controller: controller)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .overlay(alignment: mapAlignment) {
                 TacticalMapView(controller: controller)
                     .frame(width: tacticalMapSize.width, height: tacticalMapSize.height)
                     .padding(Layout.mapPadding)
             }
             .clipped()
+            .background(TacticalHUDTheme.panelBackground)
     }
 
     private func handleKeyPress(_ keyPress: KeyPress) -> KeyPress.Result {

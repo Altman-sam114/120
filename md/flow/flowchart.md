@@ -222,3 +222,15 @@ flowchart TD
   A --> U["upload-artifact v1.1<br/>中文注释：上传 manifest、7 项 JUnit、toolchain-info、日志和仓库状态的未加密结果包"]
   U --> C["Agent C 下载复判<br/>中文注释：只验收 origin/main 最新 commit 对应 artifact"]
 ```
+
+## v2.2 战术对比与 letterbox
+
+读图说明：v2.2 不改命令流，只改 HUD 颜色 token 和相机 viewport 适配。
+
+```mermaid
+flowchart LR
+  T["TacticalHUDTheme 文本/面板 token"] --> H["StatusBar / Dock / Metrics"]
+  V["Battlefield viewport size"] --> C["CameraState.adapt"]
+  C --> F["fill zoom + clamp center"]
+  F --> S["BattlefieldScene 减少左右黑边"]
+```

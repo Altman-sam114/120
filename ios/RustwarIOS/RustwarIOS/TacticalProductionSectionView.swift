@@ -18,7 +18,7 @@ struct TacticalProductionSectionView: View {
             if let productionSummary = controller.productionSummary {
                 Text("Queue: \(productionSummary)")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(TacticalHUDTheme.secondaryText)
                     .lineLimit(3)
                     .accessibilityLabel("Production queue")
                     .accessibilityValue(productionSummary)
