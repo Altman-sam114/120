@@ -4202,7 +4202,10 @@
 验证状态：
 
 - 按用户要求未运行任何本地测试、构建、Simulator、Preview 或浏览器验证。
-- 等待 push `origin/main` 后由 GitHub Actions v1.2 artifact 完成 Agent C 复判。
+- 实现提交 `62c138e86dcd141650e1a277f72639d1e02121e6` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29165838076`，attempt `1`，artifact `rustwar-ci-v1.2-main-62c138e-run29165838076-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29165838076/`，目录大小 `692K`。
+- manifest 确认 `version=v1.2`、`branch=main`、`commitSha=62c138e86dcd141650e1a277f72639d1e02121e6`、`runId=29165838076`、`runAttempt=1`，toolchain/static/Swift package/Xcode list/build/simulator visual/screenshot probe/test outcomes 全部 success。
+- JUnit 为 8 checks、0 failures、1 skipped；metrics 2622x1206、透明 0、亮度均值 85.418、标准差 45.896、范围 255。
+- build 确认 `TacticalHUDTheme` / `TacticalMapView` arm64/x86_64 编译与 `BUILD SUCCEEDED`；首屏 smoke 通过。pending chrome 等待态依赖代码路径验收，默认暂停首屏通常不展示 pending badge。
 
 遗留事项：
 
