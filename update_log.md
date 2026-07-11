@@ -3981,3 +3981,6 @@
 - 云端首屏同时显示 HUD 仍偏系统灰、弱对比文字较多，战场左右存在明显黑色留边；这些是 v2.2 战术界面精修的首要视觉目标。
 - 最新文档提交 `558ffbb9a9e61f25d437956e45538652f28127f6` 的 run `29144586777` 结构化检查与横屏探针仍通过，但人工查看发现 8 秒等待期间对局继续运行到玩家单位/建筑全部消失，HUD 变为 0 income / 0 units。该结果不是稳定初始首屏，不能作为最终视觉基线。
 - 为保持证据可复现，`GameController.init` 新增默认 `false` 的 `startsPaused` 参数；`RustwarIOSApp` 仅在命令行含 `--rustwar-ci-visual-smoke` 时传入 `true`，workflow 用该参数启动。普通 App、Preview 和现有 `GameController()` 调用仍默认运行，不改变玩家玩法。
+- 稳定首屏修复提交 `9e32841729be689fdb650d5b39e702888aa9a92b` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29144994249`，attempt `1`，artifact `rustwar-ci-v1.2-main-9e32841-run29144994249-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29144994249/`，目录大小 `872K`。
+- manifest 明确记录 `visualSmokeLaunchArgument=--rustwar-ci-visual-smoke`，toolchain/static/Swift package/Xcode list/build/simulator launch/screenshot/orientation/probe outcomes 全部 success；JUnit 为 8 checks、0 failures、1 skipped，303 项 Swift tests 和 arm64/x86_64 universal iOS build 通过。
+- metrics 为 2622x1206、透明比例 0、平均亮度 119.023、亮度标准差 64.694、亮度范围 255。人工查看最终 PNG 确认顶栏显示 `Play`，Metal 1050、Income 13.0、Pop 5/26，Command Center、Factory、2 Builder、2 Combat Units 与 Tactical Map 全部稳定存在；v2.1 云端首屏视觉 smoke 验收通过。
