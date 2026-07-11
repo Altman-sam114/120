@@ -74,11 +74,12 @@ final class GameController {
     @ObservationIgnored private var lastBattlefieldTapTime: TimeInterval?
     @ObservationIgnored private var keyboardCameraDirections: Set<KeyboardCameraDirection> = []
 
-    init(mapID: MapID = .coast) {
+    init(mapID: MapID = .coast, startsPaused: Bool = false) {
         let preset = MapPreset.preset(for: mapID)
         self.currentMapID = mapID
         self.engine = GameEngine(mapID: mapID)
         self.camera = CameraState(center: preset.camera.center, zoom: preset.camera.zoom)
+        self.isPaused = startsPaused
     }
 
     var playerEconomy: TeamEconomy {

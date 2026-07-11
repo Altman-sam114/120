@@ -21,6 +21,7 @@ jobs:
       IOS_PROJECT: ios/RustwarIOS/RustwarIOS.xcodeproj
       IOS_SCHEME: RustwarIOS
       IOS_BUNDLE_ID: com.rustwar.prototype.ios
+      IOS_VISUAL_SMOKE_ARGUMENT: --rustwar-ci-visual-smoke
       IOS_SIMULATOR_DEVICE_TYPE: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
       IOS_SIMULATOR_RUNTIME: com.apple.CoreSimulator.SimRuntime.iOS-26-5
       SWIFT_PACKAGE_PATH: swift/RustwarCore
@@ -222,7 +223,10 @@ jobs:
             xcrun simctl install "$simulator_udid" "$app_path" >> "$build_log" 2>&1
             simulator_install_status=$?
             if [[ "$simulator_install_status" -eq 0 ]]; then
-              launch_output="$(xcrun simctl launch "$simulator_udid" "$IOS_BUNDLE_ID" 2>&1)"
+              launch_output="$(xcrun simctl launch \
+                "$simulator_udid" \
+                "$IOS_BUNDLE_ID" \
+                "$IOS_VISUAL_SMOKE_ARGUMENT" 2>&1)"
               simulator_launch_status=$?
               printf '%s\n' "$launch_output" >> "$build_log"
             fi
@@ -265,6 +269,7 @@ jobs:
             echo "runtime=${IOS_SIMULATOR_RUNTIME}"
             echo "udid=${simulator_udid:-unavailable}"
             echo "bundle_id=${IOS_BUNDLE_ID}"
+            echo "launch_argument=${IOS_VISUAL_SMOKE_ARGUMENT}"
             echo "create_exit=${simulator_create_status}"
             echo "boot_exit=${simulator_boot_status}"
             echo "build_exit=${xcode_build_status}"
@@ -435,6 +440,7 @@ jobs:
             simulatorRuntime: process.env.IOS_SIMULATOR_RUNTIME,
             simulatorUDID: process.env.IOS_SIMULATOR_UDID,
             appBundleID: process.env.IOS_BUNDLE_ID,
+            visualSmokeLaunchArgument: process.env.IOS_VISUAL_SMOKE_ARGUMENT,
             runnerOS: process.env.RUNNER_OS || null,
             runnerArch: process.env.RUNNER_ARCH || null,
             runnerName: process.env.RUNNER_NAME || null,

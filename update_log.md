@@ -3979,3 +3979,5 @@
 
 - 首屏非空探针不是像素基线、布局断言或交互自动化；仍不能证明 dock 滚动、触摸命中、VoiceOver、Dynamic Type、Reduce Motion、旋转、等待命令、战斗特效或帧率。
 - 云端首屏同时显示 HUD 仍偏系统灰、弱对比文字较多，战场左右存在明显黑色留边；这些是 v2.2 战术界面精修的首要视觉目标。
+- 最新文档提交 `558ffbb9a9e61f25d437956e45538652f28127f6` 的 run `29144586777` 结构化检查与横屏探针仍通过，但人工查看发现 8 秒等待期间对局继续运行到玩家单位/建筑全部消失，HUD 变为 0 income / 0 units。该结果不是稳定初始首屏，不能作为最终视觉基线。
+- 为保持证据可复现，`GameController.init` 新增默认 `false` 的 `startsPaused` 参数；`RustwarIOSApp` 仅在命令行含 `--rustwar-ci-visual-smoke` 时传入 `true`，workflow 用该参数启动。普通 App、Preview 和现有 `GameController()` 调用仍默认运行，不改变玩家玩法。

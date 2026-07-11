@@ -137,7 +137,7 @@ git diff --check
 - v1.98 云端代码验收必须确认损伤状态只读取当前 `hitPoints/maxHitPoints`，55%/25% 阈值不写回 Core；完成建筑和单位调用同一 helper，施工中建筑跳过。smoke 使用一个 compound path，critical flame 使用第二个 path，每实体不得创建常驻 timer、SKAction、随机源或超过两个损伤节点；敌方实体继续由既有 visibility filter 决定是否进入 `drawEntities`。当前 CI 没有 SpriteKit screenshot/像素/帧率测试，build 不能证明烟火尺寸、对比度或千单位混战性能。
 - v1.99 云端代码验收必须确认九个新 HUD Swift 文件全部加入 `RustwarIOS` target，`GameHUDView` 只分派 status/dock，dock shell 仍集中 1/2 列与 Commands/Build/Production visibility gate。六个 section 的 action、条件、disabled、keyboardShortcut、accessibility label/value/hint inventory 必须与重构前一致；生产 `enumerated()` 必须用稳定 `UnitType` element id，不能依赖可变 index 作为 identity。当前 CI 没有 SwiftUI screenshot/XCUITest，build 成功不能证明滚动、断点、VoiceOver 顺序、触控命中或实际视觉层级。
 - v2.0 云端代码验收必须确认 `TacticalHUDTheme.swift` 与 `TacticalSelectionSummaryView.swift` 加入 target 并进入 arm64/x86_64 编译。Theme 必须集中 44pt minimum hit target 和重复 spacing/radius/status colors；Selection Summary 只接收 value，不持有第二个 controller 或可变状态。资源指标的四个 SF Symbols、等待命令的 icon+text+stroke、stance/Radar/Extractor 的不同图标必须保留非颜色差异；所有 action、快捷键、disabled gate、三档 layout metrics 和 Tactical Map 手势不变。CI 没有 screenshot/XCUITest，build 不能证明对比度、Dynamic Type 换行、触控命中或像素层级。
-- v2.1 云端验收必须确认固定 iPhone 17 Pro / iOS 26.5 Simulator 的 create、boot、arm64/x86_64 build、install、launch、launch PID 存活、screenshot、landscape normalization 和 ImageIO probe 均为 exit 0；PNG 必须 `width > height` 且至少 640x300，透明像素不超过 1%、亮度标准差至少 8、亮度范围至少 40。Agent C 除核对 metrics 外还必须人工查看云端 PNG 方向正确且确实是 Rustwar 首屏，像素统计通过不能替代内容核对。
+- v2.1 云端验收必须确认固定 iPhone 17 Pro / iOS 26.5 Simulator 的 create、boot、arm64/x86_64 build、install、`--rustwar-ci-visual-smoke` paused launch、launch PID 存活、screenshot、landscape normalization 和 ImageIO probe 均为 exit 0；PNG 必须 `width > height` 且至少 640x300，透明像素不超过 1%、亮度标准差至少 8、亮度范围至少 40。Agent C 除核对 metrics 外还必须人工查看云端 PNG 方向正确、初始单位/建筑仍存在且确实是 Rustwar 首屏，像素统计通过不能替代内容核对。默认 `GameController()` 仍必须 `isPaused=false`。
 - 当前 CI 覆盖源码检查、Swift core、iOS build，以及单一固定设备的首屏启动/截图/非空像素探针；仍没有 XCUITest、像素基线差异、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸、滚动、离屏快捷键或战斗帧率自动化。v2.1 首屏 smoke 不能冒充完整 UI 回归。
 - 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
 
@@ -223,6 +223,7 @@ rustwar-ci-${version}-${branch_slug}-${short_sha}-run${run_id}-attempt${run_atte
 - `projectSpecificReports`
 - `simulatorDeviceType` / `simulatorRuntime` / `simulatorUDID`
 - `appBundleID`
+- `visualSmokeLaunchArgument`
 - `simulatorVisualOutcome` / `simulatorLaunchOutcome`
 - `screenshotOutcome` / `screenshotProbeOutcome`
 - `screenshotOrientationOutcome`
