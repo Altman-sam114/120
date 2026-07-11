@@ -3880,7 +3880,10 @@
 验证状态：
 
 - 按用户要求未运行任何本地测试、构建、parse、Simulator、Preview 或浏览器验证。
-- 实现提交将 push 到 `origin/main`；由固定 Xcode 26.5 云端 workflow 生成精确 SHA 对应的 v1.1 artifact 后再进入 Agent C 复判。
+- 实现提交 `a272b5eff1b36cd09b899d8ccfb49178dd703766` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29138133614`，attempt `1`，artifact `rustwar-ci-v1.1-main-a272b5e-run29138133614-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29138133614/`，目录大小 `312K`。
+- manifest 确认 `version=v1.1`、`branch=main`、`commitSha=a272b5eff1b36cd09b899d8ccfb49178dd703766`、`runId=29138133614`、`runAttempt=1`，toolchain/static/Swift package/Xcode list/iOS build/test outcomes 全部为 success。
+- `toolchain-info.txt` 确认 macOS 26.4 ARM64 runner、Xcode 26.5 build 17F42、iOS Simulator SDK 26.5、Apple Swift 6.3.2 和 toolchain gate exit 0。
+- JUnit 为 7 checks、0 failures、1 skipped browser smoke；`ci-failure-summary.md` 为 success；`build.log` 确认 Swift Testing 303 tests passed，九个新 HUD 文件全部进入真实 `RustwarIOS` arm64/x86_64 SwiftCompile batch，原生 iOS build `BUILD SUCCEEDED`。
 
 遗留事项：
 
