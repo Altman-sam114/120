@@ -270,3 +270,15 @@ flowchart LR
   A -->|false| C["idle secondary status"]
   B --> D["Dock header attention frame"]
 ```
+
+## v2.6 命令确认对比
+
+读图说明：v2.6 只增强确认标记像素对比，不改事件流。
+
+```mermaid
+flowchart LR
+  E["CommandConfirmation revision"] --> V{"visible?"}
+  V -->|yes| S["Battlefield dual-ring marker"]
+  V -->|yes| M["Tactical Map dual-ring pulse"]
+  V -->|no| X["skip battlefield marker"]
+```

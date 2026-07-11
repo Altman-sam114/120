@@ -541,23 +541,43 @@ struct TacticalMapView: View {
             return
         }
 
-        let radius: CGFloat = reduceMotion ? 7 : 5 + clampedProgress * 4
-        let color = commandConfirmationColor(for: confirmation.kind).opacity(opacity)
+        let radius: CGFloat = reduceMotion ? 9 : 7 + clampedProgress * 5
+        let baseColor = commandConfirmationColor(for: confirmation.kind)
+        let color = baseColor.opacity(opacity)
+        let outerRadius = radius + 2.5
+        let outerRect = CGRect(
+            x: point.x - outerRadius,
+            y: point.y - outerRadius,
+            width: outerRadius * 2,
+            height: outerRadius * 2
+        )
         let ringRect = CGRect(
             x: point.x - radius,
             y: point.y - radius,
             width: radius * 2,
             height: radius * 2
         )
-        context.fill(Path(ellipseIn: ringRect), with: .color(commandConfirmationColor(for: confirmation.kind).opacity(0.12 * opacity)))
-        context.stroke(Path(ellipseIn: ringRect), with: .color(color), lineWidth: 1.6)
+        context.fill(Path(ellipseIn: outerRect), with: .color(baseColor.opacity(0.10 * opacity)))
+        context.stroke(Path(ellipseIn: outerRect), with: .color(baseColor.opacity(0.42 * opacity)), lineWidth: 1.1)
+        context.fill(Path(ellipseIn: ringRect), with: .color(baseColor.opacity(0.18 * opacity)))
+        context.stroke(Path(ellipseIn: ringRect), with: .color(color), lineWidth: 2.1)
+        context.stroke(
+            Path(ellipseIn: CGRect(
+                x: point.x - radius * 0.55,
+                y: point.y - radius * 0.55,
+                width: radius * 1.1,
+                height: radius * 1.1
+            )),
+            with: .color(Color.white.opacity(0.55 * opacity)),
+            lineWidth: 1.0
+        )
 
         let symbol = commandConfirmationPath(
             for: confirmation.kind,
             center: point,
-            radius: max(3.5, radius * 0.62)
+            radius: max(4.2, radius * 0.68)
         )
-        context.stroke(symbol, with: .color(color), lineWidth: 1.3)
+        context.stroke(symbol, with: .color(color), lineWidth: 1.8)
     }
 
     private static func commandConfirmationColor(for kind: CommandConfirmationKind) -> Color {

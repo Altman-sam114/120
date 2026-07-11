@@ -4142,3 +4142,34 @@
 
 - visual smoke 默认首屏通常不处于 waiting 命令态，不能单靠首屏 PNG 证明 TARGET MODE 像素；需依赖代码路径与后续交互自动化。
 - 后续可进入更窄玩法 parity 或命令确认视觉。
+
+### v2.6 / iOS command confirmation contrast
+
+日期：2026-07-12
+
+核心变更：
+
+- 主战场命令确认标记改为 halo + 外环 + 内环 + 更粗 kind 符号，并略延长淡出；Reduce Motion 仍短淡出。
+- Tactical Map 确认脉冲改为更大双环、更高填充对比与更粗符号描边。
+- 不改 `CommandConfirmation` 事件、revision、可见性门控、kind 颜色语义、Core 或 Web。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.6-ios-command-confirmation-contrast.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、Simulator、Preview 或浏览器验证。
+- 等待 push `origin/main` 后由 GitHub Actions v1.2 artifact 完成 Agent C 复判。
+
+遗留事项：
+
+- 默认 visual smoke 首屏不触发命令确认，不能单靠 PNG 证明 marker 像素。
+- 后续可做交互驱动的云端截图或玩法 parity 窄轮次。

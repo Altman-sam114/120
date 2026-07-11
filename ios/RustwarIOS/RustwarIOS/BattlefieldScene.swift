@@ -1016,36 +1016,50 @@ final class BattlefieldScene: SKScene {
         marker.setScale(screenScale)
 
         let color = commandConfirmationColor(for: confirmation.kind)
+
+        let halo = SKShapeNode(circleOfRadius: 38)
+        halo.fillColor = color.withAlphaComponent(0.14)
+        halo.strokeColor = color.withAlphaComponent(0.34)
+        halo.lineWidth = 1.2
+        marker.addChild(halo)
+
         let outerRing = SKShapeNode(circleOfRadius: 30)
-        outerRing.fillColor = color.withAlphaComponent(0.08)
-        outerRing.strokeColor = color.withAlphaComponent(0.92)
-        outerRing.lineWidth = 2.4
-        outerRing.glowWidth = 2
+        outerRing.fillColor = color.withAlphaComponent(0.12)
+        outerRing.strokeColor = color.withAlphaComponent(0.98)
+        outerRing.lineWidth = 3.2
+        outerRing.glowWidth = 3.4
         marker.addChild(outerRing)
+
+        let innerRing = SKShapeNode(circleOfRadius: 18)
+        innerRing.fillColor = .clear
+        innerRing.strokeColor = SKColor.white.withAlphaComponent(0.72)
+        innerRing.lineWidth = 1.6
+        marker.addChild(innerRing)
 
         let symbol = SKShapeNode(path: commandConfirmationPath(for: confirmation.kind))
         symbol.fillColor = .clear
         symbol.strokeColor = color
-        symbol.lineWidth = 3
+        symbol.lineWidth = 3.6
         symbol.lineCap = .round
         symbol.lineJoin = .round
+        symbol.glowWidth = 1.2
         marker.addChild(symbol)
 
         if accessibilityReduceMotion {
-            marker.alpha = 0.92
-            marker.run(.fadeOut(withDuration: 0.28))
-            addBoundedEffect(marker, lifetime: 0.3)
+            marker.alpha = 0.96
+            marker.run(.fadeOut(withDuration: 0.32))
+            addBoundedEffect(marker, lifetime: 0.34)
         } else {
             marker.alpha = 0
-            marker.setScale(screenScale * 0.82)
+            marker.setScale(screenScale * 0.78)
             marker.run(.sequence([
-                .fadeIn(withDuration: 0.07),
+                .fadeIn(withDuration: 0.06),
                 .group([
-                    .scale(to: screenScale * 1.08, duration: 0.48),
-                    .fadeAlpha(to: 0.06, duration: 0.68)
+                    .scale(to: screenScale * 1.12, duration: 0.52),
+                    .fadeAlpha(to: 0.05, duration: 0.78)
                 ])
             ]))
-            addBoundedEffect(marker, lifetime: 0.78)
+            addBoundedEffect(marker, lifetime: 0.86)
         }
     }
 

@@ -39,6 +39,7 @@
 - v2.3 起，command dock 与状态栏主按钮改用 theme 驱动的战术 `ButtonStyle`：深青底、青描边、高对比前景，激活态黄描边；替代系统灰 `.bordered` 外观，同时保持 44pt 触控、action、快捷键和 VoiceOver。
 - v2.4 起，Speed segmented、Selection mode segmented 与 Map menu 使用共享战术 picker 外壳（深青底、青描边、accent tint），避免在深色 HUD 上系统灰洗白；binding 与选项语义不变。
 - v2.5 起，等待目标命令时 command status 使用 TARGET MODE 标签、更强黄底与粗描边；dock header 同步 attention 外框提示，idle 状态仍保持次级信息层级。命令文案来源与 action 不变。
+- v2.6 起，成功命令确认标记在主战场与 Tactical Map 使用更高对比双环、更粗描边与更明显填充，Reduce Motion 仍保持短淡出；不改 command confirmation 事件模型、可见性门控或 kind 语义。
 
 当前验证制度：
 

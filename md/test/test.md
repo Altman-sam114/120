@@ -142,6 +142,7 @@ git diff --check
 - v2.3 云端验收额外确认 dock 主按钮不再呈现系统灰 `.bordered` 洗白：应看到深青战术底与青描边；Pause 使用 prominent cyan style；`TacticalBorderedButtonStyle` / `TacticalProminentButtonStyle` 进入 arm64/x86_64 编译。action、disabled、快捷键、44pt 最小高度与 layout metrics 不得回归。
 - v2.4 云端验收额外确认 Speed/Selection mode segmented 与 Map menu 带有 theme picker 外壳（深青底与青描边/accent tint），且 binding 行为不变；`tacticalSegmentedPicker` / `tacticalMenuPicker` 进入 arm64/x86_64 编译。
 - v2.5 云端验收额外确认 `TacticalCommandStatusView` 保留 waiting/idle 双态结构，waiting 使用更强 attention 描边与 TARGET MODE 标签语义；dock header 在等待目标时可出现 attention 外框。不得改变 command action 与 Core。
+- v2.6 云端验收额外确认 `BattlefieldScene` / `TacticalMapView` 命令确认绘制路径进入 arm64/x86_64 编译，并保持可见性门控与 Reduce Motion 短反馈；首屏 smoke 通常不展示确认标记，不能单靠 PNG 证明 marker 像素。
 - 当前 CI 覆盖源码检查、Swift core、iOS build，以及单一固定设备的首屏启动/截图/非空像素探针；仍没有 XCUITest、像素基线差异、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸、滚动、离屏快捷键或战斗帧率自动化。v2.1 首屏 smoke 不能冒充完整 UI 回归。
 - 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
 

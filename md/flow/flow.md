@@ -55,6 +55,8 @@ v2.4 收紧 picker 对比：`tacticalSegmentedPicker` / `tacticalMenuPicker` 用
 
 v2.5 强化等待命令状态层级：`TacticalCommandStatusView` 在 `isAwaitingTarget` 时显示 TARGET MODE 标签、加粗黄描边与更高对比文字；dock header 在等待目标时叠加 attention 外框与底部分隔。不改 commandStatus 字符串来源或命令派发。
 
+v2.6 强化命令确认落点视觉：`BattlefieldScene` 与 `TacticalMapView` 对 `CommandConfirmation` 使用更大外环/内环、更粗描边与更高填充对比；仍只在新 revision 且可见时生成，Reduce Motion 保留短淡出。不改 kind 颜色语义、发布路径或 Core。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
