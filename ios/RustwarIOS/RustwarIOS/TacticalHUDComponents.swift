@@ -208,8 +208,8 @@ struct TacticalBorderedButtonStyle: ButtonStyle {
             .padding(.horizontal, expandsHorizontally ? TacticalHUDTheme.compactPadding : 0)
             .padding(.vertical, expandsHorizontally ? TacticalHUDTheme.denseSpacing : 0)
             .frame(
-                maxWidth: expandsHorizontally ? .infinity : nil,
                 minWidth: expandsHorizontally ? nil : TacticalHUDTheme.controlMinimumHeight,
+                maxWidth: expandsHorizontally ? .infinity : nil,
                 minHeight: TacticalHUDTheme.controlMinimumHeight
             )
             .background(
