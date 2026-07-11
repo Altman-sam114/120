@@ -4106,3 +4106,36 @@
 
 - visual smoke 不能证明 menu 展开态与 Dynamic Type 下 segmented 挤压。
 - 后续可继续玩法 parity 或更细的等待命令视觉。
+
+### v2.5 / iOS awaiting command status contrast
+
+日期：2026-07-12
+
+核心变更：
+
+- 强化等待目标命令状态：`TacticalCommandStatusView` 增加 TARGET MODE 标签、更高对比前景与更粗 attention 描边。
+- dock header 在 `isAwaitingTargetCommand` 时叠加淡黄底、attention 外框与加粗底部分隔。
+- theme 增加 `awaitingStatusForeground` / `awaitingStatusLabel`，并提高 awaiting 背景强度。
+- 不改 commandStatus 文本来源、命令语义、Core、存档或 Web。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDTheme.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDComponents.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockHeaderView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.5-ios-awaiting-command-status-contrast.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、Simulator、Preview 或浏览器验证。
+- 等待 push `origin/main` 后由 GitHub Actions v1.2 artifact 完成 Agent C 复判。
+
+遗留事项：
+
+- visual smoke 默认首屏通常不处于 waiting 命令态，不能单靠首屏 PNG 证明 TARGET MODE 像素；需依赖代码路径与后续交互自动化。
+- 后续可进入更窄玩法 parity 或命令确认视觉。

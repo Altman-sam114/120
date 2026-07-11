@@ -53,6 +53,8 @@ v2.3 继续收紧控件对比：`TacticalBorderedButtonStyle` / `TacticalPromine
 
 v2.4 收紧 picker 对比：`tacticalSegmentedPicker` / `tacticalMenuPicker` 用 theme picker token 包装 status Speed、dock Selection mode 与 session Map；只改视觉外壳，不改 selection binding 或命令流。
 
+v2.5 强化等待命令状态层级：`TacticalCommandStatusView` 在 `isAwaitingTarget` 时显示 TARGET MODE 标签、加粗黄描边与更高对比文字；dock header 在等待目标时叠加 attention 外框与底部分隔。不改 commandStatus 字符串来源或命令派发。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

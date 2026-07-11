@@ -259,3 +259,14 @@ flowchart LR
   SP --> Mode["Dock Selection mode"]
   MP --> Map["Session Map"]
 ```
+
+## v2.5 等待命令状态
+
+读图说明：v2.5 只强化 waiting 视觉，不改命令状态字符串。
+
+```mermaid
+flowchart LR
+  A["isAwaitingTargetCommand"] -->|true| B["TARGET MODE + yellow chrome"]
+  A -->|false| C["idle secondary status"]
+  B --> D["Dock header attention frame"]
+```

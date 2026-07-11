@@ -90,13 +90,25 @@ struct TacticalCommandStatusView: View {
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
 
     var body: some View {
-        Label(
-            text,
-            systemImage: isAwaitingTarget ? "scope" : "info.circle"
-        )
-        .font(.footnote)
-        .foregroundStyle(isAwaitingTarget ? TacticalHUDTheme.primaryText : TacticalHUDTheme.secondaryText)
-        .lineLimit(2)
+        VStack(alignment: .leading, spacing: 2) {
+            if isAwaitingTarget {
+                Label("TARGET MODE", systemImage: "scope")
+                    .font(.caption2.bold())
+                    .foregroundStyle(TacticalHUDTheme.awaitingStatusLabel)
+                    .accessibilityHidden(true)
+            }
+            Label(
+                text,
+                systemImage: isAwaitingTarget ? "viewfinder" : "info.circle"
+            )
+            .font(isAwaitingTarget ? .footnote.weight(.semibold) : .footnote)
+            .foregroundStyle(
+                isAwaitingTarget
+                    ? TacticalHUDTheme.awaitingStatusForeground
+                    : TacticalHUDTheme.secondaryText
+            )
+            .lineLimit(2)
+        }
         .padding(.horizontal, TacticalHUDTheme.compactPadding)
         .padding(.vertical, TacticalHUDTheme.compactSpacing)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -113,11 +125,12 @@ struct TacticalCommandStatusView: View {
                         ? TacticalHUDTheme.attention
                         : TacticalHUDTheme.chromeStroke,
                     lineWidth: isAwaitingTarget
-                        ? (differentiateWithoutColor ? 2.5 : 1.5)
+                        ? (differentiateWithoutColor ? 3 : 2)
                         : 1
                 )
         }
-        .accessibilityLabel("Command status")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(isAwaitingTarget ? "Awaiting target command status" : "Command status")
         .accessibilityValue(text)
     }
 }

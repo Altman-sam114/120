@@ -38,6 +38,7 @@
 - v2.2 起，原生 iOS 战术 HUD 使用更高对比的 `TacticalHUDTheme` 文本/面板 token 替代系统灰 secondary 与过淡 material；状态栏、dock header 与 dock shell 叠加深战术底色。主战场水平铺满 leading/trailing safe area，相机按 viewport 夹紧中心并在需要时提高最小 fill zoom，减少地图外黑色留边。不改变命令语义、Core、存档或玩法。
 - v2.3 起，command dock 与状态栏主按钮改用 theme 驱动的战术 `ButtonStyle`：深青底、青描边、高对比前景，激活态黄描边；替代系统灰 `.bordered` 外观，同时保持 44pt 触控、action、快捷键和 VoiceOver。
 - v2.4 起，Speed segmented、Selection mode segmented 与 Map menu 使用共享战术 picker 外壳（深青底、青描边、accent tint），避免在深色 HUD 上系统灰洗白；binding 与选项语义不变。
+- v2.5 起，等待目标命令时 command status 使用 TARGET MODE 标签、更强黄底与粗描边；dock header 同步 attention 外框提示，idle 状态仍保持次级信息层级。命令文案来源与 action 不变。
 
 当前验证制度：
 

@@ -35,13 +35,29 @@ struct TacticalCommandDockHeaderView: View {
         .background {
             ZStack {
                 TacticalHUDTheme.panelBackground
+                if controller.isAwaitingTargetCommand {
+                    TacticalHUDTheme.awaitingStatusBackground.opacity(0.35)
+                }
                 Rectangle().fill(.ultraThinMaterial.opacity(0.30))
             }
         }
+        .overlay {
+            RoundedRectangle(cornerRadius: 0)
+                .stroke(
+                    controller.isAwaitingTargetCommand
+                        ? TacticalHUDTheme.attention.opacity(0.72)
+                        : Color.clear,
+                    lineWidth: controller.isAwaitingTargetCommand ? 1.5 : 0
+                )
+        }
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(TacticalHUDTheme.chromeStroke.opacity(0.55))
-                .frame(height: 1)
+                .fill(
+                    controller.isAwaitingTargetCommand
+                        ? TacticalHUDTheme.attention.opacity(0.85)
+                        : TacticalHUDTheme.chromeStroke.opacity(0.55)
+                )
+                .frame(height: controller.isAwaitingTargetCommand ? 2 : 1)
         }
     }
 }
