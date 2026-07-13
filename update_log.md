@@ -4247,3 +4247,35 @@
 
 - 默认 visual smoke 首屏未必包含选中实体，不能单靠 PNG 证明 selection 高亮像素。
 - 后续可做交互驱动截图或玩法 parity 窄轮次。
+
+### v2.9 / iOS order-line and health-bar contrast
+
+日期：2026-07-13
+
+核心变更：
+
+- `BattlefieldScene` 的 Move / Attack / Attack Move / Patrol / Guard / Build / Repair / Reclaim 八类订单线复用统一绘制 helper；只有选中单位的路线增加单个深色 underlay，并提高前景线不透明度和宽度，未选中路线保持细线。
+- 八类订单端点保留既有圆环或 A / P / G / B / + / $ 结构，只适度提高选中态描边权重；订单目标坐标和当前可见敌方门控不变。
+- 单位和建筑共享生命条从 5pt 小幅提高到 6pt，使用更深背景、浅色外框和高不透明度填充；HP fraction clamp、宽度、位置及绿/黄/红阈值保持不变。
+- 不修改 Core、命令派发、选择、伤害、AI、存档、Rally、进度条、Tactical Map、HUD 或 Web。
+- `swiftui-pro` 审阅影响本轮实现：保持颜色之外的端点符号差异、限制选中订单为单个额外节点，并避免 timer、动画和持久视觉状态。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.9-ios-orderline-healthbar-contrast.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、parse、`git diff --check`、Simulator、Preview、截图或浏览器验证。
+- 本轮实现需以 push 后精确 commit 对应的 GitHub Actions `Rustwar CI Results` v1.2 artifact 为唯一验证依据；当前尚未由 Agent C 下载或核对，不得标记通过。
+
+遗留事项：
+
+- 固定暂停首屏通常能显示单位/建筑生命条，但不保证存在选中且已有订单的单位；若云端 PNG 未覆盖订单线，订单线像素仍需后续交互驱动截图或人工真机验证。
+- 首屏 smoke 不覆盖触摸、VoiceOver、Dynamic Type、Reduce Motion、旋转、密集战斗可读性或帧率。

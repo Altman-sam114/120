@@ -61,6 +61,8 @@ v2.7 强化战术小地图等待命令 chrome：`TacticalMapView` 背景与边�
 
 v2.8 强化选中高亮对比：`BattlefieldScene` 的 selection ring/corners 增加 halo 与黑底描边，线宽更粗；`TacticalMapView` 对选中单位/建筑使用外黑内黄双描边。只改绘制，不改 selectedIDs 语义。
 
+v2.9 强化订单线与生命条对比：`BattlefieldScene` 继续只读 `UnitOrder` 和当前 HP snapshot，八类单位订单线复用统一 helper；只有选中单位路线增加深色 underlay 和更强前景，未选中路线保持细线。共享生命条只调整高度、深色底、浅色边框和填充不透明度，fraction clamp、宽度、位置及绿/黄/红阈值不变，不写回 Core。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
@@ -72,7 +74,7 @@ RustwarCore MapPreset / GameState / GameEngine
   -> reserved Battlefield region + non-overlapping TacticalMapView
   -> TerrainGrid stable hash + compound fill/detail/boundary paths -> terrainNode
   -> SpriteKit BattlefieldScene 只读快照，维护 scene-only 朝向 / cooldown / HP / entity-id 历史
-  -> 程序化单位与建筑复合几何 + 武器差异弹道 + 分层受击/摧毁爆炸
+  -> 程序化单位与建筑复合几何 + 选中订单线深色 underlay + 共享高对比生命条 + 武器差异弹道 + 分层受击/摧毁爆炸
   -> bounded decal/entity/effect layers 位于当前可见/已探索战争迷雾下，radar signal 语义保持不变
   -> GitHub Actions fixed Simulator -> install/launch -> ios-home.png -> ImageIO nonblank metrics gate
   -> SpatialTapGesture / LongPressGesture / DragGesture / MagnifyGesture / TacticalMap drag-tap-long-press

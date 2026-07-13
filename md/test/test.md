@@ -145,6 +145,7 @@ git diff --check
 - v2.6 云端验收额外确认 `BattlefieldScene` / `TacticalMapView` 命令确认绘制路径进入 arm64/x86_64 编译，并保持可见性门控与 Reduce Motion 短反馈；首屏 smoke 通常不展示确认标记，不能单靠 PNG 证明 marker 像素。
 - v2.7 云端验收额外确认 `TacticalMapView` 使用 theme map chrome/pending badge tokens，等待命令时 attention 外框与 badge 结构保留；默认首屏通常无 pending，不能单靠 PNG 证明 waiting chrome 像素。
 - v2.8 云端验收额外确认 `BattlefieldScene` selection ring/corners 与 `TacticalMapView` selected stroke 进入 arm64/x86_64 编译；不改变选择逻辑。首屏是否已有选中实体不保证，不能单靠 PNG 证明高亮像素。
+- v2.9 云端验收额外确认 `BattlefieldScene` 八类订单线复用统一 helper，深色 underlay 只在 `isSelected` 时增加且每条选中订单最多一个，未选中线保持细线；端点圆环或 A/P/G/B/+/$ 符号结构、敌方目标可见性门控、Rally 和 Core 命令语义不变。单位/建筑共享生命条只调整高度、背景、边框和填充不透明度，fraction clamp、宽度、位置及绿/黄/红阈值不变。`BattlefieldScene.swift` 必须进入 arm64/x86_64 编译；固定暂停首屏不保证存在选中且已有订单的单位，若 PNG 未覆盖该状态，不得宣称订单线像素已经截图验证。
 - 当前 CI 覆盖源码检查、Swift core、iOS build，以及单一固定设备的首屏启动/截图/非空像素探针；仍没有 XCUITest、像素基线差异、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸、滚动、离屏快捷键或战斗帧率自动化。v2.1 首屏 smoke 不能冒充完整 UI 回归。
 - 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
 

@@ -302,3 +302,19 @@ flowchart LR
   S["selectedEntityIDs"] --> B["Battlefield halo/ring/corners"]
   S --> M["Map dual-stroke markers"]
 ```
+
+## v2.9 订单线与生命条对比
+
+读图说明：v2.9 只增强 Scene 对既有订单与 HP 快照的只读绘制，不改变 Core 状态流。
+
+```mermaid
+flowchart LR
+  O["UnitOrder snapshot"] --> H["Shared order-line helper"]
+  H --> S{"selected?"}
+  S -->|yes| C["dark underlay + stronger foreground"]
+  S -->|no| I["restrained idle line"]
+  HP["Current HP / max HP"] --> B["shared high-contrast health bar"]
+  C --> E["entityNode below fog"]
+  I --> E
+  B --> E
+```

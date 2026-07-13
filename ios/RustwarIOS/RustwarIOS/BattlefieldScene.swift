@@ -2021,23 +2021,34 @@ final class BattlefieldScene: SKScene {
         entityNode.addChild(barFill)
     }
 
+    private func addOrderLine(path: CGPath, color: SKColor, isSelected: Bool) {
+        if isSelected {
+            let underlay = SKShapeNode(path: path)
+            underlay.strokeColor = SKColor.black.withAlphaComponent(0.55)
+            underlay.lineWidth = 5.4
+            underlay.lineCap = .round
+            entityNode.addChild(underlay)
+        }
+        let line = SKShapeNode(path: path)
+        line.strokeColor = color.withAlphaComponent(isSelected ? 0.92 : 0.4)
+        line.lineWidth = isSelected ? 3.6 : 1.5
+        line.lineCap = .round
+        entityNode.addChild(line)
+    }
+
     private func drawMoveOrder(from start: WorldPoint, to destination: WorldPoint, isSelected: Bool) {
         let color = isSelected ? SKColor.systemYellow : SKColor.white.withAlphaComponent(0.45)
         let path = CGMutablePath()
         path.move(to: spritePoint(for: start))
         path.addLine(to: spritePoint(for: destination))
 
-        let line = SKShapeNode(path: path)
-        line.strokeColor = color.withAlphaComponent(isSelected ? 0.75 : 0.35)
-        line.lineWidth = isSelected ? 3 : 1.5
-        line.lineCap = .round
-        entityNode.addChild(line)
+        addOrderLine(path: path, color: color, isSelected: isSelected)
 
         let marker = SKShapeNode(circleOfRadius: isSelected ? 9 : 7)
         marker.position = spritePoint(for: destination)
         marker.fillColor = .clear
         marker.strokeColor = color
-        marker.lineWidth = isSelected ? 3 : 1.5
+        marker.lineWidth = isSelected ? 3.4 : 1.5
         entityNode.addChild(marker)
     }
 
@@ -2047,17 +2058,13 @@ final class BattlefieldScene: SKScene {
         path.move(to: spritePoint(for: start))
         path.addLine(to: spritePoint(for: destination))
 
-        let line = SKShapeNode(path: path)
-        line.strokeColor = color.withAlphaComponent(isSelected ? 0.82 : 0.42)
-        line.lineWidth = isSelected ? 3 : 1.5
-        line.lineCap = .round
-        entityNode.addChild(line)
+        addOrderLine(path: path, color: color, isSelected: isSelected)
 
         let marker = SKShapeNode(rectOf: CGSize(width: isSelected ? 22 : 18, height: isSelected ? 22 : 18), cornerRadius: 4)
         marker.position = spritePoint(for: destination)
         marker.fillColor = SKColor.systemOrange.withAlphaComponent(isSelected ? 0.22 : 0.14)
         marker.strokeColor = color
-        marker.lineWidth = isSelected ? 3 : 1.5
+        marker.lineWidth = isSelected ? 3.4 : 1.5
         entityNode.addChild(marker)
 
         let label = SKLabelNode(text: "A")
@@ -2074,11 +2081,7 @@ final class BattlefieldScene: SKScene {
         path.move(to: spritePoint(for: origin))
         path.addLine(to: spritePoint(for: destination))
 
-        let line = SKShapeNode(path: path)
-        line.strokeColor = color.withAlphaComponent(isSelected ? 0.76 : 0.42)
-        line.lineWidth = isSelected ? 3 : 1.5
-        line.lineCap = .round
-        entityNode.addChild(line)
+        addOrderLine(path: path, color: color, isSelected: isSelected)
 
         let passiveEndpoint = returning ? destination : origin
         let activeEndpoint = returning ? origin : destination
@@ -2086,14 +2089,14 @@ final class BattlefieldScene: SKScene {
         passiveMarker.position = spritePoint(for: passiveEndpoint)
         passiveMarker.fillColor = SKColor.systemCyan.withAlphaComponent(0.12)
         passiveMarker.strokeColor = color.withAlphaComponent(0.72)
-        passiveMarker.lineWidth = isSelected ? 2 : 1.2
+        passiveMarker.lineWidth = isSelected ? 2.4 : 1.2
         entityNode.addChild(passiveMarker)
 
         let activeMarker = SKShapeNode(rectOf: CGSize(width: isSelected ? 22 : 18, height: isSelected ? 22 : 18), cornerRadius: 4)
         activeMarker.position = spritePoint(for: activeEndpoint)
         activeMarker.fillColor = SKColor.systemCyan.withAlphaComponent(isSelected ? 0.24 : 0.16)
         activeMarker.strokeColor = color
-        activeMarker.lineWidth = isSelected ? 3 : 1.5
+        activeMarker.lineWidth = isSelected ? 3.4 : 1.5
         entityNode.addChild(activeMarker)
 
         let label = SKLabelNode(text: "P")
@@ -2110,17 +2113,13 @@ final class BattlefieldScene: SKScene {
         path.move(to: spritePoint(for: start))
         path.addLine(to: spritePoint(for: destination))
 
-        let line = SKShapeNode(path: path)
-        line.strokeColor = color.withAlphaComponent(isSelected ? 0.78 : 0.42)
-        line.lineWidth = isSelected ? 3 : 1.5
-        line.lineCap = .round
-        entityNode.addChild(line)
+        addOrderLine(path: path, color: color, isSelected: isSelected)
 
         let marker = SKShapeNode(rectOf: CGSize(width: isSelected ? 22 : 18, height: isSelected ? 22 : 18), cornerRadius: 4)
         marker.position = spritePoint(for: destination)
         marker.fillColor = SKColor.systemGreen.withAlphaComponent(isSelected ? 0.24 : 0.16)
         marker.strokeColor = color
-        marker.lineWidth = isSelected ? 3 : 1.5
+        marker.lineWidth = isSelected ? 3.4 : 1.5
         entityNode.addChild(marker)
 
         let label = SKLabelNode(text: "G")
@@ -2137,17 +2136,13 @@ final class BattlefieldScene: SKScene {
         path.move(to: spritePoint(for: start))
         path.addLine(to: spritePoint(for: destination))
 
-        let line = SKShapeNode(path: path)
-        line.strokeColor = color.withAlphaComponent(isSelected ? 0.82 : 0.44)
-        line.lineWidth = isSelected ? 3 : 1.5
-        line.lineCap = .round
-        entityNode.addChild(line)
+        addOrderLine(path: path, color: color, isSelected: isSelected)
 
         let marker = SKShapeNode(rectOf: CGSize(width: isSelected ? 22 : 18, height: isSelected ? 22 : 18), cornerRadius: 4)
         marker.position = spritePoint(for: destination)
         marker.fillColor = SKColor.systemBlue.withAlphaComponent(isSelected ? 0.24 : 0.16)
         marker.strokeColor = color
-        marker.lineWidth = isSelected ? 3 : 1.5
+        marker.lineWidth = isSelected ? 3.4 : 1.5
         entityNode.addChild(marker)
 
         let label = SKLabelNode(text: "B")
@@ -2164,17 +2159,13 @@ final class BattlefieldScene: SKScene {
         path.move(to: spritePoint(for: start))
         path.addLine(to: spritePoint(for: destination))
 
-        let line = SKShapeNode(path: path)
-        line.strokeColor = color.withAlphaComponent(isSelected ? 0.8 : 0.44)
-        line.lineWidth = isSelected ? 3 : 1.5
-        line.lineCap = .round
-        entityNode.addChild(line)
+        addOrderLine(path: path, color: color, isSelected: isSelected)
 
         let marker = SKShapeNode(rectOf: CGSize(width: isSelected ? 22 : 18, height: isSelected ? 22 : 18), cornerRadius: 4)
         marker.position = spritePoint(for: destination)
         marker.fillColor = SKColor.systemMint.withAlphaComponent(isSelected ? 0.24 : 0.16)
         marker.strokeColor = color
-        marker.lineWidth = isSelected ? 3 : 1.5
+        marker.lineWidth = isSelected ? 3.4 : 1.5
         entityNode.addChild(marker)
 
         let label = SKLabelNode(text: "+")
@@ -2191,17 +2182,13 @@ final class BattlefieldScene: SKScene {
         path.move(to: spritePoint(for: start))
         path.addLine(to: spritePoint(for: destination))
 
-        let line = SKShapeNode(path: path)
-        line.strokeColor = color.withAlphaComponent(isSelected ? 0.82 : 0.46)
-        line.lineWidth = isSelected ? 3 : 1.5
-        line.lineCap = .round
-        entityNode.addChild(line)
+        addOrderLine(path: path, color: color, isSelected: isSelected)
 
         let marker = SKShapeNode(rectOf: CGSize(width: isSelected ? 22 : 18, height: isSelected ? 22 : 18), cornerRadius: 4)
         marker.position = spritePoint(for: destination)
         marker.fillColor = SKColor.systemYellow.withAlphaComponent(isSelected ? 0.24 : 0.16)
         marker.strokeColor = color
-        marker.lineWidth = isSelected ? 3 : 1.5
+        marker.lineWidth = isSelected ? 3.4 : 1.5
         entityNode.addChild(marker)
 
         let label = SKLabelNode(text: "$")
@@ -2218,17 +2205,13 @@ final class BattlefieldScene: SKScene {
         path.move(to: spritePoint(for: start))
         path.addLine(to: spritePoint(for: destination))
 
-        let line = SKShapeNode(path: path)
-        line.strokeColor = color.withAlphaComponent(isSelected ? 0.78 : 0.4)
-        line.lineWidth = isSelected ? 3 : 1.5
-        line.lineCap = .round
-        entityNode.addChild(line)
+        addOrderLine(path: path, color: color, isSelected: isSelected)
 
         let marker = SKShapeNode(circleOfRadius: isSelected ? 12 : 9)
         marker.position = spritePoint(for: destination)
         marker.fillColor = .clear
         marker.strokeColor = color
-        marker.lineWidth = isSelected ? 3 : 1.5
+        marker.lineWidth = isSelected ? 3.4 : 1.5
         entityNode.addChild(marker)
     }
 
@@ -2263,16 +2246,16 @@ final class BattlefieldScene: SKScene {
         guard max > 0 else {
             return
         }
-        let height = 5.0
+        let height = 6.0
         let fraction = Swift.min(1, Swift.max(0, current / max))
         let background = SKShapeNode(rect: CGRect(x: -width / 2, y: yOffset, width: width, height: height), cornerRadius: 2)
-        background.fillColor = .black.withAlphaComponent(0.65)
-        background.strokeColor = .black.withAlphaComponent(0.65)
-        background.lineWidth = 0
+        background.fillColor = .black.withAlphaComponent(0.78)
+        background.strokeColor = SKColor.white.withAlphaComponent(0.34)
+        background.lineWidth = 1
         node.addChild(background)
 
         let fill = SKShapeNode(rect: CGRect(x: -width / 2, y: yOffset, width: width * fraction, height: height), cornerRadius: 2)
-        fill.fillColor = healthColor(fraction)
+        fill.fillColor = healthColor(fraction).withAlphaComponent(0.96)
         fill.strokeColor = fill.fillColor
         fill.lineWidth = 0
         node.addChild(fill)
