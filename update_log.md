@@ -4488,7 +4488,10 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
-- 必须以 push 后精确 v2.15 commit 的 GitHub Actions v1.2 artifact 验收；当前尚未提交、push 或核对。
+- 初始实现提交 `f58d29fc9904439be5cca00e7397fa14d38c3825` 的 run `29230792651` 虽为 success，但 Agent C 人工查看 `ios-combat.png` 后判定长攻击订单线遮住模型、单位靠近边缘且烟尘/灼痕不够明确，因此没有把全绿 CI 冒充视觉通过；随后在 `main` 追加构图修复提交 `e5f9c4679c259f9172d224a55499b9e83cadf4af`。
+- 修复提交已通过 Agent C 云端 artifact 复判：run `29231715911`，attempt `1`，artifact `rustwar-ci-v1.2-main-e5f9c46-run29231715911-attempt1`，缓存 `/private/tmp/rustwar-c-review-29231715911/`，大小 `1.3M`。
+- manifest v1.2 的 `branch=main`、完整 SHA、run id、run attempt 与 `origin/main` 完全一致；production/combat 参数及两套 launch/screenshot/orientation/probe outcome 全部 success。固定 Xcode 26.5、iOS Simulator SDK 26.5、Swift 6.3.2，JUnit 8 checks、0 failures、1 browser skip，303 Core tests、arm64/x86_64 iOS build 和 `BUILD SUCCEEDED` 均有日志证据。
+- `ios-home.png` 与 `ios-combat.png` 均为 2622x1206、透明比例 0、亮度范围 255；home 亮度标准差 46.172，combat 为 43.683。Agent C 人工确认 home 保持 Land Factory / Production 首屏；combat 中双方阵型完整、7 类单位轮廓可辨，projectile、beam、方向炮口焰、impact、烟尘和独立灼痕清晰，长订单线已消失且 HUD 无明显重叠。
 
 遗留事项：
 
