@@ -4273,9 +4273,44 @@
 验证状态：
 
 - 按用户要求未运行任何本地测试、构建、parse、`git diff --check`、Simulator、Preview、截图或浏览器验证。
-- 本轮实现需以 push 后精确 commit 对应的 GitHub Actions `Rustwar CI Results` v1.2 artifact 为唯一验证依据；当前尚未由 Agent C 下载或核对，不得标记通过。
+- 实现提交 `bd21badf6c06d3412718224758e0b8e95b10ac53` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29219013396`，attempt `1`，artifact `rustwar-ci-v1.2-main-bd21bad-run29219013396-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29219013396/`，目录大小 `680K`。
+- manifest 确认 `version=v1.2`、`branch=main`、`commitSha=bd21badf6c06d3412718224758e0b8e95b10ac53`、`runId=29219013396`、`runAttempt=1`；Xcode 26.5、iOS Simulator SDK 26.5、Swift 6.3.2，toolchain/static/Swift package/Xcode list/iOS build/Simulator visual outcomes 全部 success。
+- JUnit 为 8 checks、0 failures、1 skipped，唯一 skipped 为 browser smoke；arm64/x86_64 iOS build `BUILD SUCCEEDED`，Simulator launch、截图、横屏规范化与 ImageIO probe 成功。
+- Agent C 人工查看 `ios-home.png` 确认生命条清晰，战场与 dock 无明显遮挡；默认首屏为 `No selection`，未覆盖订单线像素。同时发现 Pause/Play prominent 按钮横向占据状态栏大部分宽度，使 Metal / Income / Pop / Radar 四项完全不可见；该问题作为 v2.10 HUD 回归修复项，不反向否定 v2.9 订单线/生命条实现验收。
 
 遗留事项：
 
 - 固定暂停首屏通常能显示单位/建筑生命条，但不保证存在选中且已有订单的单位；若云端 PNG 未覆盖订单线，订单线像素仍需后续交互驱动截图或人工真机验证。
 - 首屏 smoke 不覆盖触摸、VoiceOver、Dynamic Type、Reduce Motion、旋转、密集战斗可读性或帧率。
+
+### v2.10 / iOS status-bar resource visibility
+
+日期：2026-07-13
+
+核心变更：
+
+- `TacticalProminentButtonStyle` 新增默认开启的 `expandsHorizontally` presentation 参数；默认调用继续横向铺满，非扩展调用按 label intrinsic width 布局并保留至少 44pt 高度、主题前景/背景/描边和 pressed/disabled 状态。
+- `TacticalStatusBarView` 在 regular/compact trailing 横屏角色为 Pause/Play 显式关闭横向扩展，让 Metal / Income / Pop / Radar、Play 与 Speed 共享状态栏；compact-bottom 继续使用原有 metrics / controls 双行与扩展按钮布局。
+- Pause/Play action、`P` 快捷键、Voice Control input labels、Speed binding 与 `0.5x / 1x / 2.0x` 选项、资源格式、三档 HUD role、command dock prominent 默认行为均保持。
+- 不修改 Core、GameController、命令、AI、经济、战斗、存档、Web、Tactical Map、SpriteKit、Xcode project 或 CI workflow。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDComponents.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalStatusBarView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.10-ios-status-bar-resource-visibility.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、parse/typecheck、`git diff --check`、Simulator、Preview、截图、浏览器验证或测试脚本。
+- 本轮实现需以 push 后精确 commit 对应的 GitHub Actions `Rustwar CI Results` v1.2 artifact 为唯一验证依据；当前尚未由 Agent C 下载或核对，不得标记通过。
+
+遗留事项：
+
+- 固定 iPhone 17 Pro 横屏首屏必须由 Agent C 人工确认四项资源、Play 与 segmented Speed 三档同时可见；非空像素探针和 build 成功不能替代内容核对。
+- 单一固定横屏 smoke 不覆盖 compact-bottom、全部 Dynamic Type、VoiceOver/Voice Control、触摸、旋转、Reduce Motion、真机 safe area 或 command dock 滚动；这些仍需后续自动化或人工验收。

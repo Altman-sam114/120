@@ -43,6 +43,7 @@
 - v2.7 起，战术小地图等待命令 chrome 使用 theme attention/pending badge tokens：外框加粗黄描边、pending 标签改为深战术胶囊与黄描边，不再依赖系统灰 material 与硬编码黑胶囊。
 - v2.8 起，主战场选中单位/建筑使用更高对比黄高亮（halo + 黑底描边 + 更粗黄环/角标），战术小地图选中实体也使用双描边黄高亮；不改选择逻辑与命令语义。
 - v2.9 起，主战场八类单位订单线复用统一高对比样式：选中单位路线增加深色 underlay、更清晰的前景线与端点描边，未选中路线保持克制；单位和建筑共用生命条同步加高并使用深底、浅边框和高不透明度绿/黄/红填充。该变化只读取现有订单与 HP，不改变命令、伤害、选择或存档语义。
+- v2.10 起，横屏 trailing 状态栏的 Pause/Play prominent 按钮按内容宽度布局，Metal / Income / Pop / Radar、Play 与三档 Speed 可在固定横屏首屏同屏显示；prominent style 默认仍让 command dock 主操作铺满可用行宽，compact-bottom 状态栏继续使用原有双行扩展布局。该调整只改变 SwiftUI presentation policy，不改变资源来源、暂停/速度 binding、快捷键、Core、存档或命令语义。
 
 当前验证制度：
 

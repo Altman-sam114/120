@@ -63,11 +63,14 @@ v2.8 强化选中高亮对比：`BattlefieldScene` 的 selection ring/corners �
 
 v2.9 强化订单线与生命条对比：`BattlefieldScene` 继续只读 `UnitOrder` 和当前 HP snapshot，八类单位订单线复用统一 helper；只有选中单位路线增加深色 underlay 和更强前景，未选中路线保持细线。共享生命条只调整高度、深色底、浅色边框和填充不透明度，fraction clamp、宽度、位置及绿/黄/红阈值不变，不写回 Core。
 
+v2.10 修复横屏状态栏资源可见性：`TacticalProminentButtonStyle` 把横向扩展变为调用点可配置的 presentation policy，默认仍扩展以保持 command dock 主操作整行铺满；`TacticalStatusBarView` 仅在 regular/compact trailing 角色让 Pause/Play 按 intrinsic width 布局，compact-bottom 继续保留 metrics 与 controls 双行及扩展按钮。Metal / Income / Pop / Radar 仍只读 controller 派生值，Pause action、Speed binding、三档 layout role 与 Core 状态流不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
   -> RootGameView geometry -> TacticalHUDLayoutMetrics -> 三档 safe-area 分区
-  -> TacticalHUDComponents -> GameHUD top status bar + fixed dock header + continuous command sections
+  -> TacticalHUDComponents -> configurable prominent width policy -> intrinsic trailing status Pause / full-width dock controls
+  -> GameHUD top status bar + fixed dock header + continuous command sections
   -> explicit selection / command result -> feedback revisions -> SwiftUI sensoryFeedback
   -> successful world command -> CommandConfirmation -> bounded SpriteKit marker under fog
   -> same CommandConfirmation + uptime -> short Tactical Map Canvas pulse above fog

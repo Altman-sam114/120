@@ -318,3 +318,16 @@ flowchart LR
   I --> E
   B --> E
 ```
+
+## v2.10 横屏状态栏资源可见性
+
+读图说明：v2.10 只调整 prominent control 的容器宽度策略，不改变资源、暂停或速度状态流。
+
+```mermaid
+flowchart LR
+  R["TacticalHUDLayoutRole"] --> B{"compactBottom?"}
+  B -->|yes| D["metrics / controls 双行 + expanding Pause"]
+  B -->|no| T["metrics / controls 同行 + intrinsic Pause"]
+  P["TacticalProminentButtonStyle 默认 expands"] --> Dock["command dock 主操作整行铺满"]
+  T --> V["Metal / Income / Pop / Radar + Play + Speed 同屏"]
+```

@@ -248,6 +248,8 @@ struct TacticalBorderedButtonStyle: ButtonStyle {
 }
 
 struct TacticalProminentButtonStyle: ButtonStyle {
+    var expandsHorizontally: Bool = true
+
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
@@ -258,9 +260,18 @@ struct TacticalProminentButtonStyle: ButtonStyle {
                     ? TacticalHUDTheme.prominentControlForeground
                     : TacticalHUDTheme.prominentControlForeground.opacity(0.45)
             )
-            .padding(.horizontal, TacticalHUDTheme.compactPadding)
+            .padding(
+                .horizontal,
+                expandsHorizontally
+                    ? TacticalHUDTheme.compactPadding
+                    : TacticalHUDTheme.compactSpacing
+            )
             .padding(.vertical, TacticalHUDTheme.denseSpacing)
-            .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
+            .frame(
+                minWidth: expandsHorizontally ? nil : TacticalHUDTheme.controlMinimumHeight,
+                maxWidth: expandsHorizontally ? .infinity : nil,
+                minHeight: TacticalHUDTheme.controlMinimumHeight
+            )
             .background(
                 TacticalHUDTheme.prominentControlBackground
                     .opacity(configuration.isPressed ? 0.78 : (isEnabled ? 1 : 0.45)),
