@@ -151,7 +151,8 @@ git diff --check
 - v2.12 云端验收必须确认 `BattlefieldView.swift` / `GameController.swift` 进入 arm64/x86_64 编译，并代码审查双指决策矩阵：恰好两个 touch 才开始序列；位移不足保持 undecided；两指同向、质心移动且间距稳定才 selection；明显张合或反向才 pinch；第三指、cancel、地图 revision 和 pending 命令不提交选择。selection preview 必须覆盖两指起点与当前位置四点包围矩形，结束后调用一次共享区域选择，并抑制同序列 tap/long press；pinch 只让既有 Magnify zoom，不得同时选择；两指出现后不得继续累计单指 pan。显式 Select Area、单指平移、v2.11 tap、长按、Replace/Add、单位优先/建筑 fallback、selection/warning feedback 和单次 render revision 均须保持。固定暂停首屏不驱动多指，当前无 XCUITest，artifact 只能证明编译、Core 回归和启动，不得宣称真机手势已自动化验证。
 - v2.13 云端验收必须确认 `GameController.swift`、`TacticalCommandDockView.swift`、`TacticalBuildSectionView.swift` 进入 arm64/x86_64 编译，并代码审查选择矩阵：Command Center/Land Factory 为 Production first；有 next upgrade 或 upgrading 的 Extractor/Radar 为 Build & Upgrade first；Builder 仍 Commands before Build；单位/无选择保持既有顺序。selection ids 变化必须触发无动画 scroll-to-top，旧单选 id 有 fallback；Radar/Extractor visibility 与 affordability 分离，资源不足显示 disabled 费用按钮，资源足 enabled，升级中显示 cancel，满级不显示无效入口。每个 section 最多渲染一次，全部 action、keyboard shortcut、44pt 触控、VoiceOver label/hint、Core queue/upgrade/refund 和 v2.12 手势不变。默认暂停 `No selection` PNG 不覆盖建筑选择或滚动，不得作为这些动态状态的证据。
 - v2.14 云端验收必须确认 `RustwarIOSApp.swift`、`GameController.swift`、`TacticalProductionSectionView.swift` 双架构编译；普通 init 保持运行且无初选，只有既有 visual smoke 参数暂停并通过 Core hit selection 预选完成状态己方 Land Factory。Production 每个按钮必须显示类型 icon、name、metalCost、supply、buildTime，并保留 queue action、Shift+1-9、44pt、Dynamic Type 和完整 VoiceOver label/hint；队首 progress 必须直接来自 Core `progressFraction`。artifact manifest 参数仍为 `--rustwar-ci-visual-smoke`。Agent C 必须人工确认 PNG 显示 Land Factory selection、Production 在 Commands 前、费用/人口/时间可读且无重叠；该静态图仍不证明 tap、scroll、action 或 VoiceOver。
-- 当前 CI 覆盖源码检查、Swift core、iOS build，以及单一固定设备的首屏启动/截图/非空像素探针；仍没有 XCUITest、像素基线差异、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸、滚动、离屏快捷键或战斗帧率自动化。v2.1 首屏 smoke 不能冒充完整 UI 回归。
+- v2.15 云端验收必须确认 `RustwarIOSApp.swift`、`GameController.swift`、`BattlefieldScene.swift` 进入 arm64/x86_64 编译；普通启动仍为无 visual scenario、运行且无初选，production smoke 仍输出 v2.14 `ios-home.png`。combat smoke 必须使用独立 `--rustwar-ci-combat-visual-smoke`，只构造暂停、无 AI、固定相机的 Core snapshot fixture；双方单位必须处于玩家当前视野内，Scene frozen tableau 只能在该 scenario 一次性生成。代码审查应确认 7 类模型不依赖字母，Tank/AA/Artillery 轮廓不同，履带细节为固定节点；正常 fire/impact 默认仍动态，visibility/fog、64 effect、32 decal、map reset 和 Reduce Motion 路径保持。workflow 同一固定 Simulator 必须两次 launch/process alive、两张横屏 PNG、两次 ImageIO probe 均成功，JUnit 仍为 8 项、0 failures、1 browser skip。manifest 必须含两种参数和两套 outcome/path；Agent C 人工确认 `ios-combat.png` 中双方单位、projectile、beam、炮口焰、impact、烟尘和灼痕可辨且无明显重叠。冻结静态图不证明 cooldown 时序、动画、密集战斗帧率、Reduce Motion、触摸或真机表现。
+- 当前 CI 覆盖源码检查、Swift core、iOS build，以及单一固定设备的 production/combat 两次启动、双截图和非空像素探针；仍没有 XCUITest、像素基线差异、VoiceOver、Dynamic Type、Reduce Motion、旋转、触摸、滚动、离屏快捷键或战斗帧率自动化。固定 smoke 不能冒充完整 UI/动画回归。
 - 如果本机只有 Command Line Tools、未选择完整 Xcode 或 Swift/SDK 版本不匹配，必须说明真实限制，不得宣称本地 iOS build 已通过。
 
 ## 云端重验证
@@ -184,7 +185,7 @@ v1.97 起 Rustwar CI 固定在 `macos-26`、Xcode 26.5、iOS Simulator SDK 26.5 
 - `swift test --package-path swift/RustwarCore`：检查共享 Swift core。
 - `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj`：检查 iOS project / scheme。
 - `xcodebuild -project ios/RustwarIOS/RustwarIOS.xcodeproj -scheme RustwarIOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`：检查原生 iOS App 构建。
-- 创建固定 iPhone 17 Pro / iOS 26.5 Simulator，以其 UDID 构建、安装和启动 App，并生成 `ci-results/ios-home.png`。
+- 创建固定 iPhone 17 Pro / iOS 26.5 Simulator，以其 UDID 构建并安装 App；先用 production 参数启动生成 `ci-results/ios-home.png`，再 terminate/relaunch combat 参数生成 `ci-results/ios-combat.png`。
 - `xcrun swift ci/validate-ios-screenshot.swift ...`：解码 PNG 并检查尺寸、透明像素比例、亮度标准差和亮度范围。
 - 生成 `ci-results/build.log`：主日志。
 - 生成 `ci-results/junit.xml`：CI 可读摘要。
@@ -192,9 +193,9 @@ v1.97 起 Rustwar CI 固定在 `macos-26`、Xcode 26.5、iOS Simulator SDK 26.5 
 - 生成 `ci-results/ci-artifact-manifest.json`：Agent C 核对用 manifest。
 - 生成 `ci-results/repo-state.txt`：分支、状态和最近提交记录。
 - 生成 `ci-results/toolchain-info.txt`：runner、macOS、DEVELOPER_DIR、Xcode build、Simulator SDK、Swift 与 gate exit。
-- 生成 `ci-results/ios-simulator-info.txt`、`ci-results/ios-home.png` 和 `ci-results/ios-screenshot-metrics.txt`：模拟器生命周期、首屏证据与像素指标。
+- 生成 `ci-results/ios-simulator-info.txt`、`ci-results/ios-home.png`、`ci-results/ios-screenshot-metrics.txt`、`ci-results/ios-combat.png` 和 `ci-results/ios-combat-screenshot-metrics.txt`：两次模拟器启动生命周期、生产/战斗证据与像素指标。
 
-v2.1 起 JUnit 为 8 checks：toolchain、diff、Node、Swift package、Xcode list、iOS build、iOS Simulator launch/screenshot 和 browser smoke；仅 browser smoke 预期 skipped。artifact schema/name 为 v1.2。
+v2.1 起 JUnit 为 8 checks：toolchain、diff、Node、Swift package、Xcode list、iOS build、iOS Simulator visual smoke 和 browser smoke；仅 browser smoke 预期 skipped。v2.15 起 Simulator 单项同时包含 production/combat 两次 launch、双 screenshot 和双 probe。artifact schema/name 为 v1.2。
 
 当前不在 CI 中跑浏览器 Smoke、Stage Regression 或 Full，也不跑 XCUITest。v2.1 的 Simulator 首屏 smoke 只覆盖启动、截图和非空探针；完整 iOS UI 自动化仍需后续 workflow。
 
@@ -236,11 +237,15 @@ rustwar-ci-${version}-${branch_slug}-${short_sha}-run${run_id}-attempt${run_atte
 - `projectSpecificReports`
 - `simulatorDeviceType` / `simulatorRuntime` / `simulatorUDID`
 - `appBundleID`
-- `visualSmokeLaunchArgument`
+- `visualSmokeLaunchArgument` / `combatVisualSmokeLaunchArgument`
 - `simulatorVisualOutcome` / `simulatorLaunchOutcome`
 - `screenshotOutcome` / `screenshotProbeOutcome`
 - `screenshotOrientationOutcome`
 - `screenshotPath` / `screenshotMetricsPath`
+- `combatSimulatorLaunchOutcome`
+- `combatScreenshotOutcome` / `combatScreenshotProbeOutcome`
+- `combatScreenshotOrientationOutcome`
+- `combatScreenshotPath` / `combatScreenshotMetricsPath`
 
 ## Agent C 结果包复判
 
@@ -262,7 +267,7 @@ Agent C 必须核对：
 - 主日志包含实际命令输出，而不是旧 artifact 或 checkout 自带报告。
 - v1.0 起还要确认 manifest 中 `scheme=RustwarIOS` 和实际 iOS destination，并核对 Swift/iOS 检查项真实执行或真实失败。
 - v1.97 起还要确认 `version=v1.1`、`toolchainOutcome=success`、`developerDir=/Applications/Xcode_26.5.app/Contents/Developer`、`xcodeVersion=Xcode 26.5`、`iOSSimulatorSDKVersion=26.5`，并逐项对照 `toolchain-info.txt`；JUnit 必须为 7 项、0 failures、1 skipped。
-- v2.1 起还要确认 `version=v1.2`，destination 的 UDID 与 manifest / `ios-simulator-info.txt` 一致，launch/capture/orientation/probe 均为 success；JUnit 必须为 8 项、0 failures、1 skipped。下载并人工查看横屏 `ios-home.png`，同时核对 metrics 达到阈值。
+- v2.15 起还要确认 `version=v1.2`，destination 的 UDID 与 manifest / `ios-simulator-info.txt` 一致，production/combat 两套 launch/capture/orientation/probe 均为 success；JUnit 必须为 8 项、0 failures、1 skipped。下载并人工查看横屏 `ios-home.png` 与 `ios-combat.png`，同时核对两份 metrics 达到阈值。
 
 CI 失败时：
 

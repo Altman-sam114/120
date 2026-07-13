@@ -63,8 +63,8 @@ flowchart TD
   LAY --> H["GameHUD presentation dispatcher + TacticalHUDTheme<br/>中文注释：分派独立 StatusBar / CommandDock；共享 spacing/radius/hit-target/status tokens，Selection Summary 只读派生文本，六个 section 各自拥有本域 action、快捷键与 VoiceOver"]
   LAY --> TM["Reserved TacticalMapView region<br/>中文注释：只放在 Battlefield 自身区域，按 176x118、144x96 或 120x80 缩放，与顶栏和 dock frame 不相交；原手势和世界换算不变"]
   LAY --> B["SpriteView + BattlefieldScene snapshot reader<br/>中文注释：只读 Core 快照，维护 scene-only heading / cooldown / HP / entity-id 历史；当前 HP 还派生受损烟柱/危急火焰，每实体最多两个额外 path 节点，不回写玩法状态"]
-  CI["GitHub Actions iPhone 17 Pro / iOS 26.5 Simulator<br/>中文注释：按真实 UDID 构建、安装并启动原生 App"] --> SHOT["首屏 PNG + ImageIO metrics gate<br/>中文注释：校验尺寸、透明比例和亮度变化，拒绝空图或近似黑屏"]
-  SHOT --> ART["v1.2 CI artifact<br/>中文注释：保存 manifest、JUnit、日志、simulator info、PNG 和小型 metrics，不上传 DerivedData"]
+  CI["GitHub Actions iPhone 17 Pro / iOS 26.5 Simulator<br/>中文注释：按真实 UDID 构建、安装，并分别启动生产与战斗视觉场景"] --> SHOT["双 PNG + ImageIO metrics gate<br/>中文注释：ios-home / ios-combat 分别校验尺寸、透明比例和亮度变化，拒绝空图或近似黑屏"]
+  SHOT --> ART["v1.2 CI artifact<br/>中文注释：保存 manifest、8 项 JUnit、日志、simulator info、双 PNG 和小型 metrics，不上传 DerivedData"]
   T["SpatialTap / LongPress / Drag / Magnify<br/>中文注释：iOS 触摸选择、移动落点、长按上下文命令、Select Area 框选、拖拽平移和捏合缩放"] --> DT["Battlefield tap router<br/>中文注释：pending 优先；无等待时友方选择、可见敌方 Attack、空地 Attack Move"]
   DT --> C
   TT["TacticalMap DragTap / DragCamera / LongPress<br/>中文注释：点按小地图换算世界坐标；等待点位、Builder 目标或实体目标命令时显示反馈并下令，否则点按居中相机、拖动连续移动相机；无等待命令时长按复用上下文命令"] --> C
@@ -220,7 +220,7 @@ flowchart TD
   F --> A
   S --> A
   T --> A
-  A --> U["upload-artifact v1.1<br/>中文注释：上传 manifest、7 项 JUnit、toolchain-info、日志和仓库状态的未加密结果包"]
+  A --> U["upload-artifact v1.2<br/>中文注释：上传 manifest、8 项 JUnit、toolchain-info、日志、仓库状态、双 PNG 和 metrics 的未加密结果包"]
   U --> C["Agent C 下载复判<br/>中文注释：只验收 origin/main 最新 commit 对应 artifact"]
 ```
 
@@ -401,4 +401,22 @@ flowchart LR
   B --> D
   P --> D
   D --> PNG["Cloud ios-home.png + pixel probe"]
+```
+
+## v2.15 装甲战斗视觉与双云端截图
+
+```mermaid
+flowchart LR
+  U["UnitSnapshot + heading"] --> M["Layered procedural unit body"]
+  M --> T["Tracks / turret / sensor / armor detail"]
+  C["cooldown / HP / entity history"] --> F["Directional muzzle + projectile / beam"]
+  C --> I["Impact + debris + smoke + scorch"]
+  A["--rustwar-ci-combat-visual-smoke"] --> S["Paused fixed GameEngine state"]
+  S --> Z["Frozen fire / impact tableau"]
+  F --> Z
+  I --> Z
+  P["Production smoke"] --> H["ios-home.png + metrics"]
+  Z --> B["ios-combat.png + metrics"]
+  H --> J["Single Simulator JUnit gate"]
+  B --> J
 ```

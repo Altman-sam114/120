@@ -73,6 +73,8 @@ v2.13 将 command dock 从固定 section 顺序改为选择上下文优先：`pr
 
 v2.14 精修生产信息与云端视觉场景：`TacticalProductionSectionView` 直接读取 `UnitDefinition` 的 icon context、metalCost、supply 和 buildTime，以两行按钮呈现单位名及三项资源，并从 selected producer queue 派生 `productionProgressFraction` 绘制原生 `ProgressView`。`GameController` initializer 可选通过正常 `engine.select(at:)` 选择完成状态己方建筑；只有 `--rustwar-ci-visual-smoke` 启动使用 Land Factory，普通 init 保持 nil。CI 参数、schema、Core 生产和存档均不变。
 
+v2.15 精修原生装甲单位与战斗视觉：`unitBody` 继续以固定数量程序化节点构成 7 类单位，但履带单位共享带内履带/齿段的组件，Tank、AA Tank、Artillery 分别使用单炮塔、双联炮架和长身管支撑，Scout/Builder/Hover/Gunboat 增加传感器、工程关节、悬浮舱或甲板结构。正常 `spawnFireEffect` 增加方向性锥焰和 projectile 双层尾迹/弹头，impact 增加确定性装甲碎屑；v1.91 可见性、fog、Reduce Motion、64 effect / 32 decal 上限和 Core 只读边界保持。App 只在 `--rustwar-ci-combat-visual-smoke` 下用 `GameEngine(state:)` 装配固定暂停、无 AI 的对峙状态，Scene 冻结同一套 fire/impact 绘制供第二张云端截图；普通 init 不进入该分支。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
@@ -87,7 +89,7 @@ RustwarCore MapPreset / GameState / GameEngine
   -> SpriteKit BattlefieldScene 只读快照，维护 scene-only 朝向 / cooldown / HP / entity-id 历史
   -> 程序化单位与建筑复合几何 + 选中订单线深色 underlay + 共享高对比生命条 + 武器差异弹道 + 分层受击/摧毁爆炸
   -> bounded decal/entity/effect layers 位于当前可见/已探索战争迷雾下，radar signal 语义保持不变
-  -> GitHub Actions fixed Simulator -> install/launch -> ios-home.png -> ImageIO nonblank metrics gate
+  -> GitHub Actions fixed Simulator -> production launch/ios-home.png -> combat relaunch/ios-combat.png -> dual ImageIO metrics gates
   -> SpatialTapGesture / LongPressGesture / DragGesture / MagnifyGesture / TacticalMap drag-tap-long-press
   -> Battlefield tap pending priority -> friendly selection / visible-enemy Attack / open-ground Attack Move
   -> CameraState / KeyboardCameraDirection / UserDefaults save payload / pause-speed gate / SelectionMutation replace/add / Battlefield context command / TacticalMap point commands and pending feedback / WorldRect area selection with building fallback / GameEngine.select / GameEngine.selectIdlePlayerBuilders / GameEngine.selectPlayerCombatUnits / GameEngine.selectPlayerCombatUnits(in:) / GameEngine.selectPlayerUnits(in:) / GameEngine.selectPlayerEntities(in:) / GameEngine.selectPlayerUnitsMatchingPrimarySelection / GameEngine.selectPlayerUnitsMatching(unitID:within:) / GameEngine.storeControlGroup / GameEngine.recallControlGroup / GameEngine.issueMove with formation targets / GameEngine.issueAttackMove with formation targets / GameEngine.issuePatrol with formation targets / GameEngine.issueGuard with formation offsets / GameEngine.issueRepair with dynamic approach points / GameEngine.issueReclaim with dynamic approach points / GameEngine.issueBuild with dynamic approach points / GameEngine.setAttackStance / GameEngine.issueBuildExtractor / GameEngine.issueBuildTurret / GameEngine.issueBuildLandFactory / GameEngine.issueStop / GameEngine.issueAttack / GameEngine.queueUnit / GameEngine.queueBuildingUpgrade / GameEngine.cancelBuildingUpgrade / GameEngine.cancelLastProduction / GameEngine.setRepeatProduction / GameEngine.setRally / GameEngine.setEnemyAIEnabled / GameEngine.update / GameEngine(state:) / GameState.visibility(for:)
@@ -436,6 +438,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v2.12 起，`BattlefieldView` 将 `SpatialEventGesture` 与既有 Drag/Magnify 同时挂载，但通过两指位移方向、质心位移和间距变化只锁定一种意图。selection 用四个触点位置的屏幕包围矩形调用 `handleBattlefieldMultitouchAreaSelection`；pinch 仍只调用既有 `zoom(by:)`。controller 只有在无 pending 命令时接受双指入口，再与显式 `Select Area` 共用 `applyBattlefieldAreaSelection`，因此 Core 选择算法、建筑 fallback 和 selection mutation 只有一个真源。
 - v2.13 起，`TacticalCommandDockView` 以 controller 的现有 production/upgrade 派生值决定 section 优先级，并监听只读 `dockSelectionIdentity` 回到 scroll top。生产建筑、可升级建筑、Builder、单位和无选择分别获得符合上下文的首组操作；`TacticalBuildSectionView` 通过 `showsSelected...UpgradeControl` 保持升级费用可见，再用原 `canUpgrade...` 设置 disabled。该变化不写回 Core，也不改变生产、升级、取消、快捷键或辅助功能动作。
 - v2.14 起，Production button label 使用单位类型 SF Symbol + Metal/人口/时间三项文本，queue status 使用同一 Core progress snapshot；按钮 action 和 Shift+1-9 仍调用 `queueUnit`。CI 专用 App init 预选 Land Factory，使固定横屏 screenshot 能覆盖 v2.13/v2.14 的生产首屏，但仍不执行真实点击或滚动。
+- v2.15 起，`CloudVisualScenario` 只服务云端 fixture：production 保持 v2.14 Land Factory 选择，combat 用公开 Core snapshot 类型组成固定双方单位、攻击订单与选择集合，并禁用 AI、暂停模拟、固定相机。`BattlefieldScene.showCombatVisualSmokeIfNeeded` 仅在 combat 场景和 map reset 后一次性调用带 `isFrozen` 的既有 fire/impact helpers；普通 cooldown/HP diff 仍走动态默认参数。workflow 在同一 Simulator 安装后 terminate/relaunch，分别保存 `ios-home.png` 与 `ios-combat.png`，两套 launch/process/orientation/probe 共同决定同一个 Simulator JUnit case。
 - v1.1 起，HUD Move 命令只作用于当前选中的己方单位；`RustwarCore` 推进位置，SpriteKit 只渲染状态。
 - v1.2 起，选中己方陆军工厂时 HUD 显示生产按钮和队列进度；生产完成后由 `RustwarCore` 生成单位。
 - v1.3 起，选中己方单位时 HUD 显示 Attack 命令；Attack 模式下一次 tap 由 `GameController` 命中敌方目标并调用 `GameEngine.issueAttack`，`RustwarCore` 推进靠近、开火、扣血和死亡清理，SpriteKit 只显示 HP 条和攻击目标线。v1.48 起，`issueAttack(targetID:)` 优先读取 `selectedEntityIDs`，多选时所有选中己方单位会攻击同一个敌方单位或建筑；混入建筑、敌方或缺失 id 时只要存在己方单位就执行。
@@ -575,11 +578,11 @@ RustwarCore MapPreset / GameState / GameEngine
 1. 人工用普通请求或 `agenta` / `agentb` / `agentc` / `agentx` 前缀召唤对应角色。
 2. 普通 A/B/C 单轮仍按既有流程执行；`agentx` / `x:` / `X:` 只表示未来由 Agent X 接收总目标并拆成多轮。
 3. Agent X 先拆分总目标 X，选择当前最小可验收轮次，并明确本轮目标、非目标、退出条件和需要人工确认的边界。
-4. Agent A 读取必读文档和相关源码，写入版本化提示词，并明确本轮本地轻量检查、`main` push、CI artifact 和 Agent C 复判要求。
+4. Agent A 读取必读文档和相关源码，写入版本化提示词，并明确本轮云端唯一验证、`main` push、CI artifact 和 Agent C 复判要求。
 5. Agent B 读取提示词和必读文档，执行 `git fetch origin`、`git switch main`、`git pull --ff-only origin main`、`git status --short --branch`；若没有 `origin` 或权限不足，停止远端步骤并说明阻塞。
-6. Agent B 小步实现，运行本地轻量检查，提交本轮相关文件。
+6. Agent B 小步实现；当前用户制度禁止本地验证，只做只读状态与提交范围核对后提交本轮相关文件。
 7. Agent B `git push origin main` 触发 `Rustwar CI Results` workflow。
-8. GitHub Actions 在固定 `macos-26` / Xcode 26.5 / iOS Simulator SDK 26.5 上先验证工具链，再运行 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore` 和 iOS `xcodebuild`，生成 manifest、7 项 JUnit、toolchain info、主日志、失败摘要和仓库状态文件。
+8. GitHub Actions 在固定 `macos-26` / Xcode 26.5 / iOS Simulator SDK 26.5 上先验证工具链，再运行 `git diff --check`、`node --check app.js`、`swift test --package-path swift/RustwarCore` 和 iOS `xcodebuild`，并在固定 Simulator 执行 production/combat 两次启动、截图与像素探针；结果包包含 manifest、8 项 JUnit、toolchain info、主日志、失败摘要、仓库状态、双 PNG 和 metrics。
 9. Agent C 定位 `origin/main` 最新 commit 对应 run，用 `gh auth login` 后下载 artifact 到 `/private/tmp/rustwar-c-review-<run_id>/`，并检查下载目录大小，避免拉取大体积无关产物。
 10. Agent C 核对 manifest 的 `branch`、`commitSha`、run id、run attempt 与 `origin/main` 最新 commit 和下载结果一致。
 11. 若 CI 或验收失败，Agent C 输出退回清单；Agent X 判断是否退回 Agent B 追加修复、暂停等待人工确认，或因重复阻塞停止。
@@ -595,15 +598,15 @@ RustwarCore MapPreset / GameState / GameEngine
 - Web 数据层：内存中的 `state`，浏览器 `localStorage`，沙盒 JSON 文件。
 - Web 模型层：`unitTypes`、`buildingTypes`、`mapPresets`、实体对象和订单对象。
 - 原生模型层：`MapPreset`、`GameState`、`GameEngine`、单位/建筑定义、订单和 Swift value snapshots。
-- 测试层：当前是本地轻量检查 + GitHub Actions 结果包；浏览器 Smoke / Regression 与 iOS UI 自动化仍需人工明确要求或未来新增自动化测试。
+- 测试层：当前按用户要求只认 GitHub Actions 结果包，不运行本地验证；浏览器 Smoke / Regression 与 iOS UI 自动化仍需未来新增云端自动化。
 
 ## 4. 测试映射
 
-- 文档-only：本地至少 `git diff --check`，再通过 `main` push 触发 CI artifact。
+- 文档-only：不运行本地检查，通过 `main` push 让 CI 执行 `git diff --check` 并生成 artifact。
 - 改 `.github/workflows/ci-results.yml`：当前用户制度禁止本地 YAML/测试命令，直接 push 后以 GitHub 创建 run、执行固定工具链 gate 并生成可下载 artifact 作为验证；失败时下载 artifact 读取真实原因。
-- 改 `app.js` 语法或逻辑：本地至少 `node --check app.js` 和 `git diff --check`，CI 重跑同类检查。
-- 改 `swift/RustwarCore/`：本地尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 阻塞，至少尝试 `swiftc -typecheck swift/RustwarCore/Sources/RustwarCore/*.swift` 并记录工具链错误；当前 Swift tests 覆盖初始化、经济 tick、选择、当前玩家可见敌方命中过滤、世界矩形框选、区域选择建筑 fallback、屏幕范围作战单位选择、全图同类型选择、半径附近同类型选择、控制编队保存/召回/过滤/JSON 兼容、玩家当前视野 tile 计算、单位攻击姿态 JSON 兼容与 Attack-Move / Patrol / Guard / 手动 Attack 行为、单单位和多单位 Move / Attack-Move / Patrol 队形落点、单单位和多单位 Attack、单单位和多单位 Guard、单 Builder 和多 Builder Repair/Reclaim/Build 分散接近点、单单位和多单位 Stop、生产、生产取消/退款、重复生产、生产建筑集结点、炮塔防御开火/死亡残骸清理、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/进攻 AI、红方 AI Web-lite 目标评分、`GameState` JSON 往返和恢复后继续模拟；Attack 覆盖多单位共享目标、混合选择、失败不覆盖旧订单和目标摧毁清理，Build Turret 和 Build Land Factory 覆盖多 Builder 共享目标、单次扣费、协同加速、混合选择、失败不覆盖旧订单和 Stop 选中范围。
-- 改 `ios/RustwarIOS/`：本地尽量跑 `xcodebuild -list` 和 iOS build；若只有 Command Line Tools 或 Swift/SDK 不匹配，记录阻塞并由云端 macOS artifact 复验；涉及战术小地图时还要确认新 Swift 文件已加入 Xcode target。
+- 改 `app.js` 语法或逻辑：只由 CI 运行 `node --check app.js` 和 `git diff --check`。
+- 改 `swift/RustwarCore/`：只由固定云端 Swift 工具链运行完整 package tests；当前 suite 覆盖初始化、经济、选择、命令、生产、战斗、AI、存档和恢复模拟。
+- 改 `ios/RustwarIOS/`：只由固定云端 Xcode/SDK 执行 project list、双架构 build、Simulator 启动和视觉探针；涉及新 Swift 文件时还要确认加入 Xcode target。
 - 改 HTML id 或 UI 引用：云端轻量检查之外，若人工要求则做 Smoke 浏览器验证。
 - 改输入/命令：人工要求本机回归时验证主地图、迷你地图、Shift 追加、Esc 取消。
 - 改战斗/AI/存档/沙盒：人工要求本机回归时执行 Stage Regression。

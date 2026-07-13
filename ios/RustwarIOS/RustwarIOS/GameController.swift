@@ -3,6 +3,11 @@ import Observation
 import SwiftUI
 import RustwarCore
 
+enum CloudVisualScenario: Equatable {
+    case production
+    case combat
+}
+
 @MainActor
 @Observable
 final class GameController {
@@ -17,6 +22,7 @@ final class GameController {
 
     var engine: GameEngine
     var camera: CameraState
+    let cloudVisualScenario: CloudVisualScenario?
     var renderRevision = 0
     var mapRenderRevision = 0
     private(set) var selectionFeedbackRevision = 0
@@ -77,12 +83,19 @@ final class GameController {
     init(
         mapID: MapID = .coast,
         startsPaused: Bool = false,
-        initiallySelectedPlayerBuildingType: BuildingType? = nil
+        initiallySelectedPlayerBuildingType: BuildingType? = nil,
+        cloudVisualScenario: CloudVisualScenario? = nil
     ) {
         let preset = MapPreset.preset(for: mapID)
         self.currentMapID = mapID
-        self.engine = GameEngine(mapID: mapID)
-        self.camera = CameraState(center: preset.camera.center, zoom: preset.camera.zoom)
+        self.cloudVisualScenario = cloudVisualScenario
+        if cloudVisualScenario == .combat {
+            self.engine = GameEngine(state: Self.combatVisualSmokeState(mapID: mapID), enemyAIEnabled: false)
+            self.camera = CameraState(center: WorldPoint(1_920, 1_570), zoom: 0.94)
+        } else {
+            self.engine = GameEngine(mapID: mapID)
+            self.camera = CameraState(center: preset.camera.center, zoom: preset.camera.zoom)
+        }
         self.isPaused = startsPaused
         if let initiallySelectedPlayerBuildingType,
            let building = engine.state.buildings.first(where: {
@@ -93,6 +106,54 @@ final class GameController {
            }) {
             engine.select(at: building.position, includeEnemies: false)
         }
+    }
+
+    private static func combatVisualSmokeState(mapID: MapID) -> GameState {
+        var state = GameState(mapID: mapID)
+        state.wrecks = []
+
+        func unit(
+            _ type: UnitType,
+            id: String,
+            team: Team,
+            at position: WorldPoint,
+            targetID: String,
+            healthFraction: Double = 1
+        ) -> UnitSnapshot {
+            let definition = GameDefinitions.unit(type)
+            return UnitSnapshot(
+                id: id,
+                type: type,
+                team: team,
+                position: position,
+                hitPoints: definition.hitPoints * healthFraction,
+                maxHitPoints: definition.hitPoints,
+                order: .attack(targetID: targetID),
+                weaponCooldown: definition.reloadTime * 0.72
+            )
+        }
+
+        state.units = [
+            unit(.tank, id: "visual-player-tank", team: .player, at: WorldPoint(1_660, 1_455), targetID: "visual-enemy-tank"),
+            unit(.aaTank, id: "visual-player-aa", team: .player, at: WorldPoint(1_650, 1_570), targetID: "visual-enemy-hover"),
+            unit(.artillery, id: "visual-player-artillery", team: .player, at: WorldPoint(1_610, 1_700), targetID: "visual-enemy-artillery"),
+            unit(.hover, id: "visual-player-hover", team: .player, at: WorldPoint(1_785, 1_650), targetID: "visual-enemy-tank"),
+            unit(.scout, id: "visual-player-scout", team: .player, at: WorldPoint(1_910, 1_535), targetID: "visual-enemy-aa"),
+            unit(.builder, id: "visual-player-builder", team: .player, at: WorldPoint(1_745, 1_765), targetID: "visual-enemy-artillery"),
+            unit(.tank, id: "visual-enemy-tank", team: .enemy, at: WorldPoint(2_160, 1_480), targetID: "visual-player-tank", healthFraction: 0.62),
+            unit(.aaTank, id: "visual-enemy-aa", team: .enemy, at: WorldPoint(2_205, 1_610), targetID: "visual-player-scout", healthFraction: 0.8),
+            unit(.artillery, id: "visual-enemy-artillery", team: .enemy, at: WorldPoint(2_245, 1_730), targetID: "visual-player-artillery", healthFraction: 0.42),
+            unit(.hover, id: "visual-enemy-hover", team: .enemy, at: WorldPoint(2_090, 1_680), targetID: "visual-player-aa", healthFraction: 0.72),
+            unit(.gunboat, id: "visual-enemy-gunboat", team: .enemy, at: WorldPoint(2_250, 1_390), targetID: "visual-player-hover", healthFraction: 0.88)
+        ]
+        state.selectedEntityIDs = [
+            "visual-player-tank",
+            "visual-player-aa",
+            "visual-player-artillery",
+            "visual-player-hover"
+        ]
+        state.selectedEntityID = state.selectedEntityIDs.first
+        return state
     }
 
     var playerEconomy: TeamEconomy {

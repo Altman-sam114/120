@@ -4453,8 +4453,44 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证。
-- 必须以 push 后精确 v2.14 commit 的 GitHub Actions v1.2 artifact 验收；当前尚未提交、push 或核对。
+- 实现提交 `5ba971ad32fa1987cf582b631981becfff6559cd` 已通过 Agent C 云端 artifact 复判：run `29226259213`，attempt `1`，artifact `rustwar-ci-v1.2-main-5ba971a-run29226259213-attempt1`，缓存 `/private/tmp/rustwar-c-review-29226259213/`，大小 `756K`。
+- manifest v1.2 的 `branch=main`、完整 SHA、run id、run attempt 与 `origin/main` 完全一致；固定 Xcode 26.5、iOS Simulator SDK 26.5、Swift 6.3.2，JUnit 8 checks、0 failures、1 browser skip，303 Core tests、arm64/x86_64 iOS build、Simulator launch、横屏规范化和 ImageIO probe 全部成功。
+- `RustwarIOSApp.swift`、`GameController.swift`、`TacticalProductionSectionView.swift` 有双架构编译证据。PNG 为 2622x1206、透明比例 0、亮度标准差 44.777、亮度范围 255；Agent C 人工确认 Land Factory 选中、Production 位于 Commands 前，生产单位的 Metal/人口/时间清晰且无明显重叠。
 
 遗留事项：
 
 - Land Factory 静态 smoke 将覆盖建筑生产首屏，但仍不执行真实 queue tap、dock scroll、VoiceOver 或 Dynamic Type 切换。
+
+### v2.15 / iOS armored combat visual smoke
+
+日期：2026-07-13
+
+核心变更：
+
+- 参考 Rusted Warfare 官方开发者页、2019 官方战斗截图和官方视频入口，继续使用原创程序化几何强化 7 类原生单位：履带单位增加内履带、齿段和装甲层，Tank / AA Tank / Artillery 分别强化单炮塔、双联架和长身管轮廓，Scout / Builder / Hover / Gunboat 增加传感器、工程关节、悬浮舱和甲板层次。
+- 正常战斗特效增加方向性炮口锥焰、projectile 双层尾迹与高亮弹头、命中装甲碎屑；v1.91 cooldown/HP diff、当前可见性、fog 层级、Reduce Motion、64 effect / 32 decal 上限和 map reset 语义保持。
+- 新增内部 `CloudVisualScenario.combat`：仅 `--rustwar-ci-combat-visual-smoke` 构造固定暂停、无 AI、固定相机的双方装甲对峙状态，Scene 一次性冻结同一套 fire/impact 绘制；普通启动和 v2.14 production smoke 不变。
+- workflow 在固定 Simulator 安装后先保留 `ios-home.png`，再 terminate/relaunch combat 场景生成 `ios-combat.png`；两套 launch/process/orientation/ImageIO probe 共同决定现有 Simulator JUnit case，并在 manifest / simulator info 暴露 combat 参数、outcome 和路径。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/RustwarIOSApp.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `.github/workflows/ci-results.yml`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.15-ios-armored-combat-visual-smoke.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
+- 必须以 push 后精确 v2.15 commit 的 GitHub Actions v1.2 artifact 验收；当前尚未提交、push 或核对。
+
+遗留事项：
+
+- `ios-combat.png` 是冻结构图，只证明固定设备上的模型/特效像素和层级，不证明真实 cooldown 时序、动画连续性、Reduce Motion、触摸或密集战斗帧率。
+- 目前仍使用程序化矢量几何，没有最终 sprite atlas、逐帧动画、音效、屏幕震动、动态光照或正式美术资源；后续应继续以独立云端视觉场景小步扩展，而不能用静态图冒充完整回归。

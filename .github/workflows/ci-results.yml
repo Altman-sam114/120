@@ -22,6 +22,7 @@ jobs:
       IOS_SCHEME: RustwarIOS
       IOS_BUNDLE_ID: com.rustwar.prototype.ios
       IOS_VISUAL_SMOKE_ARGUMENT: --rustwar-ci-visual-smoke
+      IOS_COMBAT_VISUAL_SMOKE_ARGUMENT: --rustwar-ci-combat-visual-smoke
       IOS_SIMULATOR_DEVICE_TYPE: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
       IOS_SIMULATOR_RUNTIME: com.apple.CoreSimulator.SimRuntime.iOS-26-5
       SWIFT_PACKAGE_PATH: swift/RustwarCore
@@ -216,9 +217,16 @@ jobs:
           simulator_screenshot_status=77
           screenshot_orientation_status=77
           screenshot_probe_status=77
+          combat_simulator_launch_status=77
+          combat_simulator_process_status=77
+          combat_simulator_screenshot_status=77
+          combat_screenshot_orientation_status=77
+          combat_screenshot_probe_status=77
           app_path="${derived_data_path}/Build/Products/Debug-iphonesimulator/RustwarIOS.app"
           screenshot_path="ci-results/ios-home.png"
           screenshot_metrics_path="ci-results/ios-screenshot-metrics.txt"
+          combat_screenshot_path="ci-results/ios-combat.png"
+          combat_screenshot_metrics_path="ci-results/ios-combat-screenshot-metrics.txt"
           if [[ "$xcode_build_status" -eq 0 ]]; then
             xcrun simctl install "$simulator_udid" "$app_path" >> "$build_log" 2>&1
             simulator_install_status=$?
@@ -255,6 +263,43 @@ jobs:
                 "$screenshot_metrics_path" >> "$build_log" 2>&1
               screenshot_probe_status=$?
             fi
+
+            if [[ "$simulator_install_status" -eq 0 ]]; then
+              echo "== relaunch iOS combat visual smoke ==" >> "$build_log"
+              xcrun simctl terminate "$simulator_udid" "$IOS_BUNDLE_ID" >> "$build_log" 2>&1
+              echo "production smoke terminate exit=$?" >> "$build_log"
+              combat_launch_output="$(xcrun simctl launch \
+                "$simulator_udid" \
+                "$IOS_BUNDLE_ID" \
+                "$IOS_COMBAT_VISUAL_SMOKE_ARGUMENT" 2>&1)"
+              combat_simulator_launch_status=$?
+              printf '%s\n' "$combat_launch_output" >> "$build_log"
+            fi
+            if [[ "$combat_simulator_launch_status" -eq 0 ]]; then
+              combat_app_pid="$(printf '%s\n' "$combat_launch_output" | sed -n 's/.*: \([0-9][0-9]*\)$/\1/p' | tail -1)"
+              sleep 5
+              if [[ "$combat_app_pid" =~ ^[0-9]+$ ]]; then
+                xcrun simctl spawn "$simulator_udid" launchctl print "pid/${combat_app_pid}" >> "$build_log" 2>&1
+                combat_simulator_process_status=$?
+              else
+                echo "Unable to parse combat visual smoke PID from simctl output." >> "$build_log"
+                combat_simulator_process_status=1
+              fi
+            fi
+            if [[ "$combat_simulator_process_status" -eq 0 ]]; then
+              xcrun simctl io "$simulator_udid" screenshot --type=png "$combat_screenshot_path" >> "$build_log" 2>&1
+              combat_simulator_screenshot_status=$?
+            fi
+            if [[ "$combat_simulator_screenshot_status" -eq 0 ]]; then
+              sips --rotate 270 "$combat_screenshot_path" >> "$build_log" 2>&1
+              combat_screenshot_orientation_status=$?
+            fi
+            if [[ "$combat_screenshot_orientation_status" -eq 0 ]]; then
+              xcrun swift ci/validate-ios-screenshot.swift \
+                "$combat_screenshot_path" \
+                "$combat_screenshot_metrics_path" >> "$build_log" 2>&1
+              combat_screenshot_probe_status=$?
+            fi
           fi
           echo "simulator install exit=$simulator_install_status" >> "$build_log"
           echo "simulator launch exit=$simulator_launch_status" >> "$build_log"
@@ -262,6 +307,11 @@ jobs:
           echo "simulator screenshot exit=$simulator_screenshot_status" >> "$build_log"
           echo "screenshot landscape normalization exit=$screenshot_orientation_status" >> "$build_log"
           echo "screenshot pixel probe exit=$screenshot_probe_status" >> "$build_log"
+          echo "combat simulator launch exit=$combat_simulator_launch_status" >> "$build_log"
+          echo "combat simulator process alive exit=$combat_simulator_process_status" >> "$build_log"
+          echo "combat simulator screenshot exit=$combat_simulator_screenshot_status" >> "$build_log"
+          echo "combat screenshot landscape normalization exit=$combat_screenshot_orientation_status" >> "$build_log"
+          echo "combat screenshot pixel probe exit=$combat_screenshot_probe_status" >> "$build_log"
           echo >> "$build_log"
 
           {
@@ -270,6 +320,7 @@ jobs:
             echo "udid=${simulator_udid:-unavailable}"
             echo "bundle_id=${IOS_BUNDLE_ID}"
             echo "launch_argument=${IOS_VISUAL_SMOKE_ARGUMENT}"
+            echo "combat_launch_argument=${IOS_COMBAT_VISUAL_SMOKE_ARGUMENT}"
             echo "create_exit=${simulator_create_status}"
             echo "boot_exit=${simulator_boot_status}"
             echo "build_exit=${xcode_build_status}"
@@ -279,6 +330,11 @@ jobs:
             echo "screenshot_exit=${simulator_screenshot_status}"
             echo "orientation_normalize_exit=${screenshot_orientation_status}"
             echo "pixel_probe_exit=${screenshot_probe_status}"
+            echo "combat_launch_exit=${combat_simulator_launch_status}"
+            echo "combat_process_alive_exit=${combat_simulator_process_status}"
+            echo "combat_screenshot_exit=${combat_simulator_screenshot_status}"
+            echo "combat_orientation_normalize_exit=${combat_screenshot_orientation_status}"
+            echo "combat_pixel_probe_exit=${combat_screenshot_probe_status}"
           } > ci-results/ios-simulator-info.txt
 
           if [[ -n "$simulator_udid" ]]; then
@@ -290,7 +346,7 @@ jobs:
             echo >> "$build_log"
           fi
 
-          if [[ "$simulator_create_status" -eq 0 && "$simulator_boot_status" -eq 0 && "$simulator_install_status" -eq 0 && "$simulator_launch_status" -eq 0 && "$simulator_process_status" -eq 0 && "$simulator_screenshot_status" -eq 0 && "$screenshot_orientation_status" -eq 0 && "$screenshot_probe_status" -eq 0 ]]; then
+          if [[ "$simulator_create_status" -eq 0 && "$simulator_boot_status" -eq 0 && "$simulator_install_status" -eq 0 && "$simulator_launch_status" -eq 0 && "$simulator_process_status" -eq 0 && "$simulator_screenshot_status" -eq 0 && "$screenshot_orientation_status" -eq 0 && "$screenshot_probe_status" -eq 0 && "$combat_simulator_launch_status" -eq 0 && "$combat_simulator_process_status" -eq 0 && "$combat_simulator_screenshot_status" -eq 0 && "$combat_screenshot_orientation_status" -eq 0 && "$combat_screenshot_probe_status" -eq 0 ]]; then
             simulator_visual_status=0
           else
             simulator_visual_status=1
@@ -309,7 +365,7 @@ jobs:
             echo "- swift test --package-path ${SWIFT_PACKAGE_PATH}: $([[ "$swift_status" -eq 0 ]] && echo success || echo failure)"
             echo "- xcodebuild -list ${IOS_PROJECT}: $([[ "$xcode_list_status" -eq 0 ]] && echo success || echo failure)"
             echo "- xcodebuild ${IOS_SCHEME}: $([[ "$xcode_build_status" -eq 0 ]] && echo success || echo failure)"
-            echo "- iOS Simulator launch and screenshot: $([[ "$simulator_visual_status" -eq 0 ]] && echo success || echo failure)"
+            echo "- iOS Simulator launches and screenshots: $([[ "$simulator_visual_status" -eq 0 ]] && echo success || echo failure)"
             echo "- Browser smoke/regression: skipped; Rustwar currently has no headless browser CI."
           } > ci-results/ci-failure-summary.md
 
@@ -339,6 +395,10 @@ jobs:
           CHECK_SIMULATOR_SCREENSHOT_STATUS="$simulator_screenshot_status" \
           CHECK_SCREENSHOT_ORIENTATION_STATUS="$screenshot_orientation_status" \
           CHECK_SCREENSHOT_PROBE_STATUS="$screenshot_probe_status" \
+          CHECK_COMBAT_SIMULATOR_LAUNCH_STATUS="$([[ "$combat_simulator_launch_status" -eq 0 && "$combat_simulator_process_status" -eq 0 ]] && echo 0 || echo 1)" \
+          CHECK_COMBAT_SIMULATOR_SCREENSHOT_STATUS="$combat_simulator_screenshot_status" \
+          CHECK_COMBAT_SCREENSHOT_ORIENTATION_STATUS="$combat_screenshot_orientation_status" \
+          CHECK_COMBAT_SCREENSHOT_PROBE_STATUS="$combat_screenshot_probe_status" \
           IOS_SIMULATOR_UDID="$simulator_udid" \
           XCODE_VERSION="$xcode_version" \
           XCODE_BUILD_VERSION="$xcode_build_version" \
@@ -390,9 +450,9 @@ jobs:
               message: "Native iOS app build with code signing disabled."
             },
             {
-              name: "iOS Simulator launch and screenshot",
+              name: "iOS Simulator launches and screenshots",
               ok: process.env.CHECK_SIMULATOR_VISUAL_STATUS === "0",
-              message: "Pinned iPhone 17 Pro launch, PNG capture, and nonblank pixel probe."
+              message: "Pinned iPhone 17 Pro production/combat launches, PNG captures, and nonblank pixel probes."
             },
             {
               name: "browser smoke regression",
@@ -441,6 +501,7 @@ jobs:
             simulatorUDID: process.env.IOS_SIMULATOR_UDID,
             appBundleID: process.env.IOS_BUNDLE_ID,
             visualSmokeLaunchArgument: process.env.IOS_VISUAL_SMOKE_ARGUMENT,
+            combatVisualSmokeLaunchArgument: process.env.IOS_COMBAT_VISUAL_SMOKE_ARGUMENT,
             runnerOS: process.env.RUNNER_OS || null,
             runnerArch: process.env.RUNNER_ARCH || null,
             runnerName: process.env.RUNNER_NAME || null,
@@ -464,6 +525,12 @@ jobs:
             screenshotProbeOutcome: process.env.CHECK_SCREENSHOT_PROBE_STATUS === "0" ? "success" : "failure",
             screenshotPath: process.env.CHECK_SIMULATOR_SCREENSHOT_STATUS === "0" ? "ci-results/ios-home.png" : null,
             screenshotMetricsPath: process.env.CHECK_SCREENSHOT_PROBE_STATUS === "0" ? "ci-results/ios-screenshot-metrics.txt" : null,
+            combatSimulatorLaunchOutcome: process.env.CHECK_COMBAT_SIMULATOR_LAUNCH_STATUS === "0" ? "success" : "failure",
+            combatScreenshotOutcome: process.env.CHECK_COMBAT_SIMULATOR_SCREENSHOT_STATUS === "0" ? "success" : "failure",
+            combatScreenshotOrientationOutcome: process.env.CHECK_COMBAT_SCREENSHOT_ORIENTATION_STATUS === "0" ? "success" : "failure",
+            combatScreenshotProbeOutcome: process.env.CHECK_COMBAT_SCREENSHOT_PROBE_STATUS === "0" ? "success" : "failure",
+            combatScreenshotPath: process.env.CHECK_COMBAT_SIMULATOR_SCREENSHOT_STATUS === "0" ? "ci-results/ios-combat.png" : null,
+            combatScreenshotMetricsPath: process.env.CHECK_COMBAT_SCREENSHOT_PROBE_STATUS === "0" ? "ci-results/ios-combat-screenshot-metrics.txt" : null,
             testOutcome: process.env.CHECK_SWIFT_STATUS === "0" ? "success" : "failure",
             swiftPackagePath: process.env.SWIFT_PACKAGE_PATH,
             swiftPackageOutcome: process.env.CHECK_SWIFT_STATUS === "0" ? "success" : "failure",

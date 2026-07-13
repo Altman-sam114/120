@@ -42,6 +42,7 @@ final class BattlefieldScene: SKScene {
     private var previousBuildingPositions: [String: WorldPoint] = [:]
     private var previousBuildingTypes: [String: BuildingType] = [:]
     private var previousBuildingTeams: [String: Team] = [:]
+    private var renderedCombatVisualSmoke = false
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -88,6 +89,7 @@ final class BattlefieldScene: SKScene {
         showCommandConfirmationIfNeeded(controller.commandConfirmation, visibility: playerVisibility)
         drawResources(state.resources)
         drawEntities(state, playerVisibility: playerVisibility, selectedIDs: selectedIDs)
+        showCombatVisualSmokeIfNeeded(state)
         drawFog(visibility: playerVisibility, explored: playerExplored)
         drawRadarLayer(coverage: playerRadarCoverage, contacts: playerRadarContacts, selectedIDs: selectedIDs)
     }
@@ -369,6 +371,7 @@ final class BattlefieldScene: SKScene {
         previousBuildingPositions = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.position) })
         previousBuildingTypes = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.type) })
         previousBuildingTeams = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.team) })
+        renderedCombatVisualSmoke = false
     }
 
     private func updateVisualHistoryAndEffects(_ state: GameState, playerVisibility: VisibilitySnapshot) {
@@ -581,7 +584,8 @@ final class BattlefieldScene: SKScene {
         heading: CGFloat,
         radius: Double,
         type: UnitType,
-        target: WorldPoint?
+        target: WorldPoint?,
+        isFrozen: Bool = false
     ) {
         let color: SKColor
         let projectileRadius: Double
@@ -659,7 +663,8 @@ final class BattlefieldScene: SKScene {
             shotCount: shotCount,
             trailLength: trailLength,
             beamWidth: beamWidth,
-            travelSpeed: travelSpeed
+            travelSpeed: travelSpeed,
+            isFrozen: isFrozen
         )
     }
 
@@ -695,7 +700,8 @@ final class BattlefieldScene: SKScene {
         shotCount: Int,
         trailLength: Double,
         beamWidth: Double,
-        travelSpeed: Double
+        travelSpeed: Double,
+        isFrozen: Bool = false
     ) {
         let container = SKNode()
         let sourcePoint = spritePoint(for: source)
@@ -730,16 +736,36 @@ final class BattlefieldScene: SKScene {
             flare.lineWidth = 1.4
             flare.lineCap = .round
             container.addChild(flare)
+            let plume = polygonNode([
+                CGPoint(
+                    x: origin.x - normal.dx * flashRadius * 0.72,
+                    y: origin.y - normal.dy * flashRadius * 0.72
+                ),
+                CGPoint(
+                    x: origin.x + direction.dx * flashRadius * 3.1,
+                    y: origin.y + direction.dy * flashRadius * 3.1
+                ),
+                CGPoint(
+                    x: origin.x + normal.dx * flashRadius * 0.72,
+                    y: origin.y + normal.dy * flashRadius * 0.72
+                )
+            ], fill: color.withAlphaComponent(0.74), stroke: .white.withAlphaComponent(0.82), lineWidth: 0.8)
+            plume.zPosition = -0.5
+            container.addChild(plume)
             let flashFade = SKAction.fadeOut(withDuration: accessibilityReduceMotion ? 0.12 : 0.1)
-            if accessibilityReduceMotion {
-                flash.run(flashFade)
-                flare.run(.fadeOut(withDuration: 0.12))
-            } else {
-                flash.run(.group([flashFade, .scale(to: 1.65, duration: 0.1)]))
-                flare.run(.fadeOut(withDuration: 0.12))
+            if !isFrozen {
+                if accessibilityReduceMotion {
+                    flash.run(flashFade)
+                    flare.run(.fadeOut(withDuration: 0.12))
+                    plume.run(.fadeOut(withDuration: 0.12))
+                } else {
+                    flash.run(.group([flashFade, .scale(to: 1.65, duration: 0.1)]))
+                    flare.run(.fadeOut(withDuration: 0.12))
+                    plume.run(.fadeOut(withDuration: 0.14))
+                }
             }
 
-            guard !accessibilityReduceMotion, let target else {
+            guard (isFrozen || !accessibilityReduceMotion), let target else {
                 continue
             }
             let targetPoint = spritePoint(for: target)
@@ -749,6 +775,7 @@ final class BattlefieldScene: SKScene {
                     to: targetPoint,
                     color: color,
                     width: beamWidth,
+                    isFrozen: isFrozen,
                     to: container
                 )
             } else {
@@ -759,11 +786,16 @@ final class BattlefieldScene: SKScene {
                     radius: projectileRadius,
                     trailLength: trailLength,
                     travelSpeed: travelSpeed,
+                    isFrozen: isFrozen,
                     to: container
                 )
             }
         }
-        addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.14 : 0.5)
+        if isFrozen {
+            addPersistentBoundedEffect(container)
+        } else {
+            addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.14 : 0.5)
+        }
     }
 
     private func addProjectileEffect(
@@ -773,6 +805,7 @@ final class BattlefieldScene: SKScene {
         radius: Double,
         trailLength: Double,
         travelSpeed: Double,
+        isFrozen: Bool = false,
         to container: SKNode
     ) {
         let dx = target.x - origin.x
@@ -780,7 +813,9 @@ final class BattlefieldScene: SKScene {
         let distance = sqrt(dx * dx + dy * dy)
         let duration = Swift.min(0.42, Swift.max(0.08, distance / travelSpeed))
         let projectile = SKNode()
-        projectile.position = origin
+        projectile.position = isFrozen
+            ? CGPoint(x: origin.x + dx * 0.58, y: origin.y + dy * 0.58)
+            : origin
         projectile.zRotation = atan2(dy, dx)
 
         let glow = SKShapeNode(circleOfRadius: radius * 2.1)
@@ -790,6 +825,16 @@ final class BattlefieldScene: SKScene {
         projectile.addChild(glow)
 
         if trailLength > 0 {
+            let vaporTrail = SKShapeNode(rect: CGRect(
+                x: -trailLength * 1.65 - radius,
+                y: -radius,
+                width: trailLength * 1.65,
+                height: radius * 2
+            ), cornerRadius: radius)
+            vaporTrail.fillColor = color.withAlphaComponent(0.16)
+            vaporTrail.strokeColor = .clear
+            vaporTrail.lineWidth = 0
+            projectile.addChild(vaporTrail)
             let trail = SKShapeNode(rect: CGRect(
                 x: -trailLength - radius,
                 y: -radius * 0.55,
@@ -807,11 +852,19 @@ final class BattlefieldScene: SKScene {
         core.strokeColor = color
         core.lineWidth = 1.2
         projectile.addChild(core)
+        let nose = SKShapeNode(ellipseOf: CGSize(width: radius * 2.8, height: radius * 1.05))
+        nose.position = CGPoint(x: radius * 0.7, y: 0)
+        nose.fillColor = .white
+        nose.strokeColor = .clear
+        nose.lineWidth = 0
+        projectile.addChild(nose)
         container.addChild(projectile)
-        projectile.run(.group([
-            .move(to: target, duration: duration),
-            .sequence([.wait(forDuration: duration * 0.76), .fadeOut(withDuration: duration * 0.24)])
-        ]))
+        if !isFrozen {
+            projectile.run(.group([
+                .move(to: target, duration: duration),
+                .sequence([.wait(forDuration: duration * 0.76), .fadeOut(withDuration: duration * 0.24)])
+            ]))
+        }
     }
 
     private func addBeamEffect(
@@ -819,6 +872,7 @@ final class BattlefieldScene: SKScene {
         to target: CGPoint,
         color: SKColor,
         width: Double,
+        isFrozen: Bool = false,
         to container: SKNode
     ) {
         let path = CGMutablePath()
@@ -836,11 +890,13 @@ final class BattlefieldScene: SKScene {
         core.lineWidth = width
         core.lineCap = .round
         container.addChild(core)
-        glow.run(.fadeOut(withDuration: 0.16))
-        core.run(.fadeOut(withDuration: 0.12))
+        if !isFrozen {
+            glow.run(.fadeOut(withDuration: 0.16))
+            core.run(.fadeOut(withDuration: 0.12))
+        }
     }
 
-    private func spawnImpactEffect(at position: WorldPoint, intensity: Double) {
+    private func spawnImpactEffect(at position: WorldPoint, intensity: Double, isFrozen: Bool = false) {
         let container = SKNode()
         container.position = spritePoint(for: position)
         let core = SKShapeNode(circleOfRadius: 4 * intensity)
@@ -862,9 +918,13 @@ final class BattlefieldScene: SKScene {
         ring.lineWidth = 2
         container.addChild(ring)
 
-        addImpactSparks(intensity: intensity, color: .systemOrange, to: container)
-        addSmokePuffs(intensity: intensity * 0.72, count: 2, to: container)
-        if accessibilityReduceMotion {
+        addImpactSparks(intensity: intensity, color: .systemOrange, to: container, isFrozen: isFrozen)
+        addSmokePuffs(intensity: intensity * 0.72, count: 2, to: container, isFrozen: isFrozen)
+        addImpactDebris(intensity: intensity, to: container, isFrozen: isFrozen)
+        if isFrozen {
+            addPersistentBoundedEffect(container)
+            return
+        } else if accessibilityReduceMotion {
             core.run(.fadeOut(withDuration: 0.16))
             fire.run(.fadeOut(withDuration: 0.18))
             ring.run(.fadeOut(withDuration: 0.18))
@@ -915,7 +975,12 @@ final class BattlefieldScene: SKScene {
         addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.28 : 0.92)
     }
 
-    private func addImpactSparks(intensity: Double, color: SKColor, to container: SKNode) {
+    private func addImpactSparks(
+        intensity: Double,
+        color: SKColor,
+        to container: SKNode,
+        isFrozen: Bool = false
+    ) {
         let sparkCount = accessibilityReduceMotion ? 0 : 6
         for index in 0..<sparkCount {
             let angle = Double(index) * Double.pi / Double(sparkCount) + 0.24
@@ -926,18 +991,61 @@ final class BattlefieldScene: SKScene {
             spark.lineWidth = 0.6
             spark.zRotation = CGFloat(angle)
             container.addChild(spark)
-            spark.run(.group([
-                .moveBy(
-                    x: CGFloat(cos(angle) * distance),
-                    y: CGFloat(sin(angle) * distance),
-                    duration: 0.34
-                ),
-                .fadeOut(withDuration: 0.34)
-            ]))
+            if isFrozen {
+                spark.position = CGPoint(
+                    x: CGFloat(cos(angle) * distance * 0.78),
+                    y: CGFloat(sin(angle) * distance * 0.78)
+                )
+            } else {
+                spark.run(.group([
+                    .moveBy(
+                        x: CGFloat(cos(angle) * distance),
+                        y: CGFloat(sin(angle) * distance),
+                        duration: 0.34
+                    ),
+                    .fadeOut(withDuration: 0.34)
+                ]))
+            }
         }
     }
 
-    private func addSmokePuffs(intensity: Double, count: Int, to container: SKNode) {
+    private func addImpactDebris(intensity: Double, to container: SKNode, isFrozen: Bool) {
+        let count = accessibilityReduceMotion ? 0 : 5
+        for index in 0..<count {
+            let angle = Double(index) * 1.34 + 0.38
+            let distance = (8 + Double(index % 3) * 3.2) * intensity
+            let shard = polygonNode([
+                CGPoint(x: -2.8 * intensity, y: -1.5 * intensity),
+                CGPoint(x: 3.6 * intensity, y: 0),
+                CGPoint(x: -1.8 * intensity, y: 2.1 * intensity)
+            ], fill: armorDarkColor.withAlphaComponent(0.92), stroke: SKColor.systemOrange.withAlphaComponent(0.74), lineWidth: 0.7)
+            shard.zRotation = CGFloat(angle)
+            container.addChild(shard)
+            if isFrozen {
+                shard.position = CGPoint(x: CGFloat(cos(angle) * distance), y: CGFloat(sin(angle) * distance))
+            } else {
+                shard.run(.group([
+                    .moveBy(
+                        x: CGFloat(cos(angle) * distance),
+                        y: CGFloat(sin(angle) * distance),
+                        duration: 0.38
+                    ),
+                    .rotate(
+                        byAngle: (index.isMultiple(of: 2) ? CGFloat(1.8) : CGFloat(-1.8)),
+                        duration: 0.38
+                    ),
+                    .fadeOut(withDuration: 0.38)
+                ]))
+            }
+        }
+    }
+
+    private func addSmokePuffs(
+        intensity: Double,
+        count: Int,
+        to container: SKNode,
+        isFrozen: Bool = false
+    ) {
         for index in 0..<count {
             let angle = Double(index) * 2.1 + 0.7
             let offset = Double(index % 2) * 3.5 * intensity
@@ -948,7 +1056,9 @@ final class BattlefieldScene: SKScene {
             puff.lineWidth = 1
             puff.zPosition = -2
             container.addChild(puff)
-            if accessibilityReduceMotion {
+            if isFrozen {
+                puff.position.y += CGFloat((5 + Double(index) * 2.5) * intensity)
+            } else if accessibilityReduceMotion {
                 puff.run(.fadeOut(withDuration: 0.24))
             } else {
                 puff.run(.group([
@@ -964,7 +1074,7 @@ final class BattlefieldScene: SKScene {
         }
     }
 
-    private func addScorchMark(at position: WorldPoint, radius: Double) {
+    private func addScorchMark(at position: WorldPoint, radius: Double, isFrozen: Bool = false) {
         while decalNode.children.count >= maximumActiveDecals {
             decalNode.children.first?.removeFromParent()
         }
@@ -982,11 +1092,13 @@ final class BattlefieldScene: SKScene {
         inner.lineWidth = 0
         scorch.addChild(inner)
         decalNode.addChild(scorch)
-        scorch.run(.sequence([
-            .wait(forDuration: 7.5),
-            .fadeOut(withDuration: 2.5),
-            .removeFromParent()
-        ]))
+        if !isFrozen {
+            scorch.run(.sequence([
+                .wait(forDuration: 7.5),
+                .fadeOut(withDuration: 2.5),
+                .removeFromParent()
+            ]))
+        }
     }
 
     private func addBoundedEffect(_ effect: SKNode, lifetime: TimeInterval) {
@@ -995,6 +1107,58 @@ final class BattlefieldScene: SKScene {
         }
         effectNode.addChild(effect)
         effect.run(.sequence([.wait(forDuration: lifetime), .removeFromParent()]))
+    }
+
+    private func addPersistentBoundedEffect(_ effect: SKNode) {
+        while effectNode.children.count >= maximumActiveEffects {
+            effectNode.children.first?.removeFromParent()
+        }
+        effectNode.addChild(effect)
+    }
+
+    private func showCombatVisualSmokeIfNeeded(_ state: GameState) {
+        guard controller?.cloudVisualScenario == .combat, !renderedCombatVisualSmoke else {
+            return
+        }
+        renderedCombatVisualSmoke = true
+
+        let shots: [(sourceID: String, targetID: String)] = [
+            ("visual-player-tank", "visual-enemy-tank"),
+            ("visual-player-aa", "visual-enemy-hover"),
+            ("visual-player-artillery", "visual-enemy-artillery"),
+            ("visual-player-hover", "visual-enemy-tank"),
+            ("visual-player-builder", "visual-enemy-artillery"),
+            ("visual-enemy-gunboat", "visual-player-hover")
+        ]
+        for shot in shots {
+            guard let source = state.units.first(where: { $0.id == shot.sourceID }),
+                  let target = state.units.first(where: { $0.id == shot.targetID }),
+                  let shotHeading = heading(from: source.position, to: target.position) else {
+                continue
+            }
+            spawnUnitFireEffect(
+                from: source.position,
+                heading: shotHeading,
+                radius: GameDefinitions.unit(source.type).radius,
+                type: source.type,
+                target: target.position,
+                isFrozen: true
+            )
+        }
+
+        for targetID in ["visual-enemy-tank", "visual-enemy-artillery", "visual-player-hover"] {
+            guard let target = state.units.first(where: { $0.id == targetID }) else {
+                continue
+            }
+            spawnImpactEffect(
+                at: target.position,
+                intensity: impactIntensity(for: target.type) * 1.08,
+                isFrozen: true
+            )
+        }
+        if let artillery = state.units.first(where: { $0.id == "visual-enemy-artillery" }) {
+            addScorchMark(at: artillery.position, radius: 14, isFrozen: true)
+        }
     }
 
     private func showCommandConfirmationIfNeeded(
@@ -1411,7 +1575,18 @@ final class BattlefieldScene: SKScene {
                 fill: armorDarkColor,
                 stroke: outlineColor
             ))
+            let builderSensor = circleNode(
+                radius: radius * 0.18,
+                fill: SKColor.systemMint.withAlphaComponent(0.86),
+                stroke: .white.withAlphaComponent(0.82),
+                lineWidth: 1
+            )
+            builderSensor.position = CGPoint(x: -radius * 0.28, y: 0)
+            body.addChild(builderSensor)
             for y in [-radius * 0.42, radius * 0.42] {
+                let joint = circleNode(radius: radius * 0.13, fill: armorLightColor, stroke: outlineColor)
+                joint.position = CGPoint(x: radius * 0.24, y: y)
+                body.addChild(joint)
                 let arm = lineNode(
                     from: CGPoint(x: radius * 0.28, y: y),
                     to: CGPoint(x: radius * 0.95, y: y * 1.25),
@@ -1445,6 +1620,21 @@ final class BattlefieldScene: SKScene {
                 color: armorDarkColor,
                 width: 2
             ))
+            for y in [-radius * 0.5, radius * 0.5] {
+                body.addChild(polygonNode([
+                    CGPoint(x: -radius * 0.46, y: y),
+                    CGPoint(x: radius * 0.05, y: y * 1.18),
+                    CGPoint(x: -radius * 0.08, y: y * 0.58)
+                ], fill: armorLightColor, stroke: outlineColor, lineWidth: 0.9))
+            }
+            let scoutSensor = circleNode(
+                radius: radius * 0.13,
+                fill: .systemYellow,
+                stroke: .white.withAlphaComponent(0.9),
+                lineWidth: 0.8
+            )
+            scoutSensor.position = CGPoint(x: radius * 0.18, y: 0)
+            body.addChild(scoutSensor)
         case .tank:
             addTracks(radius: radius, length: 1.55, to: body)
             body.addChild(rectNode(
@@ -1454,12 +1644,32 @@ final class BattlefieldScene: SKScene {
                 stroke: outlineColor
             ))
             body.addChild(circleNode(radius: radius * 0.38, fill: armorLightColor, stroke: outlineColor))
+            body.addChild(circleNode(
+                radius: radius * 0.25,
+                fill: armorMidColor,
+                stroke: highlightColor.withAlphaComponent(0.74),
+                lineWidth: 1.1
+            ))
+            body.addChild(rectNode(
+                CGRect(x: radius * 0.12, y: -radius * 0.145, width: radius * 0.9, height: radius * 0.29),
+                cornerRadius: radius * 0.08,
+                fill: armorDarkColor,
+                stroke: outlineColor
+            ))
             body.addChild(rectNode(
                 CGRect(x: radius * 0.15, y: -radius * 0.09, width: radius * 0.86, height: radius * 0.18),
                 cornerRadius: 1,
                 fill: highlightColor,
                 stroke: outlineColor
             ))
+            for y in [-radius * 0.37, radius * 0.37] {
+                body.addChild(lineNode(
+                    from: CGPoint(x: -radius * 0.38, y: y),
+                    to: CGPoint(x: radius * 0.28, y: y),
+                    color: armorLightColor.withAlphaComponent(0.8),
+                    width: 1.2
+                ))
+            }
         case .hover:
             for y in [-radius * 0.55, radius * 0.55] {
                 body.addChild(ellipseNode(
@@ -1479,6 +1689,23 @@ final class BattlefieldScene: SKScene {
                 fill: armorLightColor,
                 stroke: outlineColor
             ))
+            let hoverEmitter = circleNode(
+                radius: radius * 0.14,
+                fill: SKColor.systemCyan,
+                stroke: .white.withAlphaComponent(0.92),
+                lineWidth: 1
+            )
+            hoverEmitter.position = CGPoint(x: radius * 0.45, y: 0)
+            body.addChild(hoverEmitter)
+            for y in [-radius * 0.42, radius * 0.42] {
+                body.addChild(rectNode(
+                    CGRect(x: -radius * 0.55, y: y - radius * 0.08, width: radius * 0.6, height: radius * 0.16),
+                    cornerRadius: radius * 0.08,
+                    fill: armorDarkColor,
+                    stroke: SKColor.systemCyan.withAlphaComponent(0.76),
+                    lineWidth: 0.9
+                ))
+            }
         case .aaTank:
             addTracks(radius: radius, length: 1.45, to: body)
             body.addChild(rectNode(
@@ -1488,9 +1715,19 @@ final class BattlefieldScene: SKScene {
                 stroke: outlineColor
             ))
             body.addChild(circleNode(radius: radius * 0.34, fill: armorLightColor, stroke: outlineColor))
+            body.addChild(polygonNode([
+                CGPoint(x: -radius * 0.28, y: -radius * 0.4),
+                CGPoint(x: radius * 0.34, y: -radius * 0.3),
+                CGPoint(x: radius * 0.48, y: 0),
+                CGPoint(x: radius * 0.34, y: radius * 0.3),
+                CGPoint(x: -radius * 0.28, y: radius * 0.4)
+            ], fill: armorMidColor, stroke: outlineColor, lineWidth: 1.2))
             for y in [-radius * 0.22, radius * 0.22] {
+                let mount = circleNode(radius: radius * 0.11, fill: armorDarkColor, stroke: highlightColor, lineWidth: 0.8)
+                mount.position = CGPoint(x: radius * 0.18, y: y)
+                body.addChild(mount)
                 body.addChild(rectNode(
-                    CGRect(x: radius * 0.05, y: y - radius * 0.07, width: radius * 0.92, height: radius * 0.14),
+                    CGRect(x: radius * 0.12, y: y - radius * 0.075, width: radius * 0.96, height: radius * 0.15),
                     cornerRadius: 1,
                     fill: highlightColor,
                     stroke: outlineColor
@@ -1505,11 +1742,30 @@ final class BattlefieldScene: SKScene {
                 stroke: outlineColor
             ))
             body.addChild(circleNode(radius: radius * 0.35, fill: armorLightColor, stroke: outlineColor))
+            body.addChild(polygonNode([
+                CGPoint(x: -radius * 0.3, y: -radius * 0.34),
+                CGPoint(x: radius * 0.32, y: -radius * 0.25),
+                CGPoint(x: radius * 0.44, y: 0),
+                CGPoint(x: radius * 0.32, y: radius * 0.25),
+                CGPoint(x: -radius * 0.3, y: radius * 0.34)
+            ], fill: armorMidColor, stroke: outlineColor, lineWidth: 1.2))
+            body.addChild(rectNode(
+                CGRect(x: -radius * 0.05, y: -radius * 0.15, width: radius * 1.32, height: radius * 0.3),
+                cornerRadius: radius * 0.09,
+                fill: armorDarkColor,
+                stroke: outlineColor
+            ))
             body.addChild(rectNode(
                 CGRect(x: radius * 0.02, y: -radius * 0.1, width: radius * 1.2, height: radius * 0.2),
                 cornerRadius: 1,
                 fill: highlightColor,
                 stroke: outlineColor
+            ))
+            body.addChild(lineNode(
+                from: CGPoint(x: radius * 0.34, y: 0),
+                to: CGPoint(x: radius * 1.18, y: 0),
+                color: .white.withAlphaComponent(0.46),
+                width: 1
             ))
             for y in [-radius * 0.42, radius * 0.42] {
                 body.addChild(lineNode(
@@ -1538,6 +1794,14 @@ final class BattlefieldScene: SKScene {
                 ))
             }
             body.addChild(circleNode(radius: radius * 0.3, fill: armorLightColor, stroke: outlineColor))
+            let gunboatCabin = polygonNode([
+                CGPoint(x: -radius * 0.22, y: -radius * 0.24),
+                CGPoint(x: radius * 0.28, y: -radius * 0.18),
+                CGPoint(x: radius * 0.4, y: 0),
+                CGPoint(x: radius * 0.28, y: radius * 0.18),
+                CGPoint(x: -radius * 0.22, y: radius * 0.24)
+            ], fill: armorMidColor, stroke: outlineColor, lineWidth: 1)
+            body.addChild(gunboatCabin)
             body.addChild(rectNode(
                 CGRect(x: radius * 0.05, y: -radius * 0.07, width: radius * 0.72, height: radius * 0.14),
                 cornerRadius: 1,
@@ -1705,6 +1969,27 @@ final class BattlefieldScene: SKScene {
                 fill: armorDarkColor,
                 stroke: outlineColor
             ))
+            node.addChild(rectNode(
+                CGRect(
+                    x: -radius * length * 0.42,
+                    y: y - radius * 0.105,
+                    width: radius * length * 0.84,
+                    height: radius * 0.21
+                ),
+                cornerRadius: radius * 0.08,
+                fill: SKColor(red: 0.22, green: 0.25, blue: 0.26, alpha: 1),
+                stroke: armorLightColor.withAlphaComponent(0.58),
+                lineWidth: 0.8
+            ))
+            for segment in -2...2 {
+                let x = Double(segment) * radius * length * 0.16
+                node.addChild(lineNode(
+                    from: CGPoint(x: x, y: y - radius * 0.15),
+                    to: CGPoint(x: x, y: y + radius * 0.15),
+                    color: outlineColor.withAlphaComponent(0.82),
+                    width: 0.9
+                ))
+            }
         }
     }
 

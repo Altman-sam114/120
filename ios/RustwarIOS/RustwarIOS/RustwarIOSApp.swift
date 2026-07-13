@@ -7,11 +7,17 @@ struct RustwarIOSApp: App {
     @State private var controller: GameController
 
     init() {
-        let isVisualSmoke = ProcessInfo.processInfo.arguments.contains("--rustwar-ci-visual-smoke")
+        let arguments = ProcessInfo.processInfo.arguments
+        let isProductionVisualSmoke = arguments.contains("--rustwar-ci-visual-smoke")
+        let isCombatVisualSmoke = arguments.contains("--rustwar-ci-combat-visual-smoke")
+        let visualScenario: CloudVisualScenario? = isCombatVisualSmoke
+            ? .combat
+            : (isProductionVisualSmoke ? .production : nil)
         _controller = State(
             initialValue: GameController(
-                startsPaused: isVisualSmoke,
-                initiallySelectedPlayerBuildingType: isVisualSmoke ? .landFactory : nil
+                startsPaused: visualScenario != nil,
+                initiallySelectedPlayerBuildingType: isProductionVisualSmoke ? .landFactory : nil,
+                cloudVisualScenario: visualScenario
             )
         )
     }

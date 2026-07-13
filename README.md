@@ -48,6 +48,7 @@
 - v2.12 起，原生 iOS 主战场可用双指近似同向拖动直接框选：选择框覆盖两指起点与当前位置的包围区域，松手后继续使用单位优先、无单位时建筑 fallback 和 Replace / Add 规则；双指明显改变间距仍用于捏合缩放。双指序列会抑制误触 tap/长按，第三指、取消、地图重置或 pending 命令不会提交框选；单指平移和显式 `Select Area` 单指框选保持。
 - v2.13 起，点选完成状态 Command Center 或 Land Factory 后，Production 会成为 command dock 第一组；点选可升级/正在升级的 Extractor 或 Radar Station 后，Build & Upgrade 会成为第一组。选择实体变化会把 dock 无动画回到顶部，避免旧滚动位置遮住建筑动作；升级费用按钮在金属不足时保持可见但禁用，满级时不显示无效入口。Builder 的普通建造仍排在 Commands 后，所有生产/升级 action、快捷键和 Core 语义不变。
 - v2.14 起，Production 单位按钮同时显示单位类型图标、名称、Metal、人口和生产秒数，当前队首使用 Queue 摘要与真实进度条；VoiceOver 会朗读完整费用和时间。云端 `--rustwar-ci-visual-smoke` 专用启动态改为暂停并预选己方 Land Factory，使 artifact PNG 直接覆盖 Production-first 建筑首屏；普通玩家启动仍默认运行且无预选。
+- v2.15 起，原生 iOS 的 7 类程序化单位进一步增加履带齿段、内履带、装甲裙板、独立炮塔/炮管、传感器、工程关节、悬浮舱与船体甲板层次；Tank、AA Tank 和 Artillery 不再只靠炮管数量区分。正常战斗的炮口焰增加方向性锥焰，projectile 增加双层尾迹和高亮弹头，命中增加装甲碎屑并保持烟尘/冲击环/灼痕、雾层、Reduce Motion 和 64/32 上限。CI 另用 `--rustwar-ci-combat-visual-smoke` 启动固定暂停的双方装甲对峙场景，生成第二张 `ios-combat.png` 及像素指标；普通启动、Core 战斗数值、AI、命令和存档不变。
 
 当前验证制度：
 
@@ -183,4 +184,4 @@
 
 ## 协作与云端验证
 
-后续 Agent A/B/C 迭代使用 `main` 直推和 GitHub Actions 云端唯一验证：Agent B 提交并 push 到 `origin/main`，Actions 执行检查并上传未加密 CI 结果包，Agent C 下载并核对 manifest、JUnit、工具链/模拟器信息、日志、失败摘要和必要截图后再给出验收结论；当前用户制度禁止本地测试。`agentx:` 用于主控循环：Agent X 接收总目标并推进小轮次，但不得跳过 Agent C 云端 artifact 验收。v1.97 起固定 Xcode 26.5 / iOS Simulator SDK 26.5，v2.1 起 CI flow v1.2 还会启动固定 iPhone 17 Pro 并生成经过像素探针的首屏证据。详细规则见 `AGENTS.md`、`md/test/test.md` 和 `md/flow/flow.md`。
+后续 Agent A/B/C 迭代使用 `main` 直推和 GitHub Actions 云端唯一验证：Agent B 提交并 push 到 `origin/main`，Actions 执行检查并上传未加密 CI 结果包，Agent C 下载并核对 manifest、JUnit、工具链/模拟器信息、日志、失败摘要和必要截图后再给出验收结论；当前用户制度禁止本地测试。`agentx:` 用于主控循环：Agent X 接收总目标并推进小轮次，但不得跳过 Agent C 云端 artifact 验收。v1.97 起固定 Xcode 26.5 / iOS Simulator SDK 26.5，v2.1 起 CI flow v1.2 会启动固定 iPhone 17 Pro 并生成经过像素探针的首屏证据，v2.15 起同一 run 还会独立重启固定战斗场景并生成第二张战斗证据。详细规则见 `AGENTS.md`、`md/test/test.md` 和 `md/flow/flow.md`。
