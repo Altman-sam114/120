@@ -4308,9 +4308,45 @@
 验证状态：
 
 - 按用户要求未运行任何本地测试、构建、parse/typecheck、`git diff --check`、Simulator、Preview、截图、浏览器验证或测试脚本。
-- 本轮实现需以 push 后精确 commit 对应的 GitHub Actions `Rustwar CI Results` v1.2 artifact 为唯一验证依据；当前尚未由 Agent C 下载或核对，不得标记通过。
+- 实现提交 `0b5b2f72fef286701237b9205097e74ffa5b2d5e` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29219910910`，attempt `1`，artifact `rustwar-ci-v1.2-main-0b5b2f7-run29219910910-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29219910910/`，目录大小 `724K`。
+- manifest 确认 `version=v1.2`、`branch=main`、`commitSha=0b5b2f72fef286701237b9205097e74ffa5b2d5e`、run id、run attempt 完全一致；Xcode 26.5、iOS Simulator SDK 26.5、Swift 6.3.2，toolchain/static/Swift package/Xcode list/iOS build/Simulator visual outcomes 全部 success。
+- JUnit 为 8 checks、0 failures、1 skipped，唯一 skipped 为 browser smoke；arm64/x86_64 iOS build `BUILD SUCCEEDED`，Simulator launch、截图、横屏规范化和 ImageIO probe 全部成功。
+- metrics 为 2622x1206、透明比例 0、亮度标准差 45.476、亮度范围 255。Agent C 人工查看 PNG 确认 Metal / Income / Pop / Radar 四项资源、Play 和 `0.5x / 1x / 2.0x` 三档 Speed 同时可见，战场、Tactical Map 与 dock 无明显重叠。
 
 遗留事项：
 
-- 固定 iPhone 17 Pro 横屏首屏必须由 Agent C 人工确认四项资源、Play 与 segmented Speed 三档同时可见；非空像素探针和 build 成功不能替代内容核对。
-- 单一固定横屏 smoke 不覆盖 compact-bottom、全部 Dynamic Type、VoiceOver/Voice Control、触摸、旋转、Reduce Motion、真机 safe area 或 command dock 滚动；这些仍需后续自动化或人工验收。
+- 固定云端截图为暂停 `No selection` 首屏，单一横屏 smoke 不覆盖 compact-bottom、全部 Dynamic Type、VoiceOver/Voice Control、触摸、旋转、Reduce Motion、战斗、真机 safe area 或 command dock 滚动；这些仍需后续自动化或人工验收。
+
+### v2.11 / iOS direct-tap combat movement
+
+日期：2026-07-13
+
+核心变更：
+
+- `GameController.handleBattlefieldTap` 保持 Select Area、点位、实体和 Builder 目标等待态的既有优先级；全部未消费后只解析一次当前玩家可见的 `SelectionTarget`。
+- 命中己方单位或建筑时继续进入 Replace/Add 普通选择和己方单位双击同类路径，不会变为 Guard 或 Repair；建筑选择会继续通过既有 controller 派生值直接显示 Production / Build & Upgrade 控件。
+- 已有至少一个存活己方单位被选中时，点当前可见敌方复用 `GameEngine.issueAttack(targetID:)`，点未命中单位/建筑的位置复用 `GameEngine.issueAttackMove(to:)`；混合选择由 Core 过滤单位执行，选择集合不先修改。
+- 新增私有 `handleDirectTapCommand`，集中复用 Attack / Attack Move status、单次 success/warning 反馈、成功 confirmation、旧双击候选清理和单次 render revision。普通 tap 不调用完整上下文 helper，因此残骸/资源点不会自动 Reclaim/Build，空地不会变为 plain Move。
+- 雾内或仅雷达可见敌方仍不能成为精确 Attack target；该位置按空地 Attack Move 处理。Hold Fire 单位仍可执行直接手动 Attack，而直接 Attack Move 继续服从既有不自动索敌规则。
+- 长按 Attack / Repair / Guard / Reclaim / Build Extractor / Rally / Move、显式 Move / Attack Move、Tactical Map、Core order、formation、姿态、战斗、AI、存档、手势 recognizer、Web 和 CI schema 均不变。
+- `swiftui-pro` 约束直接影响本轮：继续让单一 `@MainActor @Observable` controller 路由意图，复用 Core 作为玩法真源，不把业务逻辑下沉到 SwiftUI body，也不增加 UIKit 手势、全局屏幕尺寸、timer 或第二套状态。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.11-ios-direct-tap-combat-movement.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地测试、构建、parse/typecheck、`git diff --check`、Simulator、Preview、截图、浏览器验证或测试脚本。
+- 本轮必须以 push 后精确 v2.11 commit 对应的 GitHub Actions `Rustwar CI Results` v1.2 artifact 为唯一验证依据；当前尚未由 Agent C 下载或核对，不得标记通过。
+
+遗留事项：
+
+- 固定 iPhone 17 Pro 云端 smoke 启动在暂停 `No selection` 首屏，不执行触摸，不能证明直接 Attack / Attack Move、选择保持、双击清理或 Hold Fire 的交互路径；本轮仍需 Agent C 结合精确 artifact、双架构编译、既有 Core tests 和代码决策表复判。
+- 当前没有 XCUITest 或真机触摸验收；多指框选是 v2.11 的明确非目标，应在下一输入轮次实现，同时保护单指平移、捏合、长按与本轮直接 tap。

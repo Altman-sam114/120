@@ -65,7 +65,8 @@ flowchart TD
   LAY --> B["SpriteView + BattlefieldScene snapshot reader<br/>中文注释：只读 Core 快照，维护 scene-only heading / cooldown / HP / entity-id 历史；当前 HP 还派生受损烟柱/危急火焰，每实体最多两个额外 path 节点，不回写玩法状态"]
   CI["GitHub Actions iPhone 17 Pro / iOS 26.5 Simulator<br/>中文注释：按真实 UDID 构建、安装并启动原生 App"] --> SHOT["首屏 PNG + ImageIO metrics gate<br/>中文注释：校验尺寸、透明比例和亮度变化，拒绝空图或近似黑屏"]
   SHOT --> ART["v1.2 CI artifact<br/>中文注释：保存 manifest、JUnit、日志、simulator info、PNG 和小型 metrics，不上传 DerivedData"]
-  T["SpatialTap / LongPress / Drag / Magnify<br/>中文注释：iOS 触摸选择、移动落点、长按上下文命令、Select Area 框选、拖拽平移和捏合缩放"] --> C
+  T["SpatialTap / LongPress / Drag / Magnify<br/>中文注释：iOS 触摸选择、移动落点、长按上下文命令、Select Area 框选、拖拽平移和捏合缩放"] --> DT["Battlefield tap router<br/>中文注释：pending 优先；无等待时友方选择、可见敌方 Attack、空地 Attack Move"]
+  DT --> C
   TT["TacticalMap DragTap / DragCamera / LongPress<br/>中文注释：点按小地图换算世界坐标；等待点位、Builder 目标或实体目标命令时显示反馈并下令，否则点按居中相机、拖动连续移动相机；无等待命令时长按复用上下文命令"] --> C
   CTX["Battlefield long press context command<br/>中文注释：非等待态长按主战场，按敌方 Attack、受损友方 Repair、健康友方 Guard、残骸 Reclaim、资源点 Build Extractor、空点 Rally 或 Move 的顺序复用已有命令"] --> C
   C --> M["UnitOrder.move<br/>中文注释：选中己方单位后写入移动目标；多选时按稳定方阵给选中己方单位分配围绕目标点的目的地"]
@@ -330,4 +331,23 @@ flowchart LR
   B -->|no| T["metrics / controls 同行 + intrinsic Pause"]
   P["TacticalProminentButtonStyle 默认 expands"] --> Dock["command dock 主操作整行铺满"]
   T --> V["Metal / Income / Pop / Radar + Play + Speed 同屏"]
+```
+
+## v2.11 主战场直接点按命令
+
+读图说明：v2.11 只调整 `GameController` 的无等待态 tap 决策，Core 命令、长按上下文和显式命令模式不变。
+
+```mermaid
+flowchart TD
+  T["Battlefield tap"] --> P{"有 pending 命令?"}
+  P -->|yes| H["保持 area / point / entity / builder handler 优先级"]
+  P -->|no| V["一次可见实体 hit test"]
+  V --> F{"命中己方实体?"}
+  F -->|yes| S["Replace / Add 选择 + 单位双击同类"]
+  F -->|no| U{"已有存活己方单位选择?"}
+  U -->|no| S
+  U -->|yes, visible enemy| A["GameEngine.issueAttack<br/>保持选择"]
+  U -->|yes, no entity| M["GameEngine.issueAttackMove<br/>保持选择"]
+  A --> C["既有 status + feedback + confirmation"]
+  M --> C
 ```

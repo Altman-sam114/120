@@ -44,6 +44,7 @@
 - v2.8 起，主战场选中单位/建筑使用更高对比黄高亮（halo + 黑底描边 + 更粗黄环/角标），战术小地图选中实体也使用双描边黄高亮；不改选择逻辑与命令语义。
 - v2.9 起，主战场八类单位订单线复用统一高对比样式：选中单位路线增加深色 underlay、更清晰的前景线与端点描边，未选中路线保持克制；单位和建筑共用生命条同步加高并使用深底、浅边框和高不透明度绿/黄/红填充。该变化只读取现有订单与 HP，不改变命令、伤害、选择或存档语义。
 - v2.10 起，横屏 trailing 状态栏的 Pause/Play prominent 按钮按内容宽度布局，Metal / Income / Pop / Radar、Play 与三档 Speed 可在固定横屏首屏同屏显示；prominent style 默认仍让 command dock 主操作铺满可用行宽，compact-bottom 状态栏继续使用原有双行扩展布局。该调整只改变 SwiftUI presentation policy，不改变资源来源、暂停/速度 binding、快捷键、Core、存档或命令语义。
+- v2.11 起，主战场普通点按采用直接触控 RTS 语义：点己方单位或建筑仍按 Replace / Add 选择并保留单位双击同类；已有己方单位选择时点当前可见敌方会立即 Attack，点没有单位/建筑的战场位置会立即 Attack Move，选择保持不变。建筑-only 选择不会下达单位命令；Hold Fire 仍允许手动点敌 Attack，但直接 Attack Move 只移动而不自动索敌。长按完整上下文、显式 Move / Attack Move 按钮和所有等待目标模式保持不变。
 
 当前验证制度：
 
@@ -110,7 +111,7 @@
 ### 原生 iOS 迁移地基
 
 - HUD：顶部 safe-area 状态栏持续显示资源、雷达、Pause/Play 和速度；右侧或底部 command dock 的固定 header 显示当前选择、摘要、命令状态和 Replace/Add，下方可连续滚动六组操作。Tactical Map 始终位于独立战场区域；旋转或 Split View resize 会按容器宽高自动切换布局，不会改变当前选择、等待命令或编队。
-- Tap：选择单位或建筑；Move、Attack Move 和 Patrol 模式下作为目的地；Guard 模式下作为友方护航目标点选；Repair 模式下作为受损友方维修目标点选；Reclaim 模式下作为残骸目标点选；Build Extractor 模式下作为资源点目标点选；Attack 模式下作为敌方目标点选。
+- Tap：无等待命令时，点己方单位或建筑按 Replace / Add 选择；已有至少一个存活己方单位被选中时，点当前可见敌方直接 Attack，点未命中单位/建筑的战场位置直接 Attack Move，并保持原选择。建筑-only 选择或没有己方单位选择时仍走普通选择；普通 tap 不会自动 Guard、Repair、Reclaim、Build 或 Rally。Move、Attack Move 和 Patrol 等显式模式下仍作为目的地，Guard / Repair / Reclaim / Build Extractor / Attack 等模式下仍作为对应目标点选。
 - Long press：无等待命令时执行上下文命令；长按敌方单位或建筑会 Attack，长按受损友方单位或建筑会让 Builder Repair，长按健康友方目标会 Guard，长按残骸会 Reclaim，长按空闲资源点会 Build Extractor，长按空地点会对生产建筑设置 Rally 或让己方单位 Move。
 - Selection mode：Replace / Add 分段控件决定主战场 tap、Select Area、Same Type 和双击附近同类的选择方式；Replace 会替换当前选择，Add 会追加命中的存活己方单位或建筑，空点或空框不会清空旧选择。
 - Idle Builders：选择全部空闲己方 Builder，并在主战场和战术小地图高亮多选集合；Move、Attack、Attack Move、Patrol、Guard、Repair、Reclaim、Build Extractor 和 Stop 会作用于所有可执行该命令的选中己方单位，其它生产或 Rally 命令仍沿用 primary selection 单实体语义。

@@ -777,6 +777,9 @@ final class GameController {
         } else {
             let previousSelection = engine.state.selectedEntityIDs
             let target = engine.state.selectionTargetVisibleToPlayer(at: point, includeEnemies: true)
+            if handleDirectTapCommand(at: point, target: target) {
+                return
+            }
             if handleNearbySameTypeSelectionIfDoubleTap(target: target, screenPoint: screenPoint) {
                 renderRevision += 1
                 return
@@ -1410,6 +1413,25 @@ final class GameController {
             return
         }
         publishCommandConfirmation(kind: kind, at: position)
+    }
+
+    private func handleDirectTapCommand(at point: WorldPoint, target: SelectionTarget?) -> Bool {
+        guard !selectedPlayerUnits.isEmpty, target?.team != .player else {
+            return false
+        }
+
+        clearLastBattlefieldTap()
+        if let target {
+            let result = engine.issueAttack(targetID: target.id)
+            commandStatus = statusText(forAttack: result)
+            reportCommandFeedback(for: result, confirmation: .attack, at: target.position)
+        } else {
+            let result = engine.issueAttackMove(to: point)
+            commandStatus = statusText(forAttackMove: result)
+            reportCommandFeedback(for: result, confirmation: .attackMove, at: point)
+        }
+        renderRevision += 1
+        return true
     }
 
     private func reportCommandFeedback(for result: ProductionCommandResult) {
