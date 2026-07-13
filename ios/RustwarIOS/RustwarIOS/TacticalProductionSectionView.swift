@@ -15,11 +15,22 @@ struct TacticalProductionSectionView: View {
                     }
                 }
             }
-            if let productionSummary = controller.productionSummary {
-                Text("Queue: \(productionSummary)")
+            if let productionSummary = controller.productionSummary,
+               let productionProgressFraction = controller.productionProgressFraction {
+                VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+                    HStack(spacing: TacticalHUDTheme.compactSpacing) {
+                        Label("Queue", systemImage: "clock.arrow.circlepath")
+                            .bold()
+                        Spacer(minLength: TacticalHUDTheme.compactSpacing)
+                        Text(productionSummary)
+                            .monospacedDigit()
+                    }
                     .font(.footnote)
-                    .foregroundStyle(TacticalHUDTheme.secondaryText)
-                    .lineLimit(3)
+                    ProgressView(value: productionProgressFraction)
+                        .tint(TacticalHUDTheme.accent)
+                }
+                .foregroundStyle(TacticalHUDTheme.secondaryText)
+                .lineLimit(2)
                     .accessibilityLabel("Production queue")
                     .accessibilityValue(productionSummary)
             }
@@ -62,22 +73,55 @@ struct TacticalProductionSectionView: View {
             Button {
                 controller.queueUnit(unitType)
             } label: {
-                Label(definition.name, systemImage: "plus")
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity)
+                productionLabel(for: unitType, definition: definition)
             }
             .tacticalControl()
             .keyboardShortcut(shortcutKey, modifiers: .shift)
+            .accessibilityLabel(productionAccessibilityLabel(for: definition))
+            .accessibilityHint("Queues one \(definition.name) for production.")
         } else {
             Button {
                 controller.queueUnit(unitType)
             } label: {
-                Label(definition.name, systemImage: "plus")
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity)
+                productionLabel(for: unitType, definition: definition)
             }
             .tacticalControl()
+            .accessibilityLabel(productionAccessibilityLabel(for: definition))
+            .accessibilityHint("Queues one \(definition.name) for production.")
         }
+    }
+
+    private func productionLabel(for unitType: UnitType, definition: UnitDefinition) -> some View {
+        VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+            Label(definition.name, systemImage: productionSystemImage(for: unitType))
+                .bold()
+            HStack(spacing: TacticalHUDTheme.controlSpacing) {
+                Label(Int(definition.metalCost).formatted(), systemImage: "hexagon.fill")
+                Label(definition.supply.formatted(), systemImage: "person.2.fill")
+                Label("\(Int(definition.buildTime))s", systemImage: "timer")
+            }
+            .font(.footnote)
+            .foregroundStyle(TacticalHUDTheme.secondaryText)
+            .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .lineLimit(2)
+    }
+
+    private func productionSystemImage(for unitType: UnitType) -> String {
+        switch unitType {
+        case .builder: "wrench.and.screwdriver.fill"
+        case .scout: "location.north.fill"
+        case .tank: "shield.fill"
+        case .hover: "wind"
+        case .aaTank: "scope"
+        case .artillery: "dot.scope"
+        case .gunboat: "ferry.fill"
+        }
+    }
+
+    private func productionAccessibilityLabel(for definition: UnitDefinition) -> String {
+        "Produce \(definition.name), \(Int(definition.metalCost)) metal, \(definition.supply) population, \(Int(definition.buildTime)) seconds"
     }
 
     private func productionShortcutKey(for index: Int) -> KeyEquivalent? {

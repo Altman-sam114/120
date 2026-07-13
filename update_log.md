@@ -4418,9 +4418,43 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、`xcodebuild`、Simulator、Preview、截图、浏览器验证和测试脚本。
-- 本轮必须以 push 后精确 v2.13 commit 对应的 GitHub Actions v1.2 artifact 为唯一验证依据；当前尚未提交、push 或由 Agent C 核对，不得标记通过。
+- 实现提交 `33ceaa93abb52ff643d69144ac2c62555e3e233b` 已通过 Agent C 云端 artifact 复判：run `29225049932`，attempt `1`，artifact `rustwar-ci-v1.2-main-33ceaa9-run29225049932-attempt1`，缓存 `/private/tmp/rustwar-c-review-29225049932/`，大小 `724K`。
+- manifest v1.2 的 branch/SHA/run/attempt、Xcode 26.5、iOS SDK 26.5、Swift 6.3.2 和 Simulator UDID 全部一致；JUnit 8 checks、0 failures、1 browser skip，303 Core tests、双架构 iOS build、launch、截图和 probe 成功，日志含 `BUILD SUCCEEDED`。
+- `GameController.swift`、`TacticalCommandDockView.swift`、`TacticalBuildSectionView.swift` 均有 arm64/x86_64 编译证据。PNG 为 2622x1206、透明 0、亮度标准差 45.476、范围 255；人工查看无重叠，但默认 `No selection` 不覆盖动态建筑上下文，因此该部分按代码矩阵验收并保留交互风险。
 
 遗留事项：
 
 - 默认暂停 `No selection` screenshot 不会展示建筑上下文、scroll reset 或 disabled upgrade；这些动态 presentation 路径仍缺少 XCUITest/交互截图。
 - v2.13 只优化已有建筑操作可达性，不新增更多生产建筑、升级树或正式建筑详情面板。
+
+### v2.14 / iOS production detail cloud smoke
+
+日期：2026-07-13
+
+核心变更：
+
+- Production 单位按钮增加类型 SF Symbol、单位名、Metal、人口与 build time，两行紧凑布局保持 1/2 列和 Dynamic Type。
+- 队首状态增加 Queue label、百分比和直接来自 Core progressFraction 的原生进度条；VoiceOver 朗读完整费用、人口、时间和队列值。
+- `GameController` initializer 支持可选初始己方建筑类型并通过 Core `select(at:)` 命中；现有 CI visual smoke 专用启动预选 Land Factory 且暂停，普通启动仍无预选并运行。
+- v1.2 workflow、artifact schema、production action、Shift+1-9、反馈、Core、存档和 Web 不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/RustwarIOSApp.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.14-ios-production-detail-cloud-smoke.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证。
+- 必须以 push 后精确 v2.14 commit 的 GitHub Actions v1.2 artifact 验收；当前尚未提交、push 或核对。
+
+遗留事项：
+
+- Land Factory 静态 smoke 将覆盖建筑生产首屏，但仍不执行真实 queue tap、dock scroll、VoiceOver 或 Dynamic Type 切换。

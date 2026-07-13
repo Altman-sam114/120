@@ -388,3 +388,17 @@ flowchart TD
   A -->|no| X["Upgrade visible + disabled"]
   PR --> K["Existing queue / repeat / cancel / rally actions"]
 ```
+
+## v2.14 生产详情与云端建筑首屏
+
+```mermaid
+flowchart LR
+  A["--rustwar-ci-visual-smoke"] --> C["GameController paused"]
+  C --> S["Core select player Land Factory"]
+  S --> D["Production first dock"]
+  U["UnitDefinition"] --> B["Unit icon + name<br/>Metal + Pop + build time"]
+  Q["ProductionQueue first item"] --> P["Queue summary + ProgressView"]
+  B --> D
+  P --> D
+  D --> PNG["Cloud ios-home.png + pixel probe"]
+```

@@ -47,6 +47,7 @@
 - v2.11 起，主战场普通点按采用直接触控 RTS 语义：点己方单位或建筑仍按 Replace / Add 选择并保留单位双击同类；已有己方单位选择时点当前可见敌方会立即 Attack，点没有单位/建筑的战场位置会立即 Attack Move，选择保持不变。建筑-only 选择不会下达单位命令；Hold Fire 仍允许手动点敌 Attack，但直接 Attack Move 只移动而不自动索敌。长按完整上下文、显式 Move / Attack Move 按钮和所有等待目标模式保持不变。
 - v2.12 起，原生 iOS 主战场可用双指近似同向拖动直接框选：选择框覆盖两指起点与当前位置的包围区域，松手后继续使用单位优先、无单位时建筑 fallback 和 Replace / Add 规则；双指明显改变间距仍用于捏合缩放。双指序列会抑制误触 tap/长按，第三指、取消、地图重置或 pending 命令不会提交框选；单指平移和显式 `Select Area` 单指框选保持。
 - v2.13 起，点选完成状态 Command Center 或 Land Factory 后，Production 会成为 command dock 第一组；点选可升级/正在升级的 Extractor 或 Radar Station 后，Build & Upgrade 会成为第一组。选择实体变化会把 dock 无动画回到顶部，避免旧滚动位置遮住建筑动作；升级费用按钮在金属不足时保持可见但禁用，满级时不显示无效入口。Builder 的普通建造仍排在 Commands 后，所有生产/升级 action、快捷键和 Core 语义不变。
+- v2.14 起，Production 单位按钮同时显示单位类型图标、名称、Metal、人口和生产秒数，当前队首使用 Queue 摘要与真实进度条；VoiceOver 会朗读完整费用和时间。云端 `--rustwar-ci-visual-smoke` 专用启动态改为暂停并预选己方 Land Factory，使 artifact PNG 直接覆盖 Production-first 建筑首屏；普通玩家启动仍默认运行且无预选。
 
 当前验证制度：
 
