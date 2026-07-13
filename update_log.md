@@ -4469,7 +4469,7 @@
 
 - 参考 Rusted Warfare 官方开发者页、2019 官方战斗截图和官方视频入口，继续使用原创程序化几何强化 7 类原生单位：履带单位增加内履带、齿段和装甲层，Tank / AA Tank / Artillery 分别强化单炮塔、双联架和长身管轮廓，Scout / Builder / Hover / Gunboat 增加传感器、工程关节、悬浮舱和甲板层次。
 - 正常战斗特效增加方向性炮口锥焰、projectile 双层尾迹与高亮弹头、命中装甲碎屑；v1.91 cooldown/HP diff、当前可见性、fog 层级、Reduce Motion、64 effect / 32 decal 上限和 map reset 语义保持。
-- 新增内部 `CloudVisualScenario.combat`：仅 `--rustwar-ci-combat-visual-smoke` 构造固定暂停、无 AI、固定相机的双方装甲对峙状态，Scene 一次性冻结同一套 fire/impact 绘制；普通启动和 v2.14 production smoke 不变。
+- 新增内部 `CloudVisualScenario.combat`：仅 `--rustwar-ci-combat-visual-smoke` 构造固定暂停、无 AI、固定相机的双方装甲对峙状态；fixture 不写 attack order，Scene 按固定 source/target 配对一次性冻结同一套 fire/impact 绘制，避免订单线遮住模型。普通启动和 v2.14 production smoke 不变。
 - workflow 在固定 Simulator 安装后先保留 `ios-home.png`，再 terminate/relaunch combat 场景生成 `ios-combat.png`；两套 launch/process/orientation/ImageIO probe 共同决定现有 Simulator JUnit case，并在 manifest / simulator info 暴露 combat 参数、outcome 和路径。
 
 关键文件：

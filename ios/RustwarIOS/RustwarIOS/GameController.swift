@@ -91,7 +91,7 @@ final class GameController {
         self.cloudVisualScenario = cloudVisualScenario
         if cloudVisualScenario == .combat {
             self.engine = GameEngine(state: Self.combatVisualSmokeState(mapID: mapID), enemyAIEnabled: false)
-            self.camera = CameraState(center: WorldPoint(1_920, 1_570), zoom: 0.94)
+            self.camera = CameraState(center: WorldPoint(1_930, 1_560), zoom: 1.12)
         } else {
             self.engine = GameEngine(mapID: mapID)
             self.camera = CameraState(center: preset.camera.center, zoom: preset.camera.zoom)
@@ -117,7 +117,6 @@ final class GameController {
             id: String,
             team: Team,
             at position: WorldPoint,
-            targetID: String,
             healthFraction: Double = 1
         ) -> UnitSnapshot {
             let definition = GameDefinitions.unit(type)
@@ -128,23 +127,22 @@ final class GameController {
                 position: position,
                 hitPoints: definition.hitPoints * healthFraction,
                 maxHitPoints: definition.hitPoints,
-                order: .attack(targetID: targetID),
                 weaponCooldown: definition.reloadTime * 0.72
             )
         }
 
         state.units = [
-            unit(.tank, id: "visual-player-tank", team: .player, at: WorldPoint(1_660, 1_455), targetID: "visual-enemy-tank"),
-            unit(.aaTank, id: "visual-player-aa", team: .player, at: WorldPoint(1_650, 1_570), targetID: "visual-enemy-hover"),
-            unit(.artillery, id: "visual-player-artillery", team: .player, at: WorldPoint(1_610, 1_700), targetID: "visual-enemy-artillery"),
-            unit(.hover, id: "visual-player-hover", team: .player, at: WorldPoint(1_785, 1_650), targetID: "visual-enemy-tank"),
-            unit(.scout, id: "visual-player-scout", team: .player, at: WorldPoint(1_910, 1_535), targetID: "visual-enemy-aa"),
-            unit(.builder, id: "visual-player-builder", team: .player, at: WorldPoint(1_745, 1_765), targetID: "visual-enemy-artillery"),
-            unit(.tank, id: "visual-enemy-tank", team: .enemy, at: WorldPoint(2_160, 1_480), targetID: "visual-player-tank", healthFraction: 0.62),
-            unit(.aaTank, id: "visual-enemy-aa", team: .enemy, at: WorldPoint(2_205, 1_610), targetID: "visual-player-scout", healthFraction: 0.8),
-            unit(.artillery, id: "visual-enemy-artillery", team: .enemy, at: WorldPoint(2_245, 1_730), targetID: "visual-player-artillery", healthFraction: 0.42),
-            unit(.hover, id: "visual-enemy-hover", team: .enemy, at: WorldPoint(2_090, 1_680), targetID: "visual-player-aa", healthFraction: 0.72),
-            unit(.gunboat, id: "visual-enemy-gunboat", team: .enemy, at: WorldPoint(2_250, 1_390), targetID: "visual-player-hover", healthFraction: 0.88)
+            unit(.tank, id: "visual-player-tank", team: .player, at: WorldPoint(1_750, 1_470)),
+            unit(.aaTank, id: "visual-player-aa", team: .player, at: WorldPoint(1_750, 1_560)),
+            unit(.artillery, id: "visual-player-artillery", team: .player, at: WorldPoint(1_740, 1_650)),
+            unit(.hover, id: "visual-player-hover", team: .player, at: WorldPoint(1_840, 1_635)),
+            unit(.scout, id: "visual-player-scout", team: .player, at: WorldPoint(1_875, 1_515)),
+            unit(.builder, id: "visual-player-builder", team: .player, at: WorldPoint(1_835, 1_665)),
+            unit(.tank, id: "visual-enemy-tank", team: .enemy, at: WorldPoint(2_070, 1_475), healthFraction: 0.62),
+            unit(.aaTank, id: "visual-enemy-aa", team: .enemy, at: WorldPoint(2_090, 1_560), healthFraction: 0.8),
+            unit(.artillery, id: "visual-enemy-artillery", team: .enemy, at: WorldPoint(2_105, 1_650), healthFraction: 0.42),
+            unit(.hover, id: "visual-enemy-hover", team: .enemy, at: WorldPoint(2_010, 1_625), healthFraction: 0.72),
+            unit(.gunboat, id: "visual-enemy-gunboat", team: .enemy, at: WorldPoint(2_115, 1_455), healthFraction: 0.88)
         ]
         state.selectedEntityIDs = [
             "visual-player-tank",

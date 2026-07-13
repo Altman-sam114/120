@@ -1051,10 +1051,15 @@ final class BattlefieldScene: SKScene {
             let offset = Double(index % 2) * 3.5 * intensity
             let puff = SKShapeNode(circleOfRadius: (4.8 + Double(index) * 1.1) * intensity)
             puff.position = CGPoint(x: CGFloat(cos(angle) * offset), y: CGFloat(sin(angle) * offset))
-            puff.fillColor = SKColor(red: 0.13, green: 0.14, blue: 0.14, alpha: 0.5)
+            puff.fillColor = SKColor(
+                red: 0.13,
+                green: 0.14,
+                blue: 0.14,
+                alpha: isFrozen ? 0.72 : 0.5
+            )
             puff.strokeColor = SKColor(red: 0.32, green: 0.31, blue: 0.29, alpha: 0.34)
             puff.lineWidth = 1
-            puff.zPosition = -2
+            puff.zPosition = isFrozen ? -0.25 : -2
             container.addChild(puff)
             if isFrozen {
                 puff.position.y += CGFloat((5 + Double(index) * 2.5) * intensity)
@@ -1156,9 +1161,7 @@ final class BattlefieldScene: SKScene {
                 isFrozen: true
             )
         }
-        if let artillery = state.units.first(where: { $0.id == "visual-enemy-artillery" }) {
-            addScorchMark(at: artillery.position, radius: 14, isFrozen: true)
-        }
+        addScorchMark(at: WorldPoint(2_055, 1_680), radius: 22, isFrozen: true)
     }
 
     private func showCommandConfirmationIfNeeded(
