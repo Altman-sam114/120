@@ -370,3 +370,21 @@ flowchart TD
   C --> R["WorldRect -> Core unit first / building fallback"]
   R --> M["Replace / Add + status + feedback"]
 ```
+
+## v2.13 建筑操作优先级
+
+读图说明：dock 顺序只由现有选择派生，不新增建筑命令或玩法状态。
+
+```mermaid
+flowchart TD
+  S["Core selected ids changed"] --> R["ScrollViewReader -> dock top"]
+  S --> P{"当前选择上下文"}
+  P -->|Command Center / Land Factory| PR["Production first"]
+  P -->|Upgradeable / upgrading Extractor or Radar| BU["Build & Upgrade first"]
+  P -->|Builder| C["Commands then Build & Upgrade"]
+  P -->|Unit / no selection| D["Existing Commands / Selection order"]
+  BU --> A{"Metal sufficient?"}
+  A -->|yes| E["Upgrade visible + enabled"]
+  A -->|no| X["Upgrade visible + disabled"]
+  PR --> K["Existing queue / repeat / cancel / rally actions"]
+```

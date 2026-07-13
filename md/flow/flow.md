@@ -69,6 +69,8 @@ v2.11 新增 iOS 主战场无等待态直接点按路由：`handleBattlefieldTap
 
 v2.12 新增 iOS 主战场双指直接框选：`BattlefieldView` 用原生 `SpatialEventGesture` 跟踪两个 touch id。两指达到位移阈值、方向近似同向、质心移动且间距变化受控时锁定 selection，并用两指起点/当前位置四点包围矩形驱动现有 `SelectionBoxOverlay`；间距明显变化或方向相反时锁定 pinch，由既有 `MagnifyGesture` 继续缩放。双指序列开始后停止后续单指 pan，并在结束窗口内抑制 tap/long press；第三指、cancel、地图 revision 或 pending 命令不会提交选择。`GameController` 的显式单指和双指入口共享屏幕转世界矩形、Core unit-first/building-fallback、Replace/Add、状态与触觉反馈，双指入口额外保留所有 pending 命令。
 
+v2.13 将 command dock 从固定 section 顺序改为选择上下文优先：`productionOptions` / queue / repeat / rally 存在时 Production 置顶；选中仍有 next upgrade 或正在升级的 Extractor/Radar 时 Build & Upgrade 置顶；Builder 普通建造仍在 Commands 后。`dockSelectionIdentity` 直接派生自 Core selected ids，变化时 `ScrollViewReader` 无动画回顶，不持久化第二套 offset/selection 状态。Radar/Extractor 的 upgrade visibility 与 affordability 分离：有升级路径时始终显示费用按钮，金属不足仅 disabled；升级 action 与 Core result 不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
@@ -430,6 +432,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - 用 `GameController` 持有 `GameEngine` 和 `CameraState`。
 - 支持 Coast / Islands / Lava 地图切换、当前地图重开、tap 选择、主战场长按上下文命令、Replace / Add 选择模式、Select Area 等待态框选己方单位并在无框内己方单位时 fallback 选择己方建筑、Screen Combat 当前屏幕作战单位选择、Same Type 全图同类型选择、双击附近同类型选择、1-9 号 HUD 控制编队保存/召回、外接键盘 Control+1-9 保存编队和 1-9 召回编队、WASD / 方向键连续移动视野、Base / Space 回到己方 Command Center、P / R / E / F / Control+A / Option+A / A / G / H / C / S / Z / X / V 快捷触发 Pause、Restart、批量选择、Attack Move、Patrol、Guard、Reclaim、Stop 和攻击姿态切换、Shift+1-9 / Shift+E/T/F/D/C/P/R 快捷触发生产、建造和生产建筑管理按钮、Move / Attack Move / Patrol 模式落点、Guard 友方目标点选、Repair 受损友方目标点选、Reclaim 残骸目标点选、Build Extractor 资源点目标点选、Build Turret、Build Land Factory 和 Build Radar 点位目标、多选 Builder 建造目标、Idle Builders / Combat Units 批量选择、多单位 Move / Attack Move / Patrol 队形落点、多单位 Guard 方阵护航偏移、多单位 Stop、多 Builder Repair 分散接近点、多 Builder Reclaim 分散接近点、多 Builder Build 分散接近点、拖拽平移、捏合缩放、暂停/恢复、0.5x / 1x / 2x 速度切换和基础 economy tick。
 - v2.12 起，`BattlefieldView` 将 `SpatialEventGesture` 与既有 Drag/Magnify 同时挂载，但通过两指位移方向、质心位移和间距变化只锁定一种意图。selection 用四个触点位置的屏幕包围矩形调用 `handleBattlefieldMultitouchAreaSelection`；pinch 仍只调用既有 `zoom(by:)`。controller 只有在无 pending 命令时接受双指入口，再与显式 `Select Area` 共用 `applyBattlefieldAreaSelection`，因此 Core 选择算法、建筑 fallback 和 selection mutation 只有一个真源。
+- v2.13 起，`TacticalCommandDockView` 以 controller 的现有 production/upgrade 派生值决定 section 优先级，并监听只读 `dockSelectionIdentity` 回到 scroll top。生产建筑、可升级建筑、Builder、单位和无选择分别获得符合上下文的首组操作；`TacticalBuildSectionView` 通过 `showsSelected...UpgradeControl` 保持升级费用可见，再用原 `canUpgrade...` 设置 disabled。该变化不写回 Core，也不改变生产、升级、取消、快捷键或辅助功能动作。
 - v1.1 起，HUD Move 命令只作用于当前选中的己方单位；`RustwarCore` 推进位置，SpriteKit 只渲染状态。
 - v1.2 起，选中己方陆军工厂时 HUD 显示生产按钮和队列进度；生产完成后由 `RustwarCore` 生成单位。
 - v1.3 起，选中己方单位时 HUD 显示 Attack 命令；Attack 模式下一次 tap 由 `GameController` 命中敌方目标并调用 `GameEngine.issueAttack`，`RustwarCore` 推进靠近、开火、扣血和死亡清理，SpriteKit 只显示 HP 条和攻击目标线。v1.48 起，`issueAttack(targetID:)` 优先读取 `selectedEntityIDs`，多选时所有选中己方单位会攻击同一个敌方单位或建筑；混入建筑、敌方或缺失 id 时只要存在己方单位就执行。

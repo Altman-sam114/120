@@ -136,6 +136,13 @@ final class GameController {
         engine.state.selectionSummary()
     }
 
+    var dockSelectionIdentity: [String] {
+        if !engine.state.selectedEntityIDs.isEmpty {
+            return engine.state.selectedEntityIDs
+        }
+        return engine.state.selectedEntityID.map { [$0] } ?? []
+    }
+
     var selectionMutationAccessibilityValue: String {
         selectionMutation == .add ? "Add to current selection" : "Replace current selection"
     }
@@ -312,6 +319,14 @@ final class GameController {
         return engine.state.metal[.player, default: 0] >= upgrade.metalCost
     }
 
+    var showsSelectedRadarUpgradeControl: Bool {
+        guard let radar = selectedCompletedPlayerRadar,
+              radar.upgradeProgress == nil else {
+            return false
+        }
+        return GameDefinitions.nextUpgrade(for: radar) != nil
+    }
+
     var canCancelSelectedRadarUpgrade: Bool {
         selectedCompletedPlayerRadar?.upgradeProgress != nil
     }
@@ -323,6 +338,14 @@ final class GameController {
             return false
         }
         return engine.state.metal[.player, default: 0] >= upgrade.metalCost
+    }
+
+    var showsSelectedExtractorUpgradeControl: Bool {
+        guard let extractor = selectedCompletedPlayerExtractor,
+              extractor.upgradeProgress == nil else {
+            return false
+        }
+        return GameDefinitions.nextUpgrade(for: extractor) != nil
     }
 
     var canCancelSelectedExtractorUpgrade: Bool {

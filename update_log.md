@@ -4381,9 +4381,46 @@
 验证状态：
 
 - 未运行本地测试、构建、parse/typecheck、Simulator、Preview、截图、浏览器验证或测试脚本。提交范围核对时误执行一次 `git diff --cached --check` 并返回通过；该命令违反用户的云端唯一验证要求，不作为验收证据，后续不再执行。
-- 本轮必须以 push 后精确 v2.12 commit 对应的 GitHub Actions `Rustwar CI Results` v1.2 artifact 为唯一验证依据；当前尚未提交、push 或由 Agent C 下载核对，不得标记通过。
+- 实现提交 `4a1c8c775a3eb4072aa4015f3d3a20cdb2950b3f` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29224227790`，attempt `1`，artifact `rustwar-ci-v1.2-main-4a1c8c7-run29224227790-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29224227790/`，目录大小 `736K`。
+- manifest 确认 `version=v1.2`、`branch=main`、完整 SHA、run id 和 attempt 完全一致；固定 Xcode 26.5、iOS Simulator SDK 26.5、Swift 6.3.2，toolchain/static/Swift package/Xcode list/iOS build/Simulator visual outcomes 全部 success。
+- JUnit 为 8 checks、0 failures、1 skipped，唯一 skipped 为 browser smoke；Swift Core 303 tests 通过，`BattlefieldView.swift` / `GameController.swift` 进入 arm64/x86_64 编译，日志包含 `BUILD SUCCEEDED`。
+- metrics 为 2622x1206、透明比例 0、亮度标准差 45.476、亮度范围 255。Agent C 人工查看 PNG 确认为暂停 `No selection` 的可识别横屏首屏且无明显重叠；未把静态截图冒充多指触摸证据。
 
 遗留事项：
 
 - 固定 iPhone 17 Pro 云端 smoke 不驱动多指；即使 build、303 Core tests 和首屏 PNG 通过，selection/pinch 仲裁、双指触感与真机 recognizer 并发仍需后续交互自动化或人工真机验收。
-- 下一轮优先把选中 Command Center / Land Factory / Extractor / Radar 后的 Production 或 Build & Upgrade 放到紧凑 command dock 前部，减少滚动。
+- v2.13 已接续实现 Command Center / Land Factory / Extractor / Radar 的上下文操作前置；v2.12 的剩余风险仍是缺少真实多指交互自动化。
+
+### v2.13 / iOS building operations first
+
+日期：2026-07-13
+
+核心变更：
+
+- Command Center / Land Factory 的 Production 置于 command dock 第一组；有升级路径或正在升级的 Extractor / Radar 把 Build & Upgrade 置于第一组。
+- dock 监听 Core selected ids 派生 identity，选择变化后无动画回到内容顶部，避免旧滚动 offset 遮住建筑操作；兼容旧单选 id fallback。
+- Radar / Extractor 的 upgrade visibility 与 affordability 分离：有 next upgrade 时费用按钮始终可见，金属不足 disabled，资源足 enabled；升级中继续显示 Cancel Upgrade，满级不显示无效按钮。
+- Builder 普通建造仍在 Commands 后；Selection / Groups / Session 顺序、所有 action、快捷键、44pt 触控、VoiceOver 和 Core 行为不变。
+- `swiftui-pro` 约束影响本轮：使用现代双参数 `onChange` 与 `ScrollViewReader`，不保存第二套 scroll/selection 状态，不引入 UIKit/第三方依赖，disabled 同时保留文字费用而非只靠颜色表达。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalBuildSectionView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.13-ios-building-operations-first.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、`xcodebuild`、Simulator、Preview、截图、浏览器验证和测试脚本。
+- 本轮必须以 push 后精确 v2.13 commit 对应的 GitHub Actions v1.2 artifact 为唯一验证依据；当前尚未提交、push 或由 Agent C 核对，不得标记通过。
+
+遗留事项：
+
+- 默认暂停 `No selection` screenshot 不会展示建筑上下文、scroll reset 或 disabled upgrade；这些动态 presentation 路径仍缺少 XCUITest/交互截图。
+- v2.13 只优化已有建筑操作可达性，不新增更多生产建筑、升级树或正式建筑详情面板。

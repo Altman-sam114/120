@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct TacticalCommandDockView: View {
+    private static let scrollTopID = "tactical-command-dock-top"
+
     @Bindable var controller: GameController
     let layoutRole: TacticalHUDLayoutRole
 
@@ -14,29 +16,38 @@ struct TacticalCommandDockView: View {
         VStack(spacing: 0) {
             TacticalCommandDockHeaderView(controller: controller)
             Divider()
-            ScrollView {
-                VStack(alignment: .leading, spacing: TacticalHUDTheme.sectionSpacing) {
-                    if hasCommandControls {
-                        TacticalCommandsSectionView(
-                            controller: controller,
-                            columns: commandColumnCount,
-                            showsStop: shouldShowStop
-                        )
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: TacticalHUDTheme.sectionSpacing) {
+                        if hasProductionControls {
+                            TacticalProductionSectionView(controller: controller, columns: commandColumnCount)
+                        }
+                        if hasSelectedBuildingUpgradeControls {
+                            TacticalBuildSectionView(controller: controller, columns: commandColumnCount)
+                        }
+                        if hasCommandControls {
+                            TacticalCommandsSectionView(
+                                controller: controller,
+                                columns: commandColumnCount,
+                                showsStop: shouldShowStop
+                            )
+                        }
+                        if hasBuildControls && !hasSelectedBuildingUpgradeControls {
+                            TacticalBuildSectionView(controller: controller, columns: commandColumnCount)
+                        }
+                        TacticalSelectionSectionView(controller: controller, columns: commandColumnCount)
+                        TacticalGroupsSectionView(controller: controller, columns: commandColumnCount)
+                        TacticalSessionSectionView(controller: controller, columns: commandColumnCount)
                     }
-                    if hasBuildControls {
-                        TacticalBuildSectionView(controller: controller, columns: commandColumnCount)
-                    }
-                    if hasProductionControls {
-                        TacticalProductionSectionView(controller: controller, columns: commandColumnCount)
-                    }
-                    TacticalSelectionSectionView(controller: controller, columns: commandColumnCount)
-                    TacticalGroupsSectionView(controller: controller, columns: commandColumnCount)
-                    TacticalSessionSectionView(controller: controller, columns: commandColumnCount)
+                    .id(Self.scrollTopID)
+                    .padding(TacticalHUDTheme.contentPadding)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(TacticalHUDTheme.contentPadding)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .scrollIndicators(.visible)
+                .onChange(of: controller.dockSelectionIdentity) { _, _ in
+                    scrollProxy.scrollTo(Self.scrollTopID, anchor: .top)
+                }
             }
-            .scrollIndicators(.visible)
         }
         .background {
             ZStack {
@@ -71,8 +82,13 @@ struct TacticalCommandDockView: View {
             controller.canIssueBuildTurret || controller.isAwaitingBuildTurretTarget ||
             controller.canIssueBuildFactory || controller.isAwaitingBuildFactoryTarget ||
             controller.canIssueBuildRadar || controller.isAwaitingBuildRadarTarget ||
-            controller.canUpgradeSelectedRadar || controller.canCancelSelectedRadarUpgrade ||
-            controller.canUpgradeSelectedExtractor || controller.canCancelSelectedExtractorUpgrade
+            controller.showsSelectedRadarUpgradeControl || controller.canCancelSelectedRadarUpgrade ||
+            controller.showsSelectedExtractorUpgradeControl || controller.canCancelSelectedExtractorUpgrade
+    }
+
+    private var hasSelectedBuildingUpgradeControls: Bool {
+        controller.showsSelectedRadarUpgradeControl || controller.canCancelSelectedRadarUpgrade ||
+            controller.showsSelectedExtractorUpgradeControl || controller.canCancelSelectedExtractorUpgrade
     }
 
     private var hasProductionControls: Bool {

@@ -48,13 +48,14 @@ struct TacticalBuildSectionView: View {
                     .keyboardShortcut(commandKey("d"), modifiers: .shift)
                     .accessibilityLabel("Build radar")
                 }
-                if controller.canUpgradeSelectedRadar {
+                if controller.showsSelectedRadarUpgradeControl {
                     Button(
                         controller.upgradeRadarButtonTitle,
                         systemImage: "dot.radiowaves.left.and.right",
                         action: controller.upgradeSelectedRadar
                     )
                     .tacticalProminentControl()
+                    .disabled(!controller.canUpgradeSelectedRadar)
                     .accessibilityLabel("Upgrade radar")
                     .accessibilityHint("Increases the selected Radar Station vision and radar range.")
                 }
@@ -64,13 +65,14 @@ struct TacticalBuildSectionView: View {
                         .accessibilityLabel("Cancel radar upgrade")
                         .accessibilityHint("Stops the selected Radar Station upgrade and refunds remaining metal.")
                 }
-                if controller.canUpgradeSelectedExtractor {
+                if controller.showsSelectedExtractorUpgradeControl {
                     Button(
                         controller.upgradeExtractorButtonTitle,
                         systemImage: "arrow.up.circle",
                         action: controller.upgradeSelectedExtractor
                     )
                     .tacticalProminentControl()
+                    .disabled(!controller.canUpgradeSelectedExtractor)
                     .accessibilityLabel("Upgrade extractor")
                     .accessibilityHint("Increases the selected Extractor income, hit points, and vision.")
                 }
