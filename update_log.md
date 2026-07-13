@@ -4344,9 +4344,46 @@
 验证状态：
 
 - 按用户要求未运行任何本地测试、构建、parse/typecheck、`git diff --check`、Simulator、Preview、截图、浏览器验证或测试脚本。
-- 本轮必须以 push 后精确 v2.11 commit 对应的 GitHub Actions `Rustwar CI Results` v1.2 artifact 为唯一验证依据；当前尚未由 Agent C 下载或核对，不得标记通过。
+- 实现提交 `54094955f009396a206e9238bac8b492c3abfaf6` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29220827156`，attempt `1`，artifact `rustwar-ci-v1.2-main-5409495-run29220827156-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29220827156/`，目录大小 `736K`。
+- manifest 确认 `version=v1.2`、`branch=main`、`commitSha=54094955f009396a206e9238bac8b492c3abfaf6`、run id、run attempt 完全一致；Xcode 26.5、iOS Simulator SDK 26.5、Swift 6.3.2，toolchain/static/Swift package/Xcode list/iOS build/Simulator visual outcomes 全部 success。
+- JUnit 为 8 checks、0 failures、1 skipped，唯一 skipped 为 browser smoke；Swift Core 303 tests 通过，`GameController.swift` 进入 arm64/x86_64 编译，日志包含 `BUILD SUCCEEDED`。
+- metrics 为 2622x1206、透明比例 0、亮度标准差 45.476、亮度范围 255。Agent C 人工查看 PNG 确认为暂停 `No selection` 的可识别横屏 Rustwar 首屏且无明显重叠；直接 tap 行为按代码决策表、双架构 build 和 Core tests 验收，未把静态截图冒充触摸证据。
 
 遗留事项：
 
-- 固定 iPhone 17 Pro 云端 smoke 启动在暂停 `No selection` 首屏，不执行触摸，不能证明直接 Attack / Attack Move、选择保持、双击清理或 Hold Fire 的交互路径；本轮仍需 Agent C 结合精确 artifact、双架构编译、既有 Core tests 和代码决策表复判。
-- 当前没有 XCUITest 或真机触摸验收；多指框选是 v2.11 的明确非目标，应在下一输入轮次实现，同时保护单指平移、捏合、长按与本轮直接 tap。
+- 固定 iPhone 17 Pro 云端 smoke 启动在暂停 `No selection` 首屏，不执行触摸，不能证明直接 Attack / Attack Move、选择保持、双击清理或 Hold Fire 的真机交互；当前结论来自精确 artifact、双架构编译、既有 Core tests 和代码决策表。
+- 当前没有 XCUITest 或真机触摸验收；多指框选在 v2.12 独立实现，并继续保护单指平移、捏合、长按与本轮直接 tap。
+
+### v2.12 / iOS multitouch box selection
+
+日期：2026-07-13
+
+核心变更：
+
+- `BattlefieldView` 新增原生 `SpatialEventGesture` 双指追踪；以两指位移方向、质心位移和间距变化区分近似同向框选与张合缩放。
+- 框选预览覆盖两指起点和当前位置四点的屏幕包围矩形，松手后调用现有单位优先/建筑 fallback 区域选择；Replace / Add 语义不变。
+- 双指序列开始后停止后续单指 pan，未确认 pinch 前暂缓 zoom；selection、pinch、第三指/取消互斥。双指期间和结束后短窗口抑制 tap/long press，避免误发 v2.11 Attack / Attack Move 或上下文命令。
+- 地图 revision 清空手势状态；任意 pending 命令时不锁定无等待态双指框选，显式 `Select Area` 继续使用单指 drag。
+- `GameController` 抽出共享 `applyBattlefieldAreaSelection`，显式框选和双指入口复用屏幕转世界矩形、Core 选择、状态与反馈；双指入口增加 controller 侧 pending 门控并清理旧双击候选。
+- `swiftui-pro` 约束影响本轮：使用 iOS 18+ 原生 SwiftUI spatial events，不引入 UIKit/第三方依赖；局部 `@State` 私有化，玩法选择仍由单一 `@MainActor @Observable` controller 和 Core 持有；overlay 保持不可命中且对 VoiceOver 隐藏。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.12-ios-multitouch-box-selection.md`
+- `update_log.md`
+
+验证状态：
+
+- 未运行本地测试、构建、parse/typecheck、Simulator、Preview、截图、浏览器验证或测试脚本。提交范围核对时误执行一次 `git diff --cached --check` 并返回通过；该命令违反用户的云端唯一验证要求，不作为验收证据，后续不再执行。
+- 本轮必须以 push 后精确 v2.12 commit 对应的 GitHub Actions `Rustwar CI Results` v1.2 artifact 为唯一验证依据；当前尚未提交、push 或由 Agent C 下载核对，不得标记通过。
+
+遗留事项：
+
+- 固定 iPhone 17 Pro 云端 smoke 不驱动多指；即使 build、303 Core tests 和首屏 PNG 通过，selection/pinch 仲裁、双指触感与真机 recognizer 并发仍需后续交互自动化或人工真机验收。
+- 下一轮优先把选中 Command Center / Land Factory / Extractor / Radar 后的 Production 或 Build & Upgrade 放到紧凑 command dock 前部，减少滚动。

@@ -351,3 +351,22 @@ flowchart TD
   A --> C["既有 status + feedback + confirmation"]
   M --> C
 ```
+
+## v2.12 双指框选与捏合仲裁
+
+读图说明：`SpatialEventGesture` 只负责识别双指意图；选择仍由既有 Core 世界矩形 API 执行，缩放仍由 `MagnifyGesture` 执行。
+
+```mermaid
+flowchart TD
+  E["SpatialEventGesture touch events"] --> N{"恰好两指且无 pending?"}
+  N -->|no, pending| K["保留 pending / 显式 Select Area"]
+  N -->|third finger or cancelled| X["清理 preview，不提交"]
+  N -->|yes| I{"两指意图"}
+  I -->|间距明显变化或方向相反| P["Pinch lock<br/>MagnifyGesture zoom"]
+  I -->|同向 + 质心移动 + 间距稳定| S["Selection lock<br/>四点包围矩形 preview"]
+  I -->|未过阈值| W["等待更多事件"]
+  S --> U["抬起并抑制 tap / long press"]
+  U --> C["GameController shared area selection"]
+  C --> R["WorldRect -> Core unit first / building fallback"]
+  R --> M["Replace / Add + status + feedback"]
+```

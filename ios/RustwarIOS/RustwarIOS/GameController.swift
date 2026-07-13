@@ -1231,12 +1231,43 @@ final class GameController {
             return
         }
 
+        applyBattlefieldAreaSelection(
+            from: startPoint,
+            to: endPoint,
+            viewportSize: viewportSize,
+            completesPendingAreaSelection: true
+        )
+    }
+
+    func handleBattlefieldMultitouchAreaSelection(from startPoint: CGPoint, to endPoint: CGPoint, viewportSize: CGSize) {
+        guard !isAwaitingTargetCommand else {
+            return
+        }
+
+        applyBattlefieldAreaSelection(
+            from: startPoint,
+            to: endPoint,
+            viewportSize: viewportSize,
+            completesPendingAreaSelection: false
+        )
+    }
+
+    private func applyBattlefieldAreaSelection(
+        from startPoint: CGPoint,
+        to endPoint: CGPoint,
+        viewportSize: CGSize,
+        completesPendingAreaSelection: Bool
+    ) {
+        clearLastBattlefieldTap()
+
         let start = camera.worldPoint(for: startPoint, viewportSize: viewportSize)
         let end = camera.worldPoint(for: endPoint, viewportSize: viewportSize)
         let rect = WorldRect(start, end)
         let matchedTargets = engine.state.playerAreaSelectionTargets(in: rect)
         let selectedIDs = engine.selectPlayerEntities(in: rect, mutation: selectionMutation)
-        isAwaitingAreaSelection = false
+        if completesPendingAreaSelection {
+            isAwaitingAreaSelection = false
+        }
         let targetLabel = Self.areaSelectionTargetLabel(for: matchedTargets)
         if selectionMutation == .add {
             commandStatus = matchedTargets.isEmpty ? "No entities added" : "\(selectedIDs.count) \(targetLabel) selected total"

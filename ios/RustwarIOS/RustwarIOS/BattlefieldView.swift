@@ -3,6 +3,10 @@ import SwiftUI
 
 struct BattlefieldView: View {
     private static let contextTapSuppressionDuration: TimeInterval = 0.18
+    private static let multitouchTapSuppressionDuration: TimeInterval = 0.32
+    private static let multitouchIntentTravelThreshold: CGFloat = 10
+    private static let multitouchPinchDistanceThreshold: CGFloat = 10
+    private static let multitouchSelectionAlignmentThreshold: CGFloat = 0.65
 
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     let controller: GameController
@@ -13,6 +17,15 @@ struct BattlefieldView: View {
     @State private var selectionDragCurrent: CGPoint?
     @State private var contextPressLocation: CGPoint?
     @State private var suppressTapUntil: TimeInterval?
+    @State private var multitouchIDs: [SpatialEventCollection.Event.ID] = []
+    @State private var multitouchStartLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
+    @State private var multitouchCurrentLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
+    @State private var isMultitouchSequenceActive = false
+    @State private var isMultitouchSelection = false
+    @State private var isMultitouchPinch = false
+    @State private var isMultitouchRejected = false
+    @State private var multitouchSelectionStart: CGPoint?
+    @State private var multitouchSelectionCurrent: CGPoint?
 
     var body: some View {
         GeometryReader { proxy in
@@ -35,6 +48,9 @@ struct BattlefieldView: View {
                     .onChange(of: controller.renderRevision) { _, _ in
                         scene.renderNow()
                     }
+                    .onChange(of: controller.mapRenderRevision) { _, _ in
+                        cancelSelectionGestures()
+                    }
                     .onChange(of: accessibilityReduceMotion) { _, reduceMotion in
                         scene.accessibilityReduceMotion = reduceMotion
                     }
@@ -42,8 +58,9 @@ struct BattlefieldView: View {
                     .simultaneousGesture(contextLocationGesture())
                     .simultaneousGesture(dragGesture(in: proxy.size))
                     .simultaneousGesture(magnifyGesture())
+                    .simultaneousGesture(multitouchSelectionGesture(in: proxy.size))
                     .onLongPressGesture(minimumDuration: 0.45, maximumDistance: 18) {
-                        guard let contextPressLocation else {
+                        guard !isMultitouchSequenceActive, let contextPressLocation else {
                             return
                         }
                         suppressTapUntil = ProcessInfo.processInfo.systemUptime + Self.contextTapSuppressionDuration
@@ -56,6 +73,8 @@ struct BattlefieldView: View {
 
                 if let selectionDragStart, let selectionDragCurrent {
                     SelectionBoxOverlay(start: selectionDragStart, current: selectionDragCurrent)
+                } else if let multitouchSelectionStart, let multitouchSelectionCurrent {
+                    SelectionBoxOverlay(start: multitouchSelectionStart, current: multitouchSelectionCurrent)
                 }
             }
         }
@@ -65,10 +84,10 @@ struct BattlefieldView: View {
         SpatialTapGesture()
             .onEnded { value in
                 if let suppressTapUntil {
-                    self.suppressTapUntil = nil
                     guard ProcessInfo.processInfo.systemUptime > suppressTapUntil else {
                         return
                     }
+                    self.suppressTapUntil = nil
                 }
                 controller.handleBattlefieldTap(screenPoint: value.location, viewportSize: viewportSize)
                 scene.renderNow()
@@ -88,6 +107,10 @@ struct BattlefieldView: View {
     private func dragGesture(in viewportSize: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 8)
             .onChanged { value in
+                guard !isMultitouchSequenceActive else {
+                    lastDragTranslation = .zero
+                    return
+                }
                 if controller.isAwaitingAreaSelection {
                     if selectionDragStart == nil {
                         selectionDragStart = value.startLocation
@@ -123,6 +146,10 @@ struct BattlefieldView: View {
     private func magnifyGesture() -> some Gesture {
         MagnifyGesture()
             .onChanged { value in
+                if isMultitouchSequenceActive && !isMultitouchPinch {
+                    lastMagnification = Double(value.magnification)
+                    return
+                }
                 let incremental = Double(value.magnification) / lastMagnification
                 controller.zoom(by: incremental)
                 lastMagnification = Double(value.magnification)
@@ -131,6 +158,188 @@ struct BattlefieldView: View {
             .onEnded { _ in
                 lastMagnification = 1.0
             }
+    }
+
+    private func multitouchSelectionGesture(in viewportSize: CGSize) -> some Gesture {
+        SpatialEventGesture()
+            .onChanged { events in
+                updateMultitouchSelection(with: events)
+            }
+            .onEnded { events in
+                finishMultitouchSelection(with: events, viewportSize: viewportSize)
+            }
+    }
+
+    private func updateMultitouchSelection(with events: SpatialEventCollection) {
+        let touchEvents = events.filter { $0.kind == .touch }
+        if touchEvents.contains(where: { $0.phase == .cancelled }) {
+            isMultitouchRejected = true
+            clearMultitouchSelectionPreview()
+        }
+
+        let activeTouches = touchEvents.filter { $0.phase == .active }
+        guard activeTouches.count >= 2 || isMultitouchSequenceActive else {
+            return
+        }
+
+        isMultitouchSequenceActive = true
+        suppressTapAfterMultitouch()
+        lastDragTranslation = .zero
+
+        guard activeTouches.count == 2, !isMultitouchRejected else {
+            if activeTouches.count > 2 {
+                isMultitouchRejected = true
+                isMultitouchPinch = false
+                clearMultitouchSelectionPreview()
+            }
+            return
+        }
+
+        if multitouchIDs.isEmpty {
+            multitouchIDs = activeTouches.map(\.id)
+            for touch in activeTouches {
+                multitouchStartLocations[touch.id] = touch.location
+                multitouchCurrentLocations[touch.id] = touch.location
+            }
+        } else {
+            for touch in activeTouches where multitouchIDs.contains(touch.id) {
+                multitouchCurrentLocations[touch.id] = touch.location
+            }
+        }
+
+        classifyMultitouchIntent()
+        if isMultitouchSelection {
+            updateMultitouchSelectionPreview()
+        }
+    }
+
+    private func classifyMultitouchIntent() {
+        guard !isMultitouchSelection,
+              !isMultitouchPinch,
+              !isMultitouchRejected,
+              multitouchIDs.count == 2,
+              let firstStart = multitouchStartLocations[multitouchIDs[0]],
+              let secondStart = multitouchStartLocations[multitouchIDs[1]],
+              let firstCurrent = multitouchCurrentLocations[multitouchIDs[0]],
+              let secondCurrent = multitouchCurrentLocations[multitouchIDs[1]] else {
+            return
+        }
+
+        let firstDelta = CGPoint(x: firstCurrent.x - firstStart.x, y: firstCurrent.y - firstStart.y)
+        let secondDelta = CGPoint(x: secondCurrent.x - secondStart.x, y: secondCurrent.y - secondStart.y)
+        let firstTravel = hypot(firstDelta.x, firstDelta.y)
+        let secondTravel = hypot(secondDelta.x, secondDelta.y)
+        let minimumTravel = min(firstTravel, secondTravel)
+        let startDistance = hypot(secondStart.x - firstStart.x, secondStart.y - firstStart.y)
+        let currentDistance = hypot(secondCurrent.x - firstCurrent.x, secondCurrent.y - firstCurrent.y)
+        let distanceChange = abs(currentDistance - startDistance)
+        let centroidTravel = hypot(
+            ((firstDelta.x + secondDelta.x) / 2),
+            ((firstDelta.y + secondDelta.y) / 2)
+        )
+        let alignment: CGFloat
+        if minimumTravel > 0 {
+            alignment = ((firstDelta.x * secondDelta.x) + (firstDelta.y * secondDelta.y)) /
+                (firstTravel * secondTravel)
+        } else {
+            alignment = -1
+        }
+
+        if (distanceChange >= Self.multitouchPinchDistanceThreshold &&
+            (distanceChange >= centroidTravel * 0.65 || alignment < 0.2)) ||
+            (minimumTravel >= Self.multitouchIntentTravelThreshold && alignment < -0.2) {
+            isMultitouchPinch = true
+            clearMultitouchSelectionPreview()
+            return
+        }
+
+        guard minimumTravel >= Self.multitouchIntentTravelThreshold,
+              centroidTravel >= Self.multitouchIntentTravelThreshold,
+              alignment >= Self.multitouchSelectionAlignmentThreshold,
+              distanceChange <= max(18, centroidTravel * 0.5),
+              !controller.isAwaitingTargetCommand else {
+            return
+        }
+
+        isMultitouchSelection = true
+    }
+
+    private func updateMultitouchSelectionPreview() {
+        guard multitouchIDs.count == 2,
+              let firstStart = multitouchStartLocations[multitouchIDs[0]],
+              let secondStart = multitouchStartLocations[multitouchIDs[1]],
+              let firstCurrent = multitouchCurrentLocations[multitouchIDs[0]],
+              let secondCurrent = multitouchCurrentLocations[multitouchIDs[1]] else {
+            return
+        }
+
+        let points = [firstStart, secondStart, firstCurrent, secondCurrent]
+        multitouchSelectionStart = CGPoint(
+            x: points.map(\.x).min() ?? firstStart.x,
+            y: points.map(\.y).min() ?? firstStart.y
+        )
+        multitouchSelectionCurrent = CGPoint(
+            x: points.map(\.x).max() ?? firstCurrent.x,
+            y: points.map(\.y).max() ?? firstCurrent.y
+        )
+    }
+
+    private func finishMultitouchSelection(with events: SpatialEventCollection, viewportSize: CGSize) {
+        for event in events where event.kind == .touch && multitouchIDs.contains(event.id) {
+            multitouchCurrentLocations[event.id] = event.location
+        }
+        if isMultitouchSelection {
+            updateMultitouchSelectionPreview()
+        }
+
+        let shouldSelect = isMultitouchSelection &&
+            !isMultitouchRejected &&
+            !events.contains(where: { $0.kind == .touch && $0.phase == .cancelled }) &&
+            !controller.isAwaitingTargetCommand
+        let startPoint = multitouchSelectionStart
+        let endPoint = multitouchSelectionCurrent
+        resetMultitouchSelectionState()
+        suppressTapAfterMultitouch()
+
+        guard shouldSelect, let startPoint, let endPoint else {
+            return
+        }
+        controller.handleBattlefieldMultitouchAreaSelection(
+            from: startPoint,
+            to: endPoint,
+            viewportSize: viewportSize
+        )
+        scene.renderNow()
+    }
+
+    private func suppressTapAfterMultitouch() {
+        suppressTapUntil = ProcessInfo.processInfo.systemUptime + Self.multitouchTapSuppressionDuration
+    }
+
+    private func clearMultitouchSelectionPreview() {
+        isMultitouchSelection = false
+        multitouchSelectionStart = nil
+        multitouchSelectionCurrent = nil
+    }
+
+    private func resetMultitouchSelectionState() {
+        multitouchIDs.removeAll()
+        multitouchStartLocations.removeAll()
+        multitouchCurrentLocations.removeAll()
+        isMultitouchSequenceActive = false
+        isMultitouchSelection = false
+        isMultitouchPinch = false
+        isMultitouchRejected = false
+        multitouchSelectionStart = nil
+        multitouchSelectionCurrent = nil
+    }
+
+    private func cancelSelectionGestures() {
+        selectionDragStart = nil
+        selectionDragCurrent = nil
+        lastDragTranslation = .zero
+        lastMagnification = 1
+        resetMultitouchSelectionState()
     }
 }
 
