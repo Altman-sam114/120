@@ -4524,7 +4524,9 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
-- 必须以 push 后精确 v2.16 commit 的 GitHub Actions v1.2 artifact 验收；当前尚未提交、push 或核对。
+- 实现提交 `b0ec43f5f25d30db8f0b2c54764cebb78c0bcc60` 已 push 到 `origin/main`，对应 GitHub Actions run `29384629571`、attempt `1` 成功；artifact `rustwar-ci-v1.2-main-b0ec43f-run29384629571-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29384629571/`，大小 `1.3M`。
+- manifest v1.2 的 `branch=main`、完整 SHA、run id 和 run attempt 与实现提交完全一致；JUnit 为 8 checks、0 failures、1 browser skip，303 个 RustwarCore tests 全部通过，arm64/x86_64 iOS 编译和 `BUILD SUCCEEDED` 均有日志证据，production/combat 两套 launch、process、screenshot、orientation 和 probe outcome 全部 success。
+- `ios-home.png` 与 `ios-combat.png` 均为 2622x1206、透明比例 0、亮度范围 255；home 亮度标准差 46.163，combat 为 43.330。Agent C 人工确认 home 保持 Land Factory / Production 首屏；combat 无长订单线且双方阵型完整，左侧两辆 Tank 与右侧 Artillery 可清楚辨认纵向 hull 和斜向 weapon mount，炮口、projectile、beam 与命中方向一致，HUD 无明显重叠。
 
 遗留事项：
 
