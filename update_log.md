@@ -4596,6 +4596,10 @@
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
 - 初始实现提交 `8583b7556ba16795c6d3a019bce08500b859e524` 的 run `29400265565`、attempt `1` 失败；artifact `rustwar-ci-v1.2-main-8583b75-run29400265565-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29400265565/`。manifest 显示 toolchain/static/Core/xcode-list 成功但 iOS build/screenshot 失败，JUnit 为 8 checks、2 failures、1 browser skip。
 - build log 精确报错为 `BattlefieldScene.swift:496:13: error: circular reference`：局部 `let heading` 的声明作用域遮蔽同一初始化表达式中的 `heading(from:to:)` helper。修复提交将局部值改名 `displayedHeading`，不改变目标选择、角度或后坐语义；必须等待新 SHA 的 Actions artifact 重新验收。
+- 修复提交 `687ca57467bcef8939eeee5f285cfc511771053b` 的 run `29400902172`、attempt `1` 已成功；artifact `rustwar-ci-v1.2-main-687ca57-run29400902172-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29400902172/`，缓存大小约 `1.4M`。
+- manifest 已核对 `branch=main`、`commitSha=687ca57467bcef8939eeee5f285cfc511771053b`、`runId=29400902172`、`runAttempt=1`；JUnit 为 8 checks、0 failures、1 browser skip，Core 共 303 tests 通过。
+- 云端 Xcode 26.5 / iOS 26.5 Simulator 构建通过；`BattlefieldScene.swift` 与 `GameController.swift` 均完成 arm64/x86_64 编译，日志包含 `BUILD SUCCEEDED`，production/combat launch、landscape normalization 与 pixel probe 全部成功。
+- Agent C 已人工复判 `ios-home.png` 与 `ios-combat.png`：两座建筑 Turret 完整露出且未被底栏、单位或 HUD 遮挡，固定双环底座和旋转护盾分层可辨，后坐炮管与冻结建筑弹道分别朝向对应 Hover 目标，既有 v2.17 单位炮塔后坐仍清晰可见。
 
 遗留事项：
 
