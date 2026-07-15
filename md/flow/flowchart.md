@@ -438,3 +438,22 @@ flowchart LR
   T --> PNG["ios-combat.png visual proof"]
   F --> PNG
 ```
+
+## v2.17 炮塔转向与后坐
+
+```mermaid
+flowchart LR
+  U["SpriteKit update delta"] --> C["Clamp visual delta to 1/15s"]
+  V["Current visible target"] --> H["Refresh 0.35s target hold"]
+  H --> D["Desired weapon heading"]
+  C --> S["Shortest-angle typed traverse"]
+  D --> S
+  S --> W["Displayed weapon heading"]
+  M["Manual renderNow"] --> Z["Zero visual delta"]
+  Z --> W
+  K["Core cooldown / reload snapshot"] --> R["Short recoil distance"]
+  W --> P["Rotating weaponMount"]
+  R --> B["Local recoilMount barrels"]
+  P --> B
+  A["Reduce Motion"] --> Q["Snap heading + zero recoil"]
+```

@@ -33,6 +33,7 @@ final class BattlefieldScene: SKScene {
     private var previousUnitPositions: [String: WorldPoint] = [:]
     private var unitHeadings: [String: CGFloat] = [:]
     private var unitWeaponHeadings: [String: CGFloat] = [:]
+    private var unitWeaponTargetHoldTimes: [String: TimeInterval] = [:]
     private var turretHeadings: [String: CGFloat] = [:]
     private var previousUnitCooldowns: [String: Double] = [:]
     private var previousBuildingCooldowns: [String: Double] = [:]
@@ -60,14 +61,23 @@ final class BattlefieldScene: SKScene {
     }
 
     override func update(_ currentTime: TimeInterval) {
+        let visualDeltaTime: TimeInterval
         if let lastUpdateTime {
-            controller?.advance(deltaTime: currentTime - lastUpdateTime)
+            let deltaTime = Swift.max(0, currentTime - lastUpdateTime)
+            controller?.advance(deltaTime: deltaTime)
+            visualDeltaTime = Swift.min(deltaTime, 1.0 / 15.0)
+        } else {
+            visualDeltaTime = 0
         }
         lastUpdateTime = currentTime
-        renderNow()
+        renderNow(visualDeltaTime: visualDeltaTime)
     }
 
     func renderNow() {
+        renderNow(visualDeltaTime: 0)
+    }
+
+    private func renderNow(visualDeltaTime: TimeInterval) {
         guard let controller else {
             return
         }
@@ -86,7 +96,11 @@ final class BattlefieldScene: SKScene {
         let playerRadarCoverage = state.radarCoverage(for: .player)
         let playerRadarContacts = state.radarContacts(for: .player)
         let selectedIDs = selectedEntityIDs(in: state)
-        updateVisualHistoryAndEffects(state, playerVisibility: playerVisibility)
+        updateVisualHistoryAndEffects(
+            state,
+            playerVisibility: playerVisibility,
+            visualDeltaTime: visualDeltaTime
+        )
         showCommandConfirmationIfNeeded(controller.commandConfirmation, visibility: playerVisibility)
         drawResources(state.resources)
         drawEntities(state, playerVisibility: playerVisibility, selectedIDs: selectedIDs)
@@ -362,7 +376,8 @@ final class BattlefieldScene: SKScene {
         decalNode.removeAllChildren()
         previousUnitPositions = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, $0.position) })
         unitHeadings = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, defaultHeading(for: $0.team)) })
-        unitWeaponHeadings = unitHeadings
+        unitWeaponHeadings = [:]
+        unitWeaponTargetHoldTimes = [:]
         turretHeadings = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, defaultHeading(for: $0.team)) })
         previousUnitCooldowns = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, $0.weaponCooldown) })
         previousBuildingCooldowns = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.weaponCooldown) })
@@ -376,7 +391,11 @@ final class BattlefieldScene: SKScene {
         renderedCombatVisualSmoke = false
     }
 
-    private func updateVisualHistoryAndEffects(_ state: GameState, playerVisibility: VisibilitySnapshot) {
+    private func updateVisualHistoryAndEffects(
+        _ state: GameState,
+        playerVisibility: VisibilitySnapshot,
+        visualDeltaTime: TimeInterval
+    ) {
         let liveUnitIDs = Set(state.units.map(\.id))
         let liveBuildingIDs = Set(state.buildings.map(\.id))
 
@@ -407,6 +426,7 @@ final class BattlefieldScene: SKScene {
         previousUnitPositions = previousUnitPositions.filter { liveUnitIDs.contains($0.key) }
         unitHeadings = unitHeadings.filter { liveUnitIDs.contains($0.key) }
         unitWeaponHeadings = unitWeaponHeadings.filter { liveUnitIDs.contains($0.key) }
+        unitWeaponTargetHoldTimes = unitWeaponTargetHoldTimes.filter { liveUnitIDs.contains($0.key) }
         previousUnitCooldowns = previousUnitCooldowns.filter { liveUnitIDs.contains($0.key) }
         previousUnitHitPoints = previousUnitHitPoints.filter { liveUnitIDs.contains($0.key) }
         previousUnitTypes = previousUnitTypes.filter { liveUnitIDs.contains($0.key) }
@@ -427,9 +447,13 @@ final class BattlefieldScene: SKScene {
                 in: state,
                 playerVisibility: playerVisibility
             )
-            let weaponHeading = visibleTarget
-                .flatMap { heading(from: unit.position, to: $0) }
-                ?? hullHeading
+            let desiredWeaponHeading = visibleTarget.flatMap { heading(from: unit.position, to: $0) }
+            let weaponHeading = displayedWeaponHeading(
+                for: unit,
+                desiredHeading: desiredWeaponHeading,
+                hullHeading: hullHeading,
+                visualDeltaTime: visualDeltaTime
+            )
             unitHeadings[unit.id] = hullHeading
             unitWeaponHeadings[unit.id] = weaponHeading
             let isVisible = isVisibleToPlayer(unit, visibility: playerVisibility)
@@ -541,6 +565,67 @@ final class BattlefieldScene: SKScene {
         )
     }
 
+    private func displayedWeaponHeading(
+        for unit: UnitSnapshot,
+        desiredHeading: CGFloat?,
+        hullHeading: CGFloat,
+        visualDeltaTime: TimeInterval
+    ) -> CGFloat {
+        let currentHeading = unitWeaponHeadings[unit.id]
+        let targetHeading: CGFloat
+        if let desiredHeading {
+            unitWeaponTargetHoldTimes[unit.id] = 0.35
+            targetHeading = desiredHeading
+        } else if let currentHeading,
+                  (unitWeaponTargetHoldTimes[unit.id] ?? 0) > 0 {
+            unitWeaponTargetHoldTimes[unit.id] = Swift.max(
+                0,
+                (unitWeaponTargetHoldTimes[unit.id] ?? 0) - visualDeltaTime
+            )
+            targetHeading = currentHeading
+        } else {
+            unitWeaponTargetHoldTimes[unit.id] = 0
+            targetHeading = hullHeading
+        }
+
+        guard let currentHeading, !accessibilityReduceMotion else {
+            return targetHeading
+        }
+        let maximumStep = weaponTraverseSpeed(for: unit.type) * CGFloat(visualDeltaTime)
+        guard maximumStep > 0 else {
+            return currentHeading
+        }
+        return steppedHeading(from: currentHeading, to: targetHeading, maximumStep: maximumStep)
+    }
+
+    private func weaponTraverseSpeed(for type: UnitType) -> CGFloat {
+        switch type {
+        case .builder:
+            3.1
+        case .scout:
+            5
+        case .tank:
+            2.35
+        case .hover:
+            4.4
+        case .aaTank:
+            5.2
+        case .artillery:
+            1.65
+        case .gunboat:
+            2.2
+        }
+    }
+
+    private func steppedHeading(from current: CGFloat, to target: CGFloat, maximumStep: CGFloat) -> CGFloat {
+        let delta = atan2(sin(target - current), cos(target - current))
+        guard abs(delta) > maximumStep else {
+            return target
+        }
+        let stepped = current + (delta > 0 ? maximumStep : -maximumStep)
+        return atan2(sin(stepped), cos(stepped))
+    }
+
     private func didStartFiring(previous: Double, current: Double, reloadTime: Double) -> Bool {
         guard reloadTime > 0 else {
             return false
@@ -571,6 +656,39 @@ final class BattlefieldScene: SKScene {
         case .artillery, .gunboat:
             1.08
         }
+    }
+
+    private func weaponRecoilDistance(for unit: UnitSnapshot, definition: UnitDefinition) -> Double {
+        guard !accessibilityReduceMotion,
+              definition.reloadTime > 0,
+              unit.weaponCooldown > 0 else {
+            return 0
+        }
+        let elapsedSinceShot = Swift.max(
+            0,
+            definition.reloadTime - Swift.min(unit.weaponCooldown, definition.reloadTime)
+        )
+        let recoilDuration = Swift.min(0.24, Swift.max(0.12, definition.reloadTime * 0.16))
+        guard elapsedSinceShot < recoilDuration else {
+            return 0
+        }
+        let recovery = 1 - elapsedSinceShot / recoilDuration
+        let recoilScale: Double
+        switch unit.type {
+        case .builder, .scout:
+            recoilScale = 0.1
+        case .tank:
+            recoilScale = 0.24
+        case .hover:
+            recoilScale = 0.12
+        case .aaTank:
+            recoilScale = 0.16
+        case .artillery:
+            recoilScale = 0.38
+        case .gunboat:
+            recoilScale = 0.24
+        }
+        return definition.radius * recoilScale * recovery * recovery
     }
 
     private func spawnUnitFireEffect(
@@ -1545,7 +1663,8 @@ final class BattlefieldScene: SKScene {
         let body = unitBody(
             for: unit,
             radius: definition.radius,
-            weaponRotation: weaponHeading - hullHeading
+            weaponRotation: weaponHeading - hullHeading,
+            recoilDistance: weaponRecoilDistance(for: unit, definition: definition)
         )
         body.zRotation = hullHeading
         node.addChild(body)
@@ -1565,12 +1684,15 @@ final class BattlefieldScene: SKScene {
     private func unitBody(
         for unit: UnitSnapshot,
         radius: Double,
-        weaponRotation: CGFloat
+        weaponRotation: CGFloat,
+        recoilDistance: Double
     ) -> SKNode {
         let body = SKNode()
         let weaponMount = SKNode()
         weaponMount.zRotation = weaponRotation
         weaponMount.zPosition = 1
+        let recoilMount = SKNode()
+        recoilMount.position.x = -CGFloat(recoilDistance)
         switch unit.type {
         case .builder:
             body.addChild(polygonNode([
@@ -1595,7 +1717,7 @@ final class BattlefieldScene: SKScene {
             )
             builderSensor.position = CGPoint(x: radius * 0.08, y: 0)
             weaponMount.addChild(builderSensor)
-            weaponMount.addChild(lineNode(
+            recoilMount.addChild(lineNode(
                 from: CGPoint(x: radius * 0.18, y: 0),
                 to: CGPoint(x: radius * 0.72, y: 0),
                 color: SKColor.systemMint.withAlphaComponent(0.88),
@@ -1632,7 +1754,7 @@ final class BattlefieldScene: SKScene {
                 CGPoint(x: -radius * 0.22, y: radius * 0.34),
                 CGPoint(x: -radius * 0.22, y: -radius * 0.34)
             ], fill: highlightColor, stroke: outlineColor, lineWidth: 1))
-            weaponMount.addChild(lineNode(
+            recoilMount.addChild(lineNode(
                 from: CGPoint(x: radius * 0.35, y: 0),
                 to: CGPoint(x: radius * 0.92, y: 0),
                 color: armorDarkColor,
@@ -1668,13 +1790,13 @@ final class BattlefieldScene: SKScene {
                 stroke: highlightColor.withAlphaComponent(0.74),
                 lineWidth: 1.1
             ))
-            weaponMount.addChild(rectNode(
+            recoilMount.addChild(rectNode(
                 CGRect(x: radius * 0.12, y: -radius * 0.145, width: radius * 0.9, height: radius * 0.29),
                 cornerRadius: radius * 0.08,
                 fill: armorDarkColor,
                 stroke: outlineColor
             ))
-            weaponMount.addChild(rectNode(
+            recoilMount.addChild(rectNode(
                 CGRect(x: radius * 0.15, y: -radius * 0.09, width: radius * 0.86, height: radius * 0.18),
                 cornerRadius: 1,
                 fill: highlightColor,
@@ -1714,8 +1836,8 @@ final class BattlefieldScene: SKScene {
                 lineWidth: 1
             )
             hoverEmitter.position = CGPoint(x: radius * 0.45, y: 0)
-            weaponMount.addChild(hoverEmitter)
-            weaponMount.addChild(lineNode(
+            recoilMount.addChild(hoverEmitter)
+            recoilMount.addChild(lineNode(
                 from: CGPoint(x: radius * 0.16, y: 0),
                 to: CGPoint(x: radius * 0.68, y: 0),
                 color: SKColor.systemCyan.withAlphaComponent(0.9),
@@ -1750,7 +1872,7 @@ final class BattlefieldScene: SKScene {
                 let mount = circleNode(radius: radius * 0.11, fill: armorDarkColor, stroke: highlightColor, lineWidth: 0.8)
                 mount.position = CGPoint(x: radius * 0.18, y: y)
                 weaponMount.addChild(mount)
-                weaponMount.addChild(rectNode(
+                recoilMount.addChild(rectNode(
                     CGRect(x: radius * 0.12, y: y - radius * 0.075, width: radius * 0.96, height: radius * 0.15),
                     cornerRadius: 1,
                     fill: highlightColor,
@@ -1773,19 +1895,19 @@ final class BattlefieldScene: SKScene {
                 CGPoint(x: radius * 0.32, y: radius * 0.25),
                 CGPoint(x: -radius * 0.3, y: radius * 0.34)
             ], fill: armorMidColor, stroke: outlineColor, lineWidth: 1.2))
-            weaponMount.addChild(rectNode(
+            recoilMount.addChild(rectNode(
                 CGRect(x: -radius * 0.05, y: -radius * 0.15, width: radius * 1.32, height: radius * 0.3),
                 cornerRadius: radius * 0.09,
                 fill: armorDarkColor,
                 stroke: outlineColor
             ))
-            weaponMount.addChild(rectNode(
+            recoilMount.addChild(rectNode(
                 CGRect(x: radius * 0.02, y: -radius * 0.1, width: radius * 1.2, height: radius * 0.2),
                 cornerRadius: 1,
                 fill: highlightColor,
                 stroke: outlineColor
             ))
-            weaponMount.addChild(lineNode(
+            recoilMount.addChild(lineNode(
                 from: CGPoint(x: radius * 0.34, y: 0),
                 to: CGPoint(x: radius * 1.18, y: 0),
                 color: .white.withAlphaComponent(0.46),
@@ -1826,12 +1948,15 @@ final class BattlefieldScene: SKScene {
                 CGPoint(x: -radius * 0.22, y: radius * 0.24)
             ], fill: armorMidColor, stroke: outlineColor, lineWidth: 1)
             weaponMount.addChild(gunboatCabin)
-            weaponMount.addChild(rectNode(
+            recoilMount.addChild(rectNode(
                 CGRect(x: radius * 0.05, y: -radius * 0.07, width: radius * 0.72, height: radius * 0.14),
                 cornerRadius: 1,
                 fill: highlightColor,
                 stroke: outlineColor
             ))
+        }
+        if !recoilMount.children.isEmpty {
+            weaponMount.addChild(recoilMount)
         }
         if !weaponMount.children.isEmpty {
             body.addChild(weaponMount)

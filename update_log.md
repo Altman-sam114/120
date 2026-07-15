@@ -4527,8 +4527,41 @@
 - 实现提交 `b0ec43f5f25d30db8f0b2c54764cebb78c0bcc60` 已 push 到 `origin/main`，对应 GitHub Actions run `29384629571`、attempt `1` 成功；artifact `rustwar-ci-v1.2-main-b0ec43f-run29384629571-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29384629571/`，大小 `1.3M`。
 - manifest v1.2 的 `branch=main`、完整 SHA、run id 和 run attempt 与实现提交完全一致；JUnit 为 8 checks、0 failures、1 browser skip，303 个 RustwarCore tests 全部通过，arm64/x86_64 iOS 编译和 `BUILD SUCCEEDED` 均有日志证据，production/combat 两套 launch、process、screenshot、orientation 和 probe outcome 全部 success。
 - `ios-home.png` 与 `ios-combat.png` 均为 2622x1206、透明比例 0、亮度范围 255；home 亮度标准差 46.163，combat 为 43.330。Agent C 人工确认 home 保持 Land Factory / Production 首屏；combat 无长订单线且双方阵型完整，左侧两辆 Tank 与右侧 Artillery 可清楚辨认纵向 hull 和斜向 weapon mount，炮口、projectile、beam 与命中方向一致，HUD 无明显重叠。
+- 验收记录提交 `4d59c30b0c6d9cab6fdb0f3f337e3bd5078c0629` 的最终 run `29385782694`、attempt `1` 和 artifact `rustwar-ci-v1.2-main-4d59c30-run29385782694-attempt1` 再次通过；缓存 `/private/tmp/rustwar-c-review-29385782694/` 为 `1.3M`，manifest、JUnit、303 tests、双架构日志、双 PNG 和 metrics 均与 v2.16 实现构图一致。
 
 遗留事项：
 
 - weapon heading 当前为每帧快照直接更新，没有炮塔转速、最短角插值、后坐动画或目标丢失后的短暂保持；静态云端截图不能证明这些动态观感。
 - 本轮不改变 Core 目标、射程、伤害、AI、命令、存档或输入，也不新增 XCUITest/真机触摸与帧率自动化。
+
+### v2.17 / iOS turret traverse and recoil
+
+日期：2026-07-15
+
+核心变更：
+
+- `BattlefieldScene.update(_:)` 把模拟 delta 与最大 1/15 秒的 visual delta 分开；SpriteKit 帧更新才推进 weapon 动态，SwiftUI 手动 `renderNow()` 使用零 delta，不会因选择、相机或布局刷新加速动画。
+- `unitWeaponHeadings` 改为显示方向，当前可见攻击目标刷新 0.35 秒 hold；目标丢失后短时保持再回归 hull。按 UnitType 设置 Artillery/Tank/Gunboat 慢速、AA/Scout/Hover 快速和 Builder 中速转向，并用正规化角差走最短角；首次出现直接播种期望方向，Reduce Motion 直接对齐。
+- cooldown/reload 快照只读推导 0.12-0.24 秒后坐窗口；`unitBody` 在固定 `weaponMount` 内增加 `recoilMount`，只回缩 Tank/AA/Artillery/Gunboat 炮管和 Builder/Scout/Hover 发射组件，炮塔座、炮塔装甲、传感器座、hull 与阵营标识保持固定。
+- combat fixture 只把单位 cooldown 固定到 reload 起点附近，让云端冻结截图暴露后坐几何；Core 冷却、伤害、射程、目标、AI、命令、fog、普通启动和存档不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.17-ios-turret-traverse-recoil.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
+- 必须以 push 后精确 v2.17 commit 的 GitHub Actions v1.2 artifact 验收；当前尚未提交、push 或核对。
+
+遗留事项：
+
+- production/combat 静态截图只能证明后坐几何、最终 weapon/hull 方向和 HUD 构图，不证明连续转向、0.35 秒保持、后坐恢复曲线、动态 Reduce Motion 或真实战斗帧率。
+- 本轮仍没有 Core turret traversal gameplay gate、建筑 Turret 转速/后坐、Sprite atlas、音效、屏幕震动、动态光照或 XCUITest/真机手势自动化。

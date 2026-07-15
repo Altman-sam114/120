@@ -129,7 +129,7 @@ final class GameController {
                 hitPoints: definition.hitPoints * healthFraction,
                 maxHitPoints: definition.hitPoints,
                 order: .attack(targetID: targetID),
-                weaponCooldown: definition.reloadTime * 0.72
+                weaponCooldown: definition.reloadTime * 0.985
             )
         }
 

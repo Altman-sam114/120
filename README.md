@@ -50,6 +50,7 @@
 - v2.14 起，Production 单位按钮同时显示单位类型图标、名称、Metal、人口和生产秒数，当前队首使用 Queue 摘要与真实进度条；VoiceOver 会朗读完整费用和时间。云端 `--rustwar-ci-visual-smoke` 专用启动态改为暂停并预选己方 Land Factory，使 artifact PNG 直接覆盖 Production-first 建筑首屏；普通玩家启动仍默认运行且无预选。
 - v2.15 起，原生 iOS 的 7 类程序化单位进一步增加履带齿段、内履带、装甲裙板、独立炮塔/炮管、传感器、工程关节、悬浮舱与船体甲板层次；Tank、AA Tank 和 Artillery 不再只靠炮管数量区分。正常战斗的炮口焰增加方向性锥焰，projectile 增加双层尾迹和高亮弹头，命中增加装甲碎屑并保持烟尘/冲击环/灼痕、雾层、Reduce Motion 和 64/32 上限。CI 另用 `--rustwar-ci-combat-visual-smoke` 启动固定暂停的双方装甲对峙场景，生成第二张 `ios-combat.png` 及像素指标；普通启动、Core 战斗数值、AI、命令和存档不变。
 - v2.16 起，单位车体/船体方向与武器方向分离：履带和 hull 只跟随实际移动或移动型订单，Tank、AA Tank、Artillery、Gunboat 的炮塔与炮管可独立朝当前可见目标旋转，Hover、Scout 和 Builder 的发射器也使用独立 weapon mount。炮口焰、projectile 和 beam 与同一 weapon heading 对齐；雾外或仅雷达 contact 的敌方不能驱动精确瞄准。该状态只存在于 SpriteKit Scene，不新增 Core 字段或存档格式。
+- v2.17 起，单位 weapon mount 会按最短角和单位类型转速连续朝当前可见目标转向；目标短暂消失时保持最后瞄准约 0.35 秒，再平滑回归 hull。Tank、AA Tank、Artillery、Gunboat 的炮管及轻型发射组件拆到独立 recoil mount，现有 cooldown 跳变会让炮管短促回缩后复位，其中 Artillery 后坐最明显。手动 UI 刷新不会重复推进动画，Reduce Motion 开启时方向直接对齐且后坐归零；Core 伤害、射程、冷却、AI、命令、雾和存档保持不变。
 
 当前验证制度：
 
