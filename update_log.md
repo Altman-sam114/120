@@ -4562,8 +4562,41 @@
 - 实现提交 `cb314e3c8eb2aaec6990a963b62a2f98f04268a0` 已 push 到 `origin/main`，对应 GitHub Actions run `29397703600`、attempt `1` 成功；artifact `rustwar-ci-v1.2-main-cb314e3-run29397703600-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29397703600/`，大小 `1.3M`。
 - manifest v1.2 的 `branch=main`、完整 SHA、run id 和 run attempt 与实现提交完全一致；JUnit 为 8 checks、0 failures、1 browser skip，303 个 RustwarCore tests 全部通过，`BattlefieldScene.swift` / `GameController.swift` 均有 arm64/x86_64 编译证据并包含 `BUILD SUCCEEDED`，production/combat 两套 launch、process、screenshot、orientation 和 probe outcome 全部 success。
 - `ios-home.png` 与 `ios-combat.png` 均为 2622x1206、透明比例 0、亮度范围 255；home 亮度标准差 46.163，combat 为 43.359。Agent C 人工确认 home 保持 Land Factory / Production 首屏；combat 无长订单线且阵型/HUD 完整，hull/weapon 偏角保持，左上 Tank、左下 AA 与右下 Artillery 的炮管相对固定炮塔座可辨回缩，炮口、projectile 和 beam 仍沿目标方向。
+- 验收记录提交 `01caaea52b4490c54113bfdbb983e04533618462` 的最终 run `29398574096`、attempt `1` 和 artifact `rustwar-ci-v1.2-main-01caaea-run29398574096-attempt1` 再次通过；缓存 `/private/tmp/rustwar-c-review-29398574096/` 为 `1.3M`，manifest、JUnit、303 tests、双架构日志、双 PNG 和 metrics 均与 v2.17 实现构图一致。
 
 遗留事项：
 
 - production/combat 静态截图只能证明后坐几何、最终 weapon/hull 方向和 HUD 构图，不证明连续转向、0.35 秒保持、后坐恢复曲线、动态 Reduce Motion 或真实战斗帧率。
 - 本轮仍没有 Core turret traversal gameplay gate、建筑 Turret 转速/后坐、Sprite atlas、音效、屏幕震动、动态光照或 XCUITest/真机手势自动化。
+
+### v2.18 / iOS building turret traverse and recoil
+
+日期：2026-07-15
+
+核心变更：
+
+- 建筑 `turretHeadings` 改为 scene-only 显示角；完成状态有伤害建筑继续只用当前可见、射程内 nearest-target helper，首次目标直接播种，后续目标切换以 1.9 rad/s 最短角转向，目标消失后保留最后角度。手动 `renderNow()` 零 delta、Reduce Motion 直接对齐、map reset/live-id 清理语义保持。
+- building cooldown/reload 快照只读推导 0.14-0.24 秒 Turret 后坐；固定四向锚固和双层圆形基座不动，旋转炮盾/枢轴独立瞄准，套筒、内管和 muzzle brake 位于局部 barrel mount 回缩。
+- combat fixture 在现有装甲阵型中追加双方各一座完成状态 Turret，两座实际最近目标分别是 enemy/player Hover；frozen tableau 追加对应 building fire，保留 v2.17 单位 shots、impact、烟尘、灼痕和订单线隐藏。
+- 浏览器检索定位到 Steam 官方页、Mobile Turret 视频和实机评测入口，但媒体连接在当前环境关闭，因此未把搜索摘要或未加载帧当成视觉证据；本轮几何为原创实现，只沿用固定底座/独立炮座/短促火力反馈的通用 RTS 层级。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.18-ios-building-turret-traverse-recoil.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
+- 必须以 push 后精确 v2.18 commit 的 GitHub Actions v1.2 artifact 验收；当前尚未提交、push 或核对。
+
+遗留事项：
+
+- 双 PNG 只能证明固定构图、炮座/基座/炮管分层和冻结后坐，不能证明连续转向、目标 retention、后坐恢复、动态 Reduce Motion 或真实帧率。
+- 建筑 Turret 转向仍是只读视觉表现，不会延迟 Core 命中；本轮不新增炮塔升级路线、AA Turret、音效、屏幕震动、动态光照、正式 sprite atlas 或 XCUITest。

@@ -79,6 +79,8 @@ v2.16 将单位模型从单一整体 heading 拆为 hull/weapon 两层：`unitHe
 
 v2.17 让 weapon heading 成为 scene-only 连续显示状态：只有 SpriteKit `update(_:)` 提供的受限 visual delta 才推进转向，SwiftUI 手动 `renderNow()` 只重绘。当前可见目标刷新 0.35 秒保持窗口，失去目标后先保持再回归 hull；`atan2(sin(delta), cos(delta))` 保证最短角，Artillery/Tank/Gunboat 与 AA/Scout/Hover/Builder 使用不同转速，Reduce Motion 直接对齐。`weaponCooldown` 与 `reloadTime` 只读推导约 0.12-0.24 秒后坐，`unitBody` 在固定炮塔座内增加局部 `recoilMount` 移动炮管/发射组件；不新增 Core 状态、timer、Task、存档字段或常驻 action。
 
+v2.18 将同一 scene-only 机械动态扩展到建筑 Turret：`nearestBuildingWeaponTargetPosition` 仍是唯一目标来源，`displayedTurretHeading` 复用受限 visual delta 和 `steppedHeading`，首次目标直接播种、后续目标切换最短角转向，目标消失时只保留最后角度而不保存位置。`turretRecoilDistance` 从 building cooldown/reload 推导，`buildingBody` 把四向锚固/双层基座、旋转炮盾/枢轴和局部 barrel mount 分层；普通 Core 防御时序、fog、damage/construction/health 层和存档不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
@@ -445,6 +447,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v2.15 起，`CloudVisualScenario` 只服务云端 fixture：production 保持 v2.14 Land Factory 选择，combat 用公开 Core snapshot 类型组成固定双方单位与选择集合，并禁用 AI、暂停模拟、固定相机。v2.16 起 fixture 使用交叉 Attack target 驱动独立武器方向，并只在 combat scene 隐藏订单线；Scene 用一致的 source/target 配对冻结 fire/impact。`BattlefieldScene.showCombatVisualSmokeIfNeeded` 仅在 combat 场景和 map reset 后一次性调用带 `isFrozen` 的既有 helpers；普通 cooldown/HP diff 仍走动态默认参数。workflow 在同一 Simulator 安装后 terminate/relaunch，分别保存 `ios-home.png` 与 `ios-combat.png`，两套 launch/process/orientation/probe 共同决定同一个 Simulator JUnit case。
 - v2.16 起，combat fixture 为双方单位写入交叉 Attack target id 以驱动 weapon heading，但 `drawUnit` 只在该专用 scenario 跳过订单线，避免证据图被长线遮挡；普通运行仍完整绘制订单。冻结 fire source/target 与 Attack target 一致，因此云端 `ios-combat.png` 可直接比较默认左右 hull 与上下偏转炮塔，并核对炮口/弹道方向。
 - v2.17 起，Scene 的 `update(_:)` 将模拟 delta 与最大 1/15 秒 visual delta 分开，后者只推进单位 weapon traverse/target hold；外部 `renderNow()` 使用零 delta。combat fixture 把单位 cooldown 固定在 reload 起点附近，让同一冻结 PNG 可看到炮管相对固定炮塔座的回缩；普通状态仍完全从 Core cooldown 快照派生并随帧恢复。
+- v2.18 起，combat fixture 追加双方各一座完成状态 Turret，位置、最近目标和 frozen building shot 保持一致；两座 building cooldown 同样固定在 reload 起点附近，让 `ios-combat.png` 可同时核对固定基座、斜向炮座、回缩炮管与弹道。fixture 只追加快照对象，不改变普通地图预设。
 - v1.1 起，HUD Move 命令只作用于当前选中的己方单位；`RustwarCore` 推进位置，SpriteKit 只渲染状态。
 - v1.2 起，选中己方陆军工厂时 HUD 显示生产按钮和队列进度；生产完成后由 `RustwarCore` 生成单位。
 - v1.3 起，选中己方单位时 HUD 显示 Attack 命令；Attack 模式下一次 tap 由 `GameController` 命中敌方目标并调用 `GameEngine.issueAttack`，`RustwarCore` 推进靠近、开火、扣血和死亡清理，SpriteKit 只显示 HP 条和攻击目标线。v1.48 起，`issueAttack(targetID:)` 优先读取 `selectedEntityIDs`，多选时所有选中己方单位会攻击同一个敌方单位或建筑；混入建筑、敌方或缺失 id 时只要存在己方单位就执行。

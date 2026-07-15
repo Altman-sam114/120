@@ -133,6 +133,25 @@ final class GameController {
             )
         }
 
+        func turret(
+            id: String,
+            team: Team,
+            at position: WorldPoint,
+            healthFraction: Double = 1
+        ) -> BuildingSnapshot {
+            let definition = GameDefinitions.building(.turret)
+            return BuildingSnapshot(
+                id: id,
+                type: .turret,
+                team: team,
+                position: position,
+                hitPoints: definition.hitPoints * healthFraction,
+                maxHitPoints: definition.hitPoints,
+                rally: position,
+                weaponCooldown: definition.reloadTime * 0.985
+            )
+        }
+
         state.units = [
             unit(.tank, id: "visual-player-tank", team: .player, at: WorldPoint(1_750, 1_470), targetID: "visual-enemy-artillery"),
             unit(.aaTank, id: "visual-player-aa", team: .player, at: WorldPoint(1_750, 1_560), targetID: "visual-enemy-gunboat"),
@@ -146,6 +165,10 @@ final class GameController {
             unit(.hover, id: "visual-enemy-hover", team: .enemy, at: WorldPoint(2_010, 1_625), targetID: "visual-player-aa", healthFraction: 0.72),
             unit(.gunboat, id: "visual-enemy-gunboat", team: .enemy, at: WorldPoint(2_115, 1_455), targetID: "visual-player-artillery", healthFraction: 0.88)
         ]
+        state.buildings.append(contentsOf: [
+            turret(id: "visual-player-turret", team: .player, at: WorldPoint(1_885, 1_670)),
+            turret(id: "visual-enemy-turret", team: .enemy, at: WorldPoint(2_055, 1_680), healthFraction: 0.74)
+        ])
         state.selectedEntityIDs = [
             "visual-player-tank",
             "visual-player-aa",

@@ -378,7 +378,7 @@ final class BattlefieldScene: SKScene {
         unitHeadings = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, defaultHeading(for: $0.team)) })
         unitWeaponHeadings = [:]
         unitWeaponTargetHoldTimes = [:]
-        turretHeadings = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, defaultHeading(for: $0.team)) })
+        turretHeadings = [:]
         previousUnitCooldowns = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, $0.weaponCooldown) })
         previousBuildingCooldowns = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.weaponCooldown) })
         previousUnitHitPoints = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, $0.hitPoints) })
@@ -493,10 +493,15 @@ final class BattlefieldScene: SKScene {
                     playerVisibility: playerVisibility
                 )
                 : nil
-            if let visibleTarget, let heading = heading(from: building.position, to: visibleTarget) {
+            let desiredHeading = visibleTarget.flatMap { heading(from: building.position, to: $0) }
+            let heading = displayedTurretHeading(
+                for: building,
+                desiredHeading: desiredHeading,
+                visualDeltaTime: visualDeltaTime
+            )
+            if definition.damage > 0 {
                 turretHeadings[building.id] = heading
             }
-            let heading = turretHeadings[building.id] ?? defaultHeading(for: building.team)
 
             if let previousCooldown = previousBuildingCooldowns[building.id],
                didStartFiring(previous: previousCooldown, current: building.weaponCooldown, reloadTime: definition.reloadTime),
@@ -626,6 +631,25 @@ final class BattlefieldScene: SKScene {
         return atan2(sin(stepped), cos(stepped))
     }
 
+    private func displayedTurretHeading(
+        for building: BuildingSnapshot,
+        desiredHeading: CGFloat?,
+        visualDeltaTime: TimeInterval
+    ) -> CGFloat {
+        let currentHeading = turretHeadings[building.id]
+        let targetHeading = desiredHeading ?? currentHeading ?? defaultHeading(for: building.team)
+        guard let currentHeading,
+              let desiredHeading,
+              !accessibilityReduceMotion else {
+            return targetHeading
+        }
+        let maximumStep = 1.9 * CGFloat(visualDeltaTime)
+        guard maximumStep > 0 else {
+            return currentHeading
+        }
+        return steppedHeading(from: currentHeading, to: desiredHeading, maximumStep: maximumStep)
+    }
+
     private func didStartFiring(previous: Double, current: Double, reloadTime: Double) -> Bool {
         guard reloadTime > 0 else {
             return false
@@ -689,6 +713,29 @@ final class BattlefieldScene: SKScene {
             recoilScale = 0.24
         }
         return definition.radius * recoilScale * recovery * recovery
+    }
+
+    private func turretRecoilDistance(
+        for building: BuildingSnapshot,
+        definition: BuildingDefinition
+    ) -> Double {
+        guard building.type == .turret,
+              building.buildProgress >= 1,
+              !accessibilityReduceMotion,
+              definition.reloadTime > 0,
+              building.weaponCooldown > 0 else {
+            return 0
+        }
+        let elapsedSinceShot = Swift.max(
+            0,
+            definition.reloadTime - Swift.min(building.weaponCooldown, definition.reloadTime)
+        )
+        let recoilDuration = Swift.min(0.24, Swift.max(0.14, definition.reloadTime * 0.18))
+        guard elapsedSinceShot < recoilDuration else {
+            return 0
+        }
+        let recovery = 1 - elapsedSinceShot / recoilDuration
+        return definition.size * 0.1 * recovery * recovery
     }
 
     private func spawnUnitFireEffect(
@@ -784,7 +831,8 @@ final class BattlefieldScene: SKScene {
         from source: WorldPoint,
         heading: CGFloat,
         size: Double,
-        target: WorldPoint?
+        target: WorldPoint?,
+        isFrozen: Bool = false
     ) {
         spawnFireEffect(
             from: source,
@@ -797,7 +845,8 @@ final class BattlefieldScene: SKScene {
             shotCount: 1,
             trailLength: 14,
             beamWidth: 0,
-            travelSpeed: 820
+            travelSpeed: 820,
+            isFrozen: isFrozen
         )
     }
 
@@ -1263,6 +1312,25 @@ final class BattlefieldScene: SKScene {
             )
         }
 
+        let buildingShots: [(sourceID: String, targetID: String)] = [
+            ("visual-player-turret", "visual-enemy-hover"),
+            ("visual-enemy-turret", "visual-player-hover")
+        ]
+        for shot in buildingShots {
+            guard let source = state.buildings.first(where: { $0.id == shot.sourceID }),
+                  let target = state.units.first(where: { $0.id == shot.targetID }),
+                  let shotHeading = heading(from: source.position, to: target.position) else {
+                continue
+            }
+            spawnBuildingFireEffect(
+                from: source.position,
+                heading: shotHeading,
+                size: GameDefinitions.building(for: source).size,
+                target: target.position,
+                isFrozen: true
+            )
+        }
+
         for targetID in ["visual-enemy-tank", "visual-enemy-artillery", "visual-player-hover"] {
             guard let target = state.units.first(where: { $0.id == targetID }) else {
                 continue
@@ -1589,7 +1657,8 @@ final class BattlefieldScene: SKScene {
         let body = buildingBody(
             for: building,
             size: definition.size,
-            turretHeading: turretHeadings[building.id] ?? defaultHeading(for: building.team)
+            turretHeading: turretHeadings[building.id] ?? defaultHeading(for: building.team),
+            turretRecoilDistance: turretRecoilDistance(for: building, definition: definition)
         )
         node.addChild(body)
         if building.buildProgress < 1 {
@@ -1968,7 +2037,8 @@ final class BattlefieldScene: SKScene {
     private func buildingBody(
         for building: BuildingSnapshot,
         size: Double,
-        turretHeading: CGFloat
+        turretHeading: CGFloat,
+        turretRecoilDistance: Double
     ) -> SKNode {
         let body = SKNode()
         let half = size / 2
@@ -2059,21 +2129,55 @@ final class BattlefieldScene: SKScene {
         case .turret:
             body.addChild(circleNode(radius: half * 0.9, fill: armorDarkColor, stroke: outlineColor, lineWidth: 2.2))
             body.addChild(circleNode(radius: half * 0.62, fill: armorMidColor, stroke: teamColor(building.team), lineWidth: 2.4))
+            for angle in stride(from: 0.0, to: Double.pi * 2, by: Double.pi / 2) {
+                let anchor = rectNode(
+                    CGRect(x: -half * 0.11, y: -half * 0.17, width: half * 0.22, height: half * 0.34),
+                    cornerRadius: 1,
+                    fill: armorLightColor,
+                    stroke: outlineColor,
+                    lineWidth: 1
+                )
+                anchor.position = CGPoint(x: cos(angle) * half * 0.73, y: sin(angle) * half * 0.73)
+                anchor.zRotation = angle
+                body.addChild(anchor)
+            }
             let cannon = SKNode()
             cannon.zRotation = turretHeading
             cannon.addChild(polygonNode([
-                CGPoint(x: -half * 0.32, y: -half * 0.34),
-                CGPoint(x: half * 0.34, y: -half * 0.28),
-                CGPoint(x: half * 0.45, y: 0),
-                CGPoint(x: half * 0.34, y: half * 0.28),
-                CGPoint(x: -half * 0.32, y: half * 0.34)
+                CGPoint(x: -half * 0.38, y: -half * 0.36),
+                CGPoint(x: half * 0.3, y: -half * 0.3),
+                CGPoint(x: half * 0.48, y: 0),
+                CGPoint(x: half * 0.3, y: half * 0.3),
+                CGPoint(x: -half * 0.38, y: half * 0.36)
             ], fill: armorLightColor, stroke: outlineColor))
-            cannon.addChild(rectNode(
-                CGRect(x: half * 0.18, y: -half * 0.08, width: half * 0.72, height: half * 0.16),
+            cannon.addChild(circleNode(
+                radius: half * 0.2,
+                fill: armorMidColor,
+                stroke: teamColor(building.team).withAlphaComponent(0.9),
+                lineWidth: 1.4
+            ))
+            let barrelMount = SKNode()
+            barrelMount.position.x = -CGFloat(turretRecoilDistance)
+            barrelMount.addChild(rectNode(
+                CGRect(x: half * 0.12, y: -half * 0.12, width: half * 0.88, height: half * 0.24),
+                cornerRadius: half * 0.06,
+                fill: armorDarkColor,
+                stroke: outlineColor
+            ))
+            barrelMount.addChild(rectNode(
+                CGRect(x: half * 0.2, y: -half * 0.065, width: half * 0.82, height: half * 0.13),
                 cornerRadius: 1,
                 fill: highlightColor,
                 stroke: outlineColor
             ))
+            barrelMount.addChild(rectNode(
+                CGRect(x: half * 0.88, y: -half * 0.16, width: half * 0.18, height: half * 0.32),
+                cornerRadius: 1,
+                fill: armorDarkColor,
+                stroke: highlightColor,
+                lineWidth: 1
+            ))
+            cannon.addChild(barrelMount)
             body.addChild(cannon)
         case .radar:
             body.addChild(polygonNode([

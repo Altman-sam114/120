@@ -457,3 +457,20 @@ flowchart LR
   P --> B
   A["Reduce Motion"] --> Q["Snap heading + zero recoil"]
 ```
+
+## v2.18 建筑炮塔机械动态
+
+```mermaid
+flowchart LR
+  V["Visible in-range enemy"] --> N["nearestBuildingWeaponTargetPosition"]
+  N --> D["Desired turret heading"]
+  U["Clamped visual delta"] --> S["Shortest-angle 1.9 rad/s traverse"]
+  D --> S
+  S --> H["Scene-only retained heading"]
+  C["Building cooldown / reload"] --> R["Short recoil distance"]
+  H --> T["Rotating shield + pivot"]
+  R --> B["Local barrel / sleeve / muzzle brake"]
+  F["Fixed base + four anchors"] --> T
+  T --> B
+  X["Combat fixture twin Turrets"] --> P["Frozen building shots in ios-combat.png"]
+```
