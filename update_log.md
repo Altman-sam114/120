@@ -4492,8 +4492,41 @@
 - 修复提交已通过 Agent C 云端 artifact 复判：run `29231715911`，attempt `1`，artifact `rustwar-ci-v1.2-main-e5f9c46-run29231715911-attempt1`，缓存 `/private/tmp/rustwar-c-review-29231715911/`，大小 `1.3M`。
 - manifest v1.2 的 `branch=main`、完整 SHA、run id、run attempt 与 `origin/main` 完全一致；production/combat 参数及两套 launch/screenshot/orientation/probe outcome 全部 success。固定 Xcode 26.5、iOS Simulator SDK 26.5、Swift 6.3.2，JUnit 8 checks、0 failures、1 browser skip，303 Core tests、arm64/x86_64 iOS build 和 `BUILD SUCCEEDED` 均有日志证据。
 - `ios-home.png` 与 `ios-combat.png` 均为 2622x1206、透明比例 0、亮度范围 255；home 亮度标准差 46.172，combat 为 43.683。Agent C 人工确认 home 保持 Land Factory / Production 首屏；combat 中双方阵型完整、7 类单位轮廓可辨，projectile、beam、方向炮口焰、impact、烟尘和独立灼痕清晰，长订单线已消失且 HUD 无明显重叠。
+- 验收记录提交 `3d104674a8748b41128b75f5d56cba00b03419ad` 的最新 run `29232465198`、attempt `1` 和 artifact `rustwar-ci-v1.2-main-3d10467-run29232465198-attempt1` 再次通过；缓存 `/private/tmp/rustwar-c-review-29232465198/` 为 `1.3M`，manifest、JUnit、双架构日志、两张 PNG 与 metrics 均与最终 v2.15 构图一致。
 
 遗留事项：
 
 - `ios-combat.png` 是冻结构图，只证明固定设备上的模型/特效像素和层级，不证明真实 cooldown 时序、动画连续性、Reduce Motion、触摸或密集战斗帧率。
 - 目前仍使用程序化矢量几何，没有最终 sprite atlas、逐帧动画、音效、屏幕震动、动态光照或正式美术资源；后续应继续以独立云端视觉场景小步扩展，而不能用静态图冒充完整回归。
+
+### v2.16 / iOS independent weapon heading
+
+日期：2026-07-15
+
+核心变更：
+
+- `BattlefieldScene` 新增按 unit id 保存的 weapon heading；既有 `unitHeadings` 收窄为 hull heading，只由实际位置差或 Move/Attack Move/Patrol 初始方向更新，静止 Attack 不再旋转整车。
+- 当前可见攻击目标通过既有 visibility/range helper 推导 weapon heading，无目标时回落 hull；炮口焰、projectile 和 beam 读取同一 weapon heading。雾外或仅 radar contact 的敌方仍不能驱动精确瞄准。
+- `unitBody` 新增固定 `weaponMount`：Tank / AA Tank / Artillery / Gunboat 的炮塔装甲与炮管，Hover / Scout / Builder 的发射器分别相对 hull 旋转；履带、船体、装甲裙板、工程臂和阵营标识保留在 hull。
+- combat fixture 使用交叉 Attack target id 制造明显相对角度，专用 scenario 隐藏订单线，frozen shot 配对与 Attack target 一致；普通运行的订单线、Core 命令与战斗规则不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.16-ios-independent-weapon-heading.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
+- 必须以 push 后精确 v2.16 commit 的 GitHub Actions v1.2 artifact 验收；当前尚未提交、push 或核对。
+
+遗留事项：
+
+- weapon heading 当前为每帧快照直接更新，没有炮塔转速、最短角插值、后坐动画或目标丢失后的短暂保持；静态云端截图不能证明这些动态观感。
+- 本轮不改变 Core 目标、射程、伤害、AI、命令、存档或输入，也不新增 XCUITest/真机触摸与帧率自动化。

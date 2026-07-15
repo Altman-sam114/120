@@ -32,6 +32,7 @@ final class BattlefieldScene: SKScene {
     private var renderedCommandConfirmationRevision = 0
     private var previousUnitPositions: [String: WorldPoint] = [:]
     private var unitHeadings: [String: CGFloat] = [:]
+    private var unitWeaponHeadings: [String: CGFloat] = [:]
     private var turretHeadings: [String: CGFloat] = [:]
     private var previousUnitCooldowns: [String: Double] = [:]
     private var previousBuildingCooldowns: [String: Double] = [:]
@@ -361,6 +362,7 @@ final class BattlefieldScene: SKScene {
         decalNode.removeAllChildren()
         previousUnitPositions = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, $0.position) })
         unitHeadings = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, defaultHeading(for: $0.team)) })
+        unitWeaponHeadings = unitHeadings
         turretHeadings = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, defaultHeading(for: $0.team)) })
         previousUnitCooldowns = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, $0.weaponCooldown) })
         previousBuildingCooldowns = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.weaponCooldown) })
@@ -404,6 +406,7 @@ final class BattlefieldScene: SKScene {
 
         previousUnitPositions = previousUnitPositions.filter { liveUnitIDs.contains($0.key) }
         unitHeadings = unitHeadings.filter { liveUnitIDs.contains($0.key) }
+        unitWeaponHeadings = unitWeaponHeadings.filter { liveUnitIDs.contains($0.key) }
         previousUnitCooldowns = previousUnitCooldowns.filter { liveUnitIDs.contains($0.key) }
         previousUnitHitPoints = previousUnitHitPoints.filter { liveUnitIDs.contains($0.key) }
         previousUnitTypes = previousUnitTypes.filter { liveUnitIDs.contains($0.key) }
@@ -417,8 +420,18 @@ final class BattlefieldScene: SKScene {
 
         for unit in state.units {
             let definition = GameDefinitions.unit(unit.type)
-            let heading = inferredHeading(for: unit, in: state, playerVisibility: playerVisibility)
-            unitHeadings[unit.id] = heading
+            let hullHeading = inferredHullHeading(for: unit)
+            let visibleTarget = visibleAttackTargetPosition(
+                for: unit,
+                definition: definition,
+                in: state,
+                playerVisibility: playerVisibility
+            )
+            let weaponHeading = visibleTarget
+                .flatMap { heading(from: unit.position, to: $0) }
+                ?? hullHeading
+            unitHeadings[unit.id] = hullHeading
+            unitWeaponHeadings[unit.id] = weaponHeading
             let isVisible = isVisibleToPlayer(unit, visibility: playerVisibility)
 
             if let previousCooldown = previousUnitCooldowns[unit.id],
@@ -426,15 +439,10 @@ final class BattlefieldScene: SKScene {
                isVisible {
                 spawnUnitFireEffect(
                     from: unit.position,
-                    heading: heading,
+                    heading: weaponHeading,
                     radius: definition.radius,
                     type: unit.type,
-                    target: visibleAttackTargetPosition(
-                        for: unit,
-                        definition: definition,
-                        in: state,
-                        playerVisibility: playerVisibility
-                    )
+                    target: visibleTarget
                 )
             }
             if let previousHitPoints = previousUnitHitPoints[unit.id],
@@ -492,11 +500,7 @@ final class BattlefieldScene: SKScene {
         }
     }
 
-    private func inferredHeading(
-        for unit: UnitSnapshot,
-        in state: GameState,
-        playerVisibility: VisibilitySnapshot
-    ) -> CGFloat {
+    private func inferredHullHeading(for unit: UnitSnapshot) -> CGFloat {
         if let previousPosition = previousUnitPositions[unit.id],
            previousPosition.distanceSquared(to: unit.position) > 0.25,
            let movementHeading = heading(from: previousPosition, to: unit.position) {
@@ -505,23 +509,13 @@ final class BattlefieldScene: SKScene {
 
         let target: WorldPoint?
         switch unit.order {
-        case let .attack(targetID)?:
-            target = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility)
         case let .move(destination)?:
             target = destination
         case let .attackMove(destination)?:
             target = destination
         case let .patrol(origin, destination, returning)?:
             target = returning ? origin : destination
-        case let .guardTarget(targetID, _)?:
-            target = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility)
-        case let .build(targetID)?:
-            target = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility)
-        case let .repair(targetID)?:
-            target = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility)
-        case let .reclaim(wreckID)?:
-            target = targetPosition(for: wreckID, in: state, playerVisibility: playerVisibility)
-        case nil:
+        default:
             target = nil
         }
         if let target, let orderHeading = heading(from: unit.position, to: target) {
@@ -1128,12 +1122,12 @@ final class BattlefieldScene: SKScene {
         renderedCombatVisualSmoke = true
 
         let shots: [(sourceID: String, targetID: String)] = [
-            ("visual-player-tank", "visual-enemy-tank"),
-            ("visual-player-aa", "visual-enemy-hover"),
-            ("visual-player-artillery", "visual-enemy-artillery"),
-            ("visual-player-hover", "visual-enemy-tank"),
-            ("visual-player-builder", "visual-enemy-artillery"),
-            ("visual-enemy-gunboat", "visual-player-hover")
+            ("visual-player-tank", "visual-enemy-artillery"),
+            ("visual-player-aa", "visual-enemy-gunboat"),
+            ("visual-player-artillery", "visual-enemy-tank"),
+            ("visual-player-hover", "visual-enemy-aa"),
+            ("visual-player-builder", "visual-enemy-hover"),
+            ("visual-enemy-gunboat", "visual-player-artillery")
         ]
         for shot in shots {
             guard let source = state.units.first(where: { $0.id == shot.sourceID }),
@@ -1510,42 +1504,50 @@ final class BattlefieldScene: SKScene {
     ) {
         let definition = GameDefinitions.unit(unit.type)
         let isSelected = selectedIDs.contains(unit.id)
-        switch unit.order {
-        case let .move(destination)?:
-            drawMoveOrder(from: unit.position, to: destination, isSelected: isSelected)
-        case let .attack(targetID)?:
-            if let targetPosition = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility) {
-                drawAttackOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
+        if controller?.cloudVisualScenario != .combat {
+            switch unit.order {
+            case let .move(destination)?:
+                drawMoveOrder(from: unit.position, to: destination, isSelected: isSelected)
+            case let .attack(targetID)?:
+                if let targetPosition = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility) {
+                    drawAttackOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
+                }
+            case let .attackMove(destination)?:
+                drawAttackMoveOrder(from: unit.position, to: destination, isSelected: isSelected)
+            case let .patrol(origin, destination, returning)?:
+                drawPatrolOrder(origin: origin, destination: destination, returning: returning, isSelected: isSelected)
+            case let .guardTarget(targetID, _)?:
+                if let targetPosition = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility) {
+                    drawGuardOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
+                }
+            case let .build(targetID)?:
+                if let targetPosition = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility) {
+                    drawBuildOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
+                }
+            case let .repair(targetID)?:
+                if let targetPosition = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility) {
+                    drawRepairOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
+                }
+            case let .reclaim(wreckID)?:
+                if let targetPosition = targetPosition(for: wreckID, in: state, playerVisibility: playerVisibility) {
+                    drawReclaimOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
+                }
+            case nil:
+                break
             }
-        case let .attackMove(destination)?:
-            drawAttackMoveOrder(from: unit.position, to: destination, isSelected: isSelected)
-        case let .patrol(origin, destination, returning)?:
-            drawPatrolOrder(origin: origin, destination: destination, returning: returning, isSelected: isSelected)
-        case let .guardTarget(targetID, _)?:
-            if let targetPosition = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility) {
-                drawGuardOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
-            }
-        case let .build(targetID)?:
-            if let targetPosition = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility) {
-                drawBuildOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
-            }
-        case let .repair(targetID)?:
-            if let targetPosition = targetPosition(for: targetID, in: state, playerVisibility: playerVisibility) {
-                drawRepairOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
-            }
-        case let .reclaim(wreckID)?:
-            if let targetPosition = targetPosition(for: wreckID, in: state, playerVisibility: playerVisibility) {
-                drawReclaimOrder(from: unit.position, to: targetPosition, isSelected: isSelected)
-            }
-        case nil:
-            break
         }
 
         let node = SKNode()
         node.position = spritePoint(for: unit.position)
         addUnitShadow(radius: definition.radius, to: node)
-        let body = unitBody(for: unit, radius: definition.radius)
-        body.zRotation = unitHeadings[unit.id] ?? defaultHeading(for: unit.team)
+        let hullHeading = unitHeadings[unit.id] ?? defaultHeading(for: unit.team)
+        let weaponHeading = unitWeaponHeadings[unit.id] ?? hullHeading
+        let body = unitBody(
+            for: unit,
+            radius: definition.radius,
+            weaponRotation: weaponHeading - hullHeading
+        )
+        body.zRotation = hullHeading
         node.addChild(body)
         addDamageState(
             currentHitPoints: unit.hitPoints,
@@ -1560,8 +1562,15 @@ final class BattlefieldScene: SKScene {
         entityNode.addChild(node)
     }
 
-    private func unitBody(for unit: UnitSnapshot, radius: Double) -> SKNode {
+    private func unitBody(
+        for unit: UnitSnapshot,
+        radius: Double,
+        weaponRotation: CGFloat
+    ) -> SKNode {
         let body = SKNode()
+        let weaponMount = SKNode()
+        weaponMount.zRotation = weaponRotation
+        weaponMount.zPosition = 1
         switch unit.type {
         case .builder:
             body.addChild(polygonNode([
@@ -1584,8 +1593,14 @@ final class BattlefieldScene: SKScene {
                 stroke: .white.withAlphaComponent(0.82),
                 lineWidth: 1
             )
-            builderSensor.position = CGPoint(x: -radius * 0.28, y: 0)
-            body.addChild(builderSensor)
+            builderSensor.position = CGPoint(x: radius * 0.08, y: 0)
+            weaponMount.addChild(builderSensor)
+            weaponMount.addChild(lineNode(
+                from: CGPoint(x: radius * 0.18, y: 0),
+                to: CGPoint(x: radius * 0.72, y: 0),
+                color: SKColor.systemMint.withAlphaComponent(0.88),
+                width: 1.6
+            ))
             for y in [-radius * 0.42, radius * 0.42] {
                 let joint = circleNode(radius: radius * 0.13, fill: armorLightColor, stroke: outlineColor)
                 joint.position = CGPoint(x: radius * 0.24, y: y)
@@ -1617,7 +1632,7 @@ final class BattlefieldScene: SKScene {
                 CGPoint(x: -radius * 0.22, y: radius * 0.34),
                 CGPoint(x: -radius * 0.22, y: -radius * 0.34)
             ], fill: highlightColor, stroke: outlineColor, lineWidth: 1))
-            body.addChild(lineNode(
+            weaponMount.addChild(lineNode(
                 from: CGPoint(x: radius * 0.35, y: 0),
                 to: CGPoint(x: radius * 0.92, y: 0),
                 color: armorDarkColor,
@@ -1637,7 +1652,7 @@ final class BattlefieldScene: SKScene {
                 lineWidth: 0.8
             )
             scoutSensor.position = CGPoint(x: radius * 0.18, y: 0)
-            body.addChild(scoutSensor)
+            weaponMount.addChild(scoutSensor)
         case .tank:
             addTracks(radius: radius, length: 1.55, to: body)
             body.addChild(rectNode(
@@ -1646,20 +1661,20 @@ final class BattlefieldScene: SKScene {
                 fill: armorMidColor,
                 stroke: outlineColor
             ))
-            body.addChild(circleNode(radius: radius * 0.38, fill: armorLightColor, stroke: outlineColor))
-            body.addChild(circleNode(
+            weaponMount.addChild(circleNode(radius: radius * 0.38, fill: armorLightColor, stroke: outlineColor))
+            weaponMount.addChild(circleNode(
                 radius: radius * 0.25,
                 fill: armorMidColor,
                 stroke: highlightColor.withAlphaComponent(0.74),
                 lineWidth: 1.1
             ))
-            body.addChild(rectNode(
+            weaponMount.addChild(rectNode(
                 CGRect(x: radius * 0.12, y: -radius * 0.145, width: radius * 0.9, height: radius * 0.29),
                 cornerRadius: radius * 0.08,
                 fill: armorDarkColor,
                 stroke: outlineColor
             ))
-            body.addChild(rectNode(
+            weaponMount.addChild(rectNode(
                 CGRect(x: radius * 0.15, y: -radius * 0.09, width: radius * 0.86, height: radius * 0.18),
                 cornerRadius: 1,
                 fill: highlightColor,
@@ -1687,7 +1702,7 @@ final class BattlefieldScene: SKScene {
                 CGPoint(x: -radius * 0.78, y: 0),
                 CGPoint(x: 0, y: -radius * 0.7)
             ], fill: armorMidColor, stroke: outlineColor))
-            body.addChild(ellipseNode(
+            weaponMount.addChild(ellipseNode(
                 CGRect(x: -radius * 0.28, y: -radius * 0.31, width: radius * 0.7, height: radius * 0.62),
                 fill: armorLightColor,
                 stroke: outlineColor
@@ -1699,7 +1714,13 @@ final class BattlefieldScene: SKScene {
                 lineWidth: 1
             )
             hoverEmitter.position = CGPoint(x: radius * 0.45, y: 0)
-            body.addChild(hoverEmitter)
+            weaponMount.addChild(hoverEmitter)
+            weaponMount.addChild(lineNode(
+                from: CGPoint(x: radius * 0.16, y: 0),
+                to: CGPoint(x: radius * 0.68, y: 0),
+                color: SKColor.systemCyan.withAlphaComponent(0.9),
+                width: 1.8
+            ))
             for y in [-radius * 0.42, radius * 0.42] {
                 body.addChild(rectNode(
                     CGRect(x: -radius * 0.55, y: y - radius * 0.08, width: radius * 0.6, height: radius * 0.16),
@@ -1717,8 +1738,8 @@ final class BattlefieldScene: SKScene {
                 fill: armorMidColor,
                 stroke: outlineColor
             ))
-            body.addChild(circleNode(radius: radius * 0.34, fill: armorLightColor, stroke: outlineColor))
-            body.addChild(polygonNode([
+            weaponMount.addChild(circleNode(radius: radius * 0.34, fill: armorLightColor, stroke: outlineColor))
+            weaponMount.addChild(polygonNode([
                 CGPoint(x: -radius * 0.28, y: -radius * 0.4),
                 CGPoint(x: radius * 0.34, y: -radius * 0.3),
                 CGPoint(x: radius * 0.48, y: 0),
@@ -1728,8 +1749,8 @@ final class BattlefieldScene: SKScene {
             for y in [-radius * 0.22, radius * 0.22] {
                 let mount = circleNode(radius: radius * 0.11, fill: armorDarkColor, stroke: highlightColor, lineWidth: 0.8)
                 mount.position = CGPoint(x: radius * 0.18, y: y)
-                body.addChild(mount)
-                body.addChild(rectNode(
+                weaponMount.addChild(mount)
+                weaponMount.addChild(rectNode(
                     CGRect(x: radius * 0.12, y: y - radius * 0.075, width: radius * 0.96, height: radius * 0.15),
                     cornerRadius: 1,
                     fill: highlightColor,
@@ -1744,27 +1765,27 @@ final class BattlefieldScene: SKScene {
                 fill: armorMidColor,
                 stroke: outlineColor
             ))
-            body.addChild(circleNode(radius: radius * 0.35, fill: armorLightColor, stroke: outlineColor))
-            body.addChild(polygonNode([
+            weaponMount.addChild(circleNode(radius: radius * 0.35, fill: armorLightColor, stroke: outlineColor))
+            weaponMount.addChild(polygonNode([
                 CGPoint(x: -radius * 0.3, y: -radius * 0.34),
                 CGPoint(x: radius * 0.32, y: -radius * 0.25),
                 CGPoint(x: radius * 0.44, y: 0),
                 CGPoint(x: radius * 0.32, y: radius * 0.25),
                 CGPoint(x: -radius * 0.3, y: radius * 0.34)
             ], fill: armorMidColor, stroke: outlineColor, lineWidth: 1.2))
-            body.addChild(rectNode(
+            weaponMount.addChild(rectNode(
                 CGRect(x: -radius * 0.05, y: -radius * 0.15, width: radius * 1.32, height: radius * 0.3),
                 cornerRadius: radius * 0.09,
                 fill: armorDarkColor,
                 stroke: outlineColor
             ))
-            body.addChild(rectNode(
+            weaponMount.addChild(rectNode(
                 CGRect(x: radius * 0.02, y: -radius * 0.1, width: radius * 1.2, height: radius * 0.2),
                 cornerRadius: 1,
                 fill: highlightColor,
                 stroke: outlineColor
             ))
-            body.addChild(lineNode(
+            weaponMount.addChild(lineNode(
                 from: CGPoint(x: radius * 0.34, y: 0),
                 to: CGPoint(x: radius * 1.18, y: 0),
                 color: .white.withAlphaComponent(0.46),
@@ -1796,7 +1817,7 @@ final class BattlefieldScene: SKScene {
                     width: 2
                 ))
             }
-            body.addChild(circleNode(radius: radius * 0.3, fill: armorLightColor, stroke: outlineColor))
+            weaponMount.addChild(circleNode(radius: radius * 0.3, fill: armorLightColor, stroke: outlineColor))
             let gunboatCabin = polygonNode([
                 CGPoint(x: -radius * 0.22, y: -radius * 0.24),
                 CGPoint(x: radius * 0.28, y: -radius * 0.18),
@@ -1804,13 +1825,16 @@ final class BattlefieldScene: SKScene {
                 CGPoint(x: radius * 0.28, y: radius * 0.18),
                 CGPoint(x: -radius * 0.22, y: radius * 0.24)
             ], fill: armorMidColor, stroke: outlineColor, lineWidth: 1)
-            body.addChild(gunboatCabin)
-            body.addChild(rectNode(
+            weaponMount.addChild(gunboatCabin)
+            weaponMount.addChild(rectNode(
                 CGRect(x: radius * 0.05, y: -radius * 0.07, width: radius * 0.72, height: radius * 0.14),
                 cornerRadius: 1,
                 fill: highlightColor,
                 stroke: outlineColor
             ))
+        }
+        if !weaponMount.children.isEmpty {
+            body.addChild(weaponMount)
         }
         addUnitFactionMarking(team: unit.team, radius: radius, to: body)
         return body

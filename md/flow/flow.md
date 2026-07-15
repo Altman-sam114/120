@@ -75,6 +75,8 @@ v2.14 精修生产信息与云端视觉场景：`TacticalProductionSectionView` 
 
 v2.15 精修原生装甲单位与战斗视觉：`unitBody` 继续以固定数量程序化节点构成 7 类单位，但履带单位共享带内履带/齿段的组件，Tank、AA Tank、Artillery 分别使用单炮塔、双联炮架和长身管支撑，Scout/Builder/Hover/Gunboat 增加传感器、工程关节、悬浮舱或甲板结构。正常 `spawnFireEffect` 增加方向性锥焰和 projectile 双层尾迹/弹头，impact 增加确定性装甲碎屑；v1.91 可见性、fog、Reduce Motion、64 effect / 32 decal 上限和 Core 只读边界保持。App 只在 `--rustwar-ci-combat-visual-smoke` 下用 `GameEngine(state:)` 装配固定暂停、无 AI 的对峙状态，Scene 冻结同一套 fire/impact 绘制供第二张云端截图；普通 init 不进入该分支。
 
+v2.16 将单位模型从单一整体 heading 拆为 hull/weapon 两层：`unitHeadings` 只由实际位置差或 Move/Attack Move/Patrol 初始方向更新，Attack 不再强制底盘转向；`unitWeaponHeadings` 只由既有当前可见攻击目标 helper 推导，无目标时回落 hull。`unitBody` 创建固定 `weaponMount`，Tank/AA/Artillery/Gunboat 的炮塔装甲与炮管、Hover/Scout/Builder 的发射器在 hull 内按 `weaponHeading - hullHeading` 旋转，炮口焰和弹道读取同一 weapon heading。状态仍只存在 Scene，live-id/filter/reset/fog/Reduce Motion/Core/存档不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
@@ -439,6 +441,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v2.13 起，`TacticalCommandDockView` 以 controller 的现有 production/upgrade 派生值决定 section 优先级，并监听只读 `dockSelectionIdentity` 回到 scroll top。生产建筑、可升级建筑、Builder、单位和无选择分别获得符合上下文的首组操作；`TacticalBuildSectionView` 通过 `showsSelected...UpgradeControl` 保持升级费用可见，再用原 `canUpgrade...` 设置 disabled。该变化不写回 Core，也不改变生产、升级、取消、快捷键或辅助功能动作。
 - v2.14 起，Production button label 使用单位类型 SF Symbol + Metal/人口/时间三项文本，queue status 使用同一 Core progress snapshot；按钮 action 和 Shift+1-9 仍调用 `queueUnit`。CI 专用 App init 预选 Land Factory，使固定横屏 screenshot 能覆盖 v2.13/v2.14 的生产首屏，但仍不执行真实点击或滚动。
 - v2.15 起，`CloudVisualScenario` 只服务云端 fixture：production 保持 v2.14 Land Factory 选择，combat 用公开 Core snapshot 类型组成固定双方单位与选择集合，并禁用 AI、暂停模拟、固定相机。fixture 不写 attack order，避免订单线遮住模型；Scene 直接用 source/target 配对冻结 fire/impact。`BattlefieldScene.showCombatVisualSmokeIfNeeded` 仅在 combat 场景和 map reset 后一次性调用带 `isFrozen` 的既有 helpers；普通 cooldown/HP diff 仍走动态默认参数。workflow 在同一 Simulator 安装后 terminate/relaunch，分别保存 `ios-home.png` 与 `ios-combat.png`，两套 launch/process/orientation/probe 共同决定同一个 Simulator JUnit case。
+- v2.16 起，combat fixture 为双方单位写入交叉 Attack target id 以驱动 weapon heading，但 `drawUnit` 只在该专用 scenario 跳过订单线，避免证据图被长线遮挡；普通运行仍完整绘制订单。冻结 fire source/target 与 Attack target 一致，因此云端 `ios-combat.png` 可直接比较默认左右 hull 与上下偏转炮塔，并核对炮口/弹道方向。
 - v1.1 起，HUD Move 命令只作用于当前选中的己方单位；`RustwarCore` 推进位置，SpriteKit 只渲染状态。
 - v1.2 起，选中己方陆军工厂时 HUD 显示生产按钮和队列进度；生产完成后由 `RustwarCore` 生成单位。
 - v1.3 起，选中己方单位时 HUD 显示 Attack 命令；Attack 模式下一次 tap 由 `GameController` 命中敌方目标并调用 `GameEngine.issueAttack`，`RustwarCore` 推进靠近、开火、扣血和死亡清理，SpriteKit 只显示 HP 条和攻击目标线。v1.48 起，`issueAttack(targetID:)` 优先读取 `selectedEntityIDs`，多选时所有选中己方单位会攻击同一个敌方单位或建筑；混入建筑、敌方或缺失 id 时只要存在己方单位就执行。

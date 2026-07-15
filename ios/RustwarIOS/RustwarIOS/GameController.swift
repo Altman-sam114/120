@@ -117,6 +117,7 @@ final class GameController {
             id: String,
             team: Team,
             at position: WorldPoint,
+            targetID: String,
             healthFraction: Double = 1
         ) -> UnitSnapshot {
             let definition = GameDefinitions.unit(type)
@@ -127,22 +128,23 @@ final class GameController {
                 position: position,
                 hitPoints: definition.hitPoints * healthFraction,
                 maxHitPoints: definition.hitPoints,
+                order: .attack(targetID: targetID),
                 weaponCooldown: definition.reloadTime * 0.72
             )
         }
 
         state.units = [
-            unit(.tank, id: "visual-player-tank", team: .player, at: WorldPoint(1_750, 1_470)),
-            unit(.aaTank, id: "visual-player-aa", team: .player, at: WorldPoint(1_750, 1_560)),
-            unit(.artillery, id: "visual-player-artillery", team: .player, at: WorldPoint(1_740, 1_650)),
-            unit(.hover, id: "visual-player-hover", team: .player, at: WorldPoint(1_840, 1_635)),
-            unit(.scout, id: "visual-player-scout", team: .player, at: WorldPoint(1_875, 1_515)),
-            unit(.builder, id: "visual-player-builder", team: .player, at: WorldPoint(1_835, 1_665)),
-            unit(.tank, id: "visual-enemy-tank", team: .enemy, at: WorldPoint(2_070, 1_475), healthFraction: 0.62),
-            unit(.aaTank, id: "visual-enemy-aa", team: .enemy, at: WorldPoint(2_090, 1_560), healthFraction: 0.8),
-            unit(.artillery, id: "visual-enemy-artillery", team: .enemy, at: WorldPoint(2_105, 1_650), healthFraction: 0.42),
-            unit(.hover, id: "visual-enemy-hover", team: .enemy, at: WorldPoint(2_010, 1_625), healthFraction: 0.72),
-            unit(.gunboat, id: "visual-enemy-gunboat", team: .enemy, at: WorldPoint(2_115, 1_455), healthFraction: 0.88)
+            unit(.tank, id: "visual-player-tank", team: .player, at: WorldPoint(1_750, 1_470), targetID: "visual-enemy-artillery"),
+            unit(.aaTank, id: "visual-player-aa", team: .player, at: WorldPoint(1_750, 1_560), targetID: "visual-enemy-gunboat"),
+            unit(.artillery, id: "visual-player-artillery", team: .player, at: WorldPoint(1_740, 1_650), targetID: "visual-enemy-tank"),
+            unit(.hover, id: "visual-player-hover", team: .player, at: WorldPoint(1_840, 1_635), targetID: "visual-enemy-aa"),
+            unit(.scout, id: "visual-player-scout", team: .player, at: WorldPoint(1_875, 1_515), targetID: "visual-enemy-hover"),
+            unit(.builder, id: "visual-player-builder", team: .player, at: WorldPoint(1_835, 1_665), targetID: "visual-enemy-hover"),
+            unit(.tank, id: "visual-enemy-tank", team: .enemy, at: WorldPoint(2_070, 1_475), targetID: "visual-player-artillery", healthFraction: 0.62),
+            unit(.aaTank, id: "visual-enemy-aa", team: .enemy, at: WorldPoint(2_090, 1_560), targetID: "visual-player-scout", healthFraction: 0.8),
+            unit(.artillery, id: "visual-enemy-artillery", team: .enemy, at: WorldPoint(2_105, 1_650), targetID: "visual-player-tank", healthFraction: 0.42),
+            unit(.hover, id: "visual-enemy-hover", team: .enemy, at: WorldPoint(2_010, 1_625), targetID: "visual-player-aa", healthFraction: 0.72),
+            unit(.gunboat, id: "visual-enemy-gunboat", team: .enemy, at: WorldPoint(2_115, 1_455), targetID: "visual-player-artillery", healthFraction: 0.88)
         ]
         state.selectedEntityIDs = [
             "visual-player-tank",

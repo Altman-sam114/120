@@ -420,3 +420,21 @@ flowchart LR
   H --> J["Single Simulator JUnit gate"]
   B --> J
 ```
+
+## v2.16 独立车体与武器朝向
+
+```mermaid
+flowchart LR
+  P["Unit position delta / move order"] --> H["Hull heading"]
+  V["Current visible attack target"] --> W["Weapon heading"]
+  H --> R["weapon - hull relative rotation"]
+  W --> R
+  R --> M["Independent weaponMount"]
+  M --> T["Tank / AA / Artillery / Gunboat turret"]
+  M --> L["Hover / Scout / Builder emitter"]
+  W --> F["Muzzle / projectile / beam heading"]
+  C["Combat cloud fixture cross targets"] --> V
+  C --> X["Hide fixture order lines only"]
+  T --> PNG["ios-combat.png visual proof"]
+  F --> PNG
+```
