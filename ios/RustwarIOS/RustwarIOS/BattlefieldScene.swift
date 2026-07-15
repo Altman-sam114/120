@@ -494,13 +494,13 @@ final class BattlefieldScene: SKScene {
                 )
                 : nil
             let desiredHeading = visibleTarget.flatMap { heading(from: building.position, to: $0) }
-            let heading = displayedTurretHeading(
+            let displayedHeading = displayedTurretHeading(
                 for: building,
                 desiredHeading: desiredHeading,
                 visualDeltaTime: visualDeltaTime
             )
             if definition.damage > 0 {
-                turretHeadings[building.id] = heading
+                turretHeadings[building.id] = displayedHeading
             }
 
             if let previousCooldown = previousBuildingCooldowns[building.id],
@@ -510,7 +510,7 @@ final class BattlefieldScene: SKScene {
                isVisible {
                 spawnBuildingFireEffect(
                     from: building.position,
-                    heading: heading,
+                    heading: displayedHeading,
                     size: definition.size,
                     target: visibleTarget
                 )

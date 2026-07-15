@@ -4594,7 +4594,8 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
-- 必须以 push 后精确 v2.18 commit 的 GitHub Actions v1.2 artifact 验收；当前尚未提交、push 或核对。
+- 初始实现提交 `8583b7556ba16795c6d3a019bce08500b859e524` 的 run `29400265565`、attempt `1` 失败；artifact `rustwar-ci-v1.2-main-8583b75-run29400265565-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29400265565/`。manifest 显示 toolchain/static/Core/xcode-list 成功但 iOS build/screenshot 失败，JUnit 为 8 checks、2 failures、1 browser skip。
+- build log 精确报错为 `BattlefieldScene.swift:496:13: error: circular reference`：局部 `let heading` 的声明作用域遮蔽同一初始化表达式中的 `heading(from:to:)` helper。修复提交将局部值改名 `displayedHeading`，不改变目标选择、角度或后坐语义；必须等待新 SHA 的 Actions artifact 重新验收。
 
 遗留事项：
 
