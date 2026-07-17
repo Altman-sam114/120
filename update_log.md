@@ -4672,7 +4672,9 @@
 
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
 - v2.19 最终验收记录提交 `60dad87bfe7c66c8d21c83a2610f7827a0707374` 的 run `29595005215`、attempt `1` 已成功；artifact `rustwar-ci-v1.2-main-60dad87-run29595005215-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29595005215/`，大小 `1.4M`。manifest、JUnit 8/0/1、303 Core tests、双架构编译、`BUILD SUCCEEDED`、双 launch/probe 和双 PNG 人工复判全部通过；workflow 仅有 `actions/upload-artifact@v5` Node 20 弃用兼容警告。
-- v2.20 等待实现 SHA push 后的 GitHub Actions 和 artifact 验收。
+- 实现提交 `7d9bbeec6d35557461a92840fe9ed7943486c7e8` 的 run `29604902452`、attempt `1` 成功；artifact `rustwar-ci-v1.2-main-7d9bbee-run29604902452-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29604902452/`，大小 `1.4M`。
+- manifest 已核对 `branch=main`、完整 SHA、`runId=29604902452`、`runAttempt=1`；JUnit 为 8 checks、0 failures、1 browser skip。新增 source/legacy 测试后 304 Core tests 全部通过，`WreckSource.swift` / `WreckSnapshot.swift` / `GameEngine.swift` / `BattlefieldScene.swift` / `GameController.swift` 均有 arm64/x86_64 编译证据，日志包含 `BUILD SUCCEEDED`，production/combat launch、orientation 与 pixel probe 全部成功。
+- `ios-home.png` 保持 Land Factory / Production 首屏；`ios-combat.png` 左上 Tank 残骸可辨双履带、烧毁 hull/炮塔和断管，右侧 Turret 残骸可辨独立圆形基座/炮盾，两者黄色回收条清楚且完整露出。新增残骸未遮挡活单位、双方 Turret、v2.19 爆炸/旧焦坑、Tactical Map 或 command dock，v2.20 通过 Agent C artifact 复判。
 
 遗留事项：
 
