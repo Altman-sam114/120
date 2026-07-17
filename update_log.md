@@ -4633,6 +4633,9 @@
 - v2.18 最终验收记录提交 `650afc47761006354b3beb518d6766b386d04745` 的 run `29426462393`、attempt `1` 已成功；artifact `rustwar-ci-v1.2-main-650afc4-run29426462393-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29426462393/`，大小 `1.4M`。manifest、JUnit 8/0/1、303 Core tests、双架构编译、`BUILD SUCCEEDED`、production/combat 双 probe 与双 PNG 人工复判全部通过。
 - v2.19 初始实现提交 `3950820c67784ebac7d4e8620404bef9d1d94061` 的 run `29585034263`、attempt `1` 成功；artifact `rustwar-ci-v1.2-main-3950820-run29585034263-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29585034263/`，大小 `1.4M`。manifest、JUnit 8/0/1、303 Core tests、双架构编译、`BUILD SUCCEEDED` 与双 probe 全部通过。
 - Agent C 人工确认 `ios-home.png` 未回退，`ios-combat.png` 的中央双层 corona、贴地光和烟尘清楚且没有遮挡阵型/HUD；但同点焦坑裂纹被冻结爆心覆盖，首次视觉验收不通过。必须由追加修复 SHA 的新 artifact 证明独立旧焦坑可辨，不能用初始全绿 run 宣布 v2.19 通过。
+- 视觉修复提交 `0adaec9e6c37aed3e8aae2ac77a37d66bc349c04` 的 run `29591206119`、attempt `1` 成功；artifact `rustwar-ci-v1.2-main-0adaec9-run29591206119-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29591206119/`，大小 `1.4M`。
+- manifest 已核对 `branch=main`、完整 SHA、`runId=29591206119`、`runAttempt=1`；JUnit 为 8 checks、0 failures、1 browser skip，303 Core tests 通过，`BattlefieldScene.swift` 完成 arm64/x86_64 编译，日志包含 `BUILD SUCCEEDED`，production/combat launch、orientation 与 pixel probe 全部成功。
+- `ios-home.png` 保持 Land Factory / Production 首屏；`ios-combat.png` 中独立旧焦坑位于中央爆点斜上方，椭圆坑缘、余烬 rim 和 7 条放射裂纹清楚可辨。中央双层 corona、贴地光、烟尘、双方 Turret、单位后坐、弹道、Tactical Map 与 command dock 均保持可读且无新增遮挡，v2.19 视觉修复通过 Agent C artifact 复判。
 
 遗留事项：
 
