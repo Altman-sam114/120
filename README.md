@@ -52,6 +52,7 @@
 - v2.16 起，单位车体/船体方向与武器方向分离：履带和 hull 只跟随实际移动或移动型订单，Tank、AA Tank、Artillery、Gunboat 的炮塔与炮管可独立朝当前可见目标旋转，Hover、Scout 和 Builder 的发射器也使用独立 weapon mount。炮口焰、projectile 和 beam 与同一 weapon heading 对齐；雾外或仅雷达 contact 的敌方不能驱动精确瞄准。该状态只存在于 SpriteKit Scene，不新增 Core 字段或存档格式。
 - v2.17 起，单位 weapon mount 会按最短角和单位类型转速连续朝当前可见目标转向；目标短暂消失时保持最后瞄准约 0.35 秒，再平滑回归 hull。Tank、AA Tank、Artillery、Gunboat 的炮管及轻型发射组件拆到独立 recoil mount，现有 cooldown 跳变会让炮管短促回缩后复位，其中 Artillery 后坐最明显。手动 UI 刷新不会重复推进动画，Reduce Motion 开启时方向直接对齐且后坐归零；Core 伤害、射程、冷却、AI、命令、雾和存档保持不变。
 - v2.18 起，完成状态建筑 Turret 也使用最短角炮座转向：四向锚固和双层圆形基座固定，炮盾/枢轴独立旋转，套筒、内管和 muzzle brake 位于局部 recoil mount。炮塔只追踪当前可见且在射程内的敌方，失去目标后保留最后朝向；building cooldown 只读推导短后坐，Reduce Motion 下直接对齐且后坐归零。云端 combat fixture 增加双方各一座 Turret 和对应冻结炮口/弹道，普通地图建筑、Core 防御开火、AI、fog 和存档不变。
+- v2.19 起，单位或建筑受到可见伤害时，命中反馈会组合贴地椭圆冲击光、不规则双层火焰冠、高亮爆心、冲击环、火花、装甲碎片和三层烟团，并在地面留下带余烬边缘与放射裂纹的短寿命焦坑；普通命中与摧毁焦痕继续共用 32 decal 上限，瞬态效果继续受 64 effect 上限约束。Reduce Motion 下所有位移、旋转和扩张退化为短透明度反馈，Core 伤害、射程、冷却、fog、命令和存档不变。
 
 当前验证制度：
 

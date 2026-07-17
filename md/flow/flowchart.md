@@ -474,3 +474,20 @@ flowchart LR
   T --> B
   X["Combat fixture twin Turrets"] --> P["Frozen building shots in ios-combat.png"]
 ```
+
+## v2.19 分层命中爆炸与地表战损
+
+```mermaid
+flowchart LR
+  H["Visible HP decrease"] --> I["spawnImpactEffect"]
+  I --> G["Ground bloom + dual radial corona"]
+  I --> F["Core + fire + shockwave"]
+  I --> P["Sparks + armor debris + smoke"]
+  I --> D["Scorch rim + deterministic cracks"]
+  D --> DN["decalNode <= 32"]
+  G --> EN["effectNode <= 64"]
+  F --> EN
+  P --> EN
+  R["Reduce Motion"] --> O["Opacity-only transient feedback"]
+  C["Combat frozen ground strike"] --> PNG["Cloud ios-combat.png"]
+```

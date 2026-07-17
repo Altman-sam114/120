@@ -1058,8 +1058,46 @@ final class BattlefieldScene: SKScene {
     }
 
     private func spawnImpactEffect(at position: WorldPoint, intensity: Double, isFrozen: Bool = false) {
+        addScorchMark(at: position, radius: 8.5 * intensity, isFrozen: isFrozen)
+
         let container = SKNode()
         container.position = spritePoint(for: position)
+
+        let groundBloom = SKShapeNode(ellipseOf: CGSize(
+            width: 24 * intensity,
+            height: 12 * intensity
+        ))
+        groundBloom.position.y = -CGFloat(2.5 * intensity)
+        groundBloom.fillColor = SKColor.systemOrange.withAlphaComponent(0.24)
+        groundBloom.strokeColor = SKColor.systemYellow.withAlphaComponent(0.52)
+        groundBloom.lineWidth = 1.2
+        groundBloom.zPosition = -3
+        container.addChild(groundBloom)
+
+        let outerCorona = radialBurstNode(
+            pointCount: 12,
+            innerRadius: 5.2 * intensity,
+            outerRadius: 10.8 * intensity,
+            rotation: 0.18,
+            fill: SKColor.systemOrange.withAlphaComponent(0.72),
+            stroke: SKColor.systemYellow.withAlphaComponent(0.78),
+            lineWidth: 1
+        )
+        outerCorona.zPosition = -1.4
+        container.addChild(outerCorona)
+
+        let innerCorona = radialBurstNode(
+            pointCount: 9,
+            innerRadius: 3.2 * intensity,
+            outerRadius: 7.4 * intensity,
+            rotation: 0.54,
+            fill: SKColor.systemYellow.withAlphaComponent(0.9),
+            stroke: .white.withAlphaComponent(0.82),
+            lineWidth: 0.8
+        )
+        innerCorona.zPosition = -0.6
+        container.addChild(innerCorona)
+
         let core = SKShapeNode(circleOfRadius: 4 * intensity)
         core.fillColor = .white.withAlphaComponent(0.94)
         core.strokeColor = SKColor.systemOrange
@@ -1080,7 +1118,7 @@ final class BattlefieldScene: SKScene {
         container.addChild(ring)
 
         addImpactSparks(intensity: intensity, color: .systemOrange, to: container, isFrozen: isFrozen)
-        addSmokePuffs(intensity: intensity * 0.72, count: 2, to: container, isFrozen: isFrozen)
+        addSmokePuffs(intensity: intensity * 0.72, count: 3, to: container, isFrozen: isFrozen)
         addImpactDebris(intensity: intensity, to: container, isFrozen: isFrozen)
         if isFrozen {
             addPersistentBoundedEffect(container)
@@ -1089,12 +1127,55 @@ final class BattlefieldScene: SKScene {
             core.run(.fadeOut(withDuration: 0.16))
             fire.run(.fadeOut(withDuration: 0.18))
             ring.run(.fadeOut(withDuration: 0.18))
+            groundBloom.run(.fadeOut(withDuration: 0.2))
+            outerCorona.run(.fadeOut(withDuration: 0.2))
+            innerCorona.run(.fadeOut(withDuration: 0.18))
         } else {
             core.run(.group([.fadeOut(withDuration: 0.18), .scale(to: 1.4, duration: 0.18)]))
             fire.run(.group([.fadeOut(withDuration: 0.28), .scale(to: 1.55, duration: 0.28)]))
             ring.run(.group([.fadeOut(withDuration: 0.38), .scale(to: 2.1, duration: 0.38)]))
+            groundBloom.run(.group([.fadeOut(withDuration: 0.34), .scale(to: 1.65, duration: 0.34)]))
+            outerCorona.run(.group([.fadeOut(withDuration: 0.3), .scale(to: 1.72, duration: 0.3)]))
+            innerCorona.run(.group([
+                .fadeOut(withDuration: 0.22),
+                .scale(to: 1.48, duration: 0.22),
+                .rotate(byAngle: 0.2, duration: 0.22)
+            ]))
         }
         addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.26 : 0.72)
+    }
+
+    private func radialBurstNode(
+        pointCount: Int,
+        innerRadius: Double,
+        outerRadius: Double,
+        rotation: Double,
+        fill: SKColor,
+        stroke: SKColor,
+        lineWidth: Double
+    ) -> SKShapeNode {
+        let path = CGMutablePath()
+        for index in 0..<(pointCount * 2) {
+            let angle = rotation + Double(index) * Double.pi / Double(pointCount)
+            let radius = index.isMultiple(of: 2) ? outerRadius : innerRadius
+            let point = CGPoint(
+                x: CGFloat(cos(angle) * radius),
+                y: CGFloat(sin(angle) * radius)
+            )
+            if index == 0 {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+        path.closeSubpath()
+
+        let burst = SKShapeNode(path: path)
+        burst.fillColor = fill
+        burst.strokeColor = stroke
+        burst.lineWidth = lineWidth
+        burst.lineJoin = .round
+        return burst
     }
 
     private func spawnDestructionEffect(at position: WorldPoint, intensity: Double, accent: SKColor) {
@@ -1257,6 +1338,39 @@ final class BattlefieldScene: SKScene {
         inner.strokeColor = .clear
         inner.lineWidth = 0
         scorch.addChild(inner)
+
+        let rim = SKShapeNode(ellipseOf: CGSize(width: radius * 1.42, height: radius))
+        rim.fillColor = .clear
+        rim.strokeColor = SKColor.systemOrange.withAlphaComponent(0.15)
+        rim.lineWidth = 1
+        scorch.addChild(rim)
+
+        let crackPath = CGMutablePath()
+        for index in 0..<7 {
+            let angle = 0.31 + Double(index) * (2 * Double.pi / 7)
+            let startRadius = radius * (0.38 + Double(index % 2) * 0.08)
+            let bendRadius = radius * (0.62 + Double(index % 3) * 0.045)
+            let endRadius = radius * (0.84 + Double(index % 2) * 0.08)
+            crackPath.move(to: CGPoint(
+                x: CGFloat(cos(angle) * startRadius),
+                y: CGFloat(sin(angle) * startRadius * 0.72)
+            ))
+            crackPath.addLine(to: CGPoint(
+                x: CGFloat(cos(angle + 0.1) * bendRadius),
+                y: CGFloat(sin(angle + 0.1) * bendRadius * 0.72)
+            ))
+            crackPath.addLine(to: CGPoint(
+                x: CGFloat(cos(angle - 0.04) * endRadius),
+                y: CGFloat(sin(angle - 0.04) * endRadius * 0.72)
+            ))
+        }
+        let cracks = SKShapeNode(path: crackPath)
+        cracks.strokeColor = SKColor.black.withAlphaComponent(0.38)
+        cracks.lineWidth = 1
+        cracks.lineCap = .round
+        cracks.lineJoin = .round
+        scorch.addChild(cracks)
+
         decalNode.addChild(scorch)
         if !isFrozen {
             scorch.run(.sequence([
@@ -1341,7 +1455,7 @@ final class BattlefieldScene: SKScene {
                 isFrozen: true
             )
         }
-        addScorchMark(at: WorldPoint(2_055, 1_680), radius: 22, isFrozen: true)
+        spawnImpactEffect(at: WorldPoint(1_960, 1_570), intensity: 1.18, isFrozen: true)
     }
 
     private func showCommandConfirmationIfNeeded(
