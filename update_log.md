@@ -4614,7 +4614,7 @@
 
 - `spawnImpactEffect` 增加贴地椭圆冲击光、12 齿外层火焰冠和 9 齿错位内层火焰冠；既有高亮爆心、火球、冲击环、火花与装甲碎片保留，烟团由两层增加为三层。
 - 普通可见 HP 下降也会通过既有 `decalNode` 留下短寿命焦坑；`addScorchMark` 增加低透明余烬 rim 与 7 条确定性放射裂纹。每次 impact 仍只占一个 effect container 和一个 decal，继续受 64/32 上限、map reset 与 fog 层级约束。
-- 动态模式仅使用现有短生命周期 `SKAction`；Reduce Motion 分支只执行淡出，不移动、旋转或扩张。combat frozen tableau 复用同一 impact 绘制并在阵型中央增加一个明确落弹点，普通启动、production smoke、Core 伤害/射程/冷却、AI、命令、输入和存档不变。
+- 动态模式仅使用现有短生命周期 `SKAction`；Reduce Motion 分支只执行淡出，不移动、旋转或扩张。combat frozen tableau 复用同一 impact 绘制并在阵型中央增加一个明确落弹点；首次 artifact 显示爆心覆盖其下裂纹后，追加一个邻近、与火焰分离且提高 frozen rim/crack 对比的旧焦坑。普通启动、production smoke、Core 伤害/射程/冷却、AI、命令、输入和存档不变。
 - 本轮实际查看了公开图片搜索结果，可见高单位密度战场中以亮色爆点、黑烟和地表战损维持火力可读性；同时定位 YouTube gameplay 条目，但播放器画面捕获超时，因此没有把未取得的视频帧当成视觉证据。全部几何仍为 Rustwar 原创程序化实现。
 
 关键文件：
@@ -4631,7 +4631,8 @@
 
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
 - v2.18 最终验收记录提交 `650afc47761006354b3beb518d6766b386d04745` 的 run `29426462393`、attempt `1` 已成功；artifact `rustwar-ci-v1.2-main-650afc4-run29426462393-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29426462393/`，大小 `1.4M`。manifest、JUnit 8/0/1、303 Core tests、双架构编译、`BUILD SUCCEEDED`、production/combat 双 probe 与双 PNG 人工复判全部通过。
-- v2.19 实现等待 push 后的精确 `origin/main` SHA、GitHub Actions run 和 artifact 复判。
+- v2.19 初始实现提交 `3950820c67784ebac7d4e8620404bef9d1d94061` 的 run `29585034263`、attempt `1` 成功；artifact `rustwar-ci-v1.2-main-3950820-run29585034263-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29585034263/`，大小 `1.4M`。manifest、JUnit 8/0/1、303 Core tests、双架构编译、`BUILD SUCCEEDED` 与双 probe 全部通过。
+- Agent C 人工确认 `ios-home.png` 未回退，`ios-combat.png` 的中央双层 corona、贴地光和烟尘清楚且没有遮挡阵型/HUD；但同点焦坑裂纹被冻结爆心覆盖，首次视觉验收不通过。必须由追加修复 SHA 的新 artifact 证明独立旧焦坑可辨，不能用初始全绿 run 宣布 v2.19 通过。
 
 遗留事项：
 

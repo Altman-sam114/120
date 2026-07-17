@@ -81,7 +81,7 @@ v2.17 让 weapon heading 成为 scene-only 连续显示状态：只有 SpriteKit
 
 v2.18 将同一 scene-only 机械动态扩展到建筑 Turret：`nearestBuildingWeaponTargetPosition` 仍是唯一目标来源，`displayedTurretHeading` 复用受限 visual delta 和 `steppedHeading`，首次目标直接播种、后续目标切换最短角转向，目标消失时只保留最后角度而不保存位置。`turretRecoilDistance` 从 building cooldown/reload 推导，`buildingBody` 把四向锚固/双层基座、旋转炮盾/枢轴和局部 barrel mount 分层；普通 Core 防御时序、fog、damage/construction/health 层和存档不变。
 
-v2.19 精修 Scene-only 命中反馈：`spawnImpactEffect` 在既有可见 HP diff 门控后先向 `decalNode` 写入带余烬 rim 和确定性放射裂纹的焦坑，再向 `effectNode` 写入贴地椭圆 bloom、两层交错 radial corona、爆心/火球/冲击环、火花、碎片和三团烟尘。普通模式只使用短生命周期 `SKAction`，Reduce Motion 只淡出不移动、旋转或扩张；冻结 combat scenario 复用同一绘制函数并追加一个明确落弹点。64 effect / 32 decal 上限、map reset、fog 层级、Core 只读和 visibility gate 保持。
+v2.19 精修 Scene-only 命中反馈：`spawnImpactEffect` 在既有可见 HP diff 门控后先向 `decalNode` 写入带余烬 rim 和确定性放射裂纹的焦坑，再向 `effectNode` 写入贴地椭圆 bloom、两层交错 radial corona、爆心/火球/冲击环、火花、碎片和三团烟尘。普通模式只使用短生命周期 `SKAction`，Reduce Motion 只淡出不移动、旋转或扩张；冻结 combat scenario 复用同一绘制函数，追加一个明确落弹点和一个与爆心分离的高对比旧焦坑供 artifact 复判。64 effect / 32 decal 上限、map reset、fog 层级、Core 只读和 visibility gate 保持。
 
 ```text
 RustwarCore MapPreset / GameState / GameEngine

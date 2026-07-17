@@ -489,5 +489,5 @@ flowchart LR
   F --> EN
   P --> EN
   R["Reduce Motion"] --> O["Opacity-only transient feedback"]
-  C["Combat frozen ground strike"] --> PNG["Cloud ios-combat.png"]
+  C["Combat frozen ground strike + cooled crater"] --> PNG["Cloud ios-combat.png"]
 ```

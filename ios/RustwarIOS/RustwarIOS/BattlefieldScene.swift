@@ -1329,8 +1329,18 @@ final class BattlefieldScene: SKScene {
         let scorch = SKNode()
         scorch.position = spritePoint(for: position)
         let outer = SKShapeNode(ellipseOf: CGSize(width: radius * 2, height: radius * 1.45))
-        outer.fillColor = SKColor(red: 0.05, green: 0.045, blue: 0.04, alpha: 0.38)
-        outer.strokeColor = SKColor(red: 0.22, green: 0.11, blue: 0.045, alpha: 0.32)
+        outer.fillColor = SKColor(
+            red: 0.05,
+            green: 0.045,
+            blue: 0.04,
+            alpha: isFrozen ? 0.5 : 0.38
+        )
+        outer.strokeColor = SKColor(
+            red: 0.22,
+            green: 0.11,
+            blue: 0.045,
+            alpha: isFrozen ? 0.46 : 0.32
+        )
         outer.lineWidth = 1.4
         scorch.addChild(outer)
         let inner = SKShapeNode(circleOfRadius: radius * 0.42)
@@ -1341,7 +1351,7 @@ final class BattlefieldScene: SKScene {
 
         let rim = SKShapeNode(ellipseOf: CGSize(width: radius * 1.42, height: radius))
         rim.fillColor = .clear
-        rim.strokeColor = SKColor.systemOrange.withAlphaComponent(0.15)
+        rim.strokeColor = SKColor.systemOrange.withAlphaComponent(isFrozen ? 0.28 : 0.15)
         rim.lineWidth = 1
         scorch.addChild(rim)
 
@@ -1365,7 +1375,7 @@ final class BattlefieldScene: SKScene {
             ))
         }
         let cracks = SKShapeNode(path: crackPath)
-        cracks.strokeColor = SKColor.black.withAlphaComponent(0.38)
+        cracks.strokeColor = SKColor.black.withAlphaComponent(isFrozen ? 0.58 : 0.38)
         cracks.lineWidth = 1
         cracks.lineCap = .round
         cracks.lineJoin = .round
@@ -1456,6 +1466,7 @@ final class BattlefieldScene: SKScene {
             )
         }
         spawnImpactEffect(at: WorldPoint(1_960, 1_570), intensity: 1.18, isFrozen: true)
+        addScorchMark(at: WorldPoint(1_990, 1_525), radius: 15.5, isFrozen: true)
     }
 
     private func showCommandConfirmationIfNeeded(
