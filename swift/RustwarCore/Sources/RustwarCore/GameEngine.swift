@@ -1609,7 +1609,8 @@ public struct GameEngine: Sendable {
             team: unit.team,
             metal: salvage,
             maxMetal: salvage,
-            ttl: Self.wreckTTL
+            ttl: Self.wreckTTL,
+            source: .unit(unit.type)
         )
     }
 
@@ -1624,7 +1625,8 @@ public struct GameEngine: Sendable {
             team: building.team,
             metal: salvage,
             maxMetal: salvage,
-            ttl: Self.wreckTTL
+            ttl: Self.wreckTTL,
+            source: .building(building.type)
         )
     }
 

@@ -491,3 +491,20 @@ flowchart LR
   R["Reduce Motion"] --> O["Opacity-only transient feedback"]
   C["Combat frozen ground strike + cooled crater"] --> PNG["Cloud ios-combat.png"]
 ```
+
+## v2.20 来源化可回收残骸
+
+```mermaid
+flowchart LR
+  D["Unit / building destroyed"] --> E["GameEngine.wreck(for:)"]
+  E --> S["WreckSource unit(type) / building(type)"]
+  S --> W["WreckSnapshot optional source"]
+  L["Legacy JSON without source"] --> N["source = nil"]
+  W --> R["BattlefieldScene drawWreck"]
+  N --> R
+  R --> U["Tracked / hover / naval / light wreck"]
+  R --> B["Foundation / extractor / turret / radar wreck"]
+  R --> G["Legacy generic scrap pile"]
+  W --> C["Reclaim / TTL / metal bar unchanged"]
+  F["Combat Tank + Turret wreck fixture"] --> PNG["Cloud ios-combat.png"]
+```

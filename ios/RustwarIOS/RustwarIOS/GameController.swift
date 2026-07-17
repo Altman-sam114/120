@@ -110,7 +110,28 @@ final class GameController {
 
     private static func combatVisualSmokeState(mapID: MapID) -> GameState {
         var state = GameState(mapID: mapID)
-        state.wrecks = []
+        state.wrecks = [
+            WreckSnapshot(
+                id: "visual-player-tank-wreck",
+                position: WorldPoint(1_850, 1_455),
+                size: GameDefinitions.unit(.tank).radius * 1.7,
+                team: .player,
+                metal: 54,
+                maxMetal: 72,
+                ttl: 46,
+                source: .unit(.tank)
+            ),
+            WreckSnapshot(
+                id: "visual-enemy-turret-wreck",
+                position: WorldPoint(1_990, 1_455),
+                size: GameDefinitions.building(.turret).size * 0.55,
+                team: .enemy,
+                metal: 58,
+                maxMetal: 80,
+                ttl: 42,
+                source: .building(.turret)
+            )
+        ]
 
         func unit(
             _ type: UnitType,

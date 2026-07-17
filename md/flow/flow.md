@@ -83,6 +83,8 @@ v2.18 将同一 scene-only 机械动态扩展到建筑 Turret：`nearestBuilding
 
 v2.19 精修 Scene-only 命中反馈：`spawnImpactEffect` 在既有可见 HP diff 门控后先向 `decalNode` 写入带余烬 rim 和确定性放射裂纹的焦坑，再向 `effectNode` 写入贴地椭圆 bloom、两层交错 radial corona、爆心/火球/冲击环、火花、碎片和三团烟尘。普通模式只使用短生命周期 `SKAction`，Reduce Motion 只淡出不移动、旋转或扩张；冻结 combat scenario 复用同一绘制函数，追加一个明确落弹点和一个与爆心分离的高对比旧焦坑供 artifact 复判。64 effect / 32 decal 上限、map reset、fog 层级、Core 只读和 visibility gate 保持。
 
+v2.20 为可回收残骸增加来源语义：独立 `WreckSource` 以 `.unit(UnitType)` / `.building(BuildingType)` 保存来源，`WreckSnapshot.source` 为 optional 且旧 JSON 缺字段时解码为 nil；`GameEngine.wreck(for:)` 在单位/建筑死亡时写入真实来源，但 salvage、size、TTL、Reclaim、AI 和存档恢复不变。SpriteKit `drawWreck` 根据来源选择固定节点的履带底盘、悬浮壳、舰体、轻型碎片或建筑基座几何，nil 使用通用碎片堆；TTL alpha 与 metal progress bar 保持。combat fixture 追加一具 Tank 残骸和一具 Turret 残骸供云端截图复判。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

@@ -6,6 +6,7 @@ public struct WreckSnapshot: Codable, Equatable, Identifiable, Sendable {
     public var metal: Double
     public var maxMetal: Double
     public var ttl: Double
+    public var source: WreckSource?
 
     public init(
         id: String,
@@ -14,7 +15,8 @@ public struct WreckSnapshot: Codable, Equatable, Identifiable, Sendable {
         team: Team,
         metal: Double,
         maxMetal: Double,
-        ttl: Double
+        ttl: Double,
+        source: WreckSource? = nil
     ) {
         self.id = id
         self.position = position
@@ -23,5 +25,6 @@ public struct WreckSnapshot: Codable, Equatable, Identifiable, Sendable {
         self.metal = metal
         self.maxMetal = maxMetal
         self.ttl = ttl
+        self.source = source
     }
 }

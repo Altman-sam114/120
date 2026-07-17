@@ -1669,6 +1669,32 @@ import Testing
     }
 }
 
+@Test func wreckSourceRoundTripsAndDefaultsForLegacyJSON() throws {
+    let wreck = WreckSnapshot(
+        id: "wreck-source",
+        position: WorldPoint(1_060, 2_040),
+        size: 34,
+        team: .enemy,
+        metal: 72,
+        maxMetal: 72,
+        ttl: 58,
+        source: .unit(.artillery)
+    )
+
+    let encoded = try JSONEncoder().encode(wreck)
+    let decoded = try JSONDecoder().decode(WreckSnapshot.self, from: encoded)
+    #expect(decoded == wreck)
+    #expect(decoded.source == .unit(.artillery))
+
+    var legacyJSON = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    legacyJSON.removeValue(forKey: "source")
+    let legacyEncoded = try JSONSerialization.data(withJSONObject: legacyJSON)
+    let legacyDecoded = try JSONDecoder().decode(WreckSnapshot.self, from: legacyEncoded)
+    #expect(legacyDecoded.source == nil)
+    #expect(legacyDecoded.id == wreck.id)
+    #expect(legacyDecoded.metal == wreck.metal)
+}
+
 @Test func buildOrderJSONRoundTripPreservesTarget() throws {
     var state = GameState(mapID: .coast)
     let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
@@ -5430,6 +5456,7 @@ import Testing
     #expect(wreck.maxMetal == 22)
     #expect(wreck.size == GameDefinitions.unit(.scout).radius * 1.7)
     #expect(wreck.ttl == 57)
+    #expect(wreck.source == .unit(.scout))
 }
 
 @Test func destroyedExtractorCreatesWreckAndReleasesResourceNode() throws {
@@ -5450,6 +5477,7 @@ import Testing
     #expect(wreck.position == extractor.position)
     #expect(wreck.metal == 62)
     #expect(wreck.maxMetal == 62)
+    #expect(wreck.source == .building(.extractor))
 }
 
 @Test func reclaimCommandRejectsMissingInvalidAndEmptyTargets() throws {

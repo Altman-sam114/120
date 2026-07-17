@@ -4641,3 +4641,40 @@
 
 - 冻结 PNG 只能证明单帧几何、层级、遮挡与颜色可读性，不证明 corona 扩张、裂纹/焦坑淡出、烟团移动、动态 Reduce Motion 或密集交火帧率。
 - 本轮仍未加入正式 sprite atlas、逐帧爆炸、动态光照、粒子 shader、音效、屏幕震动、XCUITest 或真机性能基线。
+
+### v2.20 / typed salvage wreck models
+
+日期：2026-07-18
+
+核心变更：
+
+- 新增独立 `WreckSource`，以 `.unit(UnitType)` 或 `.building(BuildingType)` 记录残骸来源；`WreckSnapshot.source` 为 optional 且 initializer 默认 nil，旧 JSON 缺字段继续解码为 nil。新增来源 JSON 往返/legacy default 测试，并在既有单位/建筑死亡测试中核对真实来源。
+- `GameEngine.wreck(for:)` 在单位或建筑死亡时写入来源，不改变 salvage、size、team、TTL、资源点释放、Reclaim、AI 清理或选择/订单语义。
+- `BattlefieldScene.drawWreck` 用确定性小角度、TTL alpha 和固定节点程序化模型替换单一棕色菱形：履带类保留双履带/烧毁 hull/断炮管，Hover、Gunboat、Builder/Scout 使用不同残壳，五类建筑使用破损基座、环形结构或折断设施；旧存档 nil 来源显示改良通用碎片堆。黄色金属回收进度条保持。
+- combat fixture 增加一具玩家 Tank 残骸和一具敌方 Turret 残骸，位置避开现有活单位、建筑、弹道、中央爆点和旧焦坑；普通地图初始状态不变。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/WreckSource.swift`
+- `swift/RustwarCore/Sources/RustwarCore/WreckSnapshot.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.20-ios-typed-salvage-wreck-models.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
+- v2.19 最终验收记录提交 `60dad87bfe7c66c8d21c83a2610f7827a0707374` 的 run `29595005215`、attempt `1` 已成功；artifact `rustwar-ci-v1.2-main-60dad87-run29595005215-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29595005215/`，大小 `1.4M`。manifest、JUnit 8/0/1、303 Core tests、双架构编译、`BUILD SUCCEEDED`、双 launch/probe 和双 PNG 人工复判全部通过；workflow 仅有 `actions/upload-artifact@v5` Node 20 弃用兼容警告。
+- v2.20 等待实现 SHA push 后的 GitHub Actions 和 artifact 验收。
+
+遗留事项：
+
+- `WreckSource` 只表达来源类别，不保存死亡时 hull/weapon heading、升级等级、精确损伤部位或自定义外观；残骸朝向为位置/尺寸确定性视觉值。
+- 当前残骸仍是程序化矢量节点，不含 sprite atlas、烟火余焰动画、物理碎片、地形嵌入、动态阴影或大量残骸帧率基线。

@@ -2661,13 +2661,11 @@ final class BattlefieldScene: SKScene {
 
         let side = max(12, wreck.size)
         let alpha = CGFloat(Swift.max(0.22, Swift.min(0.82, wreck.ttl / 58)))
-        let rect = CGRect(x: -side / 2, y: -side / 2, width: side, height: side)
-        let node = SKShapeNode(rect: rect, cornerRadius: 4)
+        let node = SKNode()
         node.position = spritePoint(for: wreck.position)
-        node.zRotation = CGFloat.pi / 4
-        node.fillColor = SKColor(red: 0.38, green: 0.32, blue: 0.25, alpha: alpha)
-        node.strokeColor = SKColor.systemYellow.withAlphaComponent(0.48)
-        node.lineWidth = 1.5
+        node.zRotation = wreckRotation(for: wreck)
+        node.alpha = alpha
+        node.addChild(wreckBody(for: wreck, side: side))
         entityNode.addChild(node)
 
         let fraction = Swift.min(1, Swift.max(0, wreck.metal / wreck.maxMetal))
@@ -2685,6 +2683,264 @@ final class BattlefieldScene: SKScene {
         barFill.strokeColor = barFill.fillColor
         barFill.lineWidth = 0
         entityNode.addChild(barFill)
+    }
+
+    private func wreckRotation(for wreck: WreckSnapshot) -> CGFloat {
+        let bucket = abs(
+            Int(wreck.position.x.rounded()) &* 31
+                &+ Int(wreck.position.y.rounded()) &* 17
+                &+ Int(wreck.size.rounded()) &* 13
+        ) % 13
+        return CGFloat(bucket - 6) * 0.055
+    }
+
+    private func wreckBody(for wreck: WreckSnapshot, side: Double) -> SKNode {
+        let body = SKNode()
+        let rust = SKColor(red: 0.3, green: 0.22, blue: 0.15, alpha: 0.96)
+        let char = SKColor(red: 0.08, green: 0.075, blue: 0.07, alpha: 0.98)
+        let edge = SKColor(red: 0.52, green: 0.34, blue: 0.18, alpha: 0.82)
+        let accent = teamColor(wreck.team).withAlphaComponent(0.42)
+
+        switch wreck.source {
+        case let .unit(type):
+            addUnitWreck(type, side: side, rust: rust, char: char, edge: edge, accent: accent, to: body)
+        case let .building(type):
+            addBuildingWreck(type, side: side, rust: rust, char: char, edge: edge, accent: accent, to: body)
+        case nil:
+            body.addChild(polygonNode([
+                CGPoint(x: -side * 0.48, y: -side * 0.2),
+                CGPoint(x: -side * 0.18, y: -side * 0.5),
+                CGPoint(x: side * 0.46, y: -side * 0.28),
+                CGPoint(x: side * 0.34, y: side * 0.38),
+                CGPoint(x: -side * 0.3, y: side * 0.46)
+            ], fill: rust, stroke: edge, lineWidth: 1.5))
+            body.addChild(lineNode(
+                from: CGPoint(x: -side * 0.4, y: -side * 0.38),
+                to: CGPoint(x: side * 0.44, y: side * 0.34),
+                color: char,
+                width: 3
+            ))
+            body.addChild(lineNode(
+                from: CGPoint(x: -side * 0.34, y: side * 0.36),
+                to: CGPoint(x: side * 0.38, y: -side * 0.42),
+                color: accent,
+                width: 2
+            ))
+        }
+        return body
+    }
+
+    private func addUnitWreck(
+        _ type: UnitType,
+        side: Double,
+        rust: SKColor,
+        char: SKColor,
+        edge: SKColor,
+        accent: SKColor,
+        to body: SKNode
+    ) {
+        switch type {
+        case .tank, .aaTank, .artillery:
+            for x in [-side * 0.35, side * 0.35] {
+                body.addChild(rectNode(
+                    CGRect(x: x - side * 0.12, y: -side * 0.48, width: side * 0.24, height: side * 0.96),
+                    cornerRadius: side * 0.08,
+                    fill: char,
+                    stroke: edge,
+                    lineWidth: 1
+                ))
+            }
+            body.addChild(polygonNode([
+                CGPoint(x: -side * 0.27, y: -side * 0.38),
+                CGPoint(x: side * 0.3, y: -side * 0.3),
+                CGPoint(x: side * 0.24, y: side * 0.38),
+                CGPoint(x: -side * 0.34, y: side * 0.26)
+            ], fill: rust, stroke: edge, lineWidth: 1.5))
+            body.addChild(circleNode(radius: side * 0.2, fill: char, stroke: accent, lineWidth: 1.4))
+
+            let barrelLength = type == .artillery ? side * 0.76 : side * 0.56
+            let barrelWidth = type == .artillery ? 3.2 : 2.6
+            if type == .aaTank {
+                for y in [-side * 0.09, side * 0.09] {
+                    body.addChild(lineNode(
+                        from: CGPoint(x: side * 0.08, y: y),
+                        to: CGPoint(x: barrelLength, y: y + side * 0.08),
+                        color: edge,
+                        width: 2.2
+                    ))
+                }
+            } else {
+                body.addChild(lineNode(
+                    from: CGPoint(x: side * 0.08, y: 0),
+                    to: CGPoint(x: barrelLength * 0.62, y: side * 0.06),
+                    color: edge,
+                    width: barrelWidth
+                ))
+                body.addChild(lineNode(
+                    from: CGPoint(x: barrelLength * 0.62, y: side * 0.06),
+                    to: CGPoint(x: barrelLength, y: side * 0.22),
+                    color: char,
+                    width: barrelWidth * 0.72
+                ))
+            }
+
+        case .hover:
+            body.addChild(ellipseNode(
+                CGRect(x: -side * 0.5, y: -side * 0.34, width: side, height: side * 0.68),
+                fill: char,
+                stroke: edge,
+                lineWidth: 1.6
+            ))
+            body.addChild(circleNode(radius: side * 0.22, fill: rust, stroke: accent, lineWidth: 1.3))
+            for x in [-side * 0.43, side * 0.43] {
+                let pod = circleNode(radius: side * 0.13, fill: char, stroke: edge, lineWidth: 1)
+                pod.position.x = x
+                body.addChild(pod)
+            }
+            body.addChild(lineNode(
+                from: CGPoint(x: -side * 0.34, y: -side * 0.28),
+                to: CGPoint(x: side * 0.4, y: side * 0.3),
+                color: accent,
+                width: 2
+            ))
+
+        case .gunboat:
+            body.addChild(polygonNode([
+                CGPoint(x: -side * 0.58, y: 0),
+                CGPoint(x: -side * 0.34, y: -side * 0.34),
+                CGPoint(x: side * 0.44, y: -side * 0.25),
+                CGPoint(x: side * 0.62, y: side * 0.04),
+                CGPoint(x: side * 0.32, y: side * 0.32),
+                CGPoint(x: -side * 0.4, y: side * 0.24)
+            ], fill: char, stroke: edge, lineWidth: 1.5))
+            body.addChild(rectNode(
+                CGRect(x: -side * 0.2, y: -side * 0.18, width: side * 0.48, height: side * 0.36),
+                cornerRadius: side * 0.08,
+                fill: rust,
+                stroke: accent,
+                lineWidth: 1.2
+            ))
+            body.addChild(lineNode(
+                from: CGPoint(x: -side * 0.44, y: side * 0.28),
+                to: CGPoint(x: side * 0.42, y: -side * 0.3),
+                color: char,
+                width: 2.4
+            ))
+
+        case .builder, .scout:
+            body.addChild(polygonNode([
+                CGPoint(x: -side * 0.5, y: -side * 0.14),
+                CGPoint(x: -side * 0.12, y: -side * 0.48),
+                CGPoint(x: side * 0.48, y: -side * 0.18),
+                CGPoint(x: side * 0.26, y: side * 0.44),
+                CGPoint(x: -side * 0.34, y: side * 0.34)
+            ], fill: rust, stroke: edge, lineWidth: 1.4))
+            body.addChild(circleNode(radius: side * 0.16, fill: char, stroke: accent, lineWidth: 1.2))
+            if type == .builder {
+                body.addChild(lineNode(
+                    from: CGPoint(x: -side * 0.08, y: side * 0.08),
+                    to: CGPoint(x: side * 0.5, y: side * 0.4),
+                    color: edge,
+                    width: 2.6
+                ))
+                let joint = circleNode(radius: side * 0.09, fill: char, stroke: edge, lineWidth: 1)
+                joint.position = CGPoint(x: side * 0.48, y: side * 0.4)
+                body.addChild(joint)
+            } else {
+                body.addChild(lineNode(
+                    from: CGPoint(x: -side * 0.4, y: side * 0.34),
+                    to: CGPoint(x: side * 0.44, y: -side * 0.36),
+                    color: accent,
+                    width: 2
+                ))
+            }
+        }
+    }
+
+    private func addBuildingWreck(
+        _ type: BuildingType,
+        side: Double,
+        rust: SKColor,
+        char: SKColor,
+        edge: SKColor,
+        accent: SKColor,
+        to body: SKNode
+    ) {
+        let half = side / 2
+        switch type {
+        case .command, .landFactory:
+            body.addChild(rectNode(
+                CGRect(x: -half, y: -half * 0.72, width: side, height: side * 0.72),
+                cornerRadius: side * 0.08,
+                fill: char,
+                stroke: edge,
+                lineWidth: 1.6
+            ))
+            body.addChild(polygonNode([
+                CGPoint(x: -half * 0.86, y: -half * 0.45),
+                CGPoint(x: -half * 0.3, y: half * 0.66),
+                CGPoint(x: half * 0.08, y: half * 0.18),
+                CGPoint(x: half * 0.48, y: half * 0.72),
+                CGPoint(x: half * 0.88, y: -half * 0.36)
+            ], fill: rust, stroke: edge, lineWidth: 1.4))
+            body.addChild(lineNode(
+                from: CGPoint(x: -half * 0.78, y: -half * 0.52),
+                to: CGPoint(x: half * 0.72, y: half * 0.55),
+                color: accent,
+                width: 2
+            ))
+
+        case .extractor:
+            body.addChild(circleNode(radius: half * 0.92, fill: char, stroke: edge, lineWidth: 1.7))
+            body.addChild(circleNode(radius: half * 0.55, fill: rust, stroke: accent, lineWidth: 1.4))
+            for index in 0..<4 {
+                let angle = Double(index) * Double.pi / 2 + 0.22
+                body.addChild(lineNode(
+                    from: CGPoint(x: cos(angle) * half * 0.24, y: sin(angle) * half * 0.24),
+                    to: CGPoint(x: cos(angle + 0.18) * half, y: sin(angle + 0.18) * half),
+                    color: edge,
+                    width: 2
+                ))
+            }
+
+        case .turret:
+            body.addChild(circleNode(radius: half * 0.94, fill: char, stroke: edge, lineWidth: 1.8))
+            body.addChild(circleNode(radius: half * 0.58, fill: rust, stroke: accent, lineWidth: 1.5))
+            body.addChild(polygonNode([
+                CGPoint(x: -half * 0.3, y: -half * 0.42),
+                CGPoint(x: half * 0.42, y: -half * 0.24),
+                CGPoint(x: half * 0.34, y: half * 0.38),
+                CGPoint(x: -half * 0.46, y: half * 0.2)
+            ], fill: char, stroke: edge, lineWidth: 1.2))
+            body.addChild(lineNode(
+                from: CGPoint(x: half * 0.1, y: 0),
+                to: CGPoint(x: half * 0.82, y: half * 0.14),
+                color: edge,
+                width: 3
+            ))
+            body.addChild(lineNode(
+                from: CGPoint(x: half * 0.82, y: half * 0.14),
+                to: CGPoint(x: half * 1.12, y: half * 0.42),
+                color: char,
+                width: 2
+            ))
+
+        case .radar:
+            body.addChild(circleNode(radius: half * 0.9, fill: char, stroke: edge, lineWidth: 1.7))
+            body.addChild(circleNode(radius: half * 0.45, fill: rust, stroke: accent, lineWidth: 1.4))
+            body.addChild(lineNode(
+                from: CGPoint(x: -half * 0.18, y: -half * 0.1),
+                to: CGPoint(x: half * 0.28, y: half * 0.68),
+                color: edge,
+                width: 2.6
+            ))
+            body.addChild(lineNode(
+                from: CGPoint(x: half * 0.28, y: half * 0.68),
+                to: CGPoint(x: half * 0.86, y: half * 0.42),
+                color: char,
+                width: 2
+            ))
+        }
     }
 
     private func addOrderLine(path: CGPath, color: SKColor, isSelected: Bool) {
