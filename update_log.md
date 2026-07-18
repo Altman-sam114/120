@@ -4707,7 +4707,9 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
-- 实现提交、GitHub Actions run、artifact manifest/JUnit/build/probe 和双 PNG 人工复判待本轮 push 后补记。
+- 实现提交 `f8c697925315f7f597912f62508e2d3cc8ade254` 已 push 到 `origin/main`，对应 GitHub Actions run `29630449990`、attempt `1` 成功；artifact `rustwar-ci-v1.2-main-f8c6979-run29630449990-attempt1` 已下载到 `/private/tmp/rustwar-c-review-29630449990/`，大小 `1.4M`。
+- manifest v1.2 的 `branch=main`、完整 SHA、run id、run attempt、Xcode 26.5 / iOS 26.5 Simulator 与实现提交完全一致；JUnit 为 8 checks、0 failures、1 browser skip，304 个 RustwarCore tests 通过。`GameController.swift`、`TacticalCommandDockView.swift` 和 `TacticalProductionSectionView.swift` 均有 arm64/x86_64 编译证据，日志包含 `BUILD SUCCEEDED`，production/combat 双 launch、orientation 和 pixel probe 全部成功。
+- `ios-home.png` 为 2622x1206、透明比例 0、亮度标准差 46.280；Agent C 人工确认 Build Queue 首屏完整显示 4 orders、Scout 46% / 3s、连续进度条，以及同屏的 Light Tank、AA Tank、Artillery 编号卡，文字未溢出且下方生产按钮仍提供下一段内容提示。`ios-combat.png` 为 2622x1206、亮度标准差 44.175，v2.20 阵型、残骸、炮塔、弹道、爆点、HUD 与 Tactical Map 均保持可读，无新增遮挡或视觉回退。
 
 遗留事项：
 
