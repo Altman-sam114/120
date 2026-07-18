@@ -301,10 +301,14 @@ private struct TacticalCurrentProductionView: View {
             }
             Text(definition.name)
                 .font(.caption.bold())
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
             Text("\(percent)% / \(remainingSeconds)s")
                 .font(.caption)
                 .foregroundStyle(TacticalHUDTheme.secondaryText)
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             ProgressView(value: item.progressFraction)
                 .tint(TacticalHUDTheme.accent)
         }
@@ -346,6 +350,8 @@ private struct TacticalQueuedProductionView: View {
             }
             Text(definition.name)
                 .font(.caption.bold())
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
             Text("\(Int(item.buildTime))s")
                 .font(.caption)
                 .monospacedDigit()
