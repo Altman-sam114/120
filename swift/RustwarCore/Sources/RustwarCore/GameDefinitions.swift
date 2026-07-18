@@ -45,7 +45,31 @@ public enum GameDefinitions {
                 )
             ]
         ),
-        .landFactory: BuildingDefinition(type: .landFactory, name: "Land Factory", icon: "LF", hitPoints: 920, size: 76, metalCost: 620, buildTime: 22, income: 0, supply: 8, vision: 310, produces: [.scout, .tank, .hover, .artillery, .aaTank]),
+        .landFactory: BuildingDefinition(
+            type: .landFactory,
+            name: "Land Factory",
+            icon: "LF",
+            hitPoints: 920,
+            size: 76,
+            metalCost: 620,
+            buildTime: 22,
+            income: 0,
+            supply: 8,
+            vision: 310,
+            produces: [.scout, .tank, .hover, .artillery, .aaTank],
+            upgrades: [
+                BuildingUpgradeDefinition(
+                    level: 2,
+                    name: "Land Factory T2",
+                    metalCost: 900,
+                    buildTime: 24,
+                    hitPoints: 1_200,
+                    vision: 360,
+                    radarRange: 0,
+                    productionSpeedMultiplier: 1.25
+                )
+            ]
+        ),
         .turret: BuildingDefinition(type: .turret, name: "Turret", icon: "TR", hitPoints: 650, size: 48, metalCost: 330, buildTime: 13, income: 0, supply: 0, vision: 330, attackRange: 230, damage: 28, reloadTime: 1.2),
         .radar: BuildingDefinition(
             type: .radar,
@@ -119,5 +143,17 @@ public enum GameDefinitions {
         building(snapshot.type).upgrades
             .filter { $0.level > snapshot.upgradeLevel }
             .min { $0.level < $1.level }
+    }
+
+    public static func productionSpeedMultiplier(for snapshot: BuildingSnapshot) -> Double {
+        let multiplier = building(snapshot.type).upgrades
+            .filter { $0.level <= snapshot.upgradeLevel && $0.productionSpeedMultiplier != nil }
+            .max { $0.level < $1.level }?
+            .productionSpeedMultiplier
+        return max(0.1, multiplier ?? 1)
+    }
+
+    public static func productionBuildTime(for unitType: UnitType, at producer: BuildingSnapshot) -> Double {
+        unit(unitType).buildTime / productionSpeedMultiplier(for: producer)
     }
 }

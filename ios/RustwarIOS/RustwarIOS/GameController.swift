@@ -295,6 +295,13 @@ final class GameController {
         return GameDefinitions.building(building.type).produces
     }
 
+    func productionBuildTime(for unitType: UnitType) -> Double {
+        guard let producer = selectedPlayerProducer else {
+            return GameDefinitions.unit(unitType).buildTime
+        }
+        return GameDefinitions.productionBuildTime(for: unitType, at: producer)
+    }
+
     var productionQueueItems: [ProductionQueueItem] {
         selectedPlayerProducer?.productionQueue ?? []
     }
@@ -486,6 +493,66 @@ final class GameController {
 
     var canCancelSelectedExtractorUpgrade: Bool {
         selectedCompletedPlayerExtractor?.upgradeProgress != nil
+    }
+
+    var showsSelectedFactoryTech: Bool {
+        selectedCompletedPlayerFactory != nil
+    }
+
+    var selectedFactoryTechLevel: Int {
+        selectedCompletedPlayerFactory?.upgradeLevel ?? 1
+    }
+
+    var selectedFactoryProductionSpeedText: String {
+        guard let factory = selectedCompletedPlayerFactory else {
+            return "1x production"
+        }
+        let multiplier = GameDefinitions.productionSpeedMultiplier(for: factory)
+        let value = multiplier.formatted(.number.precision(.fractionLength(0...2)))
+        return "\(value)x production"
+    }
+
+    var selectedFactoryUpgradeProgress: Double? {
+        selectedCompletedPlayerFactory?.upgradeProgress
+    }
+
+    var showsSelectedFactoryUpgradeControl: Bool {
+        guard let factory = selectedCompletedPlayerFactory,
+              factory.upgradeProgress == nil else {
+            return false
+        }
+        return GameDefinitions.nextUpgrade(for: factory) != nil
+    }
+
+    var canUpgradeSelectedFactory: Bool {
+        guard let factory = selectedCompletedPlayerFactory,
+              factory.upgradeProgress == nil,
+              let upgrade = GameDefinitions.nextUpgrade(for: factory) else {
+            return false
+        }
+        return engine.state.metal[.player, default: 0] >= upgrade.metalCost
+    }
+
+    var canCancelSelectedFactoryUpgrade: Bool {
+        selectedCompletedPlayerFactory?.upgradeProgress != nil
+    }
+
+    var upgradeFactoryButtonTitle: String {
+        guard let factory = selectedCompletedPlayerFactory,
+              let upgrade = GameDefinitions.nextUpgrade(for: factory) else {
+            return "Upgrade Factory"
+        }
+        return "Upgrade T\(upgrade.level) - \(Int(upgrade.metalCost)) Metal"
+    }
+
+    var factoryUpgradeBenefitText: String? {
+        guard let factory = selectedCompletedPlayerFactory,
+              let upgrade = GameDefinitions.nextUpgrade(for: factory) else {
+            return nil
+        }
+        let speed = (upgrade.productionSpeedMultiplier ?? 1)
+            .formatted(.number.precision(.fractionLength(0...2)))
+        return "\(speed)x production | \(Int(upgrade.hitPoints)) HP"
     }
 
     var selectedRadarUpgradeSummary: String? {
@@ -1195,6 +1262,21 @@ final class GameController {
     func cancelExtractorUpgrade() {
         let result = engine.cancelBuildingUpgrade()
         commandStatus = statusText(forExtractorUpgradeCancel: result)
+        reportCommandFeedback(for: result)
+        renderRevision += 1
+    }
+
+    func upgradeSelectedFactory() {
+        let result = engine.queueBuildingUpgrade()
+        commandStatus = statusText(forFactoryUpgrade: result)
+        reportCommandFeedback(for: result)
+        renderRevision += 1
+        mapRenderRevision += 1
+    }
+
+    func cancelFactoryUpgrade() {
+        let result = engine.cancelBuildingUpgrade()
+        commandStatus = statusText(forFactoryUpgradeCancel: result)
         reportCommandFeedback(for: result)
         renderRevision += 1
     }
@@ -1965,6 +2047,10 @@ final class GameController {
         selectedCompletedPlayerBuilding(type: .extractor)
     }
 
+    private var selectedCompletedPlayerFactory: BuildingSnapshot? {
+        selectedCompletedPlayerBuilding(type: .landFactory)
+    }
+
     private func selectedCompletedPlayerBuilding(type: BuildingType) -> BuildingSnapshot? {
         let selectedIDs = engine.state.selectedEntityIDs.isEmpty
             ? engine.state.selectedEntityID.map { [$0] } ?? []
@@ -2288,6 +2374,37 @@ final class GameController {
             return "Extractor required"
         case .noUpgradeQueued:
             return "No extractor upgrade queued"
+        }
+    }
+
+    private func statusText(forFactoryUpgrade result: BuildingUpgradeResult) -> String? {
+        switch result {
+        case .queued:
+            return "Factory T2 upgrade started"
+        case .noSelection:
+            return "No factory selected"
+        case .selectedBuildingCannotUpgrade:
+            return "Land Factory required"
+        case .upgradeAlreadyQueued:
+            return "Factory upgrade already queued"
+        case .fullyUpgraded:
+            return "Factory already at max tech"
+        case .insufficientMetal:
+            return "Need more metal"
+        }
+    }
+
+    private func statusText(forFactoryUpgradeCancel result: BuildingUpgradeCancelResult) -> String? {
+        switch result {
+        case let .cancelled(refundedMetal):
+            let refund = refundedMetal.formatted(.number.precision(.fractionLength(0...1)))
+            return "Factory upgrade cancelled (+\(refund) metal)"
+        case .noSelection:
+            return "No factory selected"
+        case .selectedBuildingCannotCancelUpgrade:
+            return "Land Factory required"
+        case .noUpgradeQueued:
+            return "No factory upgrade queued"
         }
     }
 

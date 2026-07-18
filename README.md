@@ -55,6 +55,7 @@
 - v2.19 起，单位或建筑受到可见伤害时，命中反馈会组合贴地椭圆冲击光、不规则双层火焰冠、高亮爆心、冲击环、火花、装甲碎片和三层烟团，并在地面留下带余烬边缘与放射裂纹的短寿命焦坑；普通命中与摧毁焦痕继续共用 32 decal 上限，瞬态效果继续受 64 effect 上限约束。Reduce Motion 下所有位移、旋转和扩张退化为短透明度反馈，Core 伤害、射程、冷却、fog、命令和存档不变。
 - v2.20 起，新生成的可回收残骸会保存来源单位或建筑类型：Tank / AA Tank / Artillery 留下烧毁履带底盘与断裂炮管，Hover、Gunboat、Builder/Scout 使用各自残壳轮廓，Command Center / Factory、Extractor、Turret、Radar 则保留不同的破损基座结构。旧存档中没有来源字段的残骸仍可读取并使用通用金属碎片堆；残骸金属、TTL、回收命令、进度条、AI 回收和存档恢复语义不变。
 - v2.21 起，点开己方 Command Center 或 Land Factory 后，Production 首部会直接显示完整 Build Queue：当前单位使用名称、真实完成百分比、剩余秒数和进度条，后续单位按队列位置、类型与生产时间横向排列；队列总数始终可见。取消按钮明确为 Cancel Last 并继续取消队尾，Repeat、Rally、生产按钮、快捷键、退款和 Core 队列语义不变。
+- v2.22 起，完成状态己方 Land Factory 的 Production 首部直接显示 Factory Tech：T1 可消耗 900 metal、用 24 秒升级 T2，完成后 HP 从 920 提升到 1200、vision 从 310 提升到 360，并让之后新入队单位的生产时间缩短 20%（生产速度 1.25x）。升级与当前生产队列并行推进，升级前已存在的队列项目保留原 buildTime；升级可取消并按剩余进度退款。T2 工厂增加强化屋顶导轨与科技核心轮廓，生产按钮会显示当前工厂真实 buildTime。
 
 当前验证制度：
 
@@ -147,9 +148,10 @@
 - Upgrade Extractor：选中完成状态己方 Extractor 且金属足够时显示；T1 点按后消耗 650 金属并启动 20 秒 T2 升级，完成后收入提升到 18、HP 上限提升到 760、真实视野提升到 290；T2 可继续消耗 1250 金属并启动 32 秒 T3 升级，完成后收入提升到 32、HP 上限提升到 1020、真实视野提升到 340。升级进度会显示在建筑下方，升级中可用 Cancel Upgrade 按剩余进度退款。
 - Turret：选中己方 Builder 时显示；点按后进入炮塔放置模式，再 tap 清晰陆地点扣除 330 金属并创建未完成 Turret；多选 Builder 时所有选中己方 Builder 会协同建造同一个新 Turret，并在远距接近时分散到目标周边；完成后的 Turret 会自动攻击射程内敌方单位或建筑。
 - Factory：选中己方 Builder 时显示；点按后进入工厂放置模式，再 tap 清晰陆地点扣除 620 金属并创建未完成 Land Factory；多选 Builder 时所有选中己方 Builder 会协同建造同一个新 Land Factory，并在远距接近时分散到目标周边；完成后该工厂可生产 Scout / Light Tank / Hover Tank / Artillery / AA Tank。
+- Upgrade Factory：选中完成状态己方 Land Factory 时直接显示在 Production 顶部；T1 可升级到 T2，升级中显示真实进度并可取消，完成后提高 HP、视野和未来新入队单位的生产速度。
 - Radar：选中己方 Builder 时显示；点按后进入雷达站放置模式，再 tap 清晰陆地点扣除 430 金属并创建未完成 Radar Station；多选 Builder 时所有选中己方 Builder 会协同建造同一个新 Radar Station，并在完成后提供雷达信号范围。
 - Upgrade Radar：选中完成状态己方 Radar Station 且金属足够时显示；点按后消耗 780 金属并启动 22 秒 T2 升级，升级完成后 HP 上限提升到 520、真实视野提升到 390、雷达范围提升到 1360。升级进度会显示在建筑下方，HUD 雷达 VoiceOver 摘要会报告已升级雷达数量。
-- Cancel Upgrade：选中正在升级的完成状态己方 Radar Station 或 Extractor 时显示；点按后取消当前升级进度，并按剩余进度返还金属。
+- Cancel Upgrade：选中正在升级的完成状态己方 Radar Station、Extractor 或 Land Factory 时显示在对应建筑操作区；点按后取消当前升级进度，并按剩余进度返还金属。
 - Attack：选中己方单位时显示；点按后进入攻击目标模式，再 tap 当前玩家视野内的敌方单位或建筑下达攻击命令；多选时所有选中己方单位会攻击同一敌方目标。单位会靠近射程、造成伤害并移除被摧毁目标。
 - Stop：选中己方单位时显示；点按后清除所有选中己方单位当前移动、攻击移动、巡逻、护航、维修、回收、建造或攻击命令，并取消正在等待落点/目标/框选的 Move、Attack Move、Patrol、Guard、Repair、Reclaim、Build Extractor、Turret、Factory、Attack 或 Select Area 模式。
 - Builder：选中完成状态己方 Command Center 时显示；点按后扣除金属并加入生产队列，完成后在该 Command Center 的集结点生成新的 Builder。

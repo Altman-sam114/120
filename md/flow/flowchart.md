@@ -418,6 +418,21 @@ flowchart LR
   D --> P["ios-home.png artifact review"]
 ```
 
+## v2.22 Land Factory T2
+
+```mermaid
+flowchart LR
+  S["Selected completed Land Factory"] --> T["Factory Tech panel"]
+  T --> U["Upgrade T2<br/>900 metal / 24 seconds"]
+  U --> P["BuildingSnapshot.upgradeProgress"]
+  P --> C["T2 complete<br/>1200 HP / 360 vision"]
+  C --> M["productionSpeedMultiplier 1.25x"]
+  M --> Q["Future ProductionQueueItem<br/>base buildTime / 1.25"]
+  E["Existing queued items"] --> K["Keep captured buildTime"]
+  T --> X["Cancel + remaining-progress refund"]
+  C --> V["T2 roof rails + tech core"]
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid

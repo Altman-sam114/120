@@ -4715,3 +4715,41 @@
 
 - 静态 production PNG 只能证明固定队列构图与首屏可读性，不证明横向滚动、实时进度、取消/生产点击、VoiceOver、真机触摸或超长队列性能。
 - 本轮不加入单位缩略图资产、队列拖拽重排、单项任意取消、批量生产步进或生产完成通知。
+
+### v2.22 / iOS Land Factory T2
+
+日期：2026-07-18
+
+核心变更：
+
+- Land Factory 新增单一 T2 upgrade：900 metal、24 秒、1200 HP、360 vision、1.25x production speed；复用通用 upgradeProgress、完成 HP 补差、取消退款和存档字段。
+- `BuildingUpgradeDefinition.productionSpeedMultiplier` 为 optional/default nil；`GameDefinitions` 按 producer 已完成 tech 计算 effective buildTime，`enqueueUnit` 只在新建 `ProductionQueueItem` 时捕获该值。升级与当前生产队列并行推进，升级前已有队列不被改写。
+- Production 首部新增 Factory Tech 面板，直接显示 T1/T2、当前生产倍率、升级费用/收益、真实升级进度、取消入口或 MAX TECH；生产按钮秒数与 VoiceOver 同步使用当前工厂 effective buildTime。
+- T2 工厂 SpriteKit 模型增加强化屋顶导轨与青色科技核心，除颜色外还有明确结构差异；普通 T1、combat fixture、AI 工厂策略和 Web 原型不变。
+- 实际观看公开 YouTube “Rusted Warfare Guide Units and Factories” 0:02 帧，可见右侧紧凑生产网格、右上小地图、顶部资源和中央选中生产建筑；该帧没有可见升级按钮，因此只作为高密度建筑操作布局参考，具体 T2 控件、数值与模型为 Rustwar 原创。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/BuildingDefinition.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameDefinitions.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.22-ios-land-factory-t2.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
+- 实现提交、GitHub Actions run、artifact manifest/JUnit/build/probe 和双 PNG 人工复判待本轮 push 后补记。
+
+遗留事项：
+
+- production 静态 PNG 只能证明 T1 可用升级入口与队列布局，不证明升级点击、24 秒动态进度、取消退款、T2 真机模型、VoiceOver 或长期经济平衡。
+- 本轮 T2 只提升生产效率、防护和视野，不解锁新单位；红方 AI 暂不主动升级 Land Factory。

@@ -62,6 +62,7 @@ public struct BuildingUpgradeDefinition: Codable, Equatable, Sendable {
     public let income: Double?
     public let vision: Double
     public let radarRange: Double
+    public let productionSpeedMultiplier: Double?
 
     public init(
         level: Int,
@@ -71,7 +72,8 @@ public struct BuildingUpgradeDefinition: Codable, Equatable, Sendable {
         hitPoints: Double,
         income: Double? = nil,
         vision: Double,
-        radarRange: Double
+        radarRange: Double,
+        productionSpeedMultiplier: Double? = nil
     ) {
         self.level = level
         self.name = name
@@ -81,5 +83,6 @@ public struct BuildingUpgradeDefinition: Codable, Equatable, Sendable {
         self.income = income
         self.vision = vision
         self.radarRange = radarRange
+        self.productionSpeedMultiplier = productionSpeedMultiplier
     }
 }

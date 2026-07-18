@@ -2251,6 +2251,23 @@ final class BattlefieldScene: SKScene {
                     width: 3
                 ))
             }
+            if building.upgradeLevel >= 2 {
+                for y in [-half * 0.9, half * 0.9] {
+                    body.addChild(rectNode(
+                        CGRect(x: -half * 0.72, y: y - half * 0.08, width: half * 1.44, height: half * 0.16),
+                        cornerRadius: 2,
+                        fill: armorLightColor,
+                        stroke: .systemCyan,
+                        lineWidth: 1.5
+                    ))
+                }
+                body.addChild(circleNode(
+                    radius: half * 0.18,
+                    fill: .systemCyan.withAlphaComponent(0.82),
+                    stroke: .white.withAlphaComponent(0.88),
+                    lineWidth: 1.4
+                ))
+            }
         case .turret:
             body.addChild(circleNode(radius: half * 0.9, fill: armorDarkColor, stroke: outlineColor, lineWidth: 2.2))
             body.addChild(circleNode(radius: half * 0.62, fill: armorMidColor, stroke: teamColor(building.team), lineWidth: 2.4))

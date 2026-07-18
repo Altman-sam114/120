@@ -675,6 +675,94 @@ import Testing
     #expect(state.income(for: .player) == 59)
 }
 
+@Test func landFactoryT2UpgradeDefinitionAndProductionSpeed() throws {
+    let factoryDefinition = GameDefinitions.building(.landFactory)
+    let upgrade = try #require(factoryDefinition.upgrades.first)
+
+    #expect(factoryDefinition.upgrades.count == 1)
+    #expect(upgrade.level == 2)
+    #expect(upgrade.name == "Land Factory T2")
+    #expect(upgrade.metalCost == 900)
+    #expect(upgrade.buildTime == 24)
+    #expect(upgrade.hitPoints == 1_200)
+    #expect(upgrade.vision == 360)
+    #expect(upgrade.productionSpeedMultiplier == 1.25)
+
+    let encodedUpgrade = try JSONEncoder().encode(upgrade)
+    var legacyUpgradeJSON = try #require(JSONSerialization.jsonObject(with: encodedUpgrade) as? [String: Any])
+    legacyUpgradeJSON.removeValue(forKey: "productionSpeedMultiplier")
+    let legacyUpgradeData = try JSONSerialization.data(withJSONObject: legacyUpgradeJSON)
+    let legacyUpgrade = try JSONDecoder().decode(BuildingUpgradeDefinition.self, from: legacyUpgradeData)
+    #expect(legacyUpgrade.productionSpeedMultiplier == nil)
+
+    let factory = BuildingSnapshot(
+        id: "factory-tech-definition",
+        type: .landFactory,
+        team: .player,
+        position: WorldPoint(600, 600),
+        hitPoints: factoryDefinition.hitPoints,
+        maxHitPoints: factoryDefinition.hitPoints,
+        rally: WorldPoint(700, 600)
+    )
+    var upgradedFactory = factory
+    upgradedFactory.upgradeLevel = 2
+
+    #expect(GameDefinitions.productionSpeedMultiplier(for: factory) == 1)
+    #expect(GameDefinitions.productionSpeedMultiplier(for: upgradedFactory) == 1.25)
+    #expect(GameDefinitions.productionBuildTime(for: .tank, at: factory) == 6)
+    #expect(abs(GameDefinitions.productionBuildTime(for: .tank, at: upgradedFactory) - 4.8) < 0.0001)
+}
+
+@Test func landFactoryUpgradeCompletesAndSpeedsFutureProduction() throws {
+    let factoryDefinition = GameDefinitions.building(.landFactory)
+    let factory = BuildingSnapshot(
+        id: "factory-tech-progress",
+        type: .landFactory,
+        team: .player,
+        position: WorldPoint(600, 600),
+        hitPoints: 800,
+        maxHitPoints: factoryDefinition.hitPoints,
+        rally: WorldPoint(700, 600),
+        productionQueue: [
+            ProductionQueueItem(
+                id: "factory-tech-existing-queue",
+                unitType: .artillery,
+                buildTime: 100
+            )
+        ]
+    )
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [factory]
+    state.metal[.player] = 1_200
+    state.selectedEntityID = factory.id
+    state.selectedEntityIDs = [factory.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.queueBuildingUpgrade() == .queued)
+    #expect(engine.state.metal[.player] == 300)
+    for _ in 0..<12 {
+        engine.update(deltaTime: 1)
+    }
+    #expect(abs((engine.state.buildings[0].upgradeProgress ?? -1) - 0.5) < 0.0001)
+
+    for _ in 0..<12 {
+        engine.update(deltaTime: 1)
+    }
+    let upgradedFactory = try #require(engine.state.buildings.first)
+    #expect(upgradedFactory.upgradeLevel == 2)
+    #expect(upgradedFactory.upgradeProgress == nil)
+    #expect(upgradedFactory.maxHitPoints == 1_200)
+    #expect(upgradedFactory.hitPoints == 1_080)
+    #expect(GameDefinitions.building(for: upgradedFactory).vision == 360)
+    #expect(upgradedFactory.productionQueue.first?.buildTime == 100)
+    #expect(abs((upgradedFactory.productionQueue.first?.progress ?? -1) - 24) < 0.0001)
+
+    #expect(engine.queueUnit(.tank) == .queued)
+    let queuedTank = try #require(engine.state.buildings.first?.productionQueue.last)
+    #expect(abs(queuedTank.buildTime - 4.8) < 0.0001)
+}
+
 @Test func extractorUpgradeRejectsInvalidSelectionAndQueueStates() {
     let extractorDefinition = GameDefinitions.building(.extractor)
     let turretDefinition = GameDefinitions.building(.turret)

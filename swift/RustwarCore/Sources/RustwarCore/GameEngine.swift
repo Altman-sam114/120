@@ -1676,7 +1676,8 @@ public struct GameEngine: Sendable {
             return .selectedBuildingCannotProduce
         }
 
-        let buildingDefinition = GameDefinitions.building(state.buildings[buildingIndex].type)
+        let producer = state.buildings[buildingIndex]
+        let buildingDefinition = GameDefinitions.building(producer.type)
         guard !buildingDefinition.produces.isEmpty else {
             return .selectedBuildingCannotProduce
         }
@@ -1701,7 +1702,7 @@ public struct GameEngine: Sendable {
             ProductionQueueItem(
                 id: nextID(prefix: "queue"),
                 unitType: unitType,
-                buildTime: unitDefinition.buildTime
+                buildTime: GameDefinitions.productionBuildTime(for: unitType, at: producer)
             )
         )
         return .queued
