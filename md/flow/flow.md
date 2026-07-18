@@ -71,7 +71,7 @@ v2.12 新增 iOS 主战场双指直接框选：`BattlefieldView` 用原生 `Spat
 
 v2.13 将 command dock 从固定 section 顺序改为选择上下文优先：`productionOptions` / queue / repeat / rally 存在时 Production 置顶；选中仍有 next upgrade 或正在升级的 Extractor/Radar 时 Build & Upgrade 置顶；Builder 普通建造仍在 Commands 后。`dockSelectionIdentity` 直接派生自 Core selected ids，变化时 `ScrollViewReader` 无动画回顶，不持久化第二套 offset/selection 状态。Radar/Extractor 的 upgrade visibility 与 affordability 分离：有升级路径时始终显示费用按钮，金属不足仅 disabled；升级 action 与 Core result 不变。
 
-v2.14 精修生产信息与云端视觉场景：`TacticalProductionSectionView` 直接读取 `UnitDefinition` 的 icon context、metalCost、supply 和 buildTime，以两行按钮呈现单位名及三项资源，并从 selected producer queue 派生 `productionProgressFraction` 绘制原生 `ProgressView`。`GameController` initializer 可选通过正常 `engine.select(at:)` 选择完成状态己方建筑；只有 `--rustwar-ci-visual-smoke` 启动使用 Land Factory，普通 init 保持 nil。CI 参数、schema、Core 生产和存档均不变。
+v2.14 精修生产信息与云端视觉场景：`TacticalProductionSectionView` 直接读取 `UnitDefinition` 的 icon context、metalCost、supply 和 buildTime，以两行按钮呈现单位名及三项资源，并从 selected producer queue 的队首进度绘制原生 `ProgressView`；v2.21 已把该单项摘要扩展为下述完整队列轨道。`GameController` initializer 可选通过正常 `engine.select(at:)` 选择完成状态己方建筑；只有 `--rustwar-ci-visual-smoke` 启动使用 Land Factory，普通 init 保持 nil。CI 参数、schema、Core 生产和存档均不变。
 
 v2.15 精修原生装甲单位与战斗视觉：`unitBody` 继续以固定数量程序化节点构成 7 类单位，但履带单位共享带内履带/齿段的组件，Tank、AA Tank、Artillery 分别使用单炮塔、双联炮架和长身管支撑，Scout/Builder/Hover/Gunboat 增加传感器、工程关节、悬浮舱或甲板结构。正常 `spawnFireEffect` 增加方向性锥焰和 projectile 双层尾迹/弹头，impact 增加确定性装甲碎屑；v1.91 可见性、fog、Reduce Motion、64 effect / 32 decal 上限和 Core 只读边界保持。App 只在 `--rustwar-ci-combat-visual-smoke` 下用 `GameEngine(state:)` 装配固定暂停、无 AI 的对峙状态，Scene 冻结同一套 fire/impact 绘制供第二张云端截图；普通 init 不进入该分支。
 
@@ -84,6 +84,8 @@ v2.18 将同一 scene-only 机械动态扩展到建筑 Turret：`nearestBuilding
 v2.19 精修 Scene-only 命中反馈：`spawnImpactEffect` 在既有可见 HP diff 门控后先向 `decalNode` 写入带余烬 rim 和确定性放射裂纹的焦坑，再向 `effectNode` 写入贴地椭圆 bloom、两层交错 radial corona、爆心/火球/冲击环、火花、碎片和三团烟尘。普通模式只使用短生命周期 `SKAction`，Reduce Motion 只淡出不移动、旋转或扩张；冻结 combat scenario 复用同一绘制函数，追加一个明确落弹点和一个与爆心分离的高对比旧焦坑供 artifact 复判。64 effect / 32 decal 上限、map reset、fog 层级、Core 只读和 visibility gate 保持。
 
 v2.20 为可回收残骸增加来源语义：独立 `WreckSource` 以 `.unit(UnitType)` / `.building(BuildingType)` 保存来源，`WreckSnapshot.source` 为 optional 且旧 JSON 缺字段时解码为 nil；`GameEngine.wreck(for:)` 在单位/建筑死亡时写入真实来源，但 salvage、size、TTL、Reclaim、AI 和存档恢复不变。SpriteKit `drawWreck` 根据来源选择固定节点的履带底盘、悬浮壳、舰体、轻型碎片或建筑基座几何，nil 使用通用碎片堆；TTL alpha 与 metal progress bar 保持。combat fixture 追加一具 Tank 残骸和一具 Turret 残骸供云端截图复判。
+
+v2.21 把生产建筑的队列事实完整暴露到 SwiftUI：`GameController.productionQueueItems` 只读返回当前选中己方 producer 的 `ProductionQueueItem` 数组；`TacticalProductionQueueView` 在生产按钮之前显示总数、队首真实 `progressFraction`、剩余秒数，以及后续项目的位置、类型和 buildTime。Cancel Last 仍调用 `cancelLastProduction`，Repeat、Rally、queue action、退款与存档不变。只有 production cloud scenario 会构造暂停、无 AI 的四项混合队列，普通 `GameEngine(mapID:)` 初始状态不变。
 
 ```text
 RustwarCore MapPreset / GameState / GameEngine
@@ -449,6 +451,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v2.13 起，`TacticalCommandDockView` 以 controller 的现有 production/upgrade 派生值决定 section 优先级，并监听只读 `dockSelectionIdentity` 回到 scroll top。生产建筑、可升级建筑、Builder、单位和无选择分别获得符合上下文的首组操作；`TacticalBuildSectionView` 通过 `showsSelected...UpgradeControl` 保持升级费用可见，再用原 `canUpgrade...` 设置 disabled。该变化不写回 Core，也不改变生产、升级、取消、快捷键或辅助功能动作。
 - v2.14 起，Production button label 使用单位类型 SF Symbol + Metal/人口/时间三项文本，queue status 使用同一 Core progress snapshot；按钮 action 和 Shift+1-9 仍调用 `queueUnit`。CI 专用 App init 预选 Land Factory，使固定横屏 screenshot 能覆盖 v2.13/v2.14 的生产首屏，但仍不执行真实点击或滚动。
 - v2.15 起，`CloudVisualScenario` 只服务云端 fixture：production 保持 v2.14 Land Factory 选择，combat 用公开 Core snapshot 类型组成固定双方单位与选择集合，并禁用 AI、暂停模拟、固定相机。v2.16 起 fixture 使用交叉 Attack target 驱动独立武器方向，并只在 combat scene 隐藏订单线；Scene 用一致的 source/target 配对冻结 fire/impact。`BattlefieldScene.showCombatVisualSmokeIfNeeded` 仅在 combat 场景和 map reset 后一次性调用带 `isFrozen` 的既有 helpers；普通 cooldown/HP diff 仍走动态默认参数。workflow 在同一 Simulator 安装后 terminate/relaunch，分别保存 `ios-home.png` 与 `ios-combat.png`，两套 launch/process/orientation/probe 共同决定同一个 Simulator JUnit case。
+- v2.21 起，production fixture 在既有 Land Factory 选择之前为该工厂预置 Scout、Tank、AA Tank、Artillery 队列，队首固定为 46% 供静态 PNG 识别；fixture 不扣经济、不推进模拟且不进入普通启动。生产 dock 先显示完整队列轨道，再显示既有单位生产按钮和 Cancel Last / Repeat / Rally 命令。
 - v2.16 起，combat fixture 为双方单位写入交叉 Attack target id 以驱动 weapon heading，但 `drawUnit` 只在该专用 scenario 跳过订单线，避免证据图被长线遮挡；普通运行仍完整绘制订单。冻结 fire source/target 与 Attack target 一致，因此云端 `ios-combat.png` 可直接比较默认左右 hull 与上下偏转炮塔，并核对炮口/弹道方向。
 - v2.17 起，Scene 的 `update(_:)` 将模拟 delta 与最大 1/15 秒 visual delta 分开，后者只推进单位 weapon traverse/target hold；外部 `renderNow()` 使用零 delta。combat fixture 把单位 cooldown 固定在 reload 起点附近，让同一冻结 PNG 可看到炮管相对固定炮塔座的回缩；普通状态仍完全从 Core cooldown 快照派生并随帧恢复。
 - v2.18 起，combat fixture 追加双方各一座完成状态 Turret，位置、最近目标和 frozen building shot 保持一致；两座 building cooldown 同样固定在 reload 起点附近，让 `ios-combat.png` 可同时核对固定基座、斜向炮座、回缩炮管与弹道。fixture 只追加快照对象，不改变普通地图预设。

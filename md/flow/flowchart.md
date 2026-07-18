@@ -403,6 +403,21 @@ flowchart LR
   D --> PNG["Cloud ios-home.png + pixel probe"]
 ```
 
+## v2.21 完整生产队列轨道
+
+```mermaid
+flowchart LR
+  S["Selected player producer"] --> Q["productionQueueItems"]
+  Q --> H["Build Queue count"]
+  Q --> C["Current unit<br/>progress + percent + time left"]
+  Q --> N["Upcoming positions<br/>unit type + build time"]
+  H --> D["Production-first command dock"]
+  C --> D
+  N --> D
+  F["Production cloud fixture<br/>Scout / Tank / AA / Artillery"] --> Q
+  D --> P["ios-home.png artifact review"]
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid

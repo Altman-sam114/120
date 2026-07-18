@@ -54,6 +54,7 @@
 - v2.18 起，完成状态建筑 Turret 也使用最短角炮座转向：四向锚固和双层圆形基座固定，炮盾/枢轴独立旋转，套筒、内管和 muzzle brake 位于局部 recoil mount。炮塔只追踪当前可见且在射程内的敌方，失去目标后保留最后朝向；building cooldown 只读推导短后坐，Reduce Motion 下直接对齐且后坐归零。云端 combat fixture 增加双方各一座 Turret 和对应冻结炮口/弹道，普通地图建筑、Core 防御开火、AI、fog 和存档不变。
 - v2.19 起，单位或建筑受到可见伤害时，命中反馈会组合贴地椭圆冲击光、不规则双层火焰冠、高亮爆心、冲击环、火花、装甲碎片和三层烟团，并在地面留下带余烬边缘与放射裂纹的短寿命焦坑；普通命中与摧毁焦痕继续共用 32 decal 上限，瞬态效果继续受 64 effect 上限约束。Reduce Motion 下所有位移、旋转和扩张退化为短透明度反馈，Core 伤害、射程、冷却、fog、命令和存档不变。
 - v2.20 起，新生成的可回收残骸会保存来源单位或建筑类型：Tank / AA Tank / Artillery 留下烧毁履带底盘与断裂炮管，Hover、Gunboat、Builder/Scout 使用各自残壳轮廓，Command Center / Factory、Extractor、Turret、Radar 则保留不同的破损基座结构。旧存档中没有来源字段的残骸仍可读取并使用通用金属碎片堆；残骸金属、TTL、回收命令、进度条、AI 回收和存档恢复语义不变。
+- v2.21 起，点开己方 Command Center 或 Land Factory 后，Production 首部会直接显示完整 Build Queue：当前单位使用名称、真实完成百分比、剩余秒数和进度条，后续单位按队列位置、类型与生产时间横向排列；队列总数始终可见。取消按钮明确为 Cancel Last 并继续取消队尾，Repeat、Rally、生产按钮、快捷键、退款和 Core 队列语义不变。
 
 当前验证制度：
 
@@ -132,7 +133,7 @@
 - Same Type：选中己方单位时显示；点按后选择全图所有同类型己方单位，并在主战场和战术小地图高亮多选集合。
 - 双击己方单位：选择该单位附近半径内的存活己方同类型单位；等待 Move、Attack、Build、Rally 或 Select Area 等命令目标时不会触发双击选择。
 - Save 1-9 / Group 1-9：保存或召回 1-9 号控制编队；外接键盘可用 Control + 1-9 保存、1-9 召回；召回会过滤已死亡、缺失或非己方目标，并恢复为当前多选集合。
-- 外接键盘：WASD / 方向键移动视野，Space 回到己方 Command Center，P 暂停/恢复，R 重开当前地图，E 选择空闲 Builder，F 选择当前屏幕内作战单位，Control + A 选择全部战斗单位，Option + A 选择同类型单位，A 进入 Attack Move，G 进入 Patrol，H 进入 Guard，C 进入 Reclaim，S 停止或取消当前等待命令，Z / X / V 切换选中有武器己方单位为 Aggressive / Defensive / Hold Fire；Shift + 1-9 按当前 HUD 顺序生产单位，Shift + E / T / F / D 进入 Build Extractor / Turret / Factory / Radar，Shift + C / P / R 执行 Cancel Production / Repeat / Rally。
+- 外接键盘：WASD / 方向键移动视野，Space 回到己方 Command Center，P 暂停/恢复，R 重开当前地图，E 选择空闲 Builder，F 选择当前屏幕内作战单位，Control + A 选择全部战斗单位，Option + A 选择同类型单位，A 进入 Attack Move，G 进入 Patrol，H 进入 Guard，C 进入 Reclaim，S 停止或取消当前等待命令，Z / X / V 切换选中有武器己方单位为 Aggressive / Defensive / Hold Fire；Shift + 1-9 按当前 HUD 顺序生产单位，Shift + E / T / F / D 进入 Build Extractor / Turret / Factory / Radar，Shift + C / P / R 执行 Cancel Last / Repeat / Rally。
 - 拖拽：平移战场视角。
 - 捏合：缩放战场视角。
 - Move：选中己方单位时显示；点按后进入移动落点模式，再 tap 战场下达移动命令；多选时所有选中己方单位会按稳定方阵获得围绕目标点的目的地。
@@ -153,7 +154,7 @@
 - Stop：选中己方单位时显示；点按后清除所有选中己方单位当前移动、攻击移动、巡逻、护航、维修、回收、建造或攻击命令，并取消正在等待落点/目标/框选的 Move、Attack Move、Patrol、Guard、Repair、Reclaim、Build Extractor、Turret、Factory、Attack 或 Select Area 模式。
 - Builder：选中完成状态己方 Command Center 时显示；点按后扣除金属并加入生产队列，完成后在该 Command Center 的集结点生成新的 Builder。
 - Scout / Light Tank / Hover Tank / Artillery / AA Tank：选中完成状态己方 Land Factory 时显示；点按后扣除金属并加入生产队列，完成后在该 Land Factory 的集结点生成单位。
-- Cancel Production：选中完成状态己方生产建筑且队列不为空时显示；点按后取消队尾生产项，并按未完成进度返还金属。
+- Cancel Last：选中完成状态己方生产建筑且队列不为空时显示；点按后取消队尾生产项，并按未完成进度返还金属。
 - Repeat：选中完成状态己方生产建筑时显示；点按会在该建筑支持的生产列表内循环 Repeat 目标，队列清空后自动尝试续造当前重复单位；金属或人口不足时保留重复目标但不会追加队列。
 - Rally：选中完成状态己方生产建筑时显示；点按后进入集结点模式，再 tap 主战场设置新集结点，后续完成生产的单位会在该点生成；选中生产建筑时战场会显示集结线和标记。
 - 炮塔：完成状态的 Turret 会自动攻击射程内敌方单位或建筑；iOS 主战场只在 cooldown 上跳时显示短促炮口焰和当前可见目标的高亮尾迹炮弹，不再把整个冷却周期画成常亮火力线。单位与建筑受击/摧毁会显示有界爆炸、烟尘和短寿命灼痕，地图切换、Restart 或 Load 会清理旧战场特效。

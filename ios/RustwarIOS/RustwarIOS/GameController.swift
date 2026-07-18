@@ -92,6 +92,9 @@ final class GameController {
         if cloudVisualScenario == .combat {
             self.engine = GameEngine(state: Self.combatVisualSmokeState(mapID: mapID), enemyAIEnabled: false)
             self.camera = CameraState(center: WorldPoint(1_930, 1_560), zoom: 1.12)
+        } else if cloudVisualScenario == .production {
+            self.engine = GameEngine(state: Self.productionVisualSmokeState(mapID: mapID), enemyAIEnabled: false)
+            self.camera = CameraState(center: preset.camera.center, zoom: preset.camera.zoom)
         } else {
             self.engine = GameEngine(mapID: mapID)
             self.camera = CameraState(center: preset.camera.center, zoom: preset.camera.zoom)
@@ -106,6 +109,26 @@ final class GameController {
            }) {
             engine.select(at: building.position, includeEnemies: false)
         }
+    }
+
+    private static func productionVisualSmokeState(mapID: MapID) -> GameState {
+        var state = GameState(mapID: mapID)
+        guard let factoryIndex = state.buildings.firstIndex(where: {
+            $0.team == .player && $0.type == .landFactory
+        }) else {
+            return state
+        }
+        let queuedTypes: [UnitType] = [.scout, .tank, .aaTank, .artillery]
+        state.buildings[factoryIndex].productionQueue = queuedTypes.enumerated().map { index, unitType in
+            let buildTime = GameDefinitions.unit(unitType).buildTime
+            return ProductionQueueItem(
+                id: "visual-production-\(index)-\(unitType.rawValue)",
+                unitType: unitType,
+                progress: index == 0 ? buildTime * 0.46 : 0,
+                buildTime: buildTime
+            )
+        }
+        return state
     }
 
     private static func combatVisualSmokeState(mapID: MapID) -> GameState {
@@ -272,17 +295,8 @@ final class GameController {
         return GameDefinitions.building(building.type).produces
     }
 
-    var productionSummary: String? {
-        guard let item = selectedPlayerProducer?.productionQueue.first else {
-            return nil
-        }
-        let definition = GameDefinitions.unit(item.unitType)
-        let percent = Int((item.progressFraction * 100).rounded())
-        return "\(definition.name) \(percent)%"
-    }
-
-    var productionProgressFraction: Double? {
-        selectedPlayerProducer?.productionQueue.first?.progressFraction
+    var productionQueueItems: [ProductionQueueItem] {
+        selectedPlayerProducer?.productionQueue ?? []
     }
 
     var canCancelProduction: Bool {

@@ -15,7 +15,7 @@
 - Web 运行入口：直接打开 `index.html`。
 - Web 核心代码：`app.js`，约 7000 行，包含配置表、全局状态、模拟循环、输入、AI、渲染、存档和沙盒。
 - Swift core：`swift/RustwarCore/`，包含原生迁移用地图、状态、地形、经济 tick、选择命中、当前可见敌方命中过滤、选择替换/追加 mutation、世界矩形框选、单位优先/建筑 fallback 区域选择、全图同类型选择、附近同类型选择、控制编队、多选集合、空闲 Builder / 战斗单位批量选择、资源点命中、残骸模型、单单位和多单位 Move / Attack-Move / Patrol 队形落点、单单位和多单位 Attack 命令、单单位 Guard 和多单位 Guard 方阵护航偏移命令、单位攻击姿态 Aggressive / Defensive / Hold Fire、单 Builder Repair 和多 Builder Repair 分散接近点命令、单 Builder Reclaim 和多 Builder Reclaim 分散接近点命令、单 Builder Build 和多 Builder Build 分散接近建筑命令、玩家当前视野 tile 计算、已探索 tile 记忆、Extractor T2/T3 经济升级、Radar Station 建筑定义和建造命令、雷达信号 contact、雷达覆盖 coverage snapshot、单单位和多单位 Stop 命令、Command Center Builder 生产、Land Factory T1 生产列表、生产建筑队列 MVP、生产取消/退款、重复生产开关、集结点设置、炮塔对单位/建筑自动防御开火、伤害/死亡残骸清理、红方 Command Center Builder 生产、红方完整 T1 生产/资源扩张/维修/回收/Land Factory 建造/Turret 建造/Radar Station 建造/Radar Station T2 升级/Extractor T2/T3 升级/进攻 AI MVP、红方 AI Web-lite 目标评分、红方 AI On/Off 开关 API，以及从已保存 `GameState` 恢复原生模拟的入口。
-- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、Replace / Add 选择模式、Idle Builders / Combat Units / Screen Combat 批量选择入口、Select Area 显式框选己方单位并在框内无己方单位时 fallback 选择己方建筑、Same Type 全图同类型选择入口、双击附近同类型选择入口、主战场长按上下文 Move / Attack / Guard / Repair / Reclaim / Build Extractor / Rally 入口、战术小地图无等待命令长按上下文 Move / Attack / Guard / Repair / Reclaim / Build Extractor / Rally 入口、1-9 号控制编队保存/召回入口、外接键盘 Control+1-9 保存和 1-9 召回控制编队快捷键、外接键盘 WASD / 方向键连续移动视野、Base / Space 回到己方 Command Center、外接键盘 P / R / E / F / Control+A / Option+A / A / G / H / C / S / Z / X / V 触发已迁移的 Pause、Restart、批量选择、战术命令和攻击姿态切换、外接键盘 Shift+1-9 / Shift+E/T/F/D/C/P/R 触发生产、建造和生产建筑管理按钮、单单位和多单位 Move / Attack Move / Patrol 队形落点、多单位 Guard 方阵护航偏移、多 Builder Repair 分散接近点、单单位和多单位 Attack 命令、Aggressive / Defensive / Hold Fire 姿态按钮、单 Builder Reclaim 和多 Builder Reclaim 分散接近点、单 Builder Build 和多 Builder Build 分散接近建筑按钮语义、玩家当前视野、已探索记忆和 Radar Station 雷达信号主战场雾层和战术小地图雾层、当前视野外敌方单位/建筑隐藏、单单位和多单位 Stop 命令、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Production 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张、维修受损友军、回收附近残骸、Land Factory / Turret 建造、Command Center Builder 生产、完整 T1 编成生产、红方 AI Web-lite 目标评分和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off HUD 开关、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图无等待命令拖动相机、战术小地图多选高亮、战术小地图当前主战场视口矩形、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
+- iOS App：`ios/RustwarIOS/`，原生 SwiftUI/SpriteKit 首屏战场地基、Coast / Islands / Lava 地图切换和当前地图重开、Replace / Add 选择模式、Idle Builders / Combat Units / Screen Combat 批量选择入口、Select Area 显式框选己方单位并在框内无己方单位时 fallback 选择己方建筑、Same Type 全图同类型选择入口、双击附近同类型选择入口、主战场长按上下文 Move / Attack / Guard / Repair / Reclaim / Build Extractor / Rally 入口、战术小地图无等待命令长按上下文 Move / Attack / Guard / Repair / Reclaim / Build Extractor / Rally 入口、1-9 号控制编队保存/召回入口、外接键盘 Control+1-9 保存和 1-9 召回控制编队快捷键、外接键盘 WASD / 方向键连续移动视野、Base / Space 回到己方 Command Center、外接键盘 P / R / E / F / Control+A / Option+A / A / G / H / C / S / Z / X / V 触发已迁移的 Pause、Restart、批量选择、战术命令和攻击姿态切换、外接键盘 Shift+1-9 / Shift+E/T/F/D/C/P/R 触发生产、建造和生产建筑管理按钮、单单位和多单位 Move / Attack Move / Patrol 队形落点、多单位 Guard 方阵护航偏移、多 Builder Repair 分散接近点、单单位和多单位 Attack 命令、Aggressive / Defensive / Hold Fire 姿态按钮、单 Builder Reclaim 和多 Builder Reclaim 分散接近点、单 Builder Build 和多 Builder Build 分散接近建筑按钮语义、玩家当前视野、已探索记忆和 Radar Station 雷达信号主战场雾层和战术小地图雾层、当前视野外敌方单位/建筑隐藏、单单位和多单位 Stop 命令、Command Center Builder 生产按钮、Land Factory 五种 T1 生产按钮、Cancel Last 生产取消/退款按钮、Repeat 生产重复开关、Rally 集结点按钮、攻击移动线、巡逻线、护航线、维修线、回收线、建造线、攻击目标线、炮塔火力线、建造进度、残骸/HP 条、红方 Builder 资源点扩张、维修受损友军、回收附近残骸、Land Factory / Turret 建造、Command Center Builder 生产、完整 T1 编成生产、红方 AI Web-lite 目标评分和可见红方主动进攻、Pause/Play、0.5x / 1x / 2x 速度切换、Enemy AI On/Off HUD 开关、战术小地图点按居中或下达点位/Builder/实体目标命令、战术小地图无等待命令拖动相机、战术小地图多选高亮、战术小地图当前主战场视口矩形、战术小地图等待命令视觉和 VoiceOver 反馈，以及 Save/Load 单槽本地存档。
 - v1.73 起，iOS 主战场和战术小地图都会隐藏当前玩家视野外的敌方单位和建筑，普通 tap、长按上下文命令、Attack / Guard / Repair 实体目标等待态和战术小地图实体目标命令也会过滤不可见敌方；主战场目标型命令线与炮塔火力线同样跳过不可见敌方目标。
 - v1.74 起，iOS 战术小地图无等待命令长按会复用主战场上下文派发顺序下达 Move / Attack / Guard / Repair / Reclaim / Build Extractor / Rally；普通点按居中和等待态点按命令保持不变。
 - v1.75 起，iOS 战术小地图会绘制当前主战场视口矩形，帮助玩家判断当前屏幕覆盖的地图范围。
@@ -4680,3 +4680,36 @@
 
 - `WreckSource` 只表达来源类别，不保存死亡时 hull/weapon heading、升级等级、精确损伤部位或自定义外观；残骸朝向为位置/尺寸确定性视觉值。
 - 当前残骸仍是程序化矢量节点，不含 sprite atlas、烟火余焰动画、物理碎片、地形嵌入、动态阴影或大量残骸帧率基线。
+
+### v2.21 / iOS full production queue track
+
+日期：2026-07-18
+
+核心变更：
+
+- `GameController.productionQueueItems` 只读暴露当前选中己方生产建筑的真实 Core 队列；删除只表达队首的重复 summary/progress 派生状态。
+- Production 首部新增独立 Build Queue：总数、当前单位类型/真实百分比/剩余秒数/进度条，以及后续单位位置、类型和生产时间均可见；后续轨道可横向滚动且每项保持 44pt 触控高度和逐项 VoiceOver。
+- Cancel Production 文案明确为 Cancel Last，但仍调用既有队尾取消和退款路径；Repeat、Rally、生产按钮、外接键盘和存档语义不变。
+- production cloud fixture 只为暂停的 Land Factory 首屏预置 Scout / Tank / AA Tank / Artillery，队首固定 46%；普通启动、combat fixture、Core 初始状态、AI 和经济不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.21-ios-production-queue-track.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
+- 实现提交、GitHub Actions run、artifact manifest/JUnit/build/probe 和双 PNG 人工复判待本轮 push 后补记。
+
+遗留事项：
+
+- 静态 production PNG 只能证明固定队列构图与首屏可读性，不证明横向滚动、实时进度、取消/生产点击、VoiceOver、真机触摸或超长队列性能。
+- 本轮不加入单位缩略图资产、队列拖拽重排、单项任意取消、批量生产步进或生产完成通知。

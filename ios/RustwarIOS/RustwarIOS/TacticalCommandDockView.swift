@@ -92,7 +92,7 @@ struct TacticalCommandDockView: View {
     }
 
     private var hasProductionControls: Bool {
-        !controller.productionOptions.isEmpty || controller.productionSummary != nil ||
+        !controller.productionOptions.isEmpty || !controller.productionQueueItems.isEmpty ||
             controller.canCancelProduction || controller.canCycleRepeatProduction ||
             controller.canIssueRally || controller.isAwaitingRallyTarget
     }
