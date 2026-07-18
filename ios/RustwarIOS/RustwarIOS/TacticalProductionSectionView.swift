@@ -80,7 +80,7 @@ struct TacticalProductionSectionView: View {
 
     private func productionLabel(for unitType: UnitType, definition: UnitDefinition) -> some View {
         let buildTime = controller.productionBuildTime(for: unitType)
-        VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+        return VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
             Label(definition.name, systemImage: unitType.productionSystemImage)
                 .bold()
             HStack(spacing: TacticalHUDTheme.controlSpacing) {
