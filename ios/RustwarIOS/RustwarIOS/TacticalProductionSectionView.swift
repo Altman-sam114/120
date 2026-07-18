@@ -8,11 +8,15 @@ struct TacticalProductionSectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             TacticalSectionHeader(section: .production)
-            if controller.showsSelectedFactoryTech {
-                TacticalFactoryTechView(controller: controller)
-            }
-            if !controller.productionQueueItems.isEmpty {
-                TacticalProductionQueueView(items: controller.productionQueueItems)
+            if controller.showsSelectedFactoryTech || !controller.productionQueueItems.isEmpty {
+                VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+                    if controller.showsSelectedFactoryTech {
+                        TacticalFactoryTechView(controller: controller)
+                    }
+                    if !controller.productionQueueItems.isEmpty {
+                        TacticalProductionQueueView(items: controller.productionQueueItems)
+                    }
+                }
             }
             if !controller.productionOptions.isEmpty {
                 TacticalCommandGrid(columns: columns) {
@@ -127,43 +131,27 @@ private struct TacticalFactoryTechView: View {
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: TacticalHUDTheme.compactSpacing))
             : AnyLayout(HStackLayout(alignment: .center, spacing: TacticalHUDTheme.compactSpacing))
 
-        layout {
-            VStack(alignment: .leading, spacing: 1) {
-                Label("Factory T\(controller.selectedFactoryTechLevel)", systemImage: "building.2.fill")
-                    .font(.footnote.bold())
-                Text(controller.selectedFactoryProductionSpeedText)
-                    .font(.caption)
-                    .foregroundStyle(TacticalHUDTheme.metricLabel)
-                    .monospacedDigit()
-            }
-            Spacer(minLength: 0)
-            if let progress = controller.selectedFactoryUpgradeProgress {
-                VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-                    HStack(spacing: TacticalHUDTheme.compactSpacing) {
-                        Text("UPGRADING T\(controller.selectedFactoryTechLevel + 1)")
-                            .font(.caption.bold())
-                            .foregroundStyle(TacticalHUDTheme.metricLabel)
-                        Text(progress, format: .percent.precision(.fractionLength(0)))
-                            .font(.caption.bold())
-                            .monospacedDigit()
-                    }
-                    ProgressView(value: progress)
-                        .tint(TacticalHUDTheme.attention)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Button("Cancel", systemImage: "xmark.circle", action: controller.cancelFactoryUpgrade)
-                    .tacticalIconControl()
-                    .labelStyle(.iconOnly)
-                    .accessibilityLabel("Cancel factory upgrade")
-                    .accessibilityHint("Stops the factory upgrade and refunds remaining metal.")
-            } else if controller.showsSelectedFactoryUpgradeControl {
+        Group {
+            if controller.showsSelectedFactoryUpgradeControl {
                 Button(action: controller.upgradeSelectedFactory) {
-                    VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-                        Label(controller.upgradeFactoryButtonTitle, systemImage: "arrow.up.circle.fill")
-                            .bold()
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: TacticalHUDTheme.compactSpacing) {
+                            Label(
+                                "Factory T\(controller.selectedFactoryTechLevel)",
+                                systemImage: "building.2.fill"
+                            )
+                            .font(.footnote.bold())
+                            Spacer(minLength: TacticalHUDTheme.denseSpacing)
+                            Text(controller.selectedFactoryProductionSpeedText)
+                                .font(.caption)
+                                .foregroundStyle(TacticalHUDTheme.prominentControlForeground)
+                                .monospacedDigit()
+                        }
+                        Text(controller.upgradeFactoryButtonTitle)
+                            .font(.caption.bold())
                         if let benefit = controller.factoryUpgradeBenefitText {
                             Text(benefit)
-                                .font(.footnote)
+                                .font(.caption)
                                 .monospacedDigit()
                         }
                     }
@@ -174,13 +162,59 @@ private struct TacticalFactoryTechView: View {
                 .accessibilityLabel("Upgrade land factory to tech level 2")
                 .accessibilityValue(controller.factoryUpgradeBenefitText ?? "")
                 .accessibilityHint("Increases factory armor, vision, and future unit production speed.")
+            } else if let progress = controller.selectedFactoryUpgradeProgress {
+                layout {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Label(
+                            "Factory T\(controller.selectedFactoryTechLevel)",
+                            systemImage: "building.2.fill"
+                        )
+                        .font(.footnote.bold())
+                        Text(controller.selectedFactoryProductionSpeedText)
+                            .font(.caption)
+                            .foregroundStyle(TacticalHUDTheme.metricLabel)
+                            .monospacedDigit()
+                    }
+                    Spacer(minLength: 0)
+                    VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+                        HStack(spacing: TacticalHUDTheme.compactSpacing) {
+                            Text("UPGRADING T\(controller.selectedFactoryTechLevel + 1)")
+                                .font(.caption.bold())
+                                .foregroundStyle(TacticalHUDTheme.metricLabel)
+                            Text(progress, format: .percent.precision(.fractionLength(0)))
+                                .font(.caption.bold())
+                                .monospacedDigit()
+                        }
+                        ProgressView(value: progress)
+                            .tint(TacticalHUDTheme.attention)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Button("Cancel", systemImage: "xmark.circle", action: controller.cancelFactoryUpgrade)
+                        .tacticalIconControl()
+                        .labelStyle(.iconOnly)
+                        .accessibilityLabel("Cancel factory upgrade")
+                        .accessibilityHint("Stops the factory upgrade and refunds remaining metal.")
+                }
             } else {
-                Label("MAX TECH", systemImage: "checkmark.seal.fill")
+                layout {
+                    Label(
+                        "Factory T\(controller.selectedFactoryTechLevel)",
+                        systemImage: "building.2.fill"
+                    )
                     .font(.footnote.bold())
-                    .foregroundStyle(TacticalHUDTheme.metricLabel)
+                    Text(controller.selectedFactoryProductionSpeedText)
+                        .font(.caption)
+                        .foregroundStyle(TacticalHUDTheme.metricLabel)
+                        .monospacedDigit()
+                    Spacer(minLength: 0)
+                    Label("MAX TECH", systemImage: "checkmark.seal.fill")
+                        .font(.footnote.bold())
+                        .foregroundStyle(TacticalHUDTheme.metricLabel)
+                }
             }
         }
-        .padding(TacticalHUDTheme.compactPadding)
+        .padding(.horizontal, TacticalHUDTheme.compactPadding)
+        .padding(.vertical, TacticalHUDTheme.denseSpacing)
         .foregroundStyle(TacticalHUDTheme.primaryText)
         .background(
             TacticalHUDTheme.selectionBackground,
@@ -197,12 +231,10 @@ private struct TacticalFactoryTechView: View {
 private struct TacticalProductionQueueView: View {
     let items: [ProductionQueueItem]
 
-    private var currentItem: ProductionQueueItem? {
-        items.first
-    }
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    private var upcomingItems: ArraySlice<ProductionQueueItem> {
-        items.dropFirst()
+    private var queueColumnCount: Int {
+        dynamicTypeSize.isAccessibilitySize ? 1 : min(items.count, 4)
     }
 
     var body: some View {
@@ -216,23 +248,13 @@ private struct TacticalProductionQueueView: View {
                     .monospacedDigit()
                     .foregroundStyle(TacticalHUDTheme.metricLabel)
             }
-            if let currentItem {
-                TacticalCurrentProductionView(item: currentItem)
-            }
-            if !upcomingItems.isEmpty {
-                VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-                    Text("NEXT")
-                        .font(.caption.bold())
-                        .foregroundStyle(TacticalHUDTheme.metricLabel)
-                        .accessibilityHidden(true)
-                    ScrollView(.horizontal) {
-                        HStack(spacing: TacticalHUDTheme.compactSpacing) {
-                            ForEach(upcomingItems.enumerated(), id: \.element.id) { offset, item in
-                                TacticalQueuedProductionView(item: item, position: offset + 2)
-                            }
-                        }
+            TacticalCommandGrid(columns: queueColumnCount) {
+                ForEach(items.enumerated(), id: \.element.id) { offset, item in
+                    if offset == 0 {
+                        TacticalCurrentProductionView(item: item)
+                    } else {
+                        TacticalQueuedProductionView(item: item, position: offset + 1)
                     }
-                    .scrollIndicators(.visible)
                 }
             }
         }
@@ -267,32 +289,36 @@ private struct TacticalCurrentProductionView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-            HStack(spacing: TacticalHUDTheme.compactSpacing) {
+        VStack(spacing: 2) {
+            HStack(spacing: TacticalHUDTheme.denseSpacing) {
+                Text("1")
+                    .font(.caption.bold())
+                    .monospacedDigit()
+                    .foregroundStyle(TacticalHUDTheme.metricLabel)
                 Image(systemName: item.unitType.productionSystemImage)
-                    .frame(width: 22)
                     .foregroundStyle(TacticalHUDTheme.accent)
                     .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(definition.name)
-                        .font(.subheadline.bold())
-                    Text("BUILDING")
-                        .font(.caption.bold())
-                        .foregroundStyle(TacticalHUDTheme.metricLabel)
-                }
-                Spacer(minLength: TacticalHUDTheme.compactSpacing)
-                VStack(alignment: .trailing, spacing: 1) {
-                    Text("\(percent)%")
-                        .font(.subheadline.bold())
-                    Text("\(remainingSeconds)s left")
-                        .font(.caption)
-                        .foregroundStyle(TacticalHUDTheme.secondaryText)
-                }
-                .monospacedDigit()
             }
+            Text(definition.name)
+                .font(.caption.bold())
+            Text("\(percent)% / \(remainingSeconds)s")
+                .font(.caption)
+                .foregroundStyle(TacticalHUDTheme.secondaryText)
+                .monospacedDigit()
             ProgressView(value: item.progressFraction)
                 .tint(TacticalHUDTheme.accent)
         }
+        .padding(.horizontal, TacticalHUDTheme.denseSpacing)
+        .frame(maxWidth: .infinity, minHeight: 60)
+        .background(
+            TacticalHUDTheme.selectionBackground,
+            in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
+                .stroke(TacticalHUDTheme.accent, lineWidth: 1.5)
+        }
+        .multilineTextAlignment(.center)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Currently building \(definition.name)")
         .accessibilityValue("\(percent) percent, about \(remainingSeconds) seconds remaining")
@@ -319,14 +345,14 @@ private struct TacticalQueuedProductionView: View {
                     .accessibilityHidden(true)
             }
             Text(definition.name)
-                .font(.footnote.bold())
+                .font(.caption.bold())
             Text("\(Int(item.buildTime))s")
                 .font(.caption)
                 .monospacedDigit()
                 .foregroundStyle(TacticalHUDTheme.secondaryText)
         }
-        .padding(.horizontal, TacticalHUDTheme.compactSpacing)
-        .frame(minHeight: TacticalHUDTheme.controlMinimumHeight)
+        .padding(.horizontal, TacticalHUDTheme.denseSpacing)
+        .frame(maxWidth: .infinity, minHeight: 60)
         .background(
             TacticalHUDTheme.controlBackground,
             in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
@@ -336,7 +362,6 @@ private struct TacticalQueuedProductionView: View {
                 .stroke(TacticalHUDTheme.controlStroke, lineWidth: 1)
         }
         .multilineTextAlignment(.center)
-        .fixedSize(horizontal: true, vertical: false)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Queue position \(position), \(definition.name)")
         .accessibilityValue("Build time \(Int(item.buildTime)) seconds")
