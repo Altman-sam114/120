@@ -248,7 +248,7 @@ private struct TacticalProductionQueueView: View {
                     .monospacedDigit()
                     .foregroundStyle(TacticalHUDTheme.metricLabel)
             }
-            TacticalCommandGrid(columns: queueColumnCount) {
+            TacticalCommandGrid(columns: queueColumnCount, spacing: TacticalHUDTheme.denseSpacing) {
                 ForEach(items.enumerated(), id: \.element.id) { offset, item in
                     if offset == 0 {
                         TacticalCurrentProductionView(item: item)
