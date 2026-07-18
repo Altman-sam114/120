@@ -299,9 +299,9 @@ private struct TacticalCurrentProductionView: View {
                     .foregroundStyle(TacticalHUDTheme.accent)
                     .accessibilityHidden(true)
             }
-            Text(definition.name)
+            Text(item.unitType.productionQueueDisplayName(fallback: definition.name))
                 .font(.caption.bold())
-                .lineLimit(1)
+                .lineLimit(2)
                 .minimumScaleFactor(0.85)
             Text("\(percent)% / \(remainingSeconds)s")
                 .font(.caption)
@@ -348,9 +348,9 @@ private struct TacticalQueuedProductionView: View {
                     .foregroundStyle(TacticalHUDTheme.accent)
                     .accessibilityHidden(true)
             }
-            Text(definition.name)
+            Text(item.unitType.productionQueueDisplayName(fallback: definition.name))
                 .font(.caption.bold())
-                .lineLimit(1)
+                .lineLimit(2)
                 .minimumScaleFactor(0.85)
             Text("\(Int(item.buildTime))s")
                 .font(.caption)
@@ -375,6 +375,10 @@ private struct TacticalQueuedProductionView: View {
 }
 
 private extension UnitType {
+    func productionQueueDisplayName(fallback: String) -> String {
+        self == .tank ? "Light\nTank" : fallback
+    }
+
     var productionSystemImage: String {
         switch self {
         case .builder: "wrench.and.screwdriver.fill"
