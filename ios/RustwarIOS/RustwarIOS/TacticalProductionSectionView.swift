@@ -312,7 +312,7 @@ private struct TacticalCurrentProductionView: View {
             ProgressView(value: item.progressFraction)
                 .tint(TacticalHUDTheme.accent)
         }
-        .padding(.horizontal, TacticalHUDTheme.denseSpacing)
+        .padding(.horizontal, 2)
         .frame(maxWidth: .infinity, minHeight: 60)
         .background(
             TacticalHUDTheme.selectionBackground,
@@ -357,7 +357,7 @@ private struct TacticalQueuedProductionView: View {
                 .monospacedDigit()
                 .foregroundStyle(TacticalHUDTheme.secondaryText)
         }
-        .padding(.horizontal, TacticalHUDTheme.denseSpacing)
+        .padding(.horizontal, 2)
         .frame(maxWidth: .infinity, minHeight: 60)
         .background(
             TacticalHUDTheme.controlBackground,
