@@ -120,32 +120,41 @@ struct TacticalProductionSectionView: View {
 
 private struct TacticalFactoryTechView: View {
     @Bindable var controller: GameController
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        VStack(alignment: .leading, spacing: TacticalHUDTheme.compactSpacing) {
-            HStack(spacing: TacticalHUDTheme.compactSpacing) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: TacticalHUDTheme.compactSpacing))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: TacticalHUDTheme.compactSpacing))
+
+        layout {
+            VStack(alignment: .leading, spacing: 1) {
                 Label("Factory T\(controller.selectedFactoryTechLevel)", systemImage: "building.2.fill")
                     .font(.footnote.bold())
-                Spacer(minLength: TacticalHUDTheme.compactSpacing)
                 Text(controller.selectedFactoryProductionSpeedText)
-                    .font(.caption.bold())
+                    .font(.caption)
                     .foregroundStyle(TacticalHUDTheme.metricLabel)
                     .monospacedDigit()
             }
+            Spacer(minLength: 0)
             if let progress = controller.selectedFactoryUpgradeProgress {
-                HStack(spacing: TacticalHUDTheme.compactSpacing) {
-                    Text("UPGRADING T\(controller.selectedFactoryTechLevel + 1)")
-                        .font(.caption.bold())
-                        .foregroundStyle(TacticalHUDTheme.metricLabel)
-                    Spacer(minLength: TacticalHUDTheme.compactSpacing)
-                    Text(progress, format: .percent.precision(.fractionLength(0)))
-                        .font(.caption.bold())
-                        .monospacedDigit()
+                VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+                    HStack(spacing: TacticalHUDTheme.compactSpacing) {
+                        Text("UPGRADING T\(controller.selectedFactoryTechLevel + 1)")
+                            .font(.caption.bold())
+                            .foregroundStyle(TacticalHUDTheme.metricLabel)
+                        Text(progress, format: .percent.precision(.fractionLength(0)))
+                            .font(.caption.bold())
+                            .monospacedDigit()
+                    }
+                    ProgressView(value: progress)
+                        .tint(TacticalHUDTheme.attention)
                 }
-                ProgressView(value: progress)
-                    .tint(TacticalHUDTheme.attention)
-                Button("Cancel Factory Upgrade", systemImage: "xmark.circle", action: controller.cancelFactoryUpgrade)
-                    .tacticalControl()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Button("Cancel", systemImage: "xmark.circle", action: controller.cancelFactoryUpgrade)
+                    .tacticalIconControl()
+                    .labelStyle(.iconOnly)
+                    .accessibilityLabel("Cancel factory upgrade")
                     .accessibilityHint("Stops the factory upgrade and refunds remaining metal.")
             } else if controller.showsSelectedFactoryUpgradeControl {
                 Button(action: controller.upgradeSelectedFactory) {
