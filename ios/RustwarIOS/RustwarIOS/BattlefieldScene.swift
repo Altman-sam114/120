@@ -611,6 +611,8 @@ final class BattlefieldScene: SKScene {
             5
         case .tank:
             2.35
+        case .heavyTank:
+            1.55
         case .hover:
             4.4
         case .aaTank:
@@ -677,6 +679,8 @@ final class BattlefieldScene: SKScene {
             0.72
         case .tank, .hover, .aaTank:
             0.9
+        case .heavyTank:
+            1.24
         case .artillery, .gunboat:
             1.08
         }
@@ -703,6 +707,8 @@ final class BattlefieldScene: SKScene {
             recoilScale = 0.1
         case .tank:
             recoilScale = 0.24
+        case .heavyTank:
+            recoilScale = 0.34
         case .hover:
             recoilScale = 0.12
         case .aaTank:
@@ -778,6 +784,14 @@ final class BattlefieldScene: SKScene {
             trailLength = 12
             beamWidth = 0
             travelSpeed = 860
+        case .heavyTank:
+            color = SKColor(red: 1, green: 0.68, blue: 0.24, alpha: 1)
+            projectileRadius = 4.4
+            flashRadius = 7.2
+            shotCount = 1
+            trailLength = 21
+            beamWidth = 0
+            travelSpeed = 690
         case .hover:
             color = .systemCyan
             projectileRadius = 2.2
@@ -1413,6 +1427,7 @@ final class BattlefieldScene: SKScene {
         renderedCombatVisualSmoke = true
 
         let shots: [(sourceID: String, targetID: String)] = [
+            ("visual-player-heavy-tank", "visual-enemy-tank"),
             ("visual-player-tank", "visual-enemy-artillery"),
             ("visual-player-aa", "visual-enemy-gunboat"),
             ("visual-player-artillery", "visual-enemy-tank"),
@@ -2004,6 +2019,77 @@ final class BattlefieldScene: SKScene {
                     width: 1.2
                 ))
             }
+        case .heavyTank:
+            addTracks(radius: radius, length: 1.78, to: body)
+            body.addChild(polygonNode([
+                CGPoint(x: radius * 0.82, y: 0),
+                CGPoint(x: radius * 0.48, y: radius * 0.64),
+                CGPoint(x: -radius * 0.72, y: radius * 0.62),
+                CGPoint(x: -radius * 0.9, y: radius * 0.36),
+                CGPoint(x: -radius * 0.9, y: -radius * 0.36),
+                CGPoint(x: -radius * 0.72, y: -radius * 0.62),
+                CGPoint(x: radius * 0.48, y: -radius * 0.64)
+            ], fill: armorMidColor, stroke: outlineColor, lineWidth: 1.8))
+            body.addChild(polygonNode([
+                CGPoint(x: radius * 0.48, y: 0),
+                CGPoint(x: radius * 0.18, y: radius * 0.48),
+                CGPoint(x: -radius * 0.56, y: radius * 0.42),
+                CGPoint(x: -radius * 0.68, y: 0),
+                CGPoint(x: -radius * 0.56, y: -radius * 0.42),
+                CGPoint(x: radius * 0.18, y: -radius * 0.48)
+            ], fill: armorLightColor, stroke: outlineColor, lineWidth: 1.2))
+            for y in [-radius * 0.48, radius * 0.48] {
+                body.addChild(lineNode(
+                    from: CGPoint(x: -radius * 0.58, y: y),
+                    to: CGPoint(x: radius * 0.45, y: y),
+                    color: armorLightColor.withAlphaComponent(0.86),
+                    width: 1.8
+                ))
+            }
+            weaponMount.addChild(polygonNode([
+                CGPoint(x: radius * 0.48, y: 0),
+                CGPoint(x: radius * 0.2, y: radius * 0.4),
+                CGPoint(x: -radius * 0.34, y: radius * 0.34),
+                CGPoint(x: -radius * 0.48, y: 0),
+                CGPoint(x: -radius * 0.34, y: -radius * 0.34),
+                CGPoint(x: radius * 0.2, y: -radius * 0.4)
+            ], fill: armorLightColor, stroke: outlineColor, lineWidth: 1.7))
+            let heavyMantlet = rectNode(
+                CGRect(x: radius * 0.16, y: -radius * 0.24, width: radius * 0.32, height: radius * 0.48),
+                cornerRadius: radius * 0.08,
+                fill: armorDarkColor,
+                stroke: highlightColor,
+                lineWidth: 1.1
+            )
+            weaponMount.addChild(heavyMantlet)
+            recoilMount.addChild(rectNode(
+                CGRect(x: radius * 0.26, y: -radius * 0.16, width: radius * 1.12, height: radius * 0.32),
+                cornerRadius: radius * 0.08,
+                fill: armorDarkColor,
+                stroke: outlineColor,
+                lineWidth: 1.4
+            ))
+            recoilMount.addChild(rectNode(
+                CGRect(x: radius * 0.3, y: -radius * 0.09, width: radius * 1.02, height: radius * 0.18),
+                cornerRadius: 1,
+                fill: highlightColor,
+                stroke: outlineColor
+            ))
+            recoilMount.addChild(rectNode(
+                CGRect(x: radius * 1.22, y: -radius * 0.23, width: radius * 0.22, height: radius * 0.46),
+                cornerRadius: 1,
+                fill: armorDarkColor,
+                stroke: outlineColor,
+                lineWidth: 1.2
+            ))
+            let commanderCupola = circleNode(
+                radius: radius * 0.12,
+                fill: armorDarkColor,
+                stroke: highlightColor,
+                lineWidth: 0.9
+            )
+            commanderCupola.position = CGPoint(x: -radius * 0.12, y: radius * 0.08)
+            weaponMount.addChild(commanderCupola)
         case .hover:
             for y in [-radius * 0.55, radius * 0.55] {
                 body.addChild(ellipseNode(
@@ -2757,7 +2843,7 @@ final class BattlefieldScene: SKScene {
         to body: SKNode
     ) {
         switch type {
-        case .tank, .aaTank, .artillery:
+        case .tank, .heavyTank, .aaTank, .artillery:
             for x in [-side * 0.35, side * 0.35] {
                 body.addChild(rectNode(
                     CGRect(x: x - side * 0.12, y: -side * 0.48, width: side * 0.24, height: side * 0.96),
@@ -2775,8 +2861,18 @@ final class BattlefieldScene: SKScene {
             ], fill: rust, stroke: edge, lineWidth: 1.5))
             body.addChild(circleNode(radius: side * 0.2, fill: char, stroke: accent, lineWidth: 1.4))
 
-            let barrelLength = type == .artillery ? side * 0.76 : side * 0.56
-            let barrelWidth = type == .artillery ? 3.2 : 2.6
+            let barrelLength: Double
+            let barrelWidth: CGFloat
+            if type == .artillery {
+                barrelLength = side * 0.76
+                barrelWidth = 3.2
+            } else if type == .heavyTank {
+                barrelLength = side * 0.7
+                barrelWidth = 3.4
+            } else {
+                barrelLength = side * 0.56
+                barrelWidth = 2.6
+            }
             if type == .aaTank {
                 for y in [-side * 0.09, side * 0.09] {
                     body.addChild(lineNode(

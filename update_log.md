@@ -4757,3 +4757,42 @@
 
 - production 静态 PNG 只能证明 T1 可用升级入口与队列布局，不证明升级点击、24 秒动态进度、取消退款、T2 真机模型、VoiceOver 或长期经济平衡。
 - 本轮 T2 只提升生产效率、防护和视野，不解锁新单位；红方 AI 暂不主动升级 Land Factory。
+
+### v2.23 / iOS Heavy Tank T2 unlock
+
+日期：2026-07-22
+
+核心变更：
+
+- 新增 `UnitType.heavyTank` 与独立定义：520 HP、19 radius、48 speed、300 vision、4 supply、420 metal、14 秒、205 range、82 damage、1.75 秒 reload，仅允许 producer T2。
+- `UnitDefinition.requiredProducerUpgradeLevel` 默认 T1；`GameDefinitions.productionUnits(for:)` 统一过滤玩家生产按钮、queue、Repeat 和红方生产候选。T1 仍只有原五类单位，T2 新增 Heavy Tank；新入队 Heavy Tank 在 1.25x 工厂捕获 11.2 秒 buildTime。
+- SpriteKit Heavy Tank 使用宽履带、楔形分层装甲、低矮六边形炮塔、独立炮盾、长炮管、内管和 muzzle brake；接入较慢炮塔转向、强后坐、重弹头/长尾迹、impact 与 typed wreck 路径。
+- production cloud fixture 改为完成状态 T2 工厂与 Heavy Tank 队首四项队列；combat fixture 增加选中 Heavy Tank 和冻结重炮弹道。普通启动、Web 原型和敌方工厂升级策略不变。
+- 公开图片检索确认 Rusted Warfare 战场重型履带单位以宽履带、厚车体、低炮塔和长炮管形成剪影；本轮只参考这种通用识别层级，具体程序化几何、数值与特效均为 Rustwar 原创。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/UnitType.swift`
+- `swift/RustwarCore/Sources/RustwarCore/UnitDefinition.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameDefinitions.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.23-ios-heavy-tank-t2-unlock.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
+- 实现提交、GitHub Actions run、artifact 与 Agent C 复判待本轮 push 后补充。
+
+遗留事项：
+
+- Heavy Tank 仍使用现有即时 Core 命中模型；没有范围伤害、穿甲、炮弹实体、动态光照、音效、震屏或正式 sprite atlas。
+- 红方 AI 尚不会主动升级 Land Factory，因此正常对局中红方不会自动生产 Heavy Tank；静态云端 PNG 不能证明动态转向、后坐恢复、真实触控生产或密集战斗性能。

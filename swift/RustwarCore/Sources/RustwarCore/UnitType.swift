@@ -2,6 +2,7 @@ public enum UnitType: String, CaseIterable, Codable, Hashable, Identifiable, Sen
     case builder
     case scout
     case tank
+    case heavyTank
     case hover
     case aaTank
     case artillery

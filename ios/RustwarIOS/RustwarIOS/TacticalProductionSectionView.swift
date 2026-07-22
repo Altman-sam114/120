@@ -376,7 +376,14 @@ private struct TacticalQueuedProductionView: View {
 
 private extension UnitType {
     func productionQueueDisplayName(fallback: String) -> String {
-        self == .tank ? "Light\nTank" : fallback
+        switch self {
+        case .tank:
+            "Light\nTank"
+        case .heavyTank:
+            "Heavy\nTank"
+        default:
+            fallback
+        }
     }
 
     var productionSystemImage: String {
@@ -384,6 +391,7 @@ private extension UnitType {
         case .builder: "wrench.and.screwdriver.fill"
         case .scout: "location.north.fill"
         case .tank: "shield.fill"
+        case .heavyTank: "shield.lefthalf.filled"
         case .hover: "wind"
         case .aaTank: "scope"
         case .artillery: "dot.scope"

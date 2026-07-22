@@ -498,7 +498,7 @@ public struct GameEngine: Sendable {
         guard !buildingDefinition.produces.isEmpty else {
             return .selectedBuildingCannotRepeatProduction
         }
-        if let unitType, !buildingDefinition.produces.contains(unitType) {
+        if let unitType, !GameDefinitions.canProduce(unitType, at: state.buildings[buildingIndex]) {
             return .unsupportedUnit
         }
 
@@ -838,7 +838,7 @@ public struct GameEngine: Sendable {
         for building: BuildingSnapshot,
         minimumRemainingMetal: Double = 0
     ) -> UnitType? {
-        let options = GameDefinitions.building(building.type).produces
+        let options = GameDefinitions.productionUnits(for: building)
         guard !options.isEmpty else {
             return nil
         }
@@ -973,6 +973,8 @@ public struct GameEngine: Sendable {
                 score -= 16
             case .aaTank:
                 score -= 10
+            case .heavyTank:
+                score -= 14
             case .tank, .hover:
                 score -= 8
             case .builder:
@@ -1681,7 +1683,7 @@ public struct GameEngine: Sendable {
         guard !buildingDefinition.produces.isEmpty else {
             return .selectedBuildingCannotProduce
         }
-        guard buildingDefinition.produces.contains(unitType) else {
+        guard GameDefinitions.canProduce(unitType, at: producer) else {
             return .unsupportedUnit
         }
 

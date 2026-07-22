@@ -713,6 +713,55 @@ import Testing
     #expect(abs(GameDefinitions.productionBuildTime(for: .tank, at: upgradedFactory) - 4.8) < 0.0001)
 }
 
+@Test func heavyTankRequiresT2FactoryAndCapturesUpgradedBuildTime() throws {
+    let heavyTank = GameDefinitions.unit(.heavyTank)
+    #expect(heavyTank.name == "Heavy Tank")
+    #expect(heavyTank.hitPoints == 520)
+    #expect(heavyTank.radius == 19)
+    #expect(heavyTank.speed == 48)
+    #expect(heavyTank.supply == 4)
+    #expect(heavyTank.metalCost == 420)
+    #expect(heavyTank.buildTime == 14)
+    #expect(heavyTank.attackRange == 205)
+    #expect(heavyTank.damage == 82)
+    #expect(heavyTank.reloadTime == 1.75)
+    #expect(heavyTank.requiredProducerUpgradeLevel == 2)
+
+    let encodedHeavyTank = try JSONEncoder().encode(heavyTank)
+    var legacyDefinitionJSON = try #require(JSONSerialization.jsonObject(with: encodedHeavyTank) as? [String: Any])
+    legacyDefinitionJSON.removeValue(forKey: "requiredProducerUpgradeLevel")
+    let legacyDefinitionData = try JSONSerialization.data(withJSONObject: legacyDefinitionJSON)
+    let legacyDefinition = try JSONDecoder().decode(UnitDefinition.self, from: legacyDefinitionData)
+    #expect(legacyDefinition.requiredProducerUpgradeLevel == 1)
+
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    _ = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
+    let factoryIndex = try #require(engine.state.buildings.firstIndex {
+        $0.team == .player && $0.type == .landFactory
+    })
+    engine.state.metal[.player] = 2_000
+
+    #expect(GameDefinitions.productionUnits(for: engine.state.buildings[factoryIndex]) == [.scout, .tank, .hover, .artillery, .aaTank])
+    #expect(engine.queueUnit(.heavyTank) == .unsupportedUnit)
+    #expect(engine.setRepeatProduction(.heavyTank) == .unsupportedUnit)
+
+    engine.state.buildings[factoryIndex].upgradeLevel = 2
+    #expect(GameDefinitions.productionUnits(for: engine.state.buildings[factoryIndex]) == [.scout, .tank, .hover, .artillery, .aaTank, .heavyTank])
+    #expect(engine.queueUnit(.heavyTank) == .queued)
+    #expect(engine.setRepeatProduction(.heavyTank) == .updated(repeatUnitType: .heavyTank))
+    let queuedHeavyTank = try #require(engine.state.buildings[factoryIndex].productionQueue.first)
+    #expect(queuedHeavyTank.unitType == .heavyTank)
+    #expect(abs(queuedHeavyTank.buildTime - 11.2) < 0.0001)
+    #expect(engine.state.metal[.player] == 1_580)
+
+    let startingUnitCount = engine.state.units.count
+    for _ in 0..<12 {
+        engine.update(deltaTime: 1)
+    }
+    #expect(engine.state.units.count == startingUnitCount + 1)
+    #expect(engine.state.units.last?.type == .heavyTank)
+}
+
 @Test func landFactoryUpgradeCompletesAndSpeedsFutureProduction() throws {
     let factoryDefinition = GameDefinitions.building(.landFactory)
     let factory = BuildingSnapshot(
@@ -8264,8 +8313,8 @@ import Testing
     #expect(endingPlayerHitPoints < startingPlayerHitPoints)
 }
 
-@Test func landFactoryProductionListMatchesWebT1Order() {
-    #expect(GameDefinitions.building(.landFactory).produces == [.scout, .tank, .hover, .artillery, .aaTank])
+@Test func landFactoryProductionListPreservesT1OrderAndAddsHeavyTank() {
+    #expect(GameDefinitions.building(.landFactory).produces == [.scout, .tank, .hover, .artillery, .aaTank, .heavyTank])
 }
 
 @Test func commandCenterProductionListMatchesWebBuilder() {

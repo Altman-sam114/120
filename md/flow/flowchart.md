@@ -433,6 +433,22 @@ flowchart LR
   C --> V["T2 roof rails + tech core"]
 ```
 
+## v2.23 Heavy Tank T2 unlock
+
+```mermaid
+flowchart LR
+  F["Selected completed Land Factory"] --> A["productionUnits(for: producer)"]
+  D["UnitDefinition.requiredProducerUpgradeLevel"] --> A
+  A --> T1["T1: five existing units"]
+  A --> T2["T2: existing units + Heavy Tank"]
+  T2 --> Q["Queue / Repeat / enemy candidate gate"]
+  Q --> B["11.2s captured buildTime at 1.25x"]
+  H["Heavy Tank Core snapshot"] --> M["Wide tracks + layered armor + low turret"]
+  H --> C["Slow traverse + heavy recoil + long tracer"]
+  M --> PNG["Production + combat cloud PNG evidence"]
+  C --> PNG
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid

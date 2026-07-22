@@ -118,13 +118,20 @@ final class GameController {
         }) else {
             return state
         }
-        let queuedTypes: [UnitType] = [.scout, .tank, .aaTank, .artillery]
+        state.buildings[factoryIndex].upgradeLevel = 2
+        let upgradedDefinition = GameDefinitions.building(for: state.buildings[factoryIndex])
+        state.buildings[factoryIndex].hitPoints = upgradedDefinition.hitPoints
+        state.buildings[factoryIndex].maxHitPoints = upgradedDefinition.hitPoints
+        let queuedTypes: [UnitType] = [.heavyTank, .tank, .aaTank, .artillery]
         state.buildings[factoryIndex].productionQueue = queuedTypes.enumerated().map { index, unitType in
-            let buildTime = GameDefinitions.unit(unitType).buildTime
+            let buildTime = GameDefinitions.productionBuildTime(
+                for: unitType,
+                at: state.buildings[factoryIndex]
+            )
             return ProductionQueueItem(
                 id: "visual-production-\(index)-\(unitType.rawValue)",
                 unitType: unitType,
-                progress: index == 0 ? buildTime * 0.46 : 0,
+                progress: index == 0 ? buildTime * 0.54 : 0,
                 buildTime: buildTime
             )
         }
@@ -197,6 +204,7 @@ final class GameController {
         }
 
         state.units = [
+            unit(.heavyTank, id: "visual-player-heavy-tank", team: .player, at: WorldPoint(1_760, 1_520), targetID: "visual-enemy-tank"),
             unit(.tank, id: "visual-player-tank", team: .player, at: WorldPoint(1_750, 1_470), targetID: "visual-enemy-artillery"),
             unit(.aaTank, id: "visual-player-aa", team: .player, at: WorldPoint(1_750, 1_560), targetID: "visual-enemy-gunboat"),
             unit(.artillery, id: "visual-player-artillery", team: .player, at: WorldPoint(1_740, 1_650), targetID: "visual-enemy-tank"),
@@ -214,6 +222,7 @@ final class GameController {
             turret(id: "visual-enemy-turret", team: .enemy, at: WorldPoint(2_055, 1_680), healthFraction: 0.74)
         ])
         state.selectedEntityIDs = [
+            "visual-player-heavy-tank",
             "visual-player-tank",
             "visual-player-aa",
             "visual-player-artillery",
@@ -292,7 +301,7 @@ final class GameController {
         guard let building = selectedPlayerProducer else {
             return []
         }
-        return GameDefinitions.building(building.type).produces
+        return GameDefinitions.productionUnits(for: building)
     }
 
     func productionBuildTime(for unitType: UnitType) -> Double {
@@ -1324,7 +1333,7 @@ final class GameController {
             return
         }
 
-        let options = GameDefinitions.building(producer.type).produces
+        let options = GameDefinitions.productionUnits(for: producer)
         let nextUnitType: UnitType?
         if let repeatUnitType = producer.repeatUnitType,
            let currentIndex = options.firstIndex(of: repeatUnitType) {
