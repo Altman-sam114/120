@@ -4746,8 +4746,12 @@
 
 验证状态：
 
-- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
-- 实现提交、GitHub Actions run、artifact manifest/JUnit/build/probe 和双 PNG 人工复判待本轮 push 后补记。
+- 按用户要求未运行本地 Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。布局修复期间误执行一次仅限目标 Swift 文件的 `git diff --check` 并返回通过；该命令违反云端唯一验证要求，不作为验收证据，后续没有再次执行。
+- 初始实现提交 `96d1a732e0eecced0ad4eee0f6b95f8008991149` 的 run `29631656448`、attempt `1` 失败；artifact 已下载到 `/private/tmp/rustwar-c-review-29631656448/`。306 个 Core tests 通过，但 iOS build 因 `productionLabel` 缺少显式 `return` 失败。修复提交 `456ef012874cea852ade9d18abacba312a3281bb` 的 run `29632009283`、attempt `1` 成功，但 `ios-home.png` 中 Factory Tech 面板过高，完整四项队列未同屏，Agent C 视觉验收不通过。
+- 后续布局提交 `29008ada651dffa5437521c4da021360cfe90875`、`c824b7289849f2c4a4b219972ff4d6dfe337974d`、`3af22df33dbd46fe7965b3a7fa37d9ea67306430`、`c8f3f27394df458e7ef1ad0797484ff2b12b9e0f` 和 `abc23e741ce92c1da34656bf61d061fce73367b2` 的 run 均成功，但依次暴露科技控件/队列高度、`Artillery` 断词或 `Light Tank` 截断等视觉问题，因此均未作为最终验收依据。
+- 最终实现提交 `392e0514a948b74dba3511f97e077a7d0c89175c` 已通过 Agent C 云端 artifact 复判：GitHub Actions run `29638706939`、attempt `1`，artifact `rustwar-ci-v1.2-main-392e051-run29638706939-attempt1`，下载缓存 `/private/tmp/rustwar-c-review-29638706939/`，大小 `1.4M`。
+- manifest 已核对 `version=v1.2`、`branch=main`、完整 SHA、run id、run attempt、Xcode 26.5 和 iOS Simulator SDK 26.5；JUnit 为 8 checks、0 failures、1 browser skip，306 个 RustwarCore tests 通过。双架构 universal binary、`BUILD SUCCEEDED`、production/combat 双 launch、landscape normalization 和 pixel probe 全部成功。
+- `ios-home.png` 为 2622x1206、透明比例 0、亮度标准差 46.512；Agent C 人工确认 Factory T1、1x production、完整 `Upgrade T2 - 900 Metal`、`1.25x production | 1200 HP` 与四个队列槽同屏，Scout 46% / 3s 和进度条可见，Light Tank 两行完整，AA Tank / Artillery 无截断或重叠。`ios-combat.png` 为 2622x1206、亮度标准差 44.175，既有阵型、残骸、双方 Turret、弹道、爆点、HUD 与 Tactical Map 无回退。
 
 遗留事项：
 
