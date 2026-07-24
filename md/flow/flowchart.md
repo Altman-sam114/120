@@ -477,6 +477,21 @@ flowchart LR
   O["Tech-gated productionOptions"] --> G["Icon + name + metal / supply / time"]
 ```
 
+## v2.26 Direct production palette
+
+```mermaid
+flowchart LR
+  S["Select completed producer"] --> T["Factory Tech"]
+  T --> O["Tech-gated productionOptions"]
+  D["Default Dynamic Type"] --> M["Three-column compact matrix"]
+  A["Accessibility Dynamic Type"] --> F["One-column full labels"]
+  O --> M
+  O --> F
+  M --> Q["Existing active item + ordered queue"]
+  F --> Q
+  Q --> C["Cancel / Repeat / Rally"]
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid

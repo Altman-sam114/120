@@ -95,6 +95,8 @@ v2.24 把 Land Factory T2 纳入 `updateEnemyAI()` 的战略升级链：红方�
 
 v2.25 只重组 `TacticalProductionSectionView` 的 presentation hierarchy，不新增第二套游戏状态：Factory Tech 继续读取 selected completed factory 的等级、有效生产倍率、upgrade progress 和 next upgrade，只把展示拆成 icon anchor、不可拆分的 `T1/T2`、短状态 badge 与按真实宽度 fallback 的垂直布局。`productionQueueItems` 仍是 Core 队列的只读映射，但队首改为全宽 active row 显示真实进度/剩余时间，后续项继续按 id、顺序与捕获的 buildTime 绘制；production buttons 仍直接遍历统一 tech-gated `productionOptions`，只调整图标、名称和 metal/supply/time 的视觉层级。Queue、Cancel、Repeat、Rally、Shift shortcut、VoiceOver、Dynamic Type 和 Core/存档边界不变。
 
+v2.26 把同一组 `productionOptions` 从队列之后前移到 Factory Tech 之后，并使用独立于通用 command grid 的生产列策略：默认 Dynamic Type 为三列紧凑 action matrix，辅助功能字号为一列完整标签。两种标签都读取同一 `UnitDefinition` 和 selected producer 的 effective buildTime，按钮 action、Shift+1-9、VoiceOver 与 44pt 最小触控保持；`productionQueueItems` 随后仍按 v2.25 active row 和 ordered slots 显示，Cancel、Repeat、Rally、Core 与存档不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

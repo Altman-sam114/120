@@ -59,6 +59,7 @@
 - v2.23 起，已完成 T2 Land Factory 会额外解锁 Heavy Tank：520 HP、420 metal、4 population、205 range、82 damage，基础生产时间 14 秒并受 T2 1.25x 生产倍率缩短为 11.2 秒。T1 的生产列表、直接下单和 Repeat 都不会暴露或接受 Heavy Tank。原生战场为其提供独立宽履带、楔形复合装甲、低矮炮塔、炮盾、长炮管与 muzzle brake，并使用更慢炮塔转速、更强后坐、重弹头和长尾迹与 Light Tank 区分。
 - v2.24 起，红方 AI 在双工厂/炮塔防线、Radar T2 和至少一个 Extractor T2 都完成后，会保留 260 metal 缓冲并自动升级 Land Factory T2；升级与既有生产队列并行。T2 完成后红方生产继续走统一编成计数和 producer tech gate，因此会在普通对局中排队 11.2 秒 Heavy Tank，而不是使用 AI 专用生成或作弊分支。
 - v2.25 起，原生 iOS Production dock 参考 Rusted Warfare 公开截图的紧凑侧栏信息组织重做视觉层级：Factory Tech 使用独立图标、不可拆分的 T1/T2 等级、倍率和短状态 badge，窄宽度会主动切换布局，不再把 `Factory T2` 自动连字符断行；当前生产项升级为整行进度焦点，后续订单保持紧凑顺序槽，生产按钮用单位图标、名称和 metal / supply / time 次级指标快速扫描。Core 队列、升级、Repeat、Rally、快捷键、VoiceOver 和 44pt 触控语义不变。
+- v2.26 起，点选生产建筑后会先显示 Factory Tech 和全部生产选项，再显示当前队列与管理动作；默认字号使用三列图标优先矩阵，让 T2 Land Factory 的六种单位无需先滚过队列即可直接下单，辅助功能字号自动改为单列完整标签。单位名称、metal、population、真实 build time、Shift+1-9、VoiceOver、44pt 触控和 v2.25 完整队列信息保持。
 
 当前验证制度：
 

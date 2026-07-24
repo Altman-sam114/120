@@ -5,25 +5,30 @@ struct TacticalProductionSectionView: View {
     @Bindable var controller: GameController
     let columns: Int
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var productionColumnCount: Int {
+        dynamicTypeSize.isAccessibilitySize ? 1 : 3
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             TacticalSectionHeader(section: .production)
-            if controller.showsSelectedFactoryTech || !controller.productionQueueItems.isEmpty {
-                VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-                    if controller.showsSelectedFactoryTech {
-                        TacticalFactoryTechView(controller: controller)
-                    }
-                    if !controller.productionQueueItems.isEmpty {
-                        TacticalProductionQueueView(items: controller.productionQueueItems)
-                    }
-                }
+            if controller.showsSelectedFactoryTech {
+                TacticalFactoryTechView(controller: controller)
             }
             if !controller.productionOptions.isEmpty {
-                TacticalCommandGrid(columns: columns) {
+                TacticalCommandGrid(
+                    columns: productionColumnCount,
+                    spacing: TacticalHUDTheme.denseSpacing
+                ) {
                     ForEach(controller.productionOptions.enumerated(), id: \.element) { index, unitType in
                         productionButton(for: unitType, shortcutIndex: index)
                     }
                 }
+            }
+            if !controller.productionQueueItems.isEmpty {
+                TacticalProductionQueueView(items: controller.productionQueueItems)
             }
             TacticalCommandGrid(columns: columns) {
                 if controller.canCancelProduction {
@@ -64,7 +69,12 @@ struct TacticalProductionSectionView: View {
             Button {
                 controller.queueUnit(unitType)
             } label: {
-                productionLabel(for: unitType, definition: definition)
+                TacticalProductionButtonLabel(
+                    unitType: unitType,
+                    definition: definition,
+                    buildTime: controller.productionBuildTime(for: unitType),
+                    usesCompactLayout: !dynamicTypeSize.isAccessibilitySize
+                )
             }
             .tacticalControl()
             .keyboardShortcut(shortcutKey, modifiers: .shift)
@@ -74,44 +84,17 @@ struct TacticalProductionSectionView: View {
             Button {
                 controller.queueUnit(unitType)
             } label: {
-                productionLabel(for: unitType, definition: definition)
+                TacticalProductionButtonLabel(
+                    unitType: unitType,
+                    definition: definition,
+                    buildTime: controller.productionBuildTime(for: unitType),
+                    usesCompactLayout: !dynamicTypeSize.isAccessibilitySize
+                )
             }
             .tacticalControl()
             .accessibilityLabel(productionAccessibilityLabel(for: definition))
             .accessibilityHint("Queues one \(definition.name) for production.")
         }
-    }
-
-    private func productionLabel(for unitType: UnitType, definition: UnitDefinition) -> some View {
-        let buildTime = controller.productionBuildTime(for: unitType)
-        return HStack(spacing: TacticalHUDTheme.compactSpacing) {
-            Image(systemName: unitType.productionSystemImage)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(TacticalHUDTheme.accent)
-                .frame(width: 26)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-                Text(definition.name)
-                    .font(.footnote.bold())
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.82)
-                HStack(spacing: TacticalHUDTheme.compactSpacing) {
-                    productionMetric(Int(definition.metalCost).formatted(), systemImage: "hexagon.fill")
-                    productionMetric(definition.supply.formatted(), systemImage: "person.2.fill")
-                    productionMetric(formattedBuildTime(buildTime), systemImage: "timer")
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func productionMetric(_ value: String, systemImage: String) -> some View {
-        Label(value, systemImage: systemImage)
-            .font(.caption2)
-            .foregroundStyle(TacticalHUDTheme.secondaryText)
-            .monospacedDigit()
-            .lineLimit(1)
-            .minimumScaleFactor(0.78)
     }
 
     private func productionAccessibilityLabel(for definition: UnitDefinition) -> String {
@@ -131,7 +114,67 @@ struct TacticalProductionSectionView: View {
         KeyEquivalent(Character(value))
     }
 
-    private func formattedBuildTime(_ buildTime: Double) -> String {
+}
+
+private struct TacticalProductionButtonLabel: View {
+    let unitType: UnitType
+    let definition: UnitDefinition
+    let buildTime: Double
+    let usesCompactLayout: Bool
+
+    var body: some View {
+        if usesCompactLayout {
+            VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+                HStack(spacing: TacticalHUDTheme.denseSpacing) {
+                    productionIcon
+                    Text(unitType.productionQueueDisplayName(fallback: definition.name))
+                        .font(.footnote.bold())
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.72)
+                }
+                HStack(spacing: TacticalHUDTheme.denseSpacing) {
+                    productionMetric(Int(definition.metalCost).formatted(), systemImage: "hexagon.fill")
+                    productionMetric(definition.supply.formatted(), systemImage: "person.2.fill")
+                }
+                productionMetric(formattedBuildTime, systemImage: "timer")
+            }
+            .frame(maxWidth: .infinity, minHeight: 62, alignment: .leading)
+        } else {
+            HStack(spacing: TacticalHUDTheme.compactSpacing) {
+                productionIcon
+                    .frame(width: 26)
+                VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+                    Text(definition.name)
+                        .font(.footnote.bold())
+                        .lineLimit(2)
+                    HStack(spacing: TacticalHUDTheme.compactSpacing) {
+                        productionMetric(Int(definition.metalCost).formatted(), systemImage: "hexagon.fill")
+                        productionMetric(definition.supply.formatted(), systemImage: "person.2.fill")
+                        productionMetric(formattedBuildTime, systemImage: "timer")
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var productionIcon: some View {
+        Image(systemName: unitType.productionSystemImage)
+            .font(.title3.weight(.semibold))
+            .foregroundStyle(TacticalHUDTheme.accent)
+            .accessibilityHidden(true)
+    }
+
+    private func productionMetric(_ value: String, systemImage: String) -> some View {
+        Label(value, systemImage: systemImage)
+            .font(.caption2)
+            .foregroundStyle(TacticalHUDTheme.secondaryText)
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
+    }
+
+    private var formattedBuildTime: String {
         "\(buildTime.formatted(.number.precision(.fractionLength(0...1))))s"
     }
 }

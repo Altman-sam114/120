@@ -4873,3 +4873,32 @@
 遗留事项：
 
 - 固定 production PNG 只能覆盖默认字号下的暂停 T2 fixture；真实滚动、Dynamic Type、VoiceOver、升级交互、超长队列和真机触控仍未自动化。
+
+### v2.26 / iOS direct production palette
+
+日期：2026-07-24
+
+核心变更：
+
+- Production 顺序调整为 Factory Tech、生产选项、Build Queue、管理动作，点选生产建筑后无需先滚过队列即可看到生产入口。
+- 默认 Dynamic Type 使用三列图标优先生产矩阵，辅助功能字号退回一列完整标签；两种布局都保留单位名、metal、population 和当前工厂真实 build time。
+- Queue action、Shift+1-9、VoiceOver、44pt 触控、v2.25 active/queued rows、Cancel Last、Repeat、Rally、Core、AI、战斗和存档语义不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.26-ios-direct-production-palette.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
+- GitHub Actions 与 Agent C 最新 artifact 复判待实现提交 push 后填写。
+
+遗留事项：
+
+- 固定 production PNG 只覆盖默认字号和暂停 T2 fixture；辅助功能字号、VoiceOver、真实点击、滚动、超长队列与真机触控仍未自动化。
