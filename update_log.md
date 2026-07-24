@@ -4862,6 +4862,8 @@
 - 实现提交 `70ab4074d756ce35ca46291cdd8d75c9c8bbf7cb` 的 GitHub Actions run `30068484373`（attempt 1）失败；Agent C 下载并核对 artifact `rustwar-ci-v1.2-main-70ab407-run30068484373-attempt1`，缓存位于 `/private/tmp/rustwar-c-review-30068484373-a1/`，约 284 KB。manifest 的 branch/SHA/run/attempt 完全匹配。
 - 失败包确认 toolchain、`git diff --check`、Node、311 项 Swift Core tests 和 Xcode project list 成功；iOS build 因三个不存在的 SwiftUI `hyphenationFactor` modifier 和其引发的 type-check 超时失败，因此没有生成双 PNG。修复移除该 API，并把升级标题拆成简单 `HStack` 和局部 presentation value；Factory T1/T2 不断词仍由独立等级文本和 `ViewThatFits` 保证。
 - 修复后的 GitHub Actions 云端验证和 Agent C artifact 复判待追加提交 push 后填写。
+- 修复提交 `8075c174857e34c5998a611dd0272e5eb31f3fee` 的 GitHub Actions run `30068912998`（attempt 1）技术检查成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-8075c17-run30068912998-attempt1` 到 `/private/tmp/rustwar-c-review-30068912998/`，约 1.5 MB。manifest/JUnit/log 证明 8 checks、0 failures、1 browser skip、311 Core tests、双架构 build、双 launch/orientation/probe 全部通过。
+- Agent C 人工复判未放行该视觉版本：`ios-home.png` 中 Factory Tech 已无断词且 Heavy Tank active row 清晰，但后三项队列被推到首屏底部之外，只露出槽位边缘。追加精简 Factory header（状态 badge 去除重复图标并并入两行结构）和 48pt 后续槽，重新触发云端视觉验收；`ios-combat.png` 未见回退。
 
 遗留事项：
 

@@ -150,12 +150,22 @@ private struct TacticalFactoryTechView: View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.compactSpacing) {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: TacticalHUDTheme.compactSpacing) {
-                    factoryIdentity
-                    Spacer(minLength: 0)
-                    factoryStatusBadge
+                    factoryIcon
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack(spacing: TacticalHUDTheme.compactSpacing) {
+                            factoryTitle
+                            Spacer(minLength: 0)
+                            factoryStatusBadge
+                        }
+                        factoryMetrics
+                    }
                 }
                 VStack(alignment: .leading, spacing: TacticalHUDTheme.compactSpacing) {
-                    factoryIdentity
+                    HStack(spacing: TacticalHUDTheme.compactSpacing) {
+                        factoryIcon
+                        factoryTitle
+                    }
+                    factoryMetrics
                     factoryStatusBadge
                 }
             }
@@ -223,38 +233,40 @@ private struct TacticalFactoryTechView: View {
         .accessibilityElement(children: .contain)
     }
 
-    private var factoryIdentity: some View {
-        HStack(spacing: TacticalHUDTheme.compactSpacing) {
-            Image(systemName: "building.2.fill")
-                .font(.headline)
-                .foregroundStyle(TacticalHUDTheme.accent)
-                .frame(width: 32, height: 32)
-                .background(
-                    TacticalHUDTheme.metricBackground,
-                    in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
-                )
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 0) {
-                Text("FACTORY TECH")
-                    .font(.caption2.bold())
-                    .foregroundStyle(TacticalHUDTheme.metricLabel)
-                    .lineLimit(1)
-                HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.compactSpacing) {
-                    Text("T\(controller.selectedFactoryTechLevel)")
-                        .font(.title3.bold())
-                        .monospacedDigit()
-                    Text(controller.selectedFactoryProductionSpeedText)
-                        .font(.caption)
-                        .foregroundStyle(TacticalHUDTheme.secondaryText)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                }
-            }
+    private var factoryIcon: some View {
+        Image(systemName: "building.2.fill")
+            .font(.headline)
+            .foregroundStyle(TacticalHUDTheme.accent)
+            .frame(width: 32, height: 32)
+            .background(
+                TacticalHUDTheme.metricBackground,
+                in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
+            )
+            .accessibilityHidden(true)
+    }
+
+    private var factoryTitle: some View {
+        Text("FACTORY TECH")
+            .font(.caption2.bold())
+            .foregroundStyle(TacticalHUDTheme.metricLabel)
+            .lineLimit(1)
+    }
+
+    private var factoryMetrics: some View {
+        HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.compactSpacing) {
+            Text("T\(controller.selectedFactoryTechLevel)")
+                .font(.title3.bold())
+                .monospacedDigit()
+            Text(controller.selectedFactoryProductionSpeedText)
+                .font(.caption)
+                .foregroundStyle(TacticalHUDTheme.secondaryText)
+                .monospacedDigit()
+                .lineLimit(1)
         }
     }
 
     private var factoryStatusBadge: some View {
-        Label(factoryStatusTitle, systemImage: factoryStatusSystemImage)
+        Text(factoryStatusTitle)
             .font(.caption2.bold())
             .foregroundStyle(factoryStatusForeground)
             .padding(.horizontal, TacticalHUDTheme.compactSpacing)
@@ -272,13 +284,6 @@ private struct TacticalFactoryTechView: View {
             return "UPGRADING"
         }
         return controller.showsSelectedFactoryUpgradeControl ? "T2 READY" : "MAX TECH"
-    }
-
-    private var factoryStatusSystemImage: String {
-        if controller.selectedFactoryUpgradeProgress != nil {
-            return "gearshape.2.fill"
-        }
-        return controller.showsSelectedFactoryUpgradeControl ? "arrow.up.circle.fill" : "checkmark.seal.fill"
     }
 
     private var factoryStatusForeground: Color {
@@ -443,7 +448,7 @@ private struct TacticalQueuedProductionView: View {
                 .foregroundStyle(TacticalHUDTheme.secondaryText)
         }
         .padding(.horizontal, 2)
-        .frame(maxWidth: .infinity, minHeight: 60)
+        .frame(maxWidth: .infinity, minHeight: 48)
         .background(
             TacticalHUDTheme.controlBackground,
             in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
