@@ -310,23 +310,8 @@ private struct TacticalProductionQueueView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.compactSpacing) {
-            HStack(spacing: TacticalHUDTheme.compactSpacing) {
-                Label("Build Queue", systemImage: "clock.arrow.circlepath")
-                    .font(.footnote.bold())
-                Spacer(minLength: TacticalHUDTheme.compactSpacing)
-                Text("\(items.count) \(items.count == 1 ? "order" : "orders")")
-                    .font(.caption.bold())
-                    .monospacedDigit()
-                    .foregroundStyle(TacticalHUDTheme.metricLabel)
-                    .padding(.horizontal, TacticalHUDTheme.compactSpacing)
-                    .padding(.vertical, 2)
-                    .background(
-                        TacticalHUDTheme.selectionBackground,
-                        in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
-                    )
-            }
             if let currentItem = items.first {
-                TacticalCurrentProductionView(item: currentItem)
+                TacticalCurrentProductionView(item: currentItem, queueCount: items.count)
             }
             if items.count > 1 {
                 TacticalCommandGrid(columns: queuedColumnCount, spacing: TacticalHUDTheme.denseSpacing) {
@@ -353,6 +338,7 @@ private struct TacticalProductionQueueView: View {
 
 private struct TacticalCurrentProductionView: View {
     let item: ProductionQueueItem
+    let queueCount: Int
 
     private var definition: UnitDefinition {
         GameDefinitions.unit(item.unitType)
@@ -389,6 +375,13 @@ private struct TacticalCurrentProductionView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.78)
                     Spacer(minLength: 0)
+                    Label("\(queueCount)", systemImage: "clock.arrow.circlepath")
+                        .font(.caption2.bold())
+                        .foregroundStyle(TacticalHUDTheme.metricLabel)
+                        .monospacedDigit()
+                        .accessibilityHidden(true)
+                }
+                HStack(spacing: TacticalHUDTheme.compactSpacing) {
                     Text("\(percent)%")
                         .font(.footnote.bold())
                         .foregroundStyle(TacticalHUDTheme.accent)
@@ -428,7 +421,7 @@ private struct TacticalQueuedProductionView: View {
     }
 
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 0) {
             HStack(spacing: TacticalHUDTheme.denseSpacing) {
                 Text(position.formatted())
                     .font(.caption.bold())
@@ -437,15 +430,16 @@ private struct TacticalQueuedProductionView: View {
                 Image(systemName: item.unitType.productionSystemImage)
                     .foregroundStyle(TacticalHUDTheme.accent)
                     .accessibilityHidden(true)
+                Spacer(minLength: 0)
+                Text("\(Int(item.buildTime))s")
+                    .font(.caption2)
+                    .monospacedDigit()
+                    .foregroundStyle(TacticalHUDTheme.secondaryText)
             }
             Text(item.unitType.productionQueueDisplayName(fallback: definition.name))
                 .font(.caption.bold())
-                .lineLimit(2)
-                .minimumScaleFactor(0.85)
-            Text("\(Int(item.buildTime))s")
-                .font(.caption)
-                .monospacedDigit()
-                .foregroundStyle(TacticalHUDTheme.secondaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.68)
         }
         .padding(.horizontal, 2)
         .frame(maxWidth: .infinity, minHeight: 48)
@@ -468,9 +462,9 @@ private extension UnitType {
     func productionQueueDisplayName(fallback: String) -> String {
         switch self {
         case .tank:
-            "Light\nTank"
+            "Light Tank"
         case .heavyTank:
-            "Heavy\nTank"
+            "Heavy Tank"
         default:
             fallback
         }

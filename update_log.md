@@ -4864,6 +4864,8 @@
 - 修复后的 GitHub Actions 云端验证和 Agent C artifact 复判待追加提交 push 后填写。
 - 修复提交 `8075c174857e34c5998a611dd0272e5eb31f3fee` 的 GitHub Actions run `30068912998`（attempt 1）技术检查成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-8075c17-run30068912998-attempt1` 到 `/private/tmp/rustwar-c-review-30068912998/`，约 1.5 MB。manifest/JUnit/log 证明 8 checks、0 failures、1 browser skip、311 Core tests、双架构 build、双 launch/orientation/probe 全部通过。
 - Agent C 人工复判未放行该视觉版本：`ios-home.png` 中 Factory Tech 已无断词且 Heavy Tank active row 清晰，但后三项队列被推到首屏底部之外，只露出槽位边缘。追加精简 Factory header（状态 badge 去除重复图标并并入两行结构）和 48pt 后续槽，重新触发云端视觉验收；`ios-combat.png` 未见回退。
+- 紧凑 header 提交 `80c2ad5a774d1c3bfdbf11f622b9965300c37029` 的 GitHub Actions run `30069582557`（attempt 1）再次通过全部技术 gate；Agent C 下载并核对 artifact `rustwar-ci-v1.2-main-80c2ad5-run30069582557-attempt1` 到 `/private/tmp/rustwar-c-review-30069582557/`，约 1.5 MB。Factory Tech 与 active row 的密度改善，但后三项仍只显示上半部，名称/时间被屏幕底部裁掉，因此视觉验收仍不通过。
+- 后续修正把重复的 Build Queue 标题行移除，将队列总数合并到 active row；后续槽改为序号/图标/时间与单行名称两层，保持真实顺序、buildTime 和完整 accessibility 文案，重新等待云端截图复判。
 
 遗留事项：
 
