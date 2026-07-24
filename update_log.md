@@ -4900,6 +4900,8 @@
 - 实现提交 `77167c63673486ec69e0950a475b0ee5ef4714e6` 的 GitHub Actions run `30072069580`（attempt 1）失败；Agent C 下载 artifact `rustwar-ci-v1.2-main-77167c6-run30072069580-attempt1` 到 `/private/tmp/rustwar-c-review-30072069580/`，约 1.5 MB。manifest 的 branch/SHA/run/attempt 完全匹配。
 - 唯一技术失败是提示词文件 EOF 多一个空行导致 `git diff --check` exit 2；Node、311 项 Swift Core tests、Xcode list、arm64/x86_64 build、production/combat 双 launch、orientation 和像素探针均成功，日志包含 `BUILD SUCCEEDED`。
 - Agent C 人工复判 `ios-home.png` 同时发现三列第一排成本图标发生省略、第二排只露出上部，因此视觉验收不通过。追加修复把默认紧凑标签收为图标/名称与单行 `metal/pop/time` 两层，并保持辅助功能字号完整标签和完整 VoiceOver；新 run 待复判。
+- 紧凑修复提交 `17e1c9999fc061ff09ff11002acc662c600343db` 的 GitHub Actions run `30072821216`（attempt 1）技术检查成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-17e1c99-run30072821216-attempt1` 到 `/private/tmp/rustwar-c-review-30072821216/`，约 1.5 MB。manifest/JUnit/log 证明 8 checks、0 failures、1 browser skip、311 Core tests、双架构 build 和双 smoke/probe 全部通过，combat PNG 与上一包 hash 完全一致。
+- `ios-home.png` 已完整显示两排六项且所有 `metal/pop/time` 可读，但 Artillery 名称仍被截成 `Artill...`，因此 Agent C 暂不放行视觉验收。追加使用明确紧凑战术简称 `Arty`，完整 VoiceOver label/hint 仍读 `Artillery`；最终 run 待复判。
 
 遗留事项：
 

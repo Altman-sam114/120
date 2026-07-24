@@ -127,7 +127,7 @@ private struct TacticalProductionButtonLabel: View {
             VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
                 HStack(spacing: TacticalHUDTheme.denseSpacing) {
                     productionIcon
-                    Text(unitType.productionQueueDisplayName(fallback: definition.name))
+                    Text(compactDisplayName)
                         .font(.caption.bold())
                         .lineLimit(2)
                         .minimumScaleFactor(0.72)
@@ -181,6 +181,15 @@ private struct TacticalProductionButtonLabel: View {
 
     private var compactMetrics: String {
         "\(Int(definition.metalCost))M \(definition.supply)P \(formattedBuildTime)"
+    }
+
+    private var compactDisplayName: String {
+        switch unitType {
+        case .artillery:
+            "Arty"
+        default:
+            unitType.productionQueueDisplayName(fallback: definition.name)
+        }
     }
 }
 
