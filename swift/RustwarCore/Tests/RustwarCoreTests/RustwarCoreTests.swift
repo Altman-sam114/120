@@ -734,25 +734,40 @@ import Testing
     let legacyDefinition = try JSONDecoder().decode(UnitDefinition.self, from: legacyDefinitionData)
     #expect(legacyDefinition.requiredProducerUpgradeLevel == 1)
 
-    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
-    _ = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
-    let factoryIndex = try #require(engine.state.buildings.firstIndex {
-        $0.team == .player && $0.type == .landFactory
-    })
-    engine.state.metal[.player] = 2_000
+    let factory = BuildingSnapshot(
+        id: "heavy-tank-tech-factory",
+        type: .landFactory,
+        team: .player,
+        position: WorldPoint(600, 600),
+        hitPoints: 920,
+        maxHitPoints: 920,
+        rally: WorldPoint(700, 600)
+    )
+    var state = GameState(mapID: .coast)
+    state.units = []
+    state.buildings = [factory]
+    state.metal[.player] = 2_000
+    state.selectedEntityID = factory.id
+    state.selectedEntityIDs = [factory.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    let factoryIndex = 0
 
     #expect(GameDefinitions.productionUnits(for: engine.state.buildings[factoryIndex]) == [.scout, .tank, .hover, .artillery, .aaTank])
     #expect(engine.queueUnit(.heavyTank) == .unsupportedUnit)
     #expect(engine.setRepeatProduction(.heavyTank) == .unsupportedUnit)
 
-    engine.state.buildings[factoryIndex].upgradeLevel = 2
+    #expect(engine.queueBuildingUpgrade() == .queued)
+    for _ in 0..<24 {
+        engine.update(deltaTime: 1)
+    }
+    #expect(engine.state.buildings[factoryIndex].upgradeLevel == 2)
     #expect(GameDefinitions.productionUnits(for: engine.state.buildings[factoryIndex]) == [.scout, .tank, .hover, .artillery, .aaTank, .heavyTank])
     #expect(engine.queueUnit(.heavyTank) == .queued)
     #expect(engine.setRepeatProduction(.heavyTank) == .updated(repeatUnitType: .heavyTank))
     let queuedHeavyTank = try #require(engine.state.buildings[factoryIndex].productionQueue.first)
     #expect(queuedHeavyTank.unitType == .heavyTank)
     #expect(abs(queuedHeavyTank.buildTime - 11.2) < 0.0001)
-    #expect(engine.state.metal[.player] == 1_580)
+    #expect(engine.state.metal[.player] == 680)
 
     let startingUnitCount = engine.state.units.count
     for _ in 0..<12 {
