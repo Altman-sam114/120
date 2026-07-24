@@ -7993,6 +7993,171 @@ import Testing
     #expect(engine.state.metal[.enemy, default: 0] == startingEnemyMetal + income - radarUpgrade.metalCost)
 }
 
+@Test func enemyAIQueuesLandFactoryUpgradeWhenTechFootholdIsReady() throws {
+    var state = enemyLandFactoryUpgradeReadyState(mapID: .coast)
+    let selectedPlayerBuilding = try #require(state.buildings.first { $0.team == .player && $0.type == .command })
+    let playerFactoryDefinition = GameDefinitions.building(.landFactory)
+    let playerFactoryPosition = WorldPoint(state.map.playerBase.x + 260, state.map.playerBase.y + 180)
+    state.buildings.append(
+        BuildingSnapshot(
+            id: "player-factory-not-upgraded-by-ai",
+            type: .landFactory,
+            team: .player,
+            position: playerFactoryPosition,
+            hitPoints: playerFactoryDefinition.hitPoints,
+            maxHitPoints: playerFactoryDefinition.hitPoints,
+            rally: playerFactoryPosition
+        )
+    )
+    state.selectedEntityID = selectedPlayerBuilding.id
+    state.selectedEntityIDs = [selectedPlayerBuilding.id]
+    let factoryID = try #require(state.buildings.first {
+        $0.team == .enemy && $0.type == .landFactory && GameDefinitions.nextUpgrade(for: $0) != nil
+    }?.id)
+    let startingEnemyMetal = state.metal[.enemy, default: 0]
+    let startingEnemyIncome = state.income(for: .enemy)
+    let upgrade = try #require(GameDefinitions.building(.landFactory).upgrades.first)
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    let enemyFactory = try #require(engine.state.buildings.first { $0.id == factoryID })
+    let playerFactory = try #require(engine.state.buildings.first { $0.id == "player-factory-not-upgraded-by-ai" })
+    #expect(enemyFactory.upgradeLevel == 1)
+    #expect(enemyFactory.upgradeProgress == 0)
+    #expect(engine.state.metal[.enemy, default: 0] == startingEnemyMetal + startingEnemyIncome - upgrade.metalCost)
+    #expect(engine.state.selectedEntityID == selectedPlayerBuilding.id)
+    #expect(engine.state.selectedEntityIDs == [selectedPlayerBuilding.id])
+    #expect(playerFactory.upgradeProgress == nil)
+    #expect(playerFactory.upgradeLevel == 1)
+    #expect(!engine.state.buildings.contains {
+        $0.team == .enemy && $0.type == .extractor && $0.upgradeProgress != nil
+    })
+}
+
+@Test func enemyLandFactoryUpgradeKeepsProductionReserve() throws {
+    var state = enemyLandFactoryUpgradeReadyState(mapID: .coast)
+    let factoryID = try #require(state.buildings.first {
+        $0.team == .enemy && $0.type == .landFactory && GameDefinitions.nextUpgrade(for: $0) != nil
+    }?.id)
+    let commandIndex = try #require(state.buildings.firstIndex {
+        $0.team == .enemy && $0.type == .command
+    })
+    state.buildings[commandIndex].productionQueue = []
+    let upgrade = try #require(GameDefinitions.building(.landFactory).upgrades.first)
+    let reserveMetal = GameDefinitions.building(.extractor).metalCost
+    let builderMetal = GameDefinitions.unit(.builder).metalCost
+    state.metal[.enemy] = upgrade.metalCost + reserveMetal + builderMetal - state.income(for: .enemy)
+
+    var engine = GameEngine(state: state)
+    engine.update(deltaTime: 1)
+
+    #expect(engine.state.buildings.first { $0.id == factoryID }?.upgradeProgress == 0)
+    #expect(engine.state.buildings[commandIndex].productionQueue.first?.unitType == .builder)
+    #expect(engine.state.metal[.enemy, default: 0] >= reserveMetal)
+}
+
+@Test func enemyLandFactoryUpgradeWaitsForTechAndMetal() throws {
+    let baseState = enemyLandFactoryUpgradeReadyState(mapID: .coast)
+    let factoryID = try #require(baseState.buildings.first {
+        $0.team == .enemy && $0.type == .landFactory && GameDefinitions.nextUpgrade(for: $0) != nil
+    }?.id)
+    let upgrade = try #require(GameDefinitions.building(.landFactory).upgrades.first)
+    let reserveMetal = GameDefinitions.building(.extractor).metalCost
+
+    var poorState = baseState
+    poorState.metal[.enemy] = max(0, upgrade.metalCost + reserveMetal - poorState.income(for: .enemy) - 1)
+    var poorEngine = GameEngine(state: poorState)
+    poorEngine.update(deltaTime: 1)
+    #expect(poorEngine.state.buildings.first { $0.id == factoryID }?.upgradeProgress == nil)
+
+    var basicEconomyState = baseState
+    for buildingIndex in basicEconomyState.buildings.indices {
+        guard basicEconomyState.buildings[buildingIndex].team == .enemy,
+              basicEconomyState.buildings[buildingIndex].type == .extractor else {
+            continue
+        }
+        basicEconomyState.buildings[buildingIndex].upgradeLevel = 1
+    }
+    var basicEconomyEngine = GameEngine(state: basicEconomyState)
+    basicEconomyEngine.update(deltaTime: 1)
+    #expect(basicEconomyEngine.state.buildings.first { $0.id == factoryID }?.upgradeProgress == nil)
+
+    var basicRadarState = baseState
+    let radarIndex = try #require(basicRadarState.buildings.firstIndex {
+        $0.team == .enemy && $0.type == .radar
+    })
+    basicRadarState.buildings[radarIndex].upgradeLevel = 1
+    var basicRadarEngine = GameEngine(state: basicRadarState)
+    basicRadarEngine.update(deltaTime: 1)
+    #expect(basicRadarEngine.state.buildings.first { $0.id == factoryID }?.upgradeProgress == nil)
+
+    var incompleteDefenseState = baseState
+    let turretIndex = try #require(incompleteDefenseState.buildings.firstIndex {
+        $0.team == .enemy && $0.type == .turret
+    })
+    incompleteDefenseState.buildings[turretIndex].buildProgress = 0.5
+    var incompleteDefenseEngine = GameEngine(state: incompleteDefenseState)
+    incompleteDefenseEngine.update(deltaTime: 1)
+    #expect(incompleteDefenseEngine.state.buildings.first { $0.id == factoryID }?.upgradeProgress == nil)
+
+    var disabledEngine = GameEngine(state: baseState, enemyAIEnabled: false)
+    disabledEngine.update(deltaTime: 1)
+    #expect(disabledEngine.state.buildings.first { $0.id == factoryID }?.upgradeProgress == nil)
+}
+
+@Test func enemyLandFactoryUpgradeCompletesAndQueuesHeavyTank() throws {
+    let state = enemyLandFactoryUpgradeReadyState(mapID: .coast)
+    let factoryID = try #require(state.buildings.first {
+        $0.team == .enemy && $0.type == .landFactory && GameDefinitions.nextUpgrade(for: $0) != nil
+    }?.id)
+
+    var queueEngine = GameEngine(state: state)
+    queueEngine.update(deltaTime: 1)
+    var progressEngine = GameEngine(state: queueEngine.state, enemyAIEnabled: false)
+    for _ in 0..<24 {
+        progressEngine.update(deltaTime: 1)
+    }
+
+    let upgradedFactory = try #require(progressEngine.state.buildings.first { $0.id == factoryID })
+    #expect(upgradedFactory.upgradeLevel == 2)
+    #expect(upgradedFactory.upgradeProgress == nil)
+    #expect(GameDefinitions.productionUnits(for: upgradedFactory).contains(.heavyTank))
+
+    var productionState = progressEngine.state
+    for buildingIndex in productionState.buildings.indices {
+        guard productionState.buildings[buildingIndex].team == .enemy,
+              productionState.buildings[buildingIndex].type == .landFactory else {
+            continue
+        }
+        productionState.buildings[buildingIndex].upgradeLevel = 2
+        productionState.buildings[buildingIndex].upgradeProgress = nil
+        if productionState.buildings[buildingIndex].id == factoryID {
+            productionState.buildings[buildingIndex].productionQueue = []
+        }
+    }
+    let otherFactoryIndex = try #require(productionState.buildings.firstIndex {
+        $0.team == .enemy && $0.type == .landFactory && $0.id != factoryID
+    })
+    productionState.buildings[otherFactoryIndex].productionQueue = [.scout, .tank, .hover, .artillery, .aaTank]
+        .enumerated()
+        .map { offset, unitType in
+            ProductionQueueItem(
+                id: "heavy-tank-composition-\(offset)",
+                unitType: unitType,
+                buildTime: 99
+            )
+        }
+    productionState.metal[.enemy] = 2_000
+
+    var productionEngine = GameEngine(state: productionState)
+    productionEngine.update(deltaTime: 1)
+
+    let producedFactory = try #require(productionEngine.state.buildings.first { $0.id == factoryID })
+    #expect(producedFactory.productionQueue.first?.unitType == .heavyTank)
+    #expect(abs((producedFactory.productionQueue.first?.buildTime ?? 0) - 11.2) < 0.0001)
+}
+
 @Test func enemyExtractorUpgradesCompleteThroughExistingProgression() throws {
     let t2State = enemyExtractorUpgradeReadyState(mapID: .coast)
     let extractorID = try #require(t2State.buildings.first {
@@ -8019,6 +8184,14 @@ import Testing
     t3State.buildings[t3ExtractorIndex].upgradeLevel = 2
     t3State.buildings[t3ExtractorIndex].hitPoints = 760
     t3State.buildings[t3ExtractorIndex].maxHitPoints = 760
+    for buildingIndex in t3State.buildings.indices {
+        guard t3State.buildings[buildingIndex].team == .enemy,
+              t3State.buildings[buildingIndex].type == .landFactory else {
+            continue
+        }
+        t3State.buildings[buildingIndex].upgradeLevel = 2
+        t3State.buildings[buildingIndex].upgradeProgress = nil
+    }
     t3State.metal[.enemy] = 1_600
 
     var t3QueueEngine = GameEngine(state: t3State)
@@ -9242,6 +9415,13 @@ private func enemyExtractorUpgradeReadyState(mapID: MapID) -> GameState {
         fatalError("No enemy Extractor available for upgrade setup.")
     }
     state.metal[.enemy] = 1_000
+    return state
+}
+
+private func enemyLandFactoryUpgradeReadyState(mapID: MapID) -> GameState {
+    var state = enemyExtractorUpgradeReadyState(mapID: mapID)
+    keepEnemyProducersBusy(in: &state)
+    state.metal[.enemy] = 2_000
     return state
 }
 

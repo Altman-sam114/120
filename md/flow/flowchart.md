@@ -449,6 +449,20 @@ flowchart LR
   C --> PNG
 ```
 
+## v2.24 Enemy Factory T2 progression
+
+```mermaid
+flowchart LR
+  A["updateEnemyAI"] --> R["Radar T2 complete"]
+  R --> E["At least one Extractor T2"]
+  E --> F["Completed T1 enemy Factory candidate"]
+  F --> M["900 metal + 260 reserve"]
+  M --> U["Generic building upgrade: 24s"]
+  U --> T["Factory T2"]
+  T --> G["productionUnits(for:) tech gate"]
+  G --> H["Heavy Tank joins least-count composition"]
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid

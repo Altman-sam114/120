@@ -582,9 +582,12 @@ public struct GameEngine: Sendable {
         updateEnemyTurretConstruction()
         updateEnemyRadarConstruction()
         let queuedRadarUpgrade = updateEnemyRadarUpgrade()
-        let queuedExtractorUpgrade = queuedRadarUpgrade ? false : updateEnemyExtractorUpgrade()
+        let queuedLandFactoryUpgrade = queuedRadarUpgrade ? false : updateEnemyLandFactoryUpgrade()
+        let queuedExtractorUpgrade = queuedRadarUpgrade || queuedLandFactoryUpgrade
+            ? false
+            : updateEnemyExtractorUpgrade()
         updateEnemyReclaim()
-        let productionReserve = queuedExtractorUpgrade
+        let productionReserve = queuedLandFactoryUpgrade || queuedExtractorUpgrade
             ? GameDefinitions.building(.extractor).metalCost
             : 0
         updateEnemyProduction(minimumRemainingMetal: productionReserve)
@@ -781,6 +784,14 @@ public struct GameEngine: Sendable {
 
     private mutating func updateEnemyExtractorUpgrade() -> Bool {
         guard let buildingIndex = enemyExtractorUpgradeCandidateIndex() else {
+            return false
+        }
+
+        return enqueueBuildingUpgrade(at: buildingIndex) == .queued
+    }
+
+    private mutating func updateEnemyLandFactoryUpgrade() -> Bool {
+        guard let buildingIndex = enemyLandFactoryUpgradeCandidateIndex() else {
             return false
         }
 
@@ -1885,6 +1896,15 @@ public struct GameEngine: Sendable {
         }.count
     }
 
+    private func completedEnemyBuildingCount(type: BuildingType) -> Int {
+        state.buildings.filter {
+            $0.team == .enemy
+                && $0.type == type
+                && $0.hitPoints > 0
+                && $0.buildProgress >= 1
+        }.count
+    }
+
     private func enemyRepairTarget(for builder: UnitSnapshot) -> RepairTarget? {
         var bestBuilding: RepairTarget?
         for building in state.buildings {
@@ -2028,6 +2048,33 @@ public struct GameEngine: Sendable {
             && !shouldPrioritizeEnemyTurretConstruction()
             && !shouldPrioritizeEnemyRadarConstruction()
             && enemyRadarUpgradeCandidateIndex() == nil
+            && enemyLandFactoryUpgradeCandidateIndex() == nil
+    }
+
+    private func shouldPrioritizeEnemyLandFactoryUpgrade() -> Bool {
+        let enemyFactoryCount = livingEnemyBuildingCount(type: .landFactory)
+        let hasAdvancedExtractor = state.buildings.contains {
+            $0.team == .enemy
+                && $0.type == .extractor
+                && $0.hitPoints > 0
+                && $0.buildProgress >= 1
+                && $0.upgradeLevel >= 2
+        }
+        let hasAdvancedRadar = state.buildings.contains {
+            $0.team == .enemy
+                && $0.type == .radar
+                && $0.hitPoints > 0
+                && $0.buildProgress >= 1
+                && $0.upgradeLevel >= 2
+        }
+        return completedEnemyBuildingCount(type: .landFactory) >= Self.enemyLandFactoryLimit
+            && completedEnemyBuildingCount(type: .extractor) >= Self.enemyExtractorCountBeforeAdditionalFactory
+            && completedEnemyBuildingCount(type: .turret) >= Self.enemyTurretLimit
+            && !shouldPrioritizeEnemyFactoryConstruction(enemyFactoryCount: enemyFactoryCount)
+            && !shouldPrioritizeEnemyTurretConstruction()
+            && !shouldPrioritizeEnemyRadarConstruction()
+            && hasAdvancedExtractor
+            && hasAdvancedRadar
     }
 
     private func enemyRadarUpgradeCandidateIndex() -> Int? {
@@ -2059,6 +2106,26 @@ public struct GameEngine: Sendable {
             let building = state.buildings[buildingIndex]
             guard building.team == .enemy,
                   building.type == .extractor,
+                  building.hitPoints > 0,
+                  building.buildProgress >= 1,
+                  building.upgradeProgress == nil,
+                  let upgrade = GameDefinitions.nextUpgrade(for: building) else {
+                return false
+            }
+            return state.metal[.enemy, default: 0] >= upgrade.metalCost + reserveMetal
+        }
+    }
+
+    private func enemyLandFactoryUpgradeCandidateIndex() -> Int? {
+        guard shouldPrioritizeEnemyLandFactoryUpgrade() else {
+            return nil
+        }
+
+        let reserveMetal = GameDefinitions.building(.extractor).metalCost
+        return state.buildings.indices.first { buildingIndex in
+            let building = state.buildings[buildingIndex]
+            guard building.team == .enemy,
+                  building.type == .landFactory,
                   building.hitPoints > 0,
                   building.buildProgress >= 1,
                   building.upgradeProgress == nil,
