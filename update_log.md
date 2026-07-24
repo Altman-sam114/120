@@ -4826,7 +4826,9 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
-- 实现提交、GitHub Actions run、artifact 与 Agent C 复判待 push 后补充。
+- 实现提交 `448075cda78611afe922cf18a2c465c9b1f5c176` 的 GitHub Actions run `30066928236`（attempt 1）成功；Agent C 下载并核对 artifact `rustwar-ci-v1.2-main-448075c-run30066928236-attempt1`，缓存位于 `/private/tmp/rustwar-c-review-30066928236/`，约 1.5 MB。manifest 的 `branch=main`、commit SHA、run id 和 attempt 与 `origin/main` 一致。
+- JUnit 为 8 checks、0 failures、1 个既定 browser skip；`git diff --check`、`node --check app.js`、311 项 Swift Core tests、`xcodebuild -list`、arm64/x86_64 universal iOS build、production/combat 双 Simulator launch、landscape normalization 与双像素探针全部通过。4 个 v2.24 Factory T2 / Heavy Tank AI tests 在 build log 中逐项通过。
+- `ios-combat.png` 与 v2.23 最终基线 hash 完全一致。`ios-home.png` hash 有极小像素差异，但尺寸、透明率和亮度统计基本一致；Agent C 人工对照确认 Factory T2、1.25x、MAX TECH、Heavy Tank 队首、四项队列、战场和 HUD 均无可见布局回退。
 
 遗留事项：
 
