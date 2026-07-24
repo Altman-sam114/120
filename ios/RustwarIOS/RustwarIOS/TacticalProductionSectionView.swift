@@ -128,17 +128,18 @@ private struct TacticalProductionButtonLabel: View {
                 HStack(spacing: TacticalHUDTheme.denseSpacing) {
                     productionIcon
                     Text(unitType.productionQueueDisplayName(fallback: definition.name))
-                        .font(.footnote.bold())
+                        .font(.caption.bold())
                         .lineLimit(2)
                         .minimumScaleFactor(0.72)
                 }
-                HStack(spacing: TacticalHUDTheme.denseSpacing) {
-                    productionMetric(Int(definition.metalCost).formatted(), systemImage: "hexagon.fill")
-                    productionMetric(definition.supply.formatted(), systemImage: "person.2.fill")
-                }
-                productionMetric(formattedBuildTime, systemImage: "timer")
+                Text(compactMetrics)
+                    .font(.caption2)
+                    .foregroundStyle(TacticalHUDTheme.secondaryText)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.68)
             }
-            .frame(maxWidth: .infinity, minHeight: 62, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         } else {
             HStack(spacing: TacticalHUDTheme.compactSpacing) {
                 productionIcon
@@ -176,6 +177,10 @@ private struct TacticalProductionButtonLabel: View {
 
     private var formattedBuildTime: String {
         "\(buildTime.formatted(.number.precision(.fractionLength(0...1))))s"
+    }
+
+    private var compactMetrics: String {
+        "\(Int(definition.metalCost))M \(definition.supply)P \(formattedBuildTime)"
     }
 }
 

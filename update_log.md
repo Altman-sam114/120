@@ -4897,7 +4897,9 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
-- GitHub Actions 与 Agent C 最新 artifact 复判待实现提交 push 后填写。
+- 实现提交 `77167c63673486ec69e0950a475b0ee5ef4714e6` 的 GitHub Actions run `30072069580`（attempt 1）失败；Agent C 下载 artifact `rustwar-ci-v1.2-main-77167c6-run30072069580-attempt1` 到 `/private/tmp/rustwar-c-review-30072069580/`，约 1.5 MB。manifest 的 branch/SHA/run/attempt 完全匹配。
+- 唯一技术失败是提示词文件 EOF 多一个空行导致 `git diff --check` exit 2；Node、311 项 Swift Core tests、Xcode list、arm64/x86_64 build、production/combat 双 launch、orientation 和像素探针均成功，日志包含 `BUILD SUCCEEDED`。
+- Agent C 人工复判 `ios-home.png` 同时发现三列第一排成本图标发生省略、第二排只露出上部，因此视觉验收不通过。追加修复把默认紧凑标签收为图标/名称与单行 `metal/pop/time` 两层，并保持辅助功能字号完整标签和完整 VoiceOver；新 run 待复判。
 
 遗留事项：
 
