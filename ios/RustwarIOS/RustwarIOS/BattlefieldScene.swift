@@ -347,13 +347,109 @@ final class BattlefieldScene: SKScene {
     private func drawResources(_ resources: [ResourceNode]) {
         resourceNode.removeAllChildren()
         for resource in resources {
-            let node = SKShapeNode(circleOfRadius: resource.radius)
+            let node = resourceDepositNode(for: resource)
             node.position = spritePoint(for: resource.position)
-            node.fillColor = resource.claimedBy == nil ? SKColor(red: 0.1, green: 0.85, blue: 0.95, alpha: 0.72) : .systemYellow
-            node.strokeColor = .white.withAlphaComponent(0.55)
-            node.lineWidth = 2
             resourceNode.addChild(node)
         }
+    }
+
+    private func resourceDepositNode(for resource: ResourceNode) -> SKNode {
+        let node = SKNode()
+        let radius = CGFloat(resource.radius)
+        let isClaimed = resource.claimedBy != nil
+        let accent = isClaimed
+            ? SKColor(red: 0.96, green: 0.76, blue: 0.18, alpha: 1)
+            : SKColor(red: 0.10, green: 0.84, blue: 0.92, alpha: 1)
+        let edge = SKColor(red: 0.05, green: 0.11, blue: 0.13, alpha: 0.92)
+        let metal = SKColor(red: 0.20, green: 0.28, blue: 0.30, alpha: 0.96)
+
+        let groundShadow = SKShapeNode(ellipseOf: CGSize(width: radius * 1.64, height: radius * 1.28))
+        groundShadow.fillColor = SKColor.black.withAlphaComponent(isClaimed ? 0.18 : 0.30)
+        groundShadow.strokeColor = .clear
+        groundShadow.position.y = -radius * 0.08
+        node.addChild(groundShadow)
+
+        let field = SKShapeNode(circleOfRadius: radius * 0.88)
+        field.fillColor = accent.withAlphaComponent(isClaimed ? 0.035 : 0.08)
+        field.strokeColor = accent.withAlphaComponent(isClaimed ? 0.12 : 0.22)
+        field.lineWidth = 1
+        node.addChild(field)
+
+        let plate = SKShapeNode(circleOfRadius: radius * 0.72)
+        plate.fillColor = SKColor(red: 0.055, green: 0.10, blue: 0.11, alpha: 0.88)
+        plate.strokeColor = edge
+        plate.lineWidth = 3
+        node.addChild(plate)
+
+        let inset = SKShapeNode(circleOfRadius: radius * 0.54)
+        inset.fillColor = metal.withAlphaComponent(0.82)
+        inset.strokeColor = accent.withAlphaComponent(isClaimed ? 0.30 : 0.58)
+        inset.lineWidth = 1.4
+        node.addChild(inset)
+
+        let segmentPath = CGMutablePath()
+        for index in 0..<8 {
+            let start = CGFloat(index) * (.pi / 4) + 0.10
+            segmentPath.addArc(
+                center: .zero,
+                radius: radius * 0.64,
+                startAngle: start,
+                endAngle: start + 0.48,
+                clockwise: false
+            )
+        }
+        let segments = SKShapeNode(path: segmentPath)
+        segments.strokeColor = accent.withAlphaComponent(isClaimed ? 0.38 : 0.92)
+        segments.lineWidth = Swift.max(2.2, radius * 0.075)
+        segments.lineCap = .round
+        node.addChild(segments)
+
+        let guidePath = CGMutablePath()
+        for index in 0..<4 {
+            let angle = CGFloat(index) * (.pi / 2)
+            guidePath.move(to: CGPoint(x: cos(angle) * radius * 0.22, y: sin(angle) * radius * 0.22))
+            guidePath.addLine(to: CGPoint(x: cos(angle) * radius * 0.48, y: sin(angle) * radius * 0.48))
+        }
+        let guides = SKShapeNode(path: guidePath)
+        guides.strokeColor = SKColor.white.withAlphaComponent(isClaimed ? 0.18 : 0.34)
+        guides.lineWidth = 1.5
+        guides.lineCap = .round
+        node.addChild(guides)
+
+        let coreRadius = radius * 0.25
+        let corePoints = (0..<6).map { index in
+            let angle = CGFloat(index) * (.pi / 3) + (.pi / 6)
+            return CGPoint(x: cos(angle) * coreRadius, y: sin(angle) * coreRadius)
+        }
+        node.addChild(polygonNode(
+            corePoints,
+            fill: accent.withAlphaComponent(isClaimed ? 0.20 : 0.42),
+            stroke: SKColor.white.withAlphaComponent(isClaimed ? 0.30 : 0.72),
+            lineWidth: 1.6
+        ))
+
+        let seamColor = SKColor(red: 0.72, green: 0.91, blue: 0.94, alpha: isClaimed ? 0.30 : 0.84)
+        let seamEdge = edge.withAlphaComponent(isClaimed ? 0.42 : 0.86)
+        for (offset, scale, rotation) in [
+            (CGPoint(x: -radius * 0.20, y: radius * 0.04), CGFloat(0.23), CGFloat(-0.28)),
+            (CGPoint(x: radius * 0.17, y: radius * 0.09), CGFloat(0.18), CGFloat(0.34)),
+            (CGPoint(x: radius * 0.02, y: -radius * 0.18), CGFloat(0.15), CGFloat(-0.08))
+        ] {
+            let shard = polygonNode([
+                CGPoint(x: -radius * scale, y: -radius * scale * 0.22),
+                CGPoint(x: -radius * scale * 0.18, y: radius * scale * 0.54),
+                CGPoint(x: radius * scale, y: radius * scale * 0.14),
+                CGPoint(x: radius * scale * 0.24, y: -radius * scale * 0.50)
+            ], fill: seamColor, stroke: seamEdge, lineWidth: 1)
+            shard.position = offset
+            shard.zRotation = rotation
+            node.addChild(shard)
+        }
+
+        if isClaimed {
+            node.alpha = 0.62
+        }
+        return node
     }
 
     private func drawEntities(

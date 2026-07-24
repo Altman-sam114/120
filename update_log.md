@@ -4941,3 +4941,32 @@
 遗留事项：
 
 - 固定 PNG 只能证明暂停 fixture 的默认缩放视觉；动态选择切换、真机缩放、色觉辅助和实际触摸仍未自动化。
+
+### v2.28 / iOS industrial resource deposits
+
+日期：2026-07-24
+
+核心变更：
+
+- 将原生主战场的大面积扁平资源圆盘重做为低占用工业采集节点：暗色基座、内嵌板、八段能量环、四向导轨、六边形核心和确定性金属矿脉共同提供轮廓与材质层级。
+- 未占领态保持青色高对比，已占领态保持黄色语义并整体退隐到 Extractor 下；资源节点继续位于实体和雾下方。
+- `ResourceNode` 的坐标、半径、归属、命中、Build Extractor、经济、小地图、Core 和存档不变；不增加动画、随机数、timer、Task 或持久状态。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.28-ios-industrial-resource-deposits.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
+- GitHub Actions 与 Agent C 最新 artifact 复判待实现提交 push 后填写。
+
+遗留事项：
+
+- 固定 production PNG 只覆盖 Coast 默认相机内的未占领资源点；其它地图、已占领节点、缩放极限、Build Extractor 命中与真机显示仍未自动化。

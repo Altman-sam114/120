@@ -99,6 +99,8 @@ v2.26 把同一组 `productionOptions` 从队列之后前移到 Factory Tech 之
 
 v2.27 只在 `BattlefieldScene` 派生选择 presentation：`selectedEntityIDs` 决定全部 marker，`selectedEntityID` 决定 primary；缺失 primary 时 fallback 到 selection array 第一项。玩家 primary 使用青色短弧、轻 halo 和四向 tick，玩家 secondary 使用绿色短弧；敌方使用橙/红，建筑角标复用相同层级。所有 marker 固定在 z=-1 左右，位于 z=-2 shadow 与默认 z=0 model 之间，不新增可变状态、动画或 Core 写回；v2.11 直接 tap 与 v2.12 双指框选继续只改变既有 selection/order 真源。
 
+v2.28 只替换 `BattlefieldScene.drawResources` 的程序化 presentation：每个 `ResourceNode` 仍只读使用既有 position、radius 和 claimedBy，生成确定性的 ground shadow、低透明 field、暗色 plate/inset、八段能量环、四向 guide、六边形 core 与三片 metal seam。未占领态使用青色扫描色，已占领态沿用黄色并整体降 alpha，让 Extractor 保持前景；节点仍位于 `resourceNode`，在 entity/fog 下方。没有动画、随机数、timer、Task、新 Core/JSON 字段或 hit-test 改动，经济、Build Extractor 和 Tactical Map 继续使用原有状态。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

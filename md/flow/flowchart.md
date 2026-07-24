@@ -507,6 +507,23 @@ flowchart LR
   Z --> V["Hull / turret / effects stay readable"]
 ```
 
+## v2.28 Industrial resource deposits
+
+```mermaid
+flowchart LR
+  R["ResourceNode position / radius / claimedBy"] --> D["BattlefieldScene drawResources"]
+  D --> P["Dark plate + inset + ground shadow"]
+  D --> E["Eight-segment energy ring + four guides"]
+  D --> C["Hex core + deterministic metal seams"]
+  U["Unclaimed"] --> Y["Cyan high-contrast scan state"]
+  O["Claimed"] --> F["Yellow subdued state below Extractor"]
+  P --> Z["resourceNode below entities and fog"]
+  E --> Z
+  C --> Z
+  Y --> Z
+  F --> Z
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid
