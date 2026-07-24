@@ -4965,7 +4965,9 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
-- GitHub Actions 与 Agent C 最新 artifact 复判待实现提交 push 后填写。
+- 实现提交 `f481e38394d164cc4ee12004374be4296549af56` 的 GitHub Actions run `30077094458`（attempt 1）成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-f481e38-run30077094458-attempt1` 到 `/private/tmp/rustwar-c-review-30077094458/`，约 1.4 MB。manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5、iOS 26.5 和 Simulator UDID 完全匹配。
+- JUnit 为 8 checks、0 failures、1 个既定 browser skip；云端 `git diff --check`、Node、311 项 Swift Core tests、Xcode list、arm64/x86_64 universal build、production/combat 双 launch、landscape normalization 和双像素探针全部通过，日志包含 `BUILD SUCCEEDED`。
+- `ios-home.png` SHA-256 变为 `7ad8a52e2255825ef9158d098b21d3895179e8411884a1d4a33c6ec780c92023`。Agent C 人工核对右上与底部未占领节点：暗色基座、分段青色环、六边形核心和金属矿脉清晰，较旧实心圆盘显著减少地形遮挡；左上已占领节点退到 Extractor 下方，Factory、Rally、HUD 和 Tactical Map 无回退。`ios-combat.png` 保持 `170fee4107f4001d982f78035f653de75cff0557a63552555da0520487554e56`，确认战斗模型、选择层级、弹道和爆点未变化。
 
 遗留事项：
 
