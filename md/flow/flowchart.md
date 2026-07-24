@@ -463,6 +463,20 @@ flowchart LR
   G --> H["Heavy Tank joins least-count composition"]
 ```
 
+## v2.25 Production dock hierarchy
+
+```mermaid
+flowchart LR
+  S["Selected completed producer"] --> T["Factory Tech status strip"]
+  T --> I["Icon + indivisible T1/T2 + speed"]
+  T --> B["Ready / upgrading / max badge"]
+  W["Available dock width"] --> H["Horizontal header or vertical fallback"]
+  Q["Core ProductionQueueItem array"] --> C["Full-width current item"]
+  C --> P["Percent + remaining time + ProgressView"]
+  Q --> N["Compact ordered next slots"]
+  O["Tech-gated productionOptions"] --> G["Icon + name + metal / supply / time"]
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid

@@ -93,6 +93,8 @@ v2.23 为 `UnitDefinition` 增加默认 T1 的 `requiredProducerUpgradeLevel`，
 
 v2.24 把 Land Factory T2 纳入 `updateEnemyAI()` 的战略升级链：红方必须先完成双工厂/炮塔防线、Radar T2 和至少一个 Extractor T2，才会从存活、完成、无升级进度的 T1 工厂选择候选。Radar 升级保持最高优先级；满足工厂条件且支付 900 metal 后仍可保留 260 metal 时，Factory T2 优先于继续升级 Extractor，并让同 tick 生产继续尊重该缓冲。24 秒完成后不走 AI 特判，而是由既有 `productionUnits(for:)` 和最低编成计数自然把 Heavy Tank 以 11.2 秒队列项加入普通红方生产。
 
+v2.25 只重组 `TacticalProductionSectionView` 的 presentation hierarchy，不新增第二套游戏状态：Factory Tech 继续读取 selected completed factory 的等级、有效生产倍率、upgrade progress 和 next upgrade，只把展示拆成 icon anchor、不可拆分的 `T1/T2`、短状态 badge 与按真实宽度 fallback 的垂直布局。`productionQueueItems` 仍是 Core 队列的只读映射，但队首改为全宽 active row 显示真实进度/剩余时间，后续项继续按 id、顺序与捕获的 buildTime 绘制；production buttons 仍直接遍历统一 tech-gated `productionOptions`，只调整图标、名称和 metal/supply/time 的视觉层级。Queue、Cancel、Repeat、Rally、Shift shortcut、VoiceOver、Dynamic Type 和 Core/存档边界不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
@@ -524,6 +526,7 @@ RustwarCore MapPreset / GameState / GameEngine
 - v1.32 起，`GameEngine.updateEnemyAI()` 会让仍空闲的红方 Builder 自动回收附近有效残骸：顺序在缺厂补建、维修、资源扩张、第二工厂和炮塔建造之后，生产和进攻之前。候选残骸必须 `metal > 0`、`ttl > 0` 且距离 Builder 不超过 560，选择规则先取最近，距离近似相同再取金属更多、TTL 更高；执行复用 `UnitOrder.reclaim`、92 范围和 `builderReclaimRate`，不新增玩家 UI，也不改变玩家当前选择。
 - v1.33 起，红方完成状态 Land Factory 的生产 AI 使用完整 T1 列表 Scout / Light Tank / Hover Tank / Artillery / AA Tank。`enemyProductionChoice(for:)` 只在当前建筑 `produces` 且 `canEnqueueUnit` 允许的候选中选择，按红方现有单位加所有红方工厂队列中的同类数量取最少者，平局按 Land Factory 生产列表顺序打平；入队仍复用 `enqueueUnit` 的金属、人口、完成度和队列校验。
 - v2.24 起，红方在 Radar T2、至少一个 Extractor T2、双工厂和炮塔防线成型后会自动升级 Land Factory T2；候选和完成进度复用通用建筑升级路径，完成后 `enemyProductionChoice(for:)` 通过 v2.23 的统一 tech gate 纳入 Heavy Tank。
+- v2.25 起，Production dock 用紧凑 Factory Tech status strip、全宽 active production row 和后续 queue slots 呈现同一 Core production snapshot；真实宽度不足时 Factory header 会主动垂直 fallback，避免 `Factory` 自动连字符断词。
 - v1.34 起，Command Center 的 `BuildingDefinition.produces` 增加 Builder，完成状态己方 Command Center 会通过现有 iOS 生产按钮显示 Builder，并复用 `queueUnit`、Cancel Production、Repeat 和 Rally。红方完成状态 Command Center 在资源/人口允许且队列为空时也会走同一 `enemyProductionChoice(for:)` / `enqueueUnit` 通用生产路径排队 Builder；本轮不新增 Builder 数量上限或专用红方建造策略。
 - v1.35 当时，`updateEnemyAttackOrders()` 改走红方 AI 专用 `enemyAttackTarget(for:)`：红方空闲 Artillery 新获得 AI 攻击订单时会优先选择存活玩家建筑中最近者，没有玩家建筑时回退 `nearestCombatTarget(for:)`；其它红方 T1 战斗单位仍使用最近玩家单位/建筑。玩家手动 `issueAttack`、Attack-Move、Patrol 和 Guard 仍使用原有目标路径。
 - v1.36 起，`enemyAttackTarget(for:)` 不再只按最近距离分配红方 AI 新攻击订单，而是扫描玩家单位/建筑并用私有 Web-lite 评分选择目标：Command Center、Extractor、Land Factory、Turret 和低血单位/建筑会获得更高优先级，Artillery 对建筑有额外偏好。该评分只影响红方空闲战斗单位的新 AI 攻击订单，不改变玩家手动攻击、Attack-Move、Patrol、Guard、炮塔防御开火或 `nearestCombatTarget(for:)` 的既有语义。

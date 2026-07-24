@@ -4834,3 +4834,33 @@
 
 - 红方仍按全局最低数量编成生产 Heavy Tank，没有针对地图、敌军构成、资源压力或战损的装甲权重策略。
 - 固定 cloud fixture 不推进普通长局 AI 科技时序；真实达到 T2 的节奏、战场压力和性能仍需后续自动化或人工真机长局验证。
+
+### v2.25 / iOS production dock density and Factory Tech hierarchy
+
+日期：2026-07-24
+
+核心变更：
+
+- 参考 Rusted Warfare 公开截图和生产教学视频的紧凑侧栏组织，在不复制第三方素材的前提下重做原生 Production 信息层级。
+- Factory Tech 改为稳定图标锚点、不可拆分的 T1/T2 等级、生产倍率与 ready/upgrading/max 短 badge，并按真实可用宽度从水平布局 fallback 到垂直布局，修复 `Factory T2` 的自动连字符断词。
+- Build Queue 将当前生产提升为全宽 active row，直接显示单位、真实百分比、剩余秒数与进度条；后续三项保持紧凑顺序槽。生产按钮强化单位 icon/name 与 metal/supply/time 的主次关系。
+- Core、生产升级数值、队列、Cancel、Repeat、Rally、Shift 快捷键、VoiceOver、Dynamic Type、44pt 触控和存档语义保持不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.25-ios-production-dock-density.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
+- GitHub Actions 云端验证和 Agent C artifact 复判待本轮实现提交 push 后填写。
+
+遗留事项：
+
+- 固定 production PNG 只能覆盖默认字号下的暂停 T2 fixture；真实滚动、Dynamic Type、VoiceOver、升级交互、超长队列和真机触控仍未自动化。
