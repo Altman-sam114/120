@@ -4790,7 +4790,11 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
-- 实现提交、GitHub Actions run、artifact 与 Agent C 复判待本轮 push 后补充。
+- 实现提交 `4b57e853525d273bc9e8fb69ac2627b04855828c` 的 GitHub Actions run `29885956992`（attempt 1）失败；artifact `rustwar-ci-v1.2-main-4b57e85-run29885956992-attempt1` 证明提示词 EOF 空白触发 `git diff --check`，且新增测试越过 `GameEngine.state` 的只读边界导致 Swift 编译失败。iOS build、双启动、双截图与像素探针在该 run 已通过。
+- 修复提交 `98c770b4b3b89e3169b77336da3d126872442c6c` 清理 EOF，并让测试通过真实 `queueBuildingUpgrade()` 与 24 秒模拟完成 T2，不开放 `state` setter。
+- 修复后的 GitHub Actions run `30065507191`（attempt 1）成功；Agent C 下载并核对 artifact `rustwar-ci-v1.2-main-98c770b-run30065507191-attempt1`，缓存位于 `/private/tmp/rustwar-c-review-30065507191/`，约 1.5 MB。manifest 的 `branch=main`、commit SHA、run id 和 attempt 均与 `origin/main` 一致。
+- JUnit 为 8 checks、0 failures、1 个既定 browser skip；`git diff --check`、`node --check app.js`、307 项 Swift Core tests、`xcodebuild -list`、arm64/x86_64 universal iOS build、production/combat 双 Simulator launch、landscape normalization 与双像素探针全部通过。
+- Agent C 人工核对 `ios-home.png`：Factory T2、1.25x、MAX TECH、Heavy Tank 队首与四项完整队列同屏可读；核对 `ios-combat.png`：Heavy Tank 的宽履带、复合装甲、长炮管、选择环和重炮尾迹清楚，未见 HUD、战术地图或既有单位重叠回退。
 
 遗留事项：
 
