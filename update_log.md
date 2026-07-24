@@ -4866,6 +4866,9 @@
 - Agent C 人工复判未放行该视觉版本：`ios-home.png` 中 Factory Tech 已无断词且 Heavy Tank active row 清晰，但后三项队列被推到首屏底部之外，只露出槽位边缘。追加精简 Factory header（状态 badge 去除重复图标并并入两行结构）和 48pt 后续槽，重新触发云端视觉验收；`ios-combat.png` 未见回退。
 - 紧凑 header 提交 `80c2ad5a774d1c3bfdbf11f622b9965300c37029` 的 GitHub Actions run `30069582557`（attempt 1）再次通过全部技术 gate；Agent C 下载并核对 artifact `rustwar-ci-v1.2-main-80c2ad5-run30069582557-attempt1` 到 `/private/tmp/rustwar-c-review-30069582557/`，约 1.5 MB。Factory Tech 与 active row 的密度改善，但后三项仍只显示上半部，名称/时间被屏幕底部裁掉，因此视觉验收仍不通过。
 - 后续修正把重复的 Build Queue 标题行移除，将队列总数合并到 active row；后续槽改为序号/图标/时间与单行名称两层，保持真实顺序、buildTime 和完整 accessibility 文案，重新等待云端截图复判。
+- 最终视觉提交 `1698e224d6a607d2526d76ba8783d64246de29e5` 的 GitHub Actions run `30070360675`（attempt 1）成功；Agent C 下载并核对 artifact `rustwar-ci-v1.2-main-1698e22-run30070360675-attempt1`，缓存位于 `/private/tmp/rustwar-c-review-30070360675/`，约 1.5 MB。manifest 的 `branch=main`、SHA、run id、attempt、Xcode 26.5、iOS 26.5 与 Simulator UDID 全部匹配。
+- JUnit 为 8 checks、0 failures、1 个既定 browser skip；`git diff --check`、Node、311 项 Swift Core tests、Xcode list、arm64/x86_64 universal build、production/combat 双 launch、landscape normalization 与双像素探针全部通过。
+- Agent C 人工核对 `ios-home.png`：Factory Tech / T2 / 1.25x / MAX TECH 无连字符断词，Heavy Tank 54% active row 与 Light Tank / AA Tank / Artillery 三个后续槽及 4s/4s/6s 时间全部完整可读，无溢出或重叠。`ios-combat.png` SHA-256 与前一成功 run 完全一致，确认战斗 tableau 与 HUD 无视觉回退。
 
 遗留事项：
 
