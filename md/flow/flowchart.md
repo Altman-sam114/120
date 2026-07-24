@@ -492,6 +492,21 @@ flowchart LR
   Q --> C["Cancel / Repeat / Rally"]
 ```
 
+## v2.27 Selection marker hierarchy
+
+```mermaid
+flowchart LR
+  S["selectedEntityIDs"] --> A["All selected markers"]
+  P["selectedEntityID or first fallback"] --> R["Primary marker"]
+  A --> G["Player secondary: green short arcs"]
+  R --> C["Player primary: cyan arcs + halo + ticks"]
+  E["Enemy observation selection"] --> O["Orange primary / red secondary"]
+  C --> Z["z -1 between shadow and model"]
+  G --> Z
+  O --> Z
+  Z --> V["Hull / turret / effects stay readable"]
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid

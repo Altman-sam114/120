@@ -97,6 +97,8 @@ v2.25 只重组 `TacticalProductionSectionView` 的 presentation hierarchy，不
 
 v2.26 把同一组 `productionOptions` 从队列之后前移到 Factory Tech 之后，并使用独立于通用 command grid 的生产列策略：默认 Dynamic Type 为三列紧凑 action matrix，辅助功能字号为一列完整标签。两种标签都读取同一 `UnitDefinition` 和 selected producer 的 effective buildTime，按钮 action、Shift+1-9、VoiceOver 与 44pt 最小触控保持；`productionQueueItems` 随后仍按 v2.25 active row 和 ordered slots 显示，Cancel、Repeat、Rally、Core 与存档不变。
 
+v2.27 只在 `BattlefieldScene` 派生选择 presentation：`selectedEntityIDs` 决定全部 marker，`selectedEntityID` 决定 primary；缺失 primary 时 fallback 到 selection array 第一项。玩家 primary 使用青色短弧、轻 halo 和四向 tick，玩家 secondary 使用绿色短弧；敌方使用橙/红，建筑角标复用相同层级。所有 marker 固定在 z=-1 左右，位于 z=-2 shadow 与默认 z=0 model 之间，不新增可变状态、动画或 Core 写回；v2.11 直接 tap 与 v2.12 双指框选继续只改变既有 selection/order 真源。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

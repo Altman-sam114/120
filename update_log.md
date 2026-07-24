@@ -4909,3 +4909,33 @@
 遗留事项：
 
 - 固定 production PNG 只覆盖默认字号和暂停 T2 fixture；辅助功能字号、VoiceOver、真实点击、滚动、超长队列与真机触控仍未自动化。
+
+### v2.27 / iOS selection marker hierarchy
+
+日期：2026-07-24
+
+核心变更：
+
+- 多选 marker 增加 primary/secondary 层级：玩家主选中青色、其余组员绿色；敌方观察选择保持橙/红，不混淆阵营。
+- 单位由黄色近整圈改为短分段弧，primary 追加轻 halo 和四向 tick；建筑角标复用同一色彩层级。
+- marker 下沉到模型下、阴影上，减少对履带、炮塔、后坐、伤害状态和特效的遮挡。
+- tap、双击、双指框选、Replace/Add、控制编队、命令、Core、AI、战斗数值和存档不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.27-ios-selection-marker-hierarchy.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
+- GitHub Actions 与 Agent C 最新 artifact 复判待实现提交 push 后填写。
+
+遗留事项：
+
+- 固定 PNG 只能证明暂停 fixture 的默认缩放视觉；动态选择切换、真机缩放、色觉辅助和实际触摸仍未自动化。

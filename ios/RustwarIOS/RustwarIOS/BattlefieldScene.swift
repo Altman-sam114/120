@@ -96,6 +96,7 @@ final class BattlefieldScene: SKScene {
         let playerRadarCoverage = state.radarCoverage(for: .player)
         let playerRadarContacts = state.radarContacts(for: .player)
         let selectedIDs = selectedEntityIDs(in: state)
+        let primarySelectedID = state.selectedEntityID ?? state.selectedEntityIDs.first
         updateVisualHistoryAndEffects(
             state,
             playerVisibility: playerVisibility,
@@ -103,7 +104,12 @@ final class BattlefieldScene: SKScene {
         )
         showCommandConfirmationIfNeeded(controller.commandConfirmation, visibility: playerVisibility)
         drawResources(state.resources)
-        drawEntities(state, playerVisibility: playerVisibility, selectedIDs: selectedIDs)
+        drawEntities(
+            state,
+            playerVisibility: playerVisibility,
+            selectedIDs: selectedIDs,
+            primarySelectedID: primarySelectedID
+        )
         showCombatVisualSmokeIfNeeded(state)
         drawFog(visibility: playerVisibility, explored: playerExplored)
         drawRadarLayer(coverage: playerRadarCoverage, contacts: playerRadarContacts, selectedIDs: selectedIDs)
@@ -350,16 +356,31 @@ final class BattlefieldScene: SKScene {
         }
     }
 
-    private func drawEntities(_ state: GameState, playerVisibility: VisibilitySnapshot, selectedIDs: Set<String>) {
+    private func drawEntities(
+        _ state: GameState,
+        playerVisibility: VisibilitySnapshot,
+        selectedIDs: Set<String>,
+        primarySelectedID: String?
+    ) {
         entityNode.removeAllChildren()
         for wreck in state.wrecks {
             drawWreck(wreck)
         }
         for building in state.buildings where isVisibleToPlayer(building, visibility: playerVisibility) {
-            drawBuilding(building, selectedIDs: selectedIDs)
+            drawBuilding(
+                building,
+                selectedIDs: selectedIDs,
+                primarySelectedID: primarySelectedID
+            )
         }
         for unit in state.units where isVisibleToPlayer(unit, visibility: playerVisibility) {
-            drawUnit(unit, selectedIDs: selectedIDs, state: state, playerVisibility: playerVisibility)
+            drawUnit(
+                unit,
+                selectedIDs: selectedIDs,
+                primarySelectedID: primarySelectedID,
+                state: state,
+                playerVisibility: playerVisibility
+            )
         }
     }
 
@@ -1784,7 +1805,8 @@ final class BattlefieldScene: SKScene {
 
     private func drawBuilding(
         _ building: BuildingSnapshot,
-        selectedIDs: Set<String>
+        selectedIDs: Set<String>,
+        primarySelectedID: String?
     ) {
         let definition = GameDefinitions.building(for: building)
         let isSelected = selectedIDs.contains(building.id)
@@ -1812,7 +1834,12 @@ final class BattlefieldScene: SKScene {
             )
         }
         if isSelected {
-            addSelectionCorners(halfExtent: definition.size / 2 + 5, to: node)
+            addSelectionCorners(
+                halfExtent: definition.size / 2 + 5,
+                team: building.team,
+                isPrimary: building.id == primarySelectedID,
+                to: node
+            )
         }
         drawHealthBar(current: building.hitPoints, max: building.maxHitPoints, width: definition.size, yOffset: definition.size / 2 + 9, on: node)
         if building.buildProgress < 1 {
@@ -1826,6 +1853,7 @@ final class BattlefieldScene: SKScene {
     private func drawUnit(
         _ unit: UnitSnapshot,
         selectedIDs: Set<String>,
+        primarySelectedID: String?,
         state: GameState,
         playerVisibility: VisibilitySnapshot
     ) {
@@ -1884,7 +1912,12 @@ final class BattlefieldScene: SKScene {
             to: node
         )
         if isSelected {
-            addSelectionRing(radius: definition.radius + 4, to: node)
+            addSelectionRing(
+                radius: definition.radius + 4,
+                team: unit.team,
+                isPrimary: unit.id == primarySelectedID,
+                to: node
+            )
         }
         drawHealthBar(current: unit.hitPoints, max: unit.maxHitPoints, width: definition.radius * 2.4, yOffset: definition.radius + 8, on: node)
         entityNode.addChild(node)
@@ -2612,33 +2645,75 @@ final class BattlefieldScene: SKScene {
         node.addChild(flame)
     }
 
-    private func addSelectionRing(radius: Double, to node: SKNode) {
-        let halo = SKShapeNode(circleOfRadius: radius + 3.5)
-        halo.fillColor = SKColor.systemYellow.withAlphaComponent(0.10)
-        halo.strokeColor = SKColor.systemYellow.withAlphaComponent(0.28)
-        halo.lineWidth = 1.2
-        node.addChild(halo)
+    private func addSelectionRing(
+        radius: Double,
+        team: Team,
+        isPrimary: Bool,
+        to node: SKNode
+    ) {
+        let color = selectionColor(team: team, isPrimary: isPrimary)
+        if isPrimary {
+            let halo = SKShapeNode(circleOfRadius: radius + 3.5)
+            halo.fillColor = color.withAlphaComponent(0.055)
+            halo.strokeColor = color.withAlphaComponent(0.24)
+            halo.lineWidth = 1
+            halo.zPosition = -1
+            node.addChild(halo)
+        }
 
         let path = CGMutablePath()
         for quadrant in 0..<4 {
-            let start = CGFloat(quadrant) * .pi / 2 + 0.16
-            path.addArc(center: .zero, radius: radius, startAngle: start, endAngle: start + .pi / 2 - 0.32, clockwise: false)
+            let center = CGFloat(quadrant) * .pi / 2
+            path.addArc(
+                center: .zero,
+                radius: radius,
+                startAngle: center - 0.28,
+                endAngle: center + 0.28,
+                clockwise: false
+            )
         }
         let underlay = SKShapeNode(path: path)
-        underlay.strokeColor = SKColor.black.withAlphaComponent(0.55)
-        underlay.lineWidth = 5.2
+        underlay.strokeColor = SKColor.black.withAlphaComponent(0.68)
+        underlay.lineWidth = isPrimary ? 5 : 4.4
         underlay.lineCap = .round
+        underlay.zPosition = -1
         node.addChild(underlay)
 
         let ring = SKShapeNode(path: path)
-        ring.strokeColor = .systemYellow
-        ring.lineWidth = 3.4
+        ring.strokeColor = color
+        ring.lineWidth = isPrimary ? 3 : 2.5
         ring.lineCap = .round
-        ring.glowWidth = 1.6
+        ring.glowWidth = isPrimary ? 1.2 : 0.45
+        ring.zPosition = -0.9
         node.addChild(ring)
+
+        guard isPrimary else {
+            return
+        }
+        let ticks = CGMutablePath()
+        for quadrant in 0..<4 {
+            let angle = CGFloat(quadrant) * .pi / 2
+            let innerRadius = CGFloat(radius - 1)
+            let outerRadius = CGFloat(radius + 5)
+            ticks.move(to: CGPoint(x: cos(angle) * innerRadius, y: sin(angle) * innerRadius))
+            ticks.addLine(to: CGPoint(x: cos(angle) * outerRadius, y: sin(angle) * outerRadius))
+        }
+        let tickNode = SKShapeNode(path: ticks)
+        tickNode.strokeColor = color
+        tickNode.lineWidth = 2.2
+        tickNode.lineCap = .round
+        tickNode.glowWidth = 0.8
+        tickNode.zPosition = -0.8
+        node.addChild(tickNode)
     }
 
-    private func addSelectionCorners(halfExtent: Double, to node: SKNode) {
+    private func addSelectionCorners(
+        halfExtent: Double,
+        team: Team,
+        isPrimary: Bool,
+        to node: SKNode
+    ) {
+        let color = selectionColor(team: team, isPrimary: isPrimary)
         let length = Swift.max(8, halfExtent * 0.34)
         let path = CGMutablePath()
         for x in [-halfExtent, halfExtent] {
@@ -2651,17 +2726,32 @@ final class BattlefieldScene: SKScene {
             }
         }
         let underlay = SKShapeNode(path: path)
-        underlay.strokeColor = SKColor.black.withAlphaComponent(0.55)
-        underlay.lineWidth = 5.4
+        underlay.strokeColor = SKColor.black.withAlphaComponent(0.68)
+        underlay.lineWidth = isPrimary ? 5.2 : 4.6
         underlay.lineCap = .round
+        underlay.zPosition = -1
         node.addChild(underlay)
 
         let corners = SKShapeNode(path: path)
-        corners.strokeColor = .systemYellow
-        corners.lineWidth = 3.6
+        corners.strokeColor = color
+        corners.lineWidth = isPrimary ? 3.2 : 2.6
         corners.lineCap = .round
-        corners.glowWidth = 1.4
+        corners.glowWidth = isPrimary ? 1.1 : 0.4
+        corners.zPosition = -0.9
         node.addChild(corners)
+    }
+
+    private func selectionColor(team: Team, isPrimary: Bool) -> SKColor {
+        switch (team, isPrimary) {
+        case (.player, true):
+            .systemCyan
+        case (.player, false):
+            teamColor(.player)
+        case (.enemy, true):
+            .systemOrange
+        case (.enemy, false):
+            teamColor(.enemy)
+        }
     }
 
     private func addConstructionFrame(size: Double, to node: SKNode) {
