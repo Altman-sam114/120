@@ -4859,7 +4859,9 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
-- GitHub Actions 云端验证和 Agent C artifact 复判待本轮实现提交 push 后填写。
+- 实现提交 `70ab4074d756ce35ca46291cdd8d75c9c8bbf7cb` 的 GitHub Actions run `30068484373`（attempt 1）失败；Agent C 下载并核对 artifact `rustwar-ci-v1.2-main-70ab407-run30068484373-attempt1`，缓存位于 `/private/tmp/rustwar-c-review-30068484373-a1/`，约 284 KB。manifest 的 branch/SHA/run/attempt 完全匹配。
+- 失败包确认 toolchain、`git diff --check`、Node、311 项 Swift Core tests 和 Xcode project list 成功；iOS build 因三个不存在的 SwiftUI `hyphenationFactor` modifier 和其引发的 type-check 超时失败，因此没有生成双 PNG。修复移除该 API，并把升级标题拆成简单 `HStack` 和局部 presentation value；Factory T1/T2 不断词仍由独立等级文本和 `ViewThatFits` 保证。
+- 修复后的 GitHub Actions 云端验证和 Agent C artifact 复判待追加提交 push 后填写。
 
 遗留事项：
 

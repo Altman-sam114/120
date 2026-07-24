@@ -95,7 +95,6 @@ struct TacticalProductionSectionView: View {
                     .font(.footnote.bold())
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
-                    .hyphenationFactor(0)
                 HStack(spacing: TacticalHUDTheme.compactSpacing) {
                     productionMetric(Int(definition.metalCost).formatted(), systemImage: "hexagon.fill")
                     productionMetric(definition.supply.formatted(), systemImage: "person.2.fill")
@@ -145,6 +144,8 @@ private struct TacticalFactoryTechView: View {
         let layout = dynamicTypeSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: TacticalHUDTheme.compactSpacing))
             : AnyLayout(HStackLayout(alignment: .center, spacing: TacticalHUDTheme.compactSpacing))
+        let upgradeTitle = controller.upgradeFactoryButtonTitle
+        let upgradeBenefit = controller.factoryUpgradeBenefitText
 
         VStack(alignment: .leading, spacing: TacticalHUDTheme.compactSpacing) {
             ViewThatFits(in: .horizontal) {
@@ -162,12 +163,15 @@ private struct TacticalFactoryTechView: View {
             if controller.showsSelectedFactoryUpgradeControl {
                 Button(action: controller.upgradeSelectedFactory) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Label(controller.upgradeFactoryButtonTitle, systemImage: "arrow.up.circle.fill")
-                            .font(.footnote.bold())
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.78)
-                            .hyphenationFactor(0)
-                        if let benefit = controller.factoryUpgradeBenefitText {
+                        HStack(spacing: TacticalHUDTheme.compactSpacing) {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .accessibilityHidden(true)
+                            Text(upgradeTitle)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.78)
+                        }
+                        .font(.footnote.bold())
+                        if let benefit = upgradeBenefit {
                             Text(benefit)
                                 .font(.caption)
                                 .monospacedDigit()
@@ -379,7 +383,6 @@ private struct TacticalCurrentProductionView: View {
                         .font(.footnote.bold())
                         .lineLimit(1)
                         .minimumScaleFactor(0.78)
-                        .hyphenationFactor(0)
                     Spacer(minLength: 0)
                     Text("\(percent)%")
                         .font(.footnote.bold())
