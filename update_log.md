@@ -4934,7 +4934,9 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
-- GitHub Actions 与 Agent C 最新 artifact 复判待实现提交 push 后填写。
+- 实现提交 `42f170af8bcdec093251afed1a7188d6a7cc258e` 的 GitHub Actions run `30075312266`（attempt 1）成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-42f170a-run30075312266-attempt1` 到 `/private/tmp/rustwar-c-review-30075312266/`，约 1.4 MB。manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5、iOS 26.5 和 Simulator UDID 完全匹配。
+- JUnit 为 8 checks、0 failures、1 个既定 browser skip；云端 `git diff --check`、Node、311 项 Swift Core tests、Xcode list、arm64/x86_64 universal build、production/combat 双 launch、landscape normalization 和双像素探针全部通过，日志包含 `BUILD SUCCEEDED`。
+- Agent C 人工核对 `ios-home.png`：Factory 使用青色 primary corners，角标位于模型下且不遮挡建筑主体、血条或 Rally 路径；Production、HUD、Tactical Map 无视觉回退。人工核对 `ios-combat.png`：Heavy Tank primary 青色反馈与其余四个 selected unit 绿色短弧层级清楚，履带、炮塔、后坐、弹道、爆点、血条和水陆战场均保持完整，无重叠或回退。
 
 遗留事项：
 
