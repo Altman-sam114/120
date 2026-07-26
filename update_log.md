@@ -5223,3 +5223,24 @@
 遗留事项：
 
 - 固定 Coast 双截图只覆盖 landscape compact trailing 角色；portrait bottom dock、iPad regular trailing、accessibility Dynamic Type 与真机观感仍需后续云端视觉矩阵或人工复看。
+
+### v2.38 / iOS two-finger settle frame selection
+
+日期：2026-07-26
+
+核心变更：
+
+- `MultitouchIntentClassifier.classify` 新增 `elapsed` 参数与静置取框路径：既有 pinch 判定和 pending 门控之后，两指静置达到 0.22s dwell（较忙手指位移 < 12pt、间距漂移 < 8pt）即返回 selection，复刻 Rusted Warfare 移动版"两指按住即取框"的手感；v2.30 拖动扫框条件原样保留。
+- `BattlefieldView` 在双指序列建立时记录 `multitouchStartTime`，onChanged 持续分类使静置达到 dwell 后显示两指之间的预览框；onEnded 在提交前重新分类一次，覆盖静置后直接抬指的路径。预览与提交仍复用既有四点包围矩形、`handleBattlefieldMultitouchAreaSelection`、第三指/取消拒绝和 tap/长按抑制。
+- 新增 2 项 Core tests：settle 达到 dwell 锁定框选（含 ≤4pt 微抖），不足 dwell、pending、13pt 单指位移、9pt 间距漂移、NaN elapsed 均拒绝。
+
+验证状态：
+
+- 按云端唯一验证制度未运行任何本地测试。
+- 实现提交 `39531cc39e4bfe30fd7f0374d61bf8e21a570a54` 的 GitHub Actions run `30207894047` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-39531cc-run30207894047-attempt1` 到 `/private/tmp/rustwar-c-review-30207894047/`，约 1.6 MB。Manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5 完全一致。
+- Core suite 从 322 增至 324 项且全部通过，日志确认两项新 classifier 测试逐条执行；`git diff --check`、Node、Xcode list、arm64/x86_64 build（含 `BattlefieldView.swift`）、双 launch、landscape normalization 和双像素探针全部成功。
+- Home/Combat PNG SHA-256 与 v2.37 基线逐字节一致（`7d19e8d5…dad` / `83bf5a5c…5fd`）；本轮为纯手势逻辑，无视觉 diff 符合预期。
+
+遗留事项：
+
+- 静态截图冒烟不执行双指手势；静置取框、拖动扫框与捏合共存的真实手感需真机人工复看。dwell 0.22s 与 12pt/8pt 容差如在真机偏灵敏或偏迟钝，只需调整分类器常量并同步测试。
