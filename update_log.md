@@ -5192,7 +5192,10 @@
 验证状态：
 
 - 按用户要求未运行本地测试、格式检查、Swift/Xcode build、Simulator、Preview 或截图。
-- 待实现提交 push 后由 Agent C 下载精确 SHA artifact；必须与 v2.35 Home/Combat PNG 对照，确认直角 dirt/grass 与海岸接缝真实软化，绿色棋盘和水面 hairline 不回退，HUD、模型和战斗层级保持。
+- 首版提交 `cb629426a385842632a3b73956c3a3aab3d33516` 的 run `30196154066` / attempt 1 虽通过全部自动检查，但 Agent C 拒绝视觉验收：半透明海岸底带的独立 round cap 在端点叠加为黑色圆点，陆地 accent 过深并重新强调网格。随后以修复提交 `23d59f0e15740d471f204f4ebe28bd868077bbb7` 收窄曲线/底带、改用实色岸带并降低 accent 对比。
+- 修复 run `30196814101` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-23d59f0-run30196814101-attempt1` 到 `/private/tmp/rustwar-c-review-30196814101/`，约 1.6 MB。Manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5、iOS 26.5 和 Swift 6.3.2 完全一致。
+- JUnit 为 8 checks、0 failures、1 个既定 browser skip；云端 `git diff --check`、Node、322 项 Core tests、Xcode list、arm64/x86_64 build、Home/Combat 双 launch、landscape normalization 和双像素探针全部成功。Home/Combat PNG SHA-256 分别为 `d50e700b37e03eaf98887408289a1a9cd19e017d7d7987b25920b8f7ea2fbb40` 和 `7adaf57a935b74b49ff0b9538bc765c8b038fcec022a958d3f5da73e5621e089`。
+- Agent C 与 v2.35 及被拒首版双图复看通过：dirt/grass patch 从硬直角方块变为连续圆化边缘，低对比 accent 不再像道路描边；Combat 海岸的黑色端点圆消失，岸线不遮挡单位、弹道或爆点。绿色棋盘、水面 hairline、HUD、模型、选择和战斗层级无回退。
 
 遗留事项：
 
