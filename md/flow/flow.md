@@ -117,6 +117,8 @@ v2.35 把基础 fill 从 `TerrainKind × 3 variation buckets` 收敛为每种 `T
 
 v2.36 将相邻不同 land surface family、water/deep、water/land 与 lava/non-lava 的表现边界统一交给 `appendOrganicBoundary`：每条原 tile edge 保持端点相接，但两个控制点沿法向做不超过 2.6 world pt 的稳定偏移。land boundary 按 grass < dirt < sand < rock 优先级选择覆盖材质，用 8.5pt 同材质底带遮住原直线接缝，再叠加 1.15pt 极低对比边缘；海岸、depth 和 lava bank 同样先用 6.5-7pt 实色底带覆盖接缝，再绘制原有细边。实色底带避免独立 subpath 的圆端重叠后形成深色圆点。所有 segment 仍聚合进按材质/边界类型固定的 compound path，仅在地图 revision 重建，不改变 Core tile 或交互语义。
 
+v2.37 收窄战术 HUD chrome 以提高战场占比：`TacticalStatusBarView` 三档 role 统一使用单行 HStack（metrics 左、Pause/Speed 右），compactBottom 改用 menu 速度选择器且 Pause 不再整行扩展；`statusVerticalPadding` 6→2、metric 垂直 padding 改用独立 `statusMetricVerticalPadding = 2`。`TacticalHUDLayoutMetrics` 把 regular trailing dock 从 28% / 268-320pt 收到 24% / 240-280pt，compact trailing 从 30% / 224-260pt 收到 24% / 204-224pt，compact bottom 高度从 0.34 / 216-320pt 收到 0.30 / 200-288pt（accessibility Dynamic Type 独立保留 0.42 / 216-320pt），极短容器最低 168pt；Tactical Map 常规档从 176×118 / 144×96 缩为 160×106 / 132×88，最小档 120×80 保持。dock header 用 compactPadding，selection summary 去掉卡片底色/描边只留文本层级。三档 role 断点、六组 section、action、disabled、快捷键、VoiceOver 和 44pt 触控目标不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

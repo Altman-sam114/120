@@ -5200,3 +5200,26 @@
 遗留事项：
 
 - 固定 Coast 双截图不能覆盖 Islands/Lava、全部 zoom 或真机 scale；宽底带在单 tile 狭窄地形上的观感仍需后续扩展云端视觉矩阵。
+
+### v2.37 / iOS slim tactical HUD chrome
+
+日期：2026-07-26
+
+核心变更：
+
+- 状态栏三档 role 统一为单行（metrics 左、Pause/Speed 右），compactBottom 不再堆叠双行；状态栏与 metric 垂直 padding 收薄到 2pt，compactBottom 改用 menu 速度选择器、Pause 不再整行扩展。
+- `TacticalHUDLayoutMetrics` dock 收窄：regular trailing 24% / 240-280pt、compact trailing 24% / 204-224pt、compact bottom 高度 0.30 / 200-288pt（accessibility Dynamic Type 独立保留 0.42 / 216-320pt），极短容器最低 168pt。
+- Tactical Map 常规档缩为 160×106 / 132×88（最小档 120×80 保持）；dock header 改用 compactPadding，selection summary 去掉卡片底色/描边只留文本层级。
+- 另含独立 chore 提交 `41300ad`：采纳用户本机 Xcode 签名产生的 `project.pbxproj` objectVersion 60 与 DEVELOPMENT_TEAM。
+- 三档 role 断点、六组 section、action、disabled 条件、快捷键、VoiceOver、44pt 触控目标、BattlefieldScene、Core、存档与 Web 不变。
+
+验证状态：
+
+- 按云端唯一验证制度未运行任何本地测试、格式检查、Swift/Xcode build、Simulator、Preview 或截图。
+- 实现提交 `c61dbf1749014afa168078617301c0ce508b95be` 的 GitHub Actions run `30204788850` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-c61dbf1-run30204788850-attempt1` 到 `/private/tmp/rustwar-c-review-30204788850/`，约 1.6 MB。Manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5、iOS 26.5 和 Swift 6.3.2 完全一致。
+- JUnit 为 8 checks、0 failures、1 个既定 browser skip；云端 `git diff --check`、Node、322 项 Core tests、Xcode list、arm64/x86_64 build、Home/Combat 双 launch、landscape normalization 和双像素探针全部成功。Home/Combat PNG SHA-256 分别为 `7d19e8d5298b879a74693587fe04594bfd7ed0cbe6df5e1d068d90d182ea1dad` 和 `83bf5a5ca7a826941fe9f8c19fb0b302519a41c5f6a597449b89fd1f901635fd`。
+- Agent C 与 v2.36 双图人工对照通过：顶部状态栏更矮、右侧 dock 更窄、小地图更小，战场可见范围明显增大；Selection/Production/Commands 分区、单位模型、弹道、爆点、血条、选择层级与地形均无回退。
+
+遗留事项：
+
+- 固定 Coast 双截图只覆盖 landscape compact trailing 角色；portrait bottom dock、iPad regular trailing、accessibility Dynamic Type 与真机观感仍需后续云端视觉矩阵或人工复看。
