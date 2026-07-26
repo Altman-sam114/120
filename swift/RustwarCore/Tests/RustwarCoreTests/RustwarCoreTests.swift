@@ -1603,13 +1603,12 @@ import Testing
     var engine = GameEngine(state: state, enemyAIEnabled: false)
     #expect(engine.selectVisibleToPlayer(at: query, includeEnemies: true) == nil)
 
-    let selected = try #require(
-        engine.selectVisibleToPlayer(
-            at: query,
-            includeEnemies: true,
-            minimumHitRadius: 60
-        )
+    let expandedSelection = engine.selectVisibleToPlayer(
+        at: query,
+        includeEnemies: true,
+        minimumHitRadius: 60
     )
+    let selected = try #require(expandedSelection)
     #expect(selected.id == enemyTank.id)
     #expect(engine.state.selectedEntityID == enemyTank.id)
     #expect(engine.state.selectedEntityIDs == [enemyTank.id])
