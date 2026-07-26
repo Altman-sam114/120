@@ -5244,3 +5244,23 @@
 遗留事项：
 
 - 静态截图冒烟不执行双指手势；静置取框、拖动扫框与捏合共存的真实手感需真机人工复看。dwell 0.22s 与 12pt/8pt 容差如在真机偏灵敏或偏迟钝，只需调整分类器常量并同步测试。
+
+### v2.39 / iOS combat readability declutter
+
+日期：2026-07-26
+
+核心变更：
+
+- 参考 Rusted Warfare 低杂讯战场：`drawHealthBar` 在满血（`current >= max`）时直接返回，血条只在受损后出现；高度 6→4.5，白描边换成黑底 + 深色描边 + 0.75pt 内缩 fill，绿/黄/红语义不变。
+- `drawUnit` 的 order 绘制分支增加 `isSelected` 门控：Move / Attack / Attack Move / Patrol / Guard / Build / Repair / Reclaim 命令线与落点标记只跟随当前选中单位，未选中单位不再泄露半透明命令线。
+- 建造/升级进度条、选中生产建筑 rally 线、弹道、爆点、灼痕、雾与 Core 命令数据不变；纯 presentation 层修改。
+
+验证状态：
+
+- 按云端唯一验证制度未运行任何本地测试。
+- 实现提交 `6467c6604d5dedb99f67e4edfa637336f4fa6cb2` 的 GitHub Actions run `30208587867` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-6467c66-run30208587867-attempt1` 到 `/private/tmp/rustwar-c-review-30208587867/`，约 1.6 MB。Manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5 完全一致；Core 324 tests 全绿，双架构 build、双 launch/probe 成功。
+- Home/Combat PNG SHA-256 分别为 `f394c4a5488a6ab9b1c9f7921625ae2695a149d66f03bced06ee67a8ae9103b1` 和 `55e3d9a983857da843c28e1b9968db1adcadb798b076eb02e4f53f8f47d5682b`。与 v2.38 人工对照：Home 满血 Command Center / Factory / Builder / 坦克常驻血条全部消失；Combat 受损敌军保留细血条、残骸金属条保留、满血玩家单位无血条；模型、弹道、爆点、选择层级无回退。
+
+遗留事项：
+
+- 命令线 isSelected 门控无法被 combat fixture PNG 证明（cloud scenario 本就跳过命令线），只有代码审查覆盖；真实混战中选中/未选中的命令线层级需真机复看。
