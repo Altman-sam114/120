@@ -4972,3 +4972,29 @@
 遗留事项：
 
 - 固定 production PNG 只覆盖 Coast 默认相机内的未占领资源点；其它地图、已占领节点、缩放极限、Build Extractor 命中与真机显示仍未自动化。
+
+### Architecture decision / Unity migration feasibility
+
+日期：2026-07-26
+
+核心决策：
+
+- 完成 Web、Swift Core、原生 iOS 和现有云端验证链路的 Unity 迁移可行性审计；当前不停止 Swift/iOS 开发，也不批准全面 Unity 重写。
+- 只有在 Android/桌面正式目标、内容生产管线、真实设备性能瓶颈、Unity/C# owner、授权预算和多平台 QA 条件明确后，才批准有期限、有量化门槛和失败退出条件的 Unity 并行垂直切片。
+- 未来 Unity 只能迁移规格、合同、内容和行为测试，不能假定直接复用 Swift Package 或 `app.js`；纯 C# simulation 必须与 Unity presentation/input/UI 分层，现有 Web/iOS 基线在 parity 与性能验收前不得删除或冻结。
+- 建议的近期工作仍是收敛 Web/Swift 行为规格、建立版本化跨端合同场景与真实设备性能基线，而不是创建 Unity 工程。
+
+关键文件：
+
+- `md/unity分析/Unity迁移可行性分析报告.md`
+- `README.md`
+- `update_log.md`
+
+验证状态：
+
+- 报告中的规模事实已只读核对：`app.js` 6,998 行、`GameEngine.swift` 2,588 行、iOS Swift 源码约 9,553 行、现有 CI workflow 560 行。
+- 按用户要求未运行任何本地测试或格式检查；本轮为文档-only，待提交并 push 后由 GitHub Actions 生成最新 SHA 对应结果包供 Agent C 复判。
+
+遗留事项：
+
+- Unity 平台目标、最低设备、最大实体数、是否联机/回放、商业授权、团队 owner 与预算尚未由人工确认，因此本决策不构成 Unity 立项授权。

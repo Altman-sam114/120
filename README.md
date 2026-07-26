@@ -192,6 +192,7 @@
 - `update_log.md`：版本更新记录、关键决策、完成事项和遗留问题。
 - `md/test/test.md`：测试分层、命令、触发条件和当前验证基线。
 - `md/flow/flow.md` 与 `md/flow/flowchart.md`：当前核心逻辑、数据流、执行流和 Mermaid 流程图。
+- `md/unity分析/Unity迁移可行性分析报告.md`：Unity 迁移条件、并行垂直切片架构、退出标准、CI 与风险控制；当前结论是继续 Swift/iOS 主线，不立即全面转 Unity。
 - `md/prompt/`：每轮 Agent A 写给 Agent B 的详细实现提示词目录。
 - `swift/RustwarCore/`：原生迁移使用的共享 Swift core package。
 - `ios/RustwarIOS/`：原生 SwiftUI/SpriteKit iOS App 地基。
