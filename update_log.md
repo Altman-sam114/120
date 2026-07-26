@@ -5123,8 +5123,10 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括格式检查、Swift tests、Xcode、Simulator、Preview 或截图。
-- 待实现提交 push 后由 Agent C 下载精确 SHA 的 `Rustwar CI Results` artifact，核对 manifest、JUnit、322 项 Core tests、双架构 build、双启动/方向/像素探针和 `ios-home.png` / `ios-combat.png`。
+- 实现提交 `43b010ea3823844d7b183f4dabd432551380eb77` 的 GitHub Actions run `30193220753` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-43b010e-run30193220753-attempt1` 到 `/private/tmp/rustwar-c-review-30193220753/`，约 1.5 MB。Manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5、iOS 26.5 和 Swift 6.3.2 完全一致。
+- JUnit 为 8/0/1；云端 `git diff --check`、Node、322 项 Core tests、Xcode list、arm64/x86_64 universal build、production/combat 双 launch、landscape normalization 和双像素探针全部成功，日志证明 `BattlefieldScene.swift` 进入双架构编译并包含 `BUILD SUCCEEDED`。
+- Home/Combat PNG SHA-256 分别变为 `095b70d79c2dde91db223721c6d45ac24cba07b62a9255aa319494a70fa2df5e` 和 `d5d8b6c8375422372d88c1077b2ce69c2192c6198d4dfbbd01a2b8de95361f17`。Agent C 与 v2.32 combat 基线人工对照，确认逐 tile 三档蓝色棋盘已消失，跨格高光保持克制，单位、炮塔、弹道、爆点、血条、选择和 HUD 层级无回退。
 
 遗留事项：
 
-- 固定云端 PNG 主要覆盖 Coast 相机；Islands/Lava、缩放极限、真机屏幕和密集效果下的帧率仍需后续云端场景或人工真机验收。
+- 固定云端 PNG 主要覆盖 Coast 相机；Islands/Lava、缩放极限、真机屏幕和密集效果下的帧率仍需后续云端场景或人工真机验收。现有全地形 tile 边界线在统一水色上仍可见，后续可单独评估无缝区域轮廓，不应重新引入逐格明暗。
