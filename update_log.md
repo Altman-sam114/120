@@ -5130,3 +5130,22 @@
 遗留事项：
 
 - 固定云端 PNG 主要覆盖 Coast 相机；Islands/Lava、缩放极限、真机屏幕和密集效果下的帧率仍需后续云端场景或人工真机验收。现有全地形 tile 边界线在统一水色上仍可见，后续可单独评估无缝区域轮廓，不应重新引入逐格明暗。
+
+### v2.34 / iOS seamless terrain fill
+
+日期：2026-07-26
+
+核心变更：
+
+- `BattlefieldScene.drawTerrain` 的基础材质 node 把零宽 stroke 改为与 fill 完全同色的 1pt 覆盖描边，配合既有 tile overlap 封闭 SpriteKit 像素栅格 hairline。
+- 保持按材质/色阶聚合的 compound path、禁用抗锯齿、固定节点数量和地图 revision 重建路径；不新增 texture、shader、动画或逐 tile node。
+- 不修改不同地形色阶、海岸/深度/熔岩边界、fog、Core 地形/通行、战斗、AI、命令、存档、Web 或 Tactical Map。
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括格式检查、Swift tests、Xcode、Simulator、Preview 或截图。
+- 待实现提交 push 后由 Agent C 下载精确 SHA artifact；除构建/测试外，必须与 v2.33 双 PNG 人工对照确认 tile 暗网格真实减少，否则继续修复。
+
+遗留事项：
+
+- 实现以 SpriteKit 同色覆盖描边处理设备像素 hairline；不同 zoom、Islands/Lava 和真机 scale 的边缘效果仍需要未来扩展云端视觉矩阵。

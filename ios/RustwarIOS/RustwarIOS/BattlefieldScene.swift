@@ -247,9 +247,10 @@ final class BattlefieldScene: SKScene {
                     continue
                 }
                 let node = SKShapeNode(path: path)
-                node.fillColor = terrainColor(for: kind, variationBucket: bucket)
-                node.strokeColor = node.fillColor
-                node.lineWidth = 0
+                let color = terrainColor(for: kind, variationBucket: bucket)
+                node.fillColor = color
+                node.strokeColor = color
+                node.lineWidth = 1
                 node.isAntialiased = false
                 terrainNode.addChild(node)
             }

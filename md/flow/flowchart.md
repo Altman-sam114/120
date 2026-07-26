@@ -596,6 +596,19 @@ flowchart LR
   S --> F["Fog / entities / combat effects remain above"]
 ```
 
+## v2.34 Seamless terrain fill
+
+```mermaid
+flowchart LR
+  P["Terrain compound fill path"] --> F["Material fill color"]
+  P --> S["Same-color 1pt covering stroke"]
+  O["Existing 0.22pt tile overlap"] --> S
+  F --> R["Rasterized continuous surface"]
+  S --> R
+  R --> B["Coast / depth / lava boundaries"]
+  B --> V["Fog and combat layers remain above"]
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid
