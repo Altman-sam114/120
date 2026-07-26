@@ -7,11 +7,19 @@ public enum MultitouchIntent: Equatable, Sendable {
 }
 
 public enum MultitouchIntentClassifier {
+    /// Two settled fingers frame a selection box between them after this dwell.
+    public static let staticFrameDwell: TimeInterval = 0.22
+    /// A static frame tolerates at most this much travel for the busier finger.
+    public static let staticFrameMaximumTravel = 12.0
+    /// A static frame tolerates at most this much finger spacing drift.
+    public static let staticFrameMaximumSpacingChange = 8.0
+
     public static func classify(
         firstStart: WorldPoint,
         secondStart: WorldPoint,
         firstCurrent: WorldPoint,
         secondCurrent: WorldPoint,
+        elapsed: TimeInterval = 0,
         isTargetCommandPending: Bool = false
     ) -> MultitouchIntent {
         let coordinates = [
@@ -21,6 +29,7 @@ public enum MultitouchIntentClassifier {
         guard coordinates.allSatisfy(\.isFinite) else {
             return .undecided
         }
+        let clampedElapsed = elapsed.isFinite ? max(0, elapsed) : 0
 
         let firstDelta = WorldPoint(firstCurrent.x - firstStart.x, firstCurrent.y - firstStart.y)
         let secondDelta = WorldPoint(secondCurrent.x - secondStart.x, secondCurrent.y - secondStart.y)
@@ -44,14 +53,26 @@ public enum MultitouchIntentClassifier {
             return .pinch
         }
 
-        guard !isTargetCommandPending,
-              minimumTravel >= 5,
-              maximumTravel >= 10,
-              centroidTravel >= 8,
-              alignment >= 0.55,
-              distanceChange <= max(20, centroidTravel * 0.55) else {
+        guard !isTargetCommandPending else {
             return .undecided
         }
-        return .selection
+
+        // Both fingers dragging together with stable spacing sweeps the box.
+        if minimumTravel >= 5,
+           maximumTravel >= 10,
+           centroidTravel >= 8,
+           alignment >= 0.55,
+           distanceChange <= max(20, centroidTravel * 0.55) {
+            return .selection
+        }
+
+        // Two settled fingers frame the box between them without any drag.
+        if clampedElapsed >= Self.staticFrameDwell,
+           maximumTravel < Self.staticFrameMaximumTravel,
+           distanceChange < Self.staticFrameMaximumSpacingChange {
+            return .selection
+        }
+
+        return .undecided
     }
 }

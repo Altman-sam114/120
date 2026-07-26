@@ -66,6 +66,76 @@ import Testing
     )
 }
 
+@Test func multitouchIntentClassifierFramesSettledFingersAfterDwell() {
+    #expect(
+        MultitouchIntentClassifier.classify(
+            firstStart: WorldPoint(100, 100),
+            secondStart: WorldPoint(300, 100),
+            firstCurrent: WorldPoint(100, 100),
+            secondCurrent: WorldPoint(300, 100),
+            elapsed: 0.3
+        ) == .selection
+    )
+    #expect(
+        MultitouchIntentClassifier.classify(
+            firstStart: WorldPoint(100, 100),
+            secondStart: WorldPoint(300, 100),
+            firstCurrent: WorldPoint(104, 103),
+            secondCurrent: WorldPoint(303, 98),
+            elapsed: MultitouchIntentClassifier.staticFrameDwell
+        ) == .selection
+    )
+}
+
+@Test func multitouchIntentClassifierRejectsUnsettledOrEarlyStaticFrames() {
+    #expect(
+        MultitouchIntentClassifier.classify(
+            firstStart: WorldPoint(100, 100),
+            secondStart: WorldPoint(300, 100),
+            firstCurrent: WorldPoint(100, 100),
+            secondCurrent: WorldPoint(300, 100),
+            elapsed: 0.1
+        ) == .undecided
+    )
+    #expect(
+        MultitouchIntentClassifier.classify(
+            firstStart: WorldPoint(100, 100),
+            secondStart: WorldPoint(300, 100),
+            firstCurrent: WorldPoint(100, 100),
+            secondCurrent: WorldPoint(300, 100),
+            elapsed: 0.3,
+            isTargetCommandPending: true
+        ) == .undecided
+    )
+    #expect(
+        MultitouchIntentClassifier.classify(
+            firstStart: WorldPoint(100, 100),
+            secondStart: WorldPoint(300, 100),
+            firstCurrent: WorldPoint(100, 113),
+            secondCurrent: WorldPoint(300, 100),
+            elapsed: 0.5
+        ) == .undecided
+    )
+    #expect(
+        MultitouchIntentClassifier.classify(
+            firstStart: WorldPoint(100, 100),
+            secondStart: WorldPoint(300, 100),
+            firstCurrent: WorldPoint(91, 100),
+            secondCurrent: WorldPoint(300, 100),
+            elapsed: 0.5
+        ) == .undecided
+    )
+    #expect(
+        MultitouchIntentClassifier.classify(
+            firstStart: WorldPoint(100, 100),
+            secondStart: WorldPoint(300, 100),
+            firstCurrent: WorldPoint(100, 100),
+            secondCurrent: WorldPoint(300, 100),
+            elapsed: .nan
+        ) == .undecided
+    )
+}
+
 @Test func repeatTapCycleResolverAdvancesAcrossUnitsAndBuildingsAndWraps() {
     let candidateIDs = ["player-tank", "player-factory", "player-builder"]
 

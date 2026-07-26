@@ -119,6 +119,8 @@ v2.36 将相邻不同 land surface family、water/deep、water/land 与 lava/non
 
 v2.37 收窄战术 HUD chrome 以提高战场占比：`TacticalStatusBarView` 三档 role 统一使用单行 HStack（metrics 左、Pause/Speed 右），compactBottom 改用 menu 速度选择器且 Pause 不再整行扩展；`statusVerticalPadding` 6→2、metric 垂直 padding 改用独立 `statusMetricVerticalPadding = 2`。`TacticalHUDLayoutMetrics` 把 regular trailing dock 从 28% / 268-320pt 收到 24% / 240-280pt，compact trailing 从 30% / 224-260pt 收到 24% / 204-224pt，compact bottom 高度从 0.34 / 216-320pt 收到 0.30 / 200-288pt（accessibility Dynamic Type 独立保留 0.42 / 216-320pt），极短容器最低 168pt；Tactical Map 常规档从 176×118 / 144×96 缩为 160×106 / 132×88，最小档 120×80 保持。dock header 用 compactPadding，selection summary 去掉卡片底色/描边只留文本层级。三档 role 断点、六组 section、action、disabled、快捷键、VoiceOver 和 44pt 触控目标不变。
 
+v2.38 给 `MultitouchIntentClassifier` 增加静置取框路径：`classify` 新增 `elapsed` 参数（非法值 clamp 为 0），在既有 pinch 判定和 pending 门控之后，先保留 v2.30 拖动扫框条件（min travel ≥ 5、max travel ≥ 10、质心 ≥ 8、alignment ≥ 0.55、间距稳定），再判定静置 frame：`elapsed ≥ staticFrameDwell(0.22s)`、较忙手指位移 < `staticFrameMaximumTravel(12pt)`、间距漂移 < `staticFrameMaximumSpacingChange(8pt)` 时返回 selection。`BattlefieldView` 在双指序列建立时记录 `multitouchStartTime`，onChanged 持续分类使静置达到 dwell 后出现两指之间的预览框；onEnded 在提交前重新分类一次，覆盖"静置后直接抬指"未经过 onChanged 判定窗口的情况。预览与提交仍复用既有四点包围矩形、`handleBattlefieldMultitouchAreaSelection`、第三指/取消拒绝和 tap/长按抑制；Core 区域选择、Replace/Add 和存档不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

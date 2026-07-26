@@ -18,6 +18,7 @@ struct BattlefieldView: View {
     @State private var multitouchIDs: [SpatialEventCollection.Event.ID] = []
     @State private var multitouchStartLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
     @State private var multitouchCurrentLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
+    @State private var multitouchStartTime: TimeInterval?
     @State private var isMultitouchSequenceActive = false
     @State private var isMultitouchSelection = false
     @State private var isMultitouchPinch = false
@@ -195,6 +196,7 @@ struct BattlefieldView: View {
 
         if multitouchIDs.isEmpty {
             multitouchIDs = activeTouches.map(\.id)
+            multitouchStartTime = ProcessInfo.processInfo.systemUptime
             for touch in activeTouches {
                 multitouchStartLocations[touch.id] = touch.location
                 multitouchCurrentLocations[touch.id] = touch.location
@@ -228,6 +230,7 @@ struct BattlefieldView: View {
             secondStart: WorldPoint(Double(secondStart.x), Double(secondStart.y)),
             firstCurrent: WorldPoint(Double(firstCurrent.x), Double(firstCurrent.y)),
             secondCurrent: WorldPoint(Double(secondCurrent.x), Double(secondCurrent.y)),
+            elapsed: multitouchStartTime.map { ProcessInfo.processInfo.systemUptime - $0 } ?? 0,
             isTargetCommandPending: controller.isAwaitingTargetCommand
         )
         if intent == .pinch {
@@ -262,6 +265,8 @@ struct BattlefieldView: View {
         for event in events where event.kind == .touch && multitouchIDs.contains(event.id) {
             multitouchCurrentLocations[event.id] = event.location
         }
+        // A settle-then-lift two-finger frame classifies at release once the dwell elapses.
+        classifyMultitouchIntent()
         if isMultitouchSelection {
             updateMultitouchSelectionPreview()
         }
@@ -300,6 +305,7 @@ struct BattlefieldView: View {
         multitouchIDs.removeAll()
         multitouchStartLocations.removeAll()
         multitouchCurrentLocations.removeAll()
+        multitouchStartTime = nil
         isMultitouchSequenceActive = false
         isMultitouchSelection = false
         isMultitouchPinch = false
