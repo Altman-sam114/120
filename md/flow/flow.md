@@ -105,6 +105,8 @@ v2.29 保留 Core 默认命中半径，仅为 `selectionTarget` / `selectionTarg
 
 v2.30 将 v2.12 内联的双指几何仲裁移到 `MultitouchIntentClassifier`：有限坐标下，明显 12pt 张合或反向移动返回 pinch；两指同向、质心至少 8pt、领先手指至少 10pt、跟随手指至少 5pt 且间距稳定时返回 selection；pending 命令只阻止 selection，不充分/非法输入返回 undecided，明确 pinch 仍可缩放。`BattlefieldView` 只管理 touch id、锁定状态、预览和提交，既有 MagnifyGesture、第三指拒绝、tap 抑制及 Core 区域选择不变。
 
+v2.31 将单点命中从“只返回最近实体”扩展为全部候选列表：`GameState.selectionTargets` / `selectionTargetsVisibleToPlayer` 统一按距离升序、再按 units-first 的原始实体顺序稳定排序，原单目标 API 只取第一项，因此旧调用语义保持。`GameEngine.select(entityID:)` 让 `GameController` 能在不重新做坐标命中的情况下精确选择循环目标。主战场普通 tap 先保留 v2.11 敌方 Attack / 空地 Attack Move 与 v2.29 真实视野/44pt 门控，随后让 `<=0.32s` 双击同类优先；只有候选 ID 集合和 44pt 屏幕区域保持相同、间隔位于 `0.38...1.4s` 时，才在己方单位候选中循环。循环状态是 controller 私有瞬态，不进入 Core state/JSON，并在命令、区域选择、地图重置、读档、候选变化或超时后失效。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

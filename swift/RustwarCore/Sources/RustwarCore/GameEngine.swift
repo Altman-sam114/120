@@ -85,6 +85,34 @@ public struct GameEngine: Sendable {
         return target
     }
 
+    @discardableResult
+    public mutating func select(entityID: String, mutation: SelectionMutation = .replace) -> SelectionTarget? {
+        let target: SelectionTarget?
+        if let unit = state.units.first(where: { $0.id == entityID }) {
+            let definition = GameDefinitions.unit(unit.type)
+            target = SelectionTarget(
+                id: unit.id,
+                kind: .unit,
+                team: unit.team,
+                displayName: definition.name,
+                position: unit.position
+            )
+        } else if let building = state.buildings.first(where: { $0.id == entityID }) {
+            let definition = GameDefinitions.building(building.type)
+            target = SelectionTarget(
+                id: building.id,
+                kind: .building,
+                team: building.team,
+                displayName: definition.name,
+                position: building.position
+            )
+        } else {
+            target = nil
+        }
+        applySelection(target.map { [$0.id] } ?? [], mutation: mutation)
+        return target
+    }
+
     public mutating func reset(mapID: MapID = .coast) {
         state = GameState(mapID: mapID)
     }

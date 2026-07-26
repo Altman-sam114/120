@@ -107,37 +107,24 @@ public extension GameState {
         includeEnemies: Bool = true,
         minimumHitRadius: Double = 0
     ) -> SelectionTarget? {
-        var best: SelectionTarget?
-        var bestDistance = Double.infinity
-        let effectiveMinimumHitRadius = minimumHitRadius.isFinite ? max(0, minimumHitRadius) : 0
+        selectionTargets(
+            at: point,
+            includeEnemies: includeEnemies,
+            minimumHitRadius: minimumHitRadius
+        ).first
+    }
 
-        for unit in units {
-            if !includeEnemies, unit.team != .player {
-                continue
-            }
-            let definition = GameDefinitions.unit(unit.type)
-            let radius = max(definition.radius + 7, effectiveMinimumHitRadius)
-            let distance = unit.position.distanceSquared(to: point)
-            if distance < radius * radius, distance < bestDistance {
-                best = SelectionTarget(id: unit.id, kind: .unit, team: unit.team, displayName: definition.name, position: unit.position)
-                bestDistance = distance
-            }
-        }
-
-        for building in buildings {
-            if !includeEnemies, building.team != .player {
-                continue
-            }
-            let definition = GameDefinitions.building(building.type)
-            let radius = max(definition.size / 2 + 4, effectiveMinimumHitRadius)
-            let distance = building.position.distanceSquared(to: point)
-            if distance < radius * radius, distance < bestDistance {
-                best = SelectionTarget(id: building.id, kind: .building, team: building.team, displayName: definition.name, position: building.position)
-                bestDistance = distance
-            }
-        }
-
-        return best
+    func selectionTargets(
+        at point: WorldPoint,
+        includeEnemies: Bool = true,
+        minimumHitRadius: Double = 0
+    ) -> [SelectionTarget] {
+        rankedSelectionTargets(
+            at: point,
+            includeEnemies: includeEnemies,
+            minimumHitRadius: minimumHitRadius,
+            playerVisibility: nil
+        )
     }
 
     func selectionTargetVisibleToPlayer(
@@ -145,44 +132,89 @@ public extension GameState {
         includeEnemies: Bool = true,
         minimumHitRadius: Double = 0
     ) -> SelectionTarget? {
-        let playerVisibility = visibility(for: .player)
-        var best: SelectionTarget?
-        var bestDistance = Double.infinity
-        let effectiveMinimumHitRadius = minimumHitRadius.isFinite ? max(0, minimumHitRadius) : 0
+        selectionTargetsVisibleToPlayer(
+            at: point,
+            includeEnemies: includeEnemies,
+            minimumHitRadius: minimumHitRadius
+        ).first
+    }
 
-        for unit in units {
-            if !includeEnemies, unit.team != .player {
-                continue
-            }
-            guard unit.team == .player || playerVisibility.isVisible(at: unit.position) else {
+    func selectionTargetsVisibleToPlayer(
+        at point: WorldPoint,
+        includeEnemies: Bool = true,
+        minimumHitRadius: Double = 0
+    ) -> [SelectionTarget] {
+        rankedSelectionTargets(
+            at: point,
+            includeEnemies: includeEnemies,
+            minimumHitRadius: minimumHitRadius,
+            playerVisibility: visibility(for: .player)
+        )
+    }
+
+    private func rankedSelectionTargets(
+        at point: WorldPoint,
+        includeEnemies: Bool,
+        minimumHitRadius: Double,
+        playerVisibility: VisibilitySnapshot?
+    ) -> [SelectionTarget] {
+        let effectiveMinimumHitRadius = minimumHitRadius.isFinite ? max(0, minimumHitRadius) : 0
+        var candidates: [(target: SelectionTarget, distance: Double, stableOrder: Int)] = []
+
+        for (index, unit) in units.enumerated() {
+            guard includeEnemies || unit.team == .player,
+                  unit.team == .player || playerVisibility?.isVisible(at: unit.position) != false else {
                 continue
             }
             let definition = GameDefinitions.unit(unit.type)
             let radius = max(definition.radius + 7, effectiveMinimumHitRadius)
             let distance = unit.position.distanceSquared(to: point)
-            if distance < radius * radius, distance < bestDistance {
-                best = SelectionTarget(id: unit.id, kind: .unit, team: unit.team, displayName: definition.name, position: unit.position)
-                bestDistance = distance
-            }
-        }
-
-        for building in buildings {
-            if !includeEnemies, building.team != .player {
+            guard distance < radius * radius else {
                 continue
             }
-            guard building.team == .player || playerVisibility.isVisible(at: building.position) else {
+            candidates.append((
+                SelectionTarget(
+                    id: unit.id,
+                    kind: .unit,
+                    team: unit.team,
+                    displayName: definition.name,
+                    position: unit.position
+                ),
+                distance,
+                index
+            ))
+        }
+
+        for (index, building) in buildings.enumerated() {
+            guard includeEnemies || building.team == .player,
+                  building.team == .player || playerVisibility?.isVisible(at: building.position) != false else {
                 continue
             }
             let definition = GameDefinitions.building(building.type)
             let radius = max(definition.size / 2 + 4, effectiveMinimumHitRadius)
             let distance = building.position.distanceSquared(to: point)
-            if distance < radius * radius, distance < bestDistance {
-                best = SelectionTarget(id: building.id, kind: .building, team: building.team, displayName: definition.name, position: building.position)
-                bestDistance = distance
+            guard distance < radius * radius else {
+                continue
             }
+            candidates.append((
+                SelectionTarget(
+                    id: building.id,
+                    kind: .building,
+                    team: building.team,
+                    displayName: definition.name,
+                    position: building.position
+                ),
+                distance,
+                units.count + index
+            ))
         }
 
-        return best
+        return candidates.sorted { lhs, rhs in
+            if lhs.distance != rhs.distance {
+                return lhs.distance < rhs.distance
+            }
+            return lhs.stableOrder < rhs.stableOrder
+        }.map { $0.target }
     }
 
     func selectionSummary() -> String {

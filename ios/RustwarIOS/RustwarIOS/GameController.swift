@@ -18,6 +18,9 @@ final class GameController {
     private static let currentSaveVersion = 1
     private static let doubleTapSameTypeInterval: TimeInterval = 0.32
     private static let doubleTapSameTypeMaximumDistance: CGFloat = 44
+    private static let repeatTapCycleMinimumInterval: TimeInterval = 0.38
+    private static let repeatTapCycleMaximumInterval: TimeInterval = 1.4
+    private static let repeatTapCycleMaximumDistance: CGFloat = 44
     private static let nearbySameTypeSelectionRadius = 760.0
     private static let minimumBattlefieldTouchTargetDiameter = 44.0
 
@@ -36,6 +39,7 @@ final class GameController {
             guard selectionMutation != oldValue else {
                 return
             }
+            clearLastBattlefieldTap()
             commandStatus = selectionMutation == .add ? "Add selection mode" : "Replace selection mode"
             reportSelectionFeedback()
             renderRevision += 1
@@ -79,6 +83,8 @@ final class GameController {
     @ObservationIgnored private var lastBattlefieldTapUnitID: String?
     @ObservationIgnored private var lastBattlefieldTapScreenPoint: CGPoint?
     @ObservationIgnored private var lastBattlefieldTapTime: TimeInterval?
+    @ObservationIgnored private var lastBattlefieldTapCandidateIDs: [String] = []
+    @ObservationIgnored private var lastBattlefieldCycleEntityID: String?
     @ObservationIgnored private var keyboardCameraDirections: Set<KeyboardCameraDirection> = []
 
     init(
@@ -1013,15 +1019,28 @@ final class GameController {
             return
         } else {
             let previousSelection = engine.state.selectedEntityIDs
-            let target = engine.state.selectionTargetVisibleToPlayer(
+            let candidates = engine.state.selectionTargetsVisibleToPlayer(
                 at: point,
                 includeEnemies: true,
                 minimumHitRadius: minimumHitRadius
             )
+            let target = candidates.first
             if handleDirectTapCommand(at: point, target: target) {
                 return
             }
-            if handleNearbySameTypeSelectionIfDoubleTap(target: target, screenPoint: screenPoint) {
+            if handleNearbySameTypeSelectionIfDoubleTap(
+                target: target,
+                candidates: candidates,
+                screenPoint: screenPoint
+            ) {
+                renderRevision += 1
+                return
+            }
+            if handleRepeatedTapSelectionIfNeeded(
+                target: target,
+                candidates: candidates,
+                screenPoint: screenPoint
+            ) {
                 renderRevision += 1
                 return
             }
@@ -1032,7 +1051,7 @@ final class GameController {
                 minimumHitRadius: minimumHitRadius
             )
             commandStatus = nil
-            recordBattlefieldTap(target: target, screenPoint: screenPoint)
+            recordBattlefieldTap(target: target, candidates: candidates, screenPoint: screenPoint)
             reportSelectionChange(from: previousSelection)
         }
         renderRevision += 1
@@ -1565,6 +1584,7 @@ final class GameController {
     }
 
     private func clearPendingTargetCommands() {
+        clearLastBattlefieldTap()
         isAwaitingMoveTarget = false
         isAwaitingAttackTarget = false
         isAwaitingAttackMoveTarget = false
@@ -1580,7 +1600,11 @@ final class GameController {
         isAwaitingAreaSelection = false
     }
 
-    private func handleNearbySameTypeSelectionIfDoubleTap(target: SelectionTarget?, screenPoint: CGPoint) -> Bool {
+    private func handleNearbySameTypeSelectionIfDoubleTap(
+        target: SelectionTarget?,
+        candidates: [SelectionTarget],
+        screenPoint: CGPoint
+    ) -> Bool {
         guard let target,
               target.kind == .unit,
               target.team == .player,
@@ -1590,10 +1614,6 @@ final class GameController {
         }
 
         let now = ProcessInfo.processInfo.systemUptime
-        defer {
-            recordBattlefieldTap(target: target, screenPoint: screenPoint, time: now)
-        }
-
         guard lastBattlefieldTapUnitID == target.id,
               let lastBattlefieldTapScreenPoint,
               let lastBattlefieldTapTime,
@@ -1617,10 +1637,73 @@ final class GameController {
             commandStatus = "\(selectedIDs.count) nearby \(sourceName) selected"
         }
         reportSelectionFeedback(hasSelection: !selectedIDs.isEmpty)
+        recordBattlefieldTap(
+            target: target,
+            candidates: candidates,
+            selectedEntityID: target.id,
+            screenPoint: screenPoint,
+            time: now
+        )
         return true
     }
 
-    private func recordBattlefieldTap(target: SelectionTarget?, screenPoint: CGPoint, time: TimeInterval = ProcessInfo.processInfo.systemUptime) {
+    private func handleRepeatedTapSelectionIfNeeded(
+        target: SelectionTarget?,
+        candidates: [SelectionTarget],
+        screenPoint: CGPoint
+    ) -> Bool {
+        guard let target, target.kind == .unit, target.team == .player else {
+            return false
+        }
+
+        let playerUnitCandidates = candidates.filter { candidate in
+            candidate.kind == .unit &&
+                candidate.team == .player &&
+                engine.state.units.contains { $0.id == candidate.id && $0.hitPoints > 0 }
+        }
+        let candidateIDs = playerUnitCandidates.map(\.id)
+        let now = ProcessInfo.processInfo.systemUptime
+        guard candidateIDs.count > 1,
+              candidateIDs == lastBattlefieldTapCandidateIDs,
+              let lastBattlefieldTapScreenPoint,
+              let lastBattlefieldTapTime,
+              let lastBattlefieldCycleEntityID,
+              now - lastBattlefieldTapTime >= Self.repeatTapCycleMinimumInterval,
+              now - lastBattlefieldTapTime <= Self.repeatTapCycleMaximumInterval,
+              hypot(screenPoint.x - lastBattlefieldTapScreenPoint.x, screenPoint.y - lastBattlefieldTapScreenPoint.y) <= Self.repeatTapCycleMaximumDistance,
+              let previousIndex = candidateIDs.firstIndex(of: lastBattlefieldCycleEntityID) else {
+            return false
+        }
+
+        let nextIndex = candidateIDs.index(after: previousIndex) == candidateIDs.end
+            ? candidateIDs.startIndex
+            : candidateIDs.index(after: previousIndex)
+        let nextTarget = playerUnitCandidates[nextIndex]
+        let previousSelection = engine.state.selectedEntityIDs
+        guard engine.select(entityID: nextTarget.id, mutation: selectionMutation) != nil else {
+            clearLastBattlefieldTap()
+            return false
+        }
+
+        commandStatus = "\(nextTarget.displayName) \(nextIndex + 1)/\(candidateIDs.count)"
+        recordBattlefieldTap(
+            target: target,
+            candidates: candidates,
+            selectedEntityID: nextTarget.id,
+            screenPoint: screenPoint,
+            time: now
+        )
+        reportSelectionChange(from: previousSelection)
+        return true
+    }
+
+    private func recordBattlefieldTap(
+        target: SelectionTarget?,
+        candidates: [SelectionTarget],
+        selectedEntityID: String? = nil,
+        screenPoint: CGPoint,
+        time: TimeInterval = ProcessInfo.processInfo.systemUptime
+    ) {
         guard let target,
               target.kind == .unit,
               target.team == .player,
@@ -1632,12 +1715,18 @@ final class GameController {
         lastBattlefieldTapUnitID = target.id
         lastBattlefieldTapScreenPoint = screenPoint
         lastBattlefieldTapTime = time
+        lastBattlefieldTapCandidateIDs = candidates.filter { candidate in
+            candidate.kind == .unit && candidate.team == .player
+        }.map(\.id)
+        lastBattlefieldCycleEntityID = selectedEntityID ?? target.id
     }
 
     private func clearLastBattlefieldTap() {
         lastBattlefieldTapUnitID = nil
         lastBattlefieldTapScreenPoint = nil
         lastBattlefieldTapTime = nil
+        lastBattlefieldTapCandidateIDs = []
+        lastBattlefieldCycleEntityID = nil
     }
 
     private func reportSelectionFeedback() {

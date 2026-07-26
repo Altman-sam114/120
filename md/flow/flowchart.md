@@ -554,6 +554,20 @@ flowchart TD
   S --> R["Existing WorldRect Replace/Add selection"]
 ```
 
+## v2.31 Dense unit tap cycling
+
+```mermaid
+flowchart LR
+  P["Battlefield tap + 44pt world radius"] --> C["Visible ranked hit candidates"]
+  C --> D{"Player-unit candidates unchanged?"}
+  D -->|"<= 0.32s"| S["Nearby same-type selection"]
+  D -->|"0.38...1.4s + same 44pt region"| N["Next stable candidate ID"]
+  N --> I["GameEngine.select(entityID:)"]
+  D -->|"Changed / expired"| F["Nearest target selection"]
+  E["Enemy target / empty ground"] --> A["Attack / Attack Move unchanged"]
+  M["Command / area / reset / load"] --> X["Clear transient cycle state"]
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid

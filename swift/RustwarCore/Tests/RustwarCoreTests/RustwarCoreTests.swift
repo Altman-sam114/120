@@ -1631,6 +1631,122 @@ import Testing
     #expect(expandedTarget.id == tank.id)
 }
 
+@Test func selectionTargetsReturnEveryHitByDistanceAndStableEntityOrder() throws {
+    let scoutDefinition = GameDefinitions.unit(.scout)
+    let commandDefinition = GameDefinitions.building(.command)
+    let query = WorldPoint(600, 600)
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "cycle-unit-first",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(620, 600),
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        ),
+        UnitSnapshot(
+            id: "cycle-unit-nearest",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(610, 600),
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        ),
+        UnitSnapshot(
+            id: "cycle-unit-second",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(620, 600),
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "cycle-building-tie",
+            type: .command,
+            team: .player,
+            position: WorldPoint(620, 600),
+            hitPoints: commandDefinition.hitPoints,
+            maxHitPoints: commandDefinition.hitPoints,
+            rally: WorldPoint(620, 600)
+        )
+    ]
+
+    let targets = state.selectionTargets(
+        at: query,
+        includeEnemies: true,
+        minimumHitRadius: 44
+    )
+
+    #expect(targets.map(\.id) == [
+        "cycle-unit-nearest",
+        "cycle-unit-first",
+        "cycle-unit-second",
+        "cycle-building-tie"
+    ])
+    #expect(state.selectionTarget(at: query, minimumHitRadius: 44)?.id == targets.first?.id)
+}
+
+@Test func visibleSelectionTargetsKeepPlayersAndRejectUnseenEnemies() {
+    let scoutDefinition = GameDefinitions.unit(.scout)
+    let commandDefinition = GameDefinitions.building(.command)
+    let query = WorldPoint(1_200, 600)
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "cycle-hidden-enemy",
+            type: .scout,
+            team: .enemy,
+            position: WorldPoint(1_210, 600),
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "cycle-visible-player-building",
+            type: .command,
+            team: .player,
+            position: WorldPoint(1_230, 600),
+            hitPoints: commandDefinition.hitPoints,
+            maxHitPoints: commandDefinition.hitPoints,
+            buildProgress: 0.5,
+            rally: WorldPoint(1_230, 600)
+        )
+    ]
+
+    #expect(state.selectionTargets(at: query, minimumHitRadius: 44).map(\.id) == [
+        "cycle-hidden-enemy",
+        "cycle-visible-player-building"
+    ])
+    #expect(state.selectionTargetsVisibleToPlayer(
+        at: query,
+        includeEnemies: true,
+        minimumHitRadius: 44
+    ).map(\.id) == ["cycle-visible-player-building"])
+}
+
+@Test func engineSelectEntityIDAppliesReplaceAddAndMissingSemantics() throws {
+    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    let playerUnit = try #require(engine.state.units.first { $0.team == .player })
+    let playerBuilding = try #require(engine.state.buildings.first { $0.team == .player })
+
+    let replacedSelection = engine.select(entityID: playerUnit.id)
+    #expect(replacedSelection?.id == playerUnit.id)
+    #expect(engine.state.selectedEntityIDs == [playerUnit.id])
+    let addedSelection = engine.select(entityID: playerBuilding.id, mutation: .add)
+    #expect(addedSelection?.id == playerBuilding.id)
+    #expect(engine.state.selectedEntityIDs == [playerUnit.id, playerBuilding.id])
+    #expect(engine.state.selectedEntityID == playerUnit.id)
+
+    let missingSelection = engine.select(entityID: "missing-cycle-entity")
+    #expect(missingSelection == nil)
+    #expect(engine.state.selectedEntityIDs.isEmpty)
+    #expect(engine.state.selectedEntityID == nil)
+}
+
 @Test func minimumVisibleSelectionHitRadiusPreservesFogAndUpdatesEngineSelection() throws {
     let scoutDefinition = GameDefinitions.unit(.scout)
     let tankDefinition = GameDefinitions.unit(.tank)

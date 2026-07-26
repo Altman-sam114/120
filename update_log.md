@@ -5056,3 +5056,23 @@
 遗留事项：
 
 - 固定 Simulator workflow 没有合成多指 XCUITest；阈值仍需未来人工真机或 UI 自动化验证。
+
+### v2.31 / iOS dense unit tap cycling
+
+日期：2026-07-26
+
+核心变更：
+
+- Core 单点命中新增全部候选 API，按距离和 units-first 原始实体顺序稳定排序；原最近目标 API 复用候选第一项，默认半径与真实视野行为不变。
+- `GameEngine` 新增按实体 ID 精确选择，供扩大到 44pt 的重叠命中区域绕过再次坐标命中。
+- iOS 对同一候选集合和 44pt 屏幕区域内 `0.38...1.4s` 的重复点按循环己方单位；`<=0.32s` 双击附近同类优先，命令、区域选择、地图重置、读档、候选变化或超时清除循环状态。
+- Core tests 新增稳定候选顺序、雾内敌人过滤和按 ID Replace/Add/invalid 语义，suite 预期至少 319 tests。
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括格式检查、Swift tests、Xcode、Simulator、Preview 或截图。
+- 等待实现提交对应的 GitHub Actions 精确 SHA artifact 验收。
+
+遗留事项：
+
+- 当前 CI 没有 XCUITest，静态截图和 Core tests 不能证明真实重复点按节奏、手指遮挡或所有密集阵型的真机手感。
