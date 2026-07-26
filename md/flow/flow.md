@@ -113,7 +113,7 @@ v2.33 只修改 `BattlefieldScene.drawTerrain` 的水面表现：`water` 与 `de
 
 v2.34 修正基础 compound fill 在 SpriteKit 像素栅格上的 tile hairline：每个现有材质/色阶 `SKShapeNode` 继续使用相同 path、fill 和禁用抗锯齿，但 stroke 从零宽改为与 fill 同色的 1pt 覆盖描边，配合既有 0.22pt tile overlap 封闭子路径边缘。节点数量、路径生成频率、不同材质边界、海岸/深度/熔岩 detail path、fog 与 Core 均不变。
 
-v2.35 把基础 fill 从 `TerrainKind × 3 variation buckets` 收敛为每种 `TerrainKind` 一个 compound path，并删除逐 tile `terrainVariationBucket`；`grass` 与 `grass2` 仍是独立 Core 类型，但 `terrainColor` 和 `landSurfaceKind` 将它们映射到同一表现 family。`appendLandSurfaceDetails` 逐行扫描连续 grass-family/dirt/sand/rock run，以稳定 hash 门控宽软纹和细高光三次曲线，并按 family 聚合为固定 path node。基础节点最多从 24 降至 8，新增细节后仍只在地形重建执行；水、熔岩、边界、fog、通行和存档不变。
+v2.35 把基础 fill 从 `TerrainKind × 3 variation buckets` 收敛为每种 `TerrainKind` 一个 compound path，并删除逐 tile `terrainVariationBucket`；`grass` 与 `grass2` 仍是独立 Core 类型，但 `terrainColor` 和 `landSurfaceKind` 将它们映射到同一表现 family。`appendLandSurfaceDetails` 逐行扫描连续 grass-family/dirt/sand/rock run，以稳定 hash 门控宽软纹和细高光三次曲线，并按 family 聚合为固定 path node。基础节点最多从 20 个非空节点降至 8 个，新增细节后仍只在地形重建执行；水面细节、熔岩细节/边界、fog、通行和存档不变，熔岩基底与其它地形一起取消逐 tile 色差。
 
 ```text
 RustwarCore MapPreset / GameState / GameEngine

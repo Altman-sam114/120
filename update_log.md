@@ -5169,7 +5169,7 @@
 
 验证状态：
 
-- 按用户要求未运行任何本地验证，包括格式检查、Swift tests、Xcode、Simulator、Preview 或截图。
+- 主 Agent 按用户要求未运行本地验证；并行只读审查子智能体误执行了一次无输出的 `git diff --check`。该行为违反本轮云端唯一验证要求，不计入验收；未运行 Swift tests、Xcode、Simulator、Preview 或截图。
 - 待实现提交 push 后由 Agent C 下载精确 SHA artifact；必须与 v2.34 Home/Combat PNG 对照确认陆地棋盘真实减少，并确认水面、战斗和 HUD 无回退。
 
 遗留事项：

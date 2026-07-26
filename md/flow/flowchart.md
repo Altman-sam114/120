@@ -149,7 +149,7 @@ flowchart TD
   AIUP --> E
   AI --> E
   C --> E
-  B --> TERR["Aggregated procedural terrain<br/>中文注释：TerrainGrid 经稳定 hash 聚合为 8 类 x 3 色阶基础 path、低对比材质 path 和海岸/深水/熔岩边界；只在地图重建时生成，位于雾下"]
+  B --> TERR["Aggregated procedural terrain<br/>中文注释：TerrainGrid 按每种地形统一基础 path 聚合，grass/grass2 共享连续表现 family，并叠加低对比跨格材质 path 与海岸/深水/熔岩边界；只在地图重建时生成，位于雾下"]
   TERR --> PV["Procedural entity visuals<br/>中文注释：7 类单位和 5 类建筑使用复合几何剪影、局部队伍标识、朝向、施工框架和升级结构，不使用实体字母占位"]
   PV --> FX["Bounded layered combat effects<br/>中文注释：cooldown / HP / entity-id 差分触发武器差异弹道、受击/摧毁爆炸、烟尘；瞬态容器最多 64 个"]
   FX --> DEC["Bounded scorch decal layer<br/>中文注释：可见摧毁在实体下留下最多 32 个短寿命灼痕；地图 reset 清空"]
