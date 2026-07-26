@@ -625,6 +625,18 @@ flowchart LR
   V --> C["Coast / fog / entities / combat remain above"]
 ```
 
+## v2.36 Organic presentation boundaries
+
+```mermaid
+flowchart LR
+  E["Adjacent TerrainGrid edge"] --> F["Resolve land / coast / depth / lava family"]
+  F --> H["Stable hash bends two Bezier controls"]
+  H --> W["Wide material or bank underlay hides square seam"]
+  W --> A["Thin low-contrast organic accent"]
+  A --> P["Fixed compound path nodes under gameplay layers"]
+  E --> C["Core tile, pathing, hit tests and saves unchanged"]
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid

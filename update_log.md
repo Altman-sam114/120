@@ -5177,3 +5177,23 @@
 遗留事项：
 
 - dirt/sand/rock 与海岸的逻辑边界仍基于直角 Core tile；有机边缘属于后续只改表现层的独立轮次。固定 Coast PNG 不能证明 Islands/Lava 或全部 zoom/真机观感。
+
+### v2.36 / iOS organic terrain boundaries
+
+日期：2026-07-26
+
+核心变更：
+
+- `BattlefieldScene.appendOrganicBoundary` 保留每条 tile edge 的原端点，以稳定 hash 为两个三次曲线控制点生成最多 3.4 world pt 的法向偏移；相邻 segment 在网格顶点相接，但中段不再是水平/垂直直线。
+- grass-family/dirt/sand/rock 之间按固定材质优先级选择覆盖 family，将全部边界聚合到最多 4 个 compound path；10.5pt 同材质底带先遮住原接缝，1.15pt 低对比 accent 再建立有机轮廓。
+- water/land、water/deep 和 lava/non-lava 复用同一曲线生成器，并以 8.5-9.5pt 底带覆盖原直线接缝，再保留泡沫、深度线和热边细节。
+- 不改变 `TerrainGrid`、Core 地形类型、通行、建造、战斗、AI、命中、雾、存档或 Tactical Map；不增加随机状态、动画、texture、shader、逐 tile node 或逐 edge node。
+
+验证状态：
+
+- 按用户要求未运行本地测试、格式检查、Swift/Xcode build、Simulator、Preview 或截图。
+- 待实现提交 push 后由 Agent C 下载精确 SHA artifact；必须与 v2.35 Home/Combat PNG 对照，确认直角 dirt/grass 与海岸接缝真实软化，绿色棋盘和水面 hairline 不回退，HUD、模型和战斗层级保持。
+
+遗留事项：
+
+- 固定 Coast 双截图不能覆盖 Islands/Lava、全部 zoom 或真机 scale；宽底带在单 tile 狭窄地形上的观感仍需后续扩展云端视觉矩阵。

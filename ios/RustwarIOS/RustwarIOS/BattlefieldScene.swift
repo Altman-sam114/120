@@ -148,6 +148,7 @@ final class BattlefieldScene: SKScene {
         let landSurfaceKinds: [TerrainKind] = [.grass, .dirt, .sand, .rock]
         let landSoftPaths = Dictionary(uniqueKeysWithValues: landSurfaceKinds.map { ($0, CGMutablePath()) })
         let landFinePaths = Dictionary(uniqueKeysWithValues: landSurfaceKinds.map { ($0, CGMutablePath()) })
+        let landBoundaryPaths = Dictionary(uniqueKeysWithValues: landSurfaceKinds.map { ($0, CGMutablePath()) })
 
         let grassDetailPath = CGMutablePath()
         let dirtDetailPath = CGMutablePath()
@@ -215,6 +216,10 @@ final class BattlefieldScene: SKScene {
                         second: terrain.terrain(column: column + 1, row: row),
                         start: CGPoint(x: rect.maxX, y: rect.minY),
                         end: CGPoint(x: rect.maxX, y: rect.maxY),
+                        column: column,
+                        row: row,
+                        salt: 149,
+                        landBoundaryPaths: landBoundaryPaths,
                         coastPath: coastPath,
                         depthPath: depthPath,
                         lavaBankPath: lavaBankPath
@@ -226,6 +231,10 @@ final class BattlefieldScene: SKScene {
                         second: terrain.terrain(column: column, row: row + 1),
                         start: CGPoint(x: rect.minX, y: rect.minY),
                         end: CGPoint(x: rect.maxX, y: rect.minY),
+                        column: column,
+                        row: row,
+                        salt: 151,
+                        landBoundaryPaths: landBoundaryPaths,
                         coastPath: coastPath,
                         depthPath: depthPath,
                         lavaBankPath: lavaBankPath
@@ -259,6 +268,14 @@ final class BattlefieldScene: SKScene {
         }
 
         for kind in landSurfaceKinds {
+            guard let path = landBoundaryPaths[kind] else {
+                continue
+            }
+            addTerrainStroke(path: path, color: terrainColor(for: kind), lineWidth: 10.5)
+            addTerrainStroke(path: path, color: landBoundaryAccentColor(for: kind), lineWidth: 1.15)
+        }
+
+        for kind in landSurfaceKinds {
             guard let softPath = landSoftPaths[kind],
                   let finePath = landFinePaths[kind] else {
                 continue
@@ -276,10 +293,11 @@ final class BattlefieldScene: SKScene {
         addTerrainStroke(path: waterWavePath, color: SKColor(red: 0.69, green: 0.90, blue: 0.98, alpha: 0.30), lineWidth: 1.05)
         addTerrainStroke(path: lavaDetailPath, color: SKColor(red: 1, green: 0.56, blue: 0.16, alpha: 0.48), lineWidth: 1.4)
 
-        addTerrainStroke(path: coastPath, color: SKColor(red: 0.02, green: 0.12, blue: 0.16, alpha: 0.62), lineWidth: 5)
+        addTerrainStroke(path: coastPath, color: SKColor(red: 0.02, green: 0.12, blue: 0.16, alpha: 0.62), lineWidth: 8.5)
         addTerrainStroke(path: coastPath, color: SKColor(red: 0.72, green: 0.91, blue: 0.92, alpha: 0.46), lineWidth: 1.35)
+        addTerrainStroke(path: depthPath, color: terrainColor(for: .deep), lineWidth: 8.5)
         addTerrainStroke(path: depthPath, color: SKColor(red: 0.27, green: 0.62, blue: 0.84, alpha: 0.34), lineWidth: 1.4)
-        addTerrainStroke(path: lavaBankPath, color: SKColor(red: 0.09, green: 0.035, blue: 0.025, alpha: 0.78), lineWidth: 5.5)
+        addTerrainStroke(path: lavaBankPath, color: SKColor(red: 0.09, green: 0.035, blue: 0.025, alpha: 0.78), lineWidth: 9.5)
         addTerrainStroke(path: lavaBankPath, color: SKColor(red: 1, green: 0.42, blue: 0.08, alpha: 0.58), lineWidth: 1.5)
     }
 
@@ -418,6 +436,10 @@ final class BattlefieldScene: SKScene {
         second: TerrainKind,
         start: CGPoint,
         end: CGPoint,
+        column: Int,
+        row: Int,
+        salt: Int,
+        landBoundaryPaths: [TerrainKind: CGMutablePath],
         coastPath: CGMutablePath,
         depthPath: CGMutablePath,
         lavaBankPath: CGMutablePath
@@ -426,20 +448,85 @@ final class BattlefieldScene: SKScene {
             return
         }
         if (first == .lava) != (second == .lava) {
-            lavaBankPath.move(to: start)
-            lavaBankPath.addLine(to: end)
+            appendOrganicBoundary(
+                to: lavaBankPath,
+                start: start,
+                end: end,
+                column: column,
+                row: row,
+                salt: salt + 31
+            )
             return
         }
 
         let firstIsWater = isWaterTerrain(first)
         let secondIsWater = isWaterTerrain(second)
         if firstIsWater != secondIsWater {
-            coastPath.move(to: start)
-            coastPath.addLine(to: end)
+            appendOrganicBoundary(
+                to: coastPath,
+                start: start,
+                end: end,
+                column: column,
+                row: row,
+                salt: salt
+            )
         } else if firstIsWater, secondIsWater {
-            depthPath.move(to: start)
-            depthPath.addLine(to: end)
+            appendOrganicBoundary(
+                to: depthPath,
+                start: start,
+                end: end,
+                column: column,
+                row: row,
+                salt: salt + 17
+            )
+        } else if let firstKind = landSurfaceKind(for: first),
+                  let secondKind = landSurfaceKind(for: second),
+                  firstKind != secondKind {
+            let dominantKind = dominantLandBoundaryKind(firstKind, secondKind)
+            guard let path = landBoundaryPaths[dominantKind] else {
+                return
+            }
+            appendOrganicBoundary(
+                to: path,
+                start: start,
+                end: end,
+                column: column,
+                row: row,
+                salt: salt + 47
+            )
         }
+    }
+
+    private func appendOrganicBoundary(
+        to path: CGMutablePath,
+        start: CGPoint,
+        end: CGPoint,
+        column: Int,
+        row: Int,
+        salt: Int
+    ) {
+        let dx = end.x - start.x
+        let dy = end.y - start.y
+        let length = (dx * dx + dy * dy).squareRoot()
+        guard length > 0 else {
+            return
+        }
+
+        let normal = CGPoint(x: -dy / length, y: dx / length)
+        let firstBend = (terrainUnitNoise(column: column, row: row, salt: salt) * 2 - 1) * 3.4
+        let secondBend = (terrainUnitNoise(column: column, row: row, salt: salt + 7) * 2 - 1) * 3.4
+        path.move(to: start)
+        path.addCurve(
+            to: end,
+            control1: CGPoint(
+                x: start.x + dx * 0.32 + normal.x * firstBend,
+                y: start.y + dy * 0.32 + normal.y * firstBend
+            ),
+            control2: CGPoint(
+                x: start.x + dx * 0.68 + normal.x * secondBend,
+                y: start.y + dy * 0.68 + normal.y * secondBend
+            )
+        )
     }
 
     private func isWaterTerrain(_ terrain: TerrainKind) -> Bool {
@@ -454,6 +541,25 @@ final class BattlefieldScene: SKScene {
             terrain
         case .water, .deep, .lava:
             nil
+        }
+    }
+
+    private func dominantLandBoundaryKind(_ first: TerrainKind, _ second: TerrainKind) -> TerrainKind {
+        landBoundaryPriority(first) >= landBoundaryPriority(second) ? first : second
+    }
+
+    private func landBoundaryPriority(_ terrain: TerrainKind) -> Int {
+        switch terrain {
+        case .grass, .grass2:
+            0
+        case .dirt:
+            1
+        case .sand:
+            2
+        case .rock:
+            3
+        case .water, .deep, .lava:
+            -1
         }
     }
 
@@ -3841,6 +3947,21 @@ final class BattlefieldScene: SKScene {
             blue: base.blue,
             alpha: 1
         )
+    }
+
+    private func landBoundaryAccentColor(for terrain: TerrainKind) -> SKColor {
+        switch terrain {
+        case .grass, .grass2:
+            SKColor(red: 0.52, green: 0.68, blue: 0.36, alpha: 0.18)
+        case .dirt:
+            SKColor(red: 0.27, green: 0.20, blue: 0.15, alpha: 0.26)
+        case .sand:
+            SKColor(red: 0.92, green: 0.80, blue: 0.60, alpha: 0.24)
+        case .rock:
+            SKColor(red: 0.18, green: 0.20, blue: 0.20, alpha: 0.30)
+        case .water, .deep, .lava:
+            .clear
+        }
     }
 
     private func landSurfaceColors(for terrain: TerrainKind) -> (soft: SKColor, fine: SKColor) {
