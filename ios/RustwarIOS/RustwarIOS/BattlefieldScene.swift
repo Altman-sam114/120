@@ -271,7 +271,7 @@ final class BattlefieldScene: SKScene {
             guard let path = landBoundaryPaths[kind] else {
                 continue
             }
-            addTerrainStroke(path: path, color: terrainColor(for: kind), lineWidth: 10.5)
+            addTerrainStroke(path: path, color: terrainColor(for: kind), lineWidth: 8.5)
             addTerrainStroke(path: path, color: landBoundaryAccentColor(for: kind), lineWidth: 1.15)
         }
 
@@ -293,11 +293,11 @@ final class BattlefieldScene: SKScene {
         addTerrainStroke(path: waterWavePath, color: SKColor(red: 0.69, green: 0.90, blue: 0.98, alpha: 0.30), lineWidth: 1.05)
         addTerrainStroke(path: lavaDetailPath, color: SKColor(red: 1, green: 0.56, blue: 0.16, alpha: 0.48), lineWidth: 1.4)
 
-        addTerrainStroke(path: coastPath, color: SKColor(red: 0.02, green: 0.12, blue: 0.16, alpha: 0.62), lineWidth: 8.5)
+        addTerrainStroke(path: coastPath, color: SKColor(red: 0.035, green: 0.15, blue: 0.18, alpha: 1), lineWidth: 6.5)
         addTerrainStroke(path: coastPath, color: SKColor(red: 0.72, green: 0.91, blue: 0.92, alpha: 0.46), lineWidth: 1.35)
-        addTerrainStroke(path: depthPath, color: terrainColor(for: .deep), lineWidth: 8.5)
+        addTerrainStroke(path: depthPath, color: terrainColor(for: .deep), lineWidth: 6.5)
         addTerrainStroke(path: depthPath, color: SKColor(red: 0.27, green: 0.62, blue: 0.84, alpha: 0.34), lineWidth: 1.4)
-        addTerrainStroke(path: lavaBankPath, color: SKColor(red: 0.09, green: 0.035, blue: 0.025, alpha: 0.78), lineWidth: 9.5)
+        addTerrainStroke(path: lavaBankPath, color: SKColor(red: 0.09, green: 0.035, blue: 0.025, alpha: 1), lineWidth: 7)
         addTerrainStroke(path: lavaBankPath, color: SKColor(red: 1, green: 0.42, blue: 0.08, alpha: 0.58), lineWidth: 1.5)
     }
 
@@ -513,8 +513,8 @@ final class BattlefieldScene: SKScene {
         }
 
         let normal = CGPoint(x: -dy / length, y: dx / length)
-        let firstBend = (terrainUnitNoise(column: column, row: row, salt: salt) * 2 - 1) * 3.4
-        let secondBend = (terrainUnitNoise(column: column, row: row, salt: salt + 7) * 2 - 1) * 3.4
+        let firstBend = (terrainUnitNoise(column: column, row: row, salt: salt) * 2 - 1) * 2.6
+        let secondBend = (terrainUnitNoise(column: column, row: row, salt: salt + 7) * 2 - 1) * 2.6
         path.move(to: start)
         path.addCurve(
             to: end,
@@ -3952,13 +3952,13 @@ final class BattlefieldScene: SKScene {
     private func landBoundaryAccentColor(for terrain: TerrainKind) -> SKColor {
         switch terrain {
         case .grass, .grass2:
-            SKColor(red: 0.52, green: 0.68, blue: 0.36, alpha: 0.18)
+            SKColor(red: 0.52, green: 0.68, blue: 0.36, alpha: 0.08)
         case .dirt:
-            SKColor(red: 0.27, green: 0.20, blue: 0.15, alpha: 0.26)
+            SKColor(red: 0.27, green: 0.20, blue: 0.15, alpha: 0.10)
         case .sand:
-            SKColor(red: 0.92, green: 0.80, blue: 0.60, alpha: 0.24)
+            SKColor(red: 0.92, green: 0.80, blue: 0.60, alpha: 0.10)
         case .rock:
-            SKColor(red: 0.18, green: 0.20, blue: 0.20, alpha: 0.30)
+            SKColor(red: 0.18, green: 0.20, blue: 0.20, alpha: 0.12)
         case .water, .deep, .lava:
             .clear
         }

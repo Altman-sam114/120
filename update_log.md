@@ -5184,9 +5184,9 @@
 
 核心变更：
 
-- `BattlefieldScene.appendOrganicBoundary` 保留每条 tile edge 的原端点，以稳定 hash 为两个三次曲线控制点生成最多 3.4 world pt 的法向偏移；相邻 segment 在网格顶点相接，但中段不再是水平/垂直直线。
-- grass-family/dirt/sand/rock 之间按固定材质优先级选择覆盖 family，将全部边界聚合到最多 4 个 compound path；10.5pt 同材质底带先遮住原接缝，1.15pt 低对比 accent 再建立有机轮廓。
-- water/land、water/deep 和 lava/non-lava 复用同一曲线生成器，并以 8.5-9.5pt 底带覆盖原直线接缝，再保留泡沫、深度线和热边细节。
+- `BattlefieldScene.appendOrganicBoundary` 保留每条 tile edge 的原端点，以稳定 hash 为两个三次曲线控制点生成最多 2.6 world pt 的法向偏移；相邻 segment 在网格顶点相接，但中段不再是水平/垂直直线。
+- grass-family/dirt/sand/rock 之间按固定材质优先级选择覆盖 family，将全部边界聚合到最多 4 个 compound path；8.5pt 同材质底带先遮住原接缝，1.15pt 极低对比 accent 避免重新强调网格。
+- water/land、water/deep 和 lava/non-lava 复用同一曲线生成器，并以 6.5-7pt 实色底带覆盖原直线接缝，再保留泡沫、深度线和热边细节；实色底带避免独立 segment 的 round cap 重叠为深色圆点。
 - 不改变 `TerrainGrid`、Core 地形类型、通行、建造、战斗、AI、命中、雾、存档或 Tactical Map；不增加随机状态、动画、texture、shader、逐 tile node 或逐 edge node。
 
 验证状态：
