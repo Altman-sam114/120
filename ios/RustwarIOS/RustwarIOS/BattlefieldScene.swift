@@ -2211,7 +2211,8 @@ final class BattlefieldScene: SKScene {
     ) {
         let definition = GameDefinitions.unit(unit.type)
         let isSelected = selectedIDs.contains(unit.id)
-        if controller?.cloudVisualScenario != .combat {
+        // Order lines only follow the current selection, matching Rusted Warfare's low-noise battlefield.
+        if isSelected, controller?.cloudVisualScenario != .combat {
             switch unit.order {
             case let .move(destination)?:
                 drawMoveOrder(from: unit.position, to: destination, isSelected: isSelected)
@@ -3720,18 +3721,22 @@ final class BattlefieldScene: SKScene {
     }
 
     private func drawHealthBar(current: Double, max: Double, width: Double, yOffset: Double, on node: SKNode) {
-        guard max > 0 else {
+        // Full-health entities stay clean; the bar only appears once damage lands.
+        guard max > 0, current < max else {
             return
         }
-        let height = 6.0
+        let height = 4.5
         let fraction = Swift.min(1, Swift.max(0, current / max))
         let background = SKShapeNode(rect: CGRect(x: -width / 2, y: yOffset, width: width, height: height), cornerRadius: 2)
-        background.fillColor = .black.withAlphaComponent(0.78)
-        background.strokeColor = SKColor.white.withAlphaComponent(0.34)
+        background.fillColor = .black.withAlphaComponent(0.75)
+        background.strokeColor = SKColor.black.withAlphaComponent(0.9)
         background.lineWidth = 1
         node.addChild(background)
 
-        let fill = SKShapeNode(rect: CGRect(x: -width / 2, y: yOffset, width: width * fraction, height: height), cornerRadius: 2)
+        let fill = SKShapeNode(
+            rect: CGRect(x: -width / 2 + 0.75, y: yOffset + 0.75, width: (width - 1.5) * fraction, height: height - 1.5),
+            cornerRadius: 1.4
+        )
         fill.fillColor = healthColor(fraction).withAlphaComponent(0.96)
         fill.strokeColor = fill.fillColor
         fill.lineWidth = 0

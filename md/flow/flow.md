@@ -121,6 +121,8 @@ v2.37 收窄战术 HUD chrome 以提高战场占比：`TacticalStatusBarView` �
 
 v2.38 给 `MultitouchIntentClassifier` 增加静置取框路径：`classify` 新增 `elapsed` 参数（非法值 clamp 为 0），在既有 pinch 判定和 pending 门控之后，先保留 v2.30 拖动扫框条件（min travel ≥ 5、max travel ≥ 10、质心 ≥ 8、alignment ≥ 0.55、间距稳定），再判定静置 frame：`elapsed ≥ staticFrameDwell(0.22s)`、较忙手指位移 < `staticFrameMaximumTravel(12pt)`、间距漂移 < `staticFrameMaximumSpacingChange(8pt)` 时返回 selection。`BattlefieldView` 在双指序列建立时记录 `multitouchStartTime`，onChanged 持续分类使静置达到 dwell 后出现两指之间的预览框；onEnded 在提交前重新分类一次，覆盖"静置后直接抬指"未经过 onChanged 判定窗口的情况。预览与提交仍复用既有四点包围矩形、`handleBattlefieldMultitouchAreaSelection`、第三指/取消拒绝和 tap/长按抑制；Core 区域选择、Replace/Add 和存档不变。
 
+v2.39 收紧战斗表现杂讯：`drawHealthBar` 在 `current >= max` 时直接返回，血条只在受损后出现，高度 6→4.5、白描边换成黑底 + 深色描边和 0.75pt 内缩 fill；`drawUnit` 的 order 绘制分支增加 `isSelected` 门控，命令线与落点标记只跟随当前选中单位，未选中单位不再绘制半透明 Move/Attack/Patrol/Guard/Build/Repair/Reclaim 线。建造/升级进度条、选中生产建筑的 rally 线、弹道、爆点、灼痕与雾层级不变；该变化只发生在 presentation 层，Core order 数据与命令派发保持。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

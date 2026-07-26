@@ -72,6 +72,7 @@
 - v2.36 起，不同陆地材质、海岸、深浅水和熔岩岸的表现边界由直线段改为稳定 hash 驱动的连续三次曲线；宽底带先遮住原始 tile 接缝，再叠加细边缘，让 dirt/sand/rock patch 与水岸不再呈现完整直角网格。该变化只发生在 SpriteKit 地形重建层，Core tile、通行、建造、命中、存档和战术小地图数据不变。
 - v2.37 起，参考 Rusted Warfare 移动版近满屏战场的 HUD 占比收窄原生 iOS 战术 chrome：顶部状态栏恒定单行且垂直 padding 收薄，compact bottom 也不再堆叠双行；command dock 收窄为 regular 24% / 240-280pt、compact trailing 24% / 204-224pt、bottom 高度 0.30 / 200-288pt（accessibility Dynamic Type 保留 0.42 / 216-320pt），战术小地图常规档缩为 160x106 / 132x88；dock header 与 selection summary 去掉独立卡片底色，只保留文本层级。全部 action、disabled 条件、快捷键、VoiceOver、44pt 触控目标和三档 role 断点不变。
 - v2.38 起，原生双指框选新增 Rusted Warfare 式静置取框：两指按住屏幕约 0.22 秒且几乎不动（较忙手指位移小于 12pt、间距漂移小于 8pt）即锁定框选，选择框直接框在两指之间，抬指后按既有 Replace / Add 规则选择框内己方单位（无单位时 fallback 相交己方建筑）。既有两指同向拖动扫框、捏合缩放判定、第三指/取消拒绝、pending 命令阻止框选和 tap/长按抑制全部保持。
+- v2.39 起，参考 Rusted Warfare 的低杂讯战场收紧战斗读法：满血单位和建筑不再常驻血条，血条只在受损后出现并改用更细的深底内缩样式；Move / Attack / Attack Move / Patrol / Guard / Build / Repair / Reclaim 命令线与落点标记只为当前选中的己方单位绘制，未选中单位不再泄露半透明命令线。选中单位命令线的高亮层级、建造/升级进度条、rally 线、弹道、爆点和 Core 语义不变。
 
 当前验证制度：
 
