@@ -5170,7 +5170,9 @@
 验证状态：
 
 - 主 Agent 按用户要求未运行本地验证；并行只读审查子智能体误执行了一次无输出的 `git diff --check`。该行为违反本轮云端唯一验证要求，不计入验收；未运行 Swift tests、Xcode、Simulator、Preview 或截图。
-- 待实现提交 push 后由 Agent C 下载精确 SHA artifact；必须与 v2.34 Home/Combat PNG 对照确认陆地棋盘真实减少，并确认水面、战斗和 HUD 无回退。
+- 实现与文档纠正后的提交 `ec6b2bf60fb7dae27947987b64059d879e32ba06` 对应 GitHub Actions run `30195046299` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-ec6b2bf-run30195046299-attempt1` 到 `/private/tmp/rustwar-c-review-30195046299/`，约 1.5 MB。Manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5、iOS 26.5 和 Swift 6.3.2 完全一致。
+- JUnit 为 8 checks、0 failures、1 个既定 browser skip；云端 `git diff --check`、Node、322 项 Core tests、Xcode list、arm64/x86_64 build、Home/Combat 双 launch、landscape normalization 和双像素探针全部成功。Home/Combat PNG SHA-256 分别为 `667dc3c716a1111c710a055f2aaf64c4c7ec0ab6dab4abc01446d88341e179d6` 和 `2b6f06e0aee0da1712b1808975b4901cf53ddb5270e717c6aeda5b2148f14121`。
+- Agent C 与 v2.34 PNG 并排复看通过：Home 的交替深浅绿色棋盘已收敛为连续草地基底，跨格纹理低于实体层级；Combat 下沿陆地同步改善，水面连续性、暗线修复、HUD、单位/建筑和战斗效果无回退。固定截图仍显示 dirt/sand/rock 与海岸的直角 tile 轮廓，因此只确认 v2.35 限定目标，不宣称地形视觉已最终完成。
 
 遗留事项：
 
