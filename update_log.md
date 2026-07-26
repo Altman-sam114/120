@@ -5144,8 +5144,10 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括格式检查、Swift tests、Xcode、Simulator、Preview 或截图。
-- 待实现提交 push 后由 Agent C 下载精确 SHA artifact；除构建/测试外，必须与 v2.33 双 PNG 人工对照确认 tile 暗网格真实减少，否则继续修复。
+- 实现提交 `03dbcba68f346c454724aa20b51014ef6f9a4f47` 的 GitHub Actions run `30194139073` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-03dbcba-run30194139073-attempt1` 到 `/private/tmp/rustwar-c-review-30194139073/`，约 1.4 MB。Manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5、iOS 26.5 和 Swift 6.3.2 完全一致。
+- JUnit 为 8/0/1；云端 `git diff --check`、Node、322 项 Core tests、Xcode list、arm64/x86_64 universal build、production/combat 双 launch、landscape normalization 和双像素探针全部成功，日志证明 `BattlefieldScene.swift` 进入双架构编译并包含 `BUILD SUCCEEDED`。
+- Home/Combat PNG SHA-256 分别变为 `4d4c3aabe01041441089667a4c4fd751a92bce4053ab3312a2694be99773461e` 和 `2fcc0429cce3f280a6129d01e82e378a8523775f3a95b6b42d8b99c96b3cdd49`。Agent C 与 v2.33 双图人工对照，确认贯穿 terrain tile 的近黑横纵 hairline 已消失；Combat 水面成为连续蓝面，跨格波纹、海岸/深度边界、单位、弹道、爆点、血条、选择和 HUD 层级无回退。
 
 遗留事项：
 
-- 实现以 SpriteKit 同色覆盖描边处理设备像素 hairline；不同 zoom、Islands/Lava 和真机 scale 的边缘效果仍需要未来扩展云端视觉矩阵。
+- 不同 zoom、Islands/Lava 和真机 scale 的边缘效果仍需要未来扩展云端视觉矩阵。陆地仍保留三档逐 tile 色块和直角边界，下一轮应继续做跨格低频材质与仅表现层的有机边缘，但不能恢复暗网格或改变 Core 通行。
