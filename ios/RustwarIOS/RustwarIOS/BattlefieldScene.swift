@@ -2651,6 +2651,20 @@ final class BattlefieldScene: SKScene {
                 CGPoint(x: -half, y: half * 0.72),
                 CGPoint(x: -half, y: -half * 0.72)
             ], fill: armorDarkColor, stroke: outlineColor, lineWidth: 2.4))
+            // Armor plate seams across the octagonal base.
+            let commandSeams = CGMutablePath()
+            commandSeams.move(to: CGPoint(x: -half * 0.72, y: -half))
+            commandSeams.addLine(to: CGPoint(x: -half * 0.46, y: -half * 0.62))
+            commandSeams.move(to: CGPoint(x: half * 0.72, y: -half))
+            commandSeams.addLine(to: CGPoint(x: half * 0.46, y: -half * 0.62))
+            commandSeams.move(to: CGPoint(x: half * 0.72, y: half))
+            commandSeams.addLine(to: CGPoint(x: half * 0.46, y: half * 0.62))
+            commandSeams.move(to: CGPoint(x: -half * 0.72, y: half))
+            commandSeams.addLine(to: CGPoint(x: -half * 0.46, y: half * 0.62))
+            let commandSeamNode = SKShapeNode(path: commandSeams)
+            commandSeamNode.strokeColor = outlineColor.withAlphaComponent(0.6)
+            commandSeamNode.lineWidth = 1.2
+            body.addChild(commandSeamNode)
             body.addChild(polygonNode([
                 CGPoint(x: -half * 0.46, y: -half * 0.62),
                 CGPoint(x: half * 0.46, y: -half * 0.62),
@@ -2659,7 +2673,35 @@ final class BattlefieldScene: SKScene {
                 CGPoint(x: -half * 0.46, y: half * 0.62),
                 CGPoint(x: -half * 0.66, y: 0)
             ], fill: armorMidColor, stroke: outlineColor))
+            // Vent grilles on the upper deck.
+            for ventY in [-half * 0.42, half * 0.42] {
+                let vent = CGMutablePath()
+                for step in 0..<3 {
+                    let x = -half * 0.3 + Double(step) * half * 0.14
+                    vent.move(to: CGPoint(x: x, y: ventY - half * 0.07))
+                    vent.addLine(to: CGPoint(x: x, y: ventY + half * 0.07))
+                }
+                let ventNode = SKShapeNode(path: vent)
+                ventNode.strokeColor = armorDarkColor.withAlphaComponent(0.9)
+                ventNode.lineWidth = 1.6
+                body.addChild(ventNode)
+            }
+            // Command core: team energy ring around a domed center.
+            body.addChild(circleNode(
+                radius: half * 0.38,
+                fill: .clear,
+                stroke: teamColor(building.team).withAlphaComponent(0.5),
+                lineWidth: 1.6
+            ))
             body.addChild(circleNode(radius: half * 0.3, fill: armorLightColor, stroke: teamColor(building.team), lineWidth: 2.5))
+            let dome = circleNode(
+                radius: half * 0.14,
+                fill: highlightColor.withAlphaComponent(0.9),
+                stroke: outlineColor,
+                lineWidth: 0.8
+            )
+            dome.position = CGPoint(x: -half * 0.05, y: half * 0.05)
+            body.addChild(dome)
             for x in [-half * 0.73, half * 0.73] {
                 for y in [-half * 0.73, half * 0.73] {
                     body.addChild(rectNode(
@@ -2668,6 +2710,14 @@ final class BattlefieldScene: SKScene {
                         fill: armorLightColor,
                         stroke: outlineColor
                     ))
+                    let bolt = circleNode(
+                        radius: half * 0.035,
+                        fill: armorDarkColor,
+                        stroke: outlineColor,
+                        lineWidth: 0.6
+                    )
+                    bolt.position = CGPoint(x: x, y: y)
+                    body.addChild(bolt)
                 }
             }
         case .extractor:
@@ -2707,6 +2757,45 @@ final class BattlefieldScene: SKScene {
                 fill: armorMidColor,
                 stroke: highlightColor
             ))
+            // Exit bay door with hazard chevrons at the vehicle ramp.
+            body.addChild(rectNode(
+                CGRect(x: half * 0.62, y: -half * 0.44, width: half * 0.34, height: half * 0.88),
+                cornerRadius: 1.5,
+                fill: armorDarkColor,
+                stroke: outlineColor,
+                lineWidth: 1.2
+            ))
+            let hazard = CGMutablePath()
+            for step in 0..<4 {
+                let y = -half * 0.38 + Double(step) * half * 0.24
+                hazard.move(to: CGPoint(x: half * 0.66, y: y))
+                hazard.addLine(to: CGPoint(x: half * 0.9, y: y + half * 0.12))
+            }
+            let hazardNode = SKShapeNode(path: hazard)
+            hazardNode.strokeColor = SKColor.systemYellow.withAlphaComponent(0.85)
+            hazardNode.lineWidth = 2
+            body.addChild(hazardNode)
+            // Roof vent grilles on the main hall.
+            for ventX in [-half * 0.18, half * 0.16] {
+                let vent = CGMutablePath()
+                for step in 0..<3 {
+                    let y = -half * 0.14 + Double(step) * half * 0.14
+                    vent.move(to: CGPoint(x: ventX - half * 0.1, y: y))
+                    vent.addLine(to: CGPoint(x: ventX + half * 0.1, y: y))
+                }
+                let ventNode = SKShapeNode(path: vent)
+                ventNode.strokeColor = armorDarkColor.withAlphaComponent(0.85)
+                ventNode.lineWidth = 1.4
+                body.addChild(ventNode)
+            }
+            // Side supply pipe along the rear wall.
+            body.addChild(rectNode(
+                CGRect(x: -half * 0.96, y: -half * 0.42, width: half * 0.14, height: half * 0.84),
+                cornerRadius: half * 0.07,
+                fill: armorLightColor,
+                stroke: outlineColor,
+                lineWidth: 1
+            ))
             for y in [-half * 0.7, half * 0.7] {
                 body.addChild(rectNode(
                     CGRect(x: -half * 0.82, y: y - half * 0.16, width: half * 0.58, height: half * 0.32),
@@ -2742,7 +2831,25 @@ final class BattlefieldScene: SKScene {
             }
         case .turret:
             body.addChild(circleNode(radius: half * 0.9, fill: armorDarkColor, stroke: outlineColor, lineWidth: 2.2))
+            // Rivet ring around the base plate.
+            for angle in stride(from: Double.pi / 8, to: Double.pi * 2, by: Double.pi / 4) {
+                let rivet = circleNode(
+                    radius: half * 0.045,
+                    fill: armorLightColor.withAlphaComponent(0.85),
+                    stroke: outlineColor,
+                    lineWidth: 0.6
+                )
+                rivet.position = CGPoint(x: cos(angle) * half * 0.8, y: sin(angle) * half * 0.8)
+                body.addChild(rivet)
+            }
             body.addChild(circleNode(radius: half * 0.62, fill: armorMidColor, stroke: teamColor(building.team), lineWidth: 2.4))
+            // Inner shade ring gives the mount depth under the cannon.
+            body.addChild(circleNode(
+                radius: half * 0.5,
+                fill: .clear,
+                stroke: outlineColor.withAlphaComponent(0.55),
+                lineWidth: 1.4
+            ))
             for angle in stride(from: 0.0, to: Double.pi * 2, by: Double.pi / 2) {
                 let anchor = rectNode(
                     CGRect(x: -half * 0.11, y: -half * 0.17, width: half * 0.22, height: half * 0.34),
@@ -2778,6 +2885,14 @@ final class BattlefieldScene: SKScene {
                 fill: armorDarkColor,
                 stroke: outlineColor
             ))
+            // Root sleeve where the barrel meets the housing.
+            barrelMount.addChild(rectNode(
+                CGRect(x: half * 0.12, y: -half * 0.15, width: half * 0.16, height: half * 0.3),
+                cornerRadius: 1,
+                fill: armorMidColor,
+                stroke: outlineColor,
+                lineWidth: 1
+            ))
             barrelMount.addChild(rectNode(
                 CGRect(x: half * 0.2, y: -half * 0.065, width: half * 0.82, height: half * 0.13),
                 cornerRadius: 1,
@@ -2790,6 +2905,13 @@ final class BattlefieldScene: SKScene {
                 fill: armorDarkColor,
                 stroke: highlightColor,
                 lineWidth: 1
+            ))
+            // Muzzle highlight edge.
+            barrelMount.addChild(lineNode(
+                from: CGPoint(x: half * 1.045, y: -half * 0.13),
+                to: CGPoint(x: half * 1.045, y: half * 0.13),
+                color: highlightColor.withAlphaComponent(0.95),
+                width: 1.4
             ))
             cannon.addChild(barrelMount)
             body.addChild(cannon)

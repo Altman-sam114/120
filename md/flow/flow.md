@@ -123,6 +123,8 @@ v2.38 给 `MultitouchIntentClassifier` 增加静置取框路径：`classify` 新
 
 v2.39 收紧战斗表现杂讯：`drawHealthBar` 在 `current >= max` 时直接返回，血条只在受损后出现，高度 6→4.5、白描边换成黑底 + 深色描边和 0.75pt 内缩 fill；`drawUnit` 的 order 绘制分支增加 `isSelected` 门控，命令线与落点标记只跟随当前选中单位，未选中单位不再绘制半透明 Move/Attack/Patrol/Guard/Build/Repair/Reclaim 线。建造/升级进度条、选中生产建筑的 rally 线、弹道、爆点、灼痕与雾层级不变；该变化只发生在 presentation 层，Core order 数据与命令派发保持。
 
+v2.40 精细化 `buildingBody` 的三类核心建筑：Command Center 在八角基座与上层甲板之间加四条拼缝线、两组三线通风格栅、外圈 0.38 半径队色能量环、偏移指挥穹顶高光和四角基脚螺栓；Land Factory 在出车侧加深色舱门 + 四道黄色警示斜纹、屋顶两组三线格栅、后墙纵向供给管；Turret 基座加八颗铆钉环与 0.5 半径内阴影环，炮管根部加套筒、口部加高光短线。全部细节为确定性静态 path 且每建筑新增节点 ≤ 12；Extractor / Radar、turret heading/recoil mount 结构、construction frame、damage smoke、选择角标与 Core 不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
