@@ -50,7 +50,7 @@ struct TacticalMetricView: View {
                 .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.horizontal, TacticalHUDTheme.compactPadding)
-        .padding(.vertical, TacticalHUDTheme.denseSpacing)
+        .padding(.vertical, TacticalHUDTheme.statusMetricVerticalPadding)
         .background(
             TacticalHUDTheme.metricBackground,
             in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)

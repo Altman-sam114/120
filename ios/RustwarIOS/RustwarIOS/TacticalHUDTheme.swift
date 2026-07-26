@@ -8,7 +8,8 @@ enum TacticalHUDTheme {
     static let contentPadding: CGFloat = 10
     static let compactPadding: CGFloat = 8
     static let statusHorizontalPadding: CGFloat = 10
-    static let statusVerticalPadding: CGFloat = 6
+    static let statusVerticalPadding: CGFloat = 2
+    static let statusMetricVerticalPadding: CGFloat = 2
     static let cornerRadius: CGFloat = 6
     static let controlMinimumHeight: CGFloat = 44
 

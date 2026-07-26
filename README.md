@@ -70,6 +70,7 @@
 - v2.34 起，原生 SpriteKit 基础地形 compound path 使用与填充同色的 1pt 覆盖描边，替代会在像素栅格上显出逐 tile 暗线的零宽 hairline；水面和同材质陆地因此保持连续，同时保留不同地形色阶、海岸泡沫、深浅水分界和固定节点规模。
 - v2.35 起，原生 SpriteKit 不再给非水地形套用逐 tile 三档明暗；每种地形使用统一基底，Coast 交替出现的 `grass` / `grass2` 在表现层共享草地色和连续纹理 family。草地、泥土、沙地和岩地按连续材质 run 聚合跨格软纹与细高光，基础节点从最多 20 个非空节点降到最多 8 个，不改变 Core 类型、通行或地图数据。
 - v2.36 起，不同陆地材质、海岸、深浅水和熔岩岸的表现边界由直线段改为稳定 hash 驱动的连续三次曲线；宽底带先遮住原始 tile 接缝，再叠加细边缘，让 dirt/sand/rock patch 与水岸不再呈现完整直角网格。该变化只发生在 SpriteKit 地形重建层，Core tile、通行、建造、命中、存档和战术小地图数据不变。
+- v2.37 起，参考 Rusted Warfare 移动版近满屏战场的 HUD 占比收窄原生 iOS 战术 chrome：顶部状态栏恒定单行且垂直 padding 收薄，compact bottom 也不再堆叠双行；command dock 收窄为 regular 24% / 240-280pt、compact trailing 24% / 204-224pt、bottom 高度 0.30 / 200-288pt（accessibility Dynamic Type 保留 0.42 / 216-320pt），战术小地图常规档缩为 160x106 / 132x88；dock header 与 selection summary 去掉独立卡片底色，只保留文本层级。全部 action、disabled 条件、快捷键、VoiceOver、44pt 触控目标和三档 role 断点不变。
 
 当前验证制度：
 

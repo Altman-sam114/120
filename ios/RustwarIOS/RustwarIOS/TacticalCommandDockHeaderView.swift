@@ -31,7 +31,7 @@ struct TacticalCommandDockHeaderView: View {
             .accessibilityValue(controller.selectionMutationAccessibilityValue)
             .accessibilityHint("Choose whether battlefield selection replaces or adds to the current selection.")
         }
-        .padding(TacticalHUDTheme.contentPadding)
+        .padding(TacticalHUDTheme.compactPadding)
         .background {
             ZStack {
                 TacticalHUDTheme.panelBackground

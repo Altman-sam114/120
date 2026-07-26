@@ -10,19 +10,10 @@ struct TacticalStatusBarView: View {
     let layoutRole: TacticalHUDLayoutRole
 
     var body: some View {
-        Group {
-            if layoutRole == .compactBottom {
-                VStack(spacing: TacticalHUDTheme.compactSpacing) {
-                    metricsStrip
-                    statusControls
-                }
-            } else {
-                HStack(spacing: TacticalHUDTheme.controlSpacing) {
-                    metricsStrip
-                    Spacer(minLength: 4)
-                    statusControls
-                }
-            }
+        HStack(spacing: TacticalHUDTheme.controlSpacing) {
+            metricsStrip
+            Spacer(minLength: 4)
+            statusControls
         }
         .padding(.horizontal, TacticalHUDTheme.statusHorizontalPadding)
         .padding(.vertical, TacticalHUDTheme.statusVerticalPadding)
@@ -82,7 +73,7 @@ struct TacticalStatusBarView: View {
             )
             .buttonStyle(
                 TacticalProminentButtonStyle(
-                    expandsHorizontally: layoutRole == .compactBottom
+                    expandsHorizontally: false
                 )
             )
             .controlSize(.regular)
@@ -90,11 +81,16 @@ struct TacticalStatusBarView: View {
             .keyboardShortcut(commandKey("p"), modifiers: [])
             .accessibilityInputLabels(["Pause", "Play"])
 
-            ViewThatFits(in: .horizontal) {
-                speedPicker(style: .segmented)
-                    .frame(width: 220)
+            if layoutRole == .compactBottom {
                 speedPicker(style: .menu)
                     .frame(minWidth: 88)
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    speedPicker(style: .segmented)
+                        .frame(width: 220)
+                    speedPicker(style: .menu)
+                        .frame(minWidth: 88)
+                }
             }
         }
         .fixedSize(horizontal: false, vertical: true)

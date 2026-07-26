@@ -15,10 +15,11 @@ struct TacticalHUDLayoutMetrics: Equatable {
         static let shortLandscapeMaximumHeight: CGFloat = 520
         static let regularWidthThreshold: CGFloat = 700
         static let compactTrailingWidthThreshold: CGFloat = 560
-        static let regularDockWidthRange: ClosedRange<CGFloat> = 268...320
-        static let compactDockWidthRange: ClosedRange<CGFloat> = 224...260
-        static let bottomDockHeightRange: ClosedRange<CGFloat> = 216...320
-        static let minimumCompactDockHeight: CGFloat = 180
+        static let regularDockWidthRange: ClosedRange<CGFloat> = 240...280
+        static let compactDockWidthRange: ClosedRange<CGFloat> = 204...224
+        static let bottomDockHeightRange: ClosedRange<CGFloat> = 200...288
+        static let accessibilityBottomDockHeightRange: ClosedRange<CGFloat> = 216...320
+        static let minimumCompactDockHeight: CGFloat = 168
     }
 
     let role: TacticalHUDLayoutRole
@@ -60,12 +61,12 @@ struct TacticalHUDLayoutMetrics: Equatable {
         switch role {
         case .regularTrailing:
             return clamped(
-                containerSize.width * 0.28,
+                containerSize.width * 0.24,
                 to: Constants.regularDockWidthRange
             )
         case .compactTrailing:
             return clamped(
-                containerSize.width * 0.30,
+                containerSize.width * 0.24,
                 to: Constants.compactDockWidthRange
             )
         case .compactBottom:
@@ -81,13 +82,18 @@ struct TacticalHUDLayoutMetrics: Equatable {
         guard role == .compactBottom else {
             return 0
         }
-        let targetRatio: CGFloat = usesAccessibilityDynamicType ? 0.42 : 0.34
+        if usesAccessibilityDynamicType {
+            return clamped(
+                containerSize.height * 0.42,
+                to: Constants.accessibilityBottomDockHeightRange
+            )
+        }
         let preferredMinimum = containerSize.height < 540
             ? Constants.minimumCompactDockHeight
             : Constants.bottomDockHeightRange.lowerBound
         return min(
             Constants.bottomDockHeightRange.upperBound,
-            max(preferredMinimum, containerSize.height * targetRatio)
+            max(preferredMinimum, containerSize.height * 0.30)
         )
     }
 
@@ -97,15 +103,15 @@ struct TacticalHUDLayoutMetrics: Equatable {
     ) -> CGSize {
         switch role {
         case .regularTrailing:
-            return CGSize(width: 176, height: 118)
+            return CGSize(width: 160, height: 106)
         case .compactTrailing:
             return containerSize.height < 430
                 ? CGSize(width: 120, height: 80)
-                : CGSize(width: 144, height: 96)
+                : CGSize(width: 132, height: 88)
         case .compactBottom:
             return containerSize.width < 360 || containerSize.height < 600
                 ? CGSize(width: 120, height: 80)
-                : CGSize(width: 144, height: 96)
+                : CGSize(width: 132, height: 88)
         }
     }
 

@@ -38,16 +38,7 @@ struct TacticalSelectionSummaryView: View {
                     .lineLimit(2)
             }
         }
-        .padding(TacticalHUDTheme.compactPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            TacticalHUDTheme.selectionBackground,
-            in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
-                .stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1)
-        }
         .accessibilityElement(children: .contain)
     }
 }
