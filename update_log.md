@@ -5073,7 +5073,8 @@
 - 按用户要求未运行任何本地验证，包括格式检查、Swift tests、Xcode、Simulator、Preview 或截图。
 - 实现提交 `bfbeac48f7336a89948d71ff84fd130e9eb25589` 的 run `30191222744` / attempt 1 失败；Agent C 下载 artifact `rustwar-ci-v1.2-main-bfbeac4-run30191222744-attempt1` 到 `/private/tmp/rustwar-c-review-30191222744/`，约 280 KB。Manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5、iOS 26.5 和 Swift 6.3.2 完全匹配。
 - 该 run 的 `git diff --check`、Node、319 项 Core tests 和 Xcode list 成功；唯一代码错误是 `GameController.swift` 把数组结束索引写成不存在的 `.end`，导致 x86_64 Swift compile 失败，继而没有 Simulator 截图。JUnit 为 8/2/1，不能验收通过。
-- 追加修复把该表达式改为 `.endIndex`，等待新提交对应的云端结果包复验。
+- 追加修复提交 `af7efcb57ae507031272a8f3c753c59e83838bda` 把该表达式改为 `.endIndex`。对应 run `30191406415` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-af7efcb-run30191406415-attempt1` 到 `/private/tmp/rustwar-c-review-30191406415/`，约 1.4 MB。Manifest 的 branch、SHA、run id、attempt、Xcode 26.5、iOS 26.5 和 Swift 6.3.2 完全一致。
+- JUnit 为 8/0/1；云端 `git diff --check`、Node、319 项 Core tests、Xcode list、arm64/x86_64 universal build、production/combat 双 launch、landscape normalization 和双像素探针全部成功，日志包含 `BUILD SUCCEEDED`。Home/Combat PNG SHA-256 分别保持 `7ad8a52e2255825ef9158d098b21d3895179e8411884a1d4a33c6ec780c92023` 和 `170fee4107f4001d982f78035f653de75cff0557a63552555da0520487554e56`；Agent C 人工复看未见 HUD、模型、选择层级、弹道、爆点或 Tactical Map 静态回退。
 
 遗留事项：
 
