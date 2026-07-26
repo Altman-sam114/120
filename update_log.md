@@ -5048,7 +5048,10 @@
 
 验证状态：
 
-- 按用户要求未运行任何本地验证；待提交 push 后只使用精确 SHA 的 GitHub Actions artifact 复判。
+- 按用户要求未运行任何本地验证，包括格式检查、Swift tests、Xcode、Simulator、Preview 或截图。
+- 实现提交 `0dc86bd5780d620a6c1c603b44cd1885b6c45e3c` 的 GitHub Actions run `30190263161` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-0dc86bd-run30190263161-attempt1` 到 `/private/tmp/rustwar-c-review-30190263161/`，约 1.5 MB。Manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5、iOS 26.5 和 Swift 6.3.2 完全一致。
+- JUnit 为 8 checks、0 failures、1 个既定 browser skip；云端 `git diff --check`、Node、316 项 Core tests、Xcode list、arm64/x86_64 build、production/combat 双 launch、landscape normalization 和双像素探针全部成功。三项 multitouch classifier tests 均有独立通过记录，日志证明分类器与 `BattlefieldView.swift` 在双架构真实编译并包含 `BUILD SUCCEEDED`。
+- Home/Combat PNG SHA-256 分别保持 `7ad8a52e2255825ef9158d098b21d3895179e8411884a1d4a33c6ec780c92023` 和 `170fee4107f4001d982f78035f653de75cff0557a63552555da0520487554e56`，与 v2.29 人工复看基线一致，无静态 UI、模型或战斗画面回退。
 
 遗留事项：
 
