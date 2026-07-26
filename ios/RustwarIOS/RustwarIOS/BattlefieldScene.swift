@@ -151,8 +151,8 @@ final class BattlefieldScene: SKScene {
         let dirtDetailPath = CGMutablePath()
         let sandDetailPath = CGMutablePath()
         let rockDetailPath = CGMutablePath()
-        let waterDetailPath = CGMutablePath()
-        let deepDetailPath = CGMutablePath()
+        let waterHighlightPath = CGMutablePath()
+        let waterWavePath = CGMutablePath()
         let lavaDetailPath = CGMutablePath()
         let coastPath = CGMutablePath()
         let depthPath = CGMutablePath()
@@ -168,7 +168,9 @@ final class BattlefieldScene: SKScene {
                     width: tileSize,
                     height: tileSize
                 )
-                let variationBucket = terrainVariationBucket(column: column, row: row)
+                let variationBucket = isWaterTerrain(kind)
+                    ? 1
+                    : terrainVariationBucket(column: column, row: row)
                 fillPaths[kind]?[variationBucket].addRect(rect.insetBy(dx: -0.22, dy: -0.22))
 
                 let detailGate = terrainUnitNoise(column: column, row: row, salt: 41)
@@ -199,14 +201,6 @@ final class BattlefieldScene: SKScene {
                     rockDetailPath.move(to: CGPoint(x: detailX - length / 2, y: detailY - 2))
                     rockDetailPath.addLine(to: CGPoint(x: detailX - 1, y: detailY + 2))
                     rockDetailPath.addLine(to: CGPoint(x: detailX + length / 2, y: detailY - 1))
-                case .water where detailGate > 0.24:
-                    let length = 8 + terrainUnitNoise(column: column, row: row, salt: 101) * 12
-                    waterDetailPath.move(to: CGPoint(x: detailX - length / 2, y: detailY))
-                    waterDetailPath.addLine(to: CGPoint(x: detailX + length / 2, y: detailY))
-                case .deep where detailGate > 0.30:
-                    let length = 7 + terrainUnitNoise(column: column, row: row, salt: 107) * 11
-                    deepDetailPath.move(to: CGPoint(x: detailX - length / 2, y: detailY))
-                    deepDetailPath.addLine(to: CGPoint(x: detailX + length / 2, y: detailY))
                 case .lava where detailGate > 0.26:
                     let length = 7 + terrainUnitNoise(column: column, row: row, salt: 109) * 10
                     lavaDetailPath.move(to: CGPoint(x: detailX - length / 2, y: detailY - 2))
@@ -241,6 +235,12 @@ final class BattlefieldScene: SKScene {
             }
         }
 
+        appendWaterSurfaceDetails(
+            terrain: terrain,
+            highlightPath: waterHighlightPath,
+            wavePath: waterWavePath
+        )
+
         for kind in TerrainKind.allCases {
             for bucket in 0..<variationCount {
                 guard let path = fillPaths[kind]?[bucket], !path.isEmpty else {
@@ -259,8 +259,8 @@ final class BattlefieldScene: SKScene {
         addTerrainFill(path: dirtDetailPath, color: SKColor(red: 0.22, green: 0.17, blue: 0.13, alpha: 0.24))
         addTerrainStroke(path: sandDetailPath, color: SKColor(red: 0.92, green: 0.82, blue: 0.63, alpha: 0.24), lineWidth: 1.1)
         addTerrainStroke(path: rockDetailPath, color: SKColor(red: 0.19, green: 0.21, blue: 0.21, alpha: 0.34), lineWidth: 1.3)
-        addTerrainStroke(path: waterDetailPath, color: SKColor(red: 0.54, green: 0.83, blue: 0.96, alpha: 0.28), lineWidth: 1.1)
-        addTerrainStroke(path: deepDetailPath, color: SKColor(red: 0.35, green: 0.67, blue: 0.86, alpha: 0.22), lineWidth: 1)
+        addTerrainStroke(path: waterHighlightPath, color: SKColor(red: 0.46, green: 0.76, blue: 0.91, alpha: 0.15), lineWidth: 3.2)
+        addTerrainStroke(path: waterWavePath, color: SKColor(red: 0.69, green: 0.90, blue: 0.98, alpha: 0.30), lineWidth: 1.05)
         addTerrainStroke(path: lavaDetailPath, color: SKColor(red: 1, green: 0.56, blue: 0.16, alpha: 0.48), lineWidth: 1.4)
 
         addTerrainStroke(path: coastPath, color: SKColor(red: 0.02, green: 0.12, blue: 0.16, alpha: 0.62), lineWidth: 5)
@@ -268,6 +268,67 @@ final class BattlefieldScene: SKScene {
         addTerrainStroke(path: depthPath, color: SKColor(red: 0.27, green: 0.62, blue: 0.84, alpha: 0.34), lineWidth: 1.4)
         addTerrainStroke(path: lavaBankPath, color: SKColor(red: 0.09, green: 0.035, blue: 0.025, alpha: 0.78), lineWidth: 5.5)
         addTerrainStroke(path: lavaBankPath, color: SKColor(red: 1, green: 0.42, blue: 0.08, alpha: 0.58), lineWidth: 1.5)
+    }
+
+    private func appendWaterSurfaceDetails(
+        terrain: TerrainGrid,
+        highlightPath: CGMutablePath,
+        wavePath: CGMutablePath
+    ) {
+        let tileSize = GameConstants.tileSize
+
+        for row in 0..<terrain.rows {
+            var column = 0
+            while column < terrain.columns {
+                guard isWaterTerrain(terrain.terrain(column: column, row: row)) else {
+                    column += 1
+                    continue
+                }
+
+                let runStart = column
+                while column < terrain.columns,
+                      isWaterTerrain(terrain.terrain(column: column, row: row)) {
+                    column += 1
+                }
+
+                let runEnd = column
+                guard terrainUnitNoise(column: runStart, row: row, salt: 101) > 0.22 else {
+                    continue
+                }
+
+                let minX = Double(runStart) * tileSize + 7
+                let maxX = Double(runEnd) * tileSize - 7
+                guard maxX - minX >= 18 else {
+                    continue
+                }
+
+                let rowBottom = -Double(row + 1) * tileSize
+                let verticalNoise = terrainUnitNoise(column: runStart, row: row, salt: 107)
+                let baselineY = rowBottom + 13 + verticalNoise * 21
+                let amplitude = 1.4 + terrainUnitNoise(column: runEnd, row: row, salt: 109) * 2.2
+                let start = CGPoint(x: minX, y: baselineY)
+                let end = CGPoint(x: maxX, y: baselineY + amplitude * 0.18)
+                let span = maxX - minX
+
+                highlightPath.move(to: start)
+                highlightPath.addCurve(
+                    to: end,
+                    control1: CGPoint(x: minX + span * 0.28, y: baselineY + amplitude),
+                    control2: CGPoint(x: minX + span * 0.72, y: baselineY - amplitude)
+                )
+
+                let crestInset = min(8, span * 0.12)
+                let crestStart = CGPoint(x: minX + crestInset, y: baselineY + 0.7)
+                let crestEnd = CGPoint(x: maxX - crestInset, y: end.y + 0.7)
+                let crestSpan = crestEnd.x - crestStart.x
+                wavePath.move(to: crestStart)
+                wavePath.addCurve(
+                    to: crestEnd,
+                    control1: CGPoint(x: crestStart.x + crestSpan * 0.30, y: crestStart.y + amplitude * 0.72),
+                    control2: CGPoint(x: crestStart.x + crestSpan * 0.70, y: crestStart.y - amplitude * 0.62)
+                )
+            }
+        }
     }
 
     private func appendTerrainBoundary(
@@ -3687,7 +3748,9 @@ final class BattlefieldScene: SKScene {
             base = (0.58, 0.12, 0.075)
         }
 
-        let offset = CGFloat(variationBucket - 1) * 0.026
+        let offset = isWaterTerrain(terrain)
+            ? 0
+            : CGFloat(variationBucket - 1) * 0.026
         return SKColor(
             red: min(1, max(0, base.red + offset)),
             green: min(1, max(0, base.green + offset)),

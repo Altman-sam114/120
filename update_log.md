@@ -5105,3 +5105,26 @@
 遗留事项：
 
 - 当前 CI 没有重叠实体 XCUITest；Core resolver 与静态 PNG 不能证明真实手指节奏、手指遮挡或建筑上下文切换手感。
+
+### v2.33 / iOS coherent water surface
+
+日期：2026-07-26
+
+核心变更：
+
+- 原生 SpriteKit 的 `water` 与 `deep` 各自固定为统一基础色，不再让稳定 hash 为相邻 tile 选择三档明暗，减少 Coast 和连续水域的棋盘式拼贴感。
+- 新增 `appendWaterSurfaceDetails`，逐行扫描连续 water/deep run，在水域内部生成跨格三次曲线；柔和高光和细波峰分别聚合成单一 compound path，节点数不随 tile 或 run 增长。
+- 海岸暗边/泡沫、water/deep 深度线、非水地形三档材质、熔岩边界、雾层和地图 revision 重建规则保持；Core 地形、通行、战斗、AI、命令、存档、Web 与 Tactical Map 不变。
+
+参考核对：
+
+- 继续以 Rusted Warfare 官方 Steam 战场截图与公开移动版视频的连续水域和战斗可读性为方向参考；只复刻低频视觉层级，不复制原始素材。
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括格式检查、Swift tests、Xcode、Simulator、Preview 或截图。
+- 待实现提交 push 后由 Agent C 下载精确 SHA 的 `Rustwar CI Results` artifact，核对 manifest、JUnit、322 项 Core tests、双架构 build、双启动/方向/像素探针和 `ios-home.png` / `ios-combat.png`。
+
+遗留事项：
+
+- 固定云端 PNG 主要覆盖 Coast 相机；Islands/Lava、缩放极限、真机屏幕和密集效果下的帧率仍需后续云端场景或人工真机验收。

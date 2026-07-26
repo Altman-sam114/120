@@ -581,6 +581,21 @@ flowchart LR
   D["<=0.32s same live unit"] --> T["Nearby same-type remains first"]
 ```
 
+## v2.33 Coherent water surface
+
+```mermaid
+flowchart LR
+  T["TerrainGrid water / deep tiles"] --> B["Unified per-kind base fill"]
+  T --> R["Horizontal contiguous water runs"]
+  R --> H["Compound soft highlight path"]
+  R --> W["Compound long crest path"]
+  B --> S["Coherent SpriteKit water surface"]
+  H --> S
+  W --> S
+  C["Coast foam + depth boundary"] --> S
+  S --> F["Fog / entities / combat effects remain above"]
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid
