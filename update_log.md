@@ -5151,3 +5151,27 @@
 遗留事项：
 
 - 不同 zoom、Islands/Lava 和真机 scale 的边缘效果仍需要未来扩展云端视觉矩阵。陆地仍保留三档逐 tile 色块和直角边界，下一轮应继续做跨格低频材质与仅表现层的有机边缘，但不能恢复暗网格或改变 Core 通行。
+
+### v2.35 / iOS coherent land materials
+
+日期：2026-07-26
+
+核心变更：
+
+- `BattlefieldScene` 把基础 fill 从最多 8 类 × 3 色阶收敛为每种 `TerrainKind` 一个统一 compound path，删除逐 tile variation bucket 和 `±0.026` 明暗偏移。
+- Coast Core 仍交替保存 `grass` / `grass2`，但原生表现层让两者共享草地基底和 surface family，从视觉上移除绿色棋盘而不修改 Core 类型、通行或地图数据。
+- 新增 `appendLandSurfaceDetails`，按连续 grass-family/dirt/sand/rock horizontal run 生成确定性的宽软纹和细高光；每个 family 只增加两个 compound path node，端点与曲线留在对应材质行内。
+- 保留 v2.33 连续水面、v2.34 covering stroke、短草痕/颗粒/裂线、海岸/深度/熔岩边界、fog 和全部 gameplay 层级；不新增 texture、shader、动画、随机数或逐 tile node。
+
+参考核对：
+
+- 并行只读研究继续对照 Rusted Warfare 官方 Steam 战场截图与公开移动实机视频；共同特征是连续低频地表而非逐格亮暗。本轮只借鉴材质尺度与信息层级，全部路径与颜色为 Rustwar 原创。
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括格式检查、Swift tests、Xcode、Simulator、Preview 或截图。
+- 待实现提交 push 后由 Agent C 下载精确 SHA artifact；必须与 v2.34 Home/Combat PNG 对照确认陆地棋盘真实减少，并确认水面、战斗和 HUD 无回退。
+
+遗留事项：
+
+- dirt/sand/rock 与海岸的逻辑边界仍基于直角 Core tile；有机边缘属于后续只改表现层的独立轮次。固定 Coast PNG 不能证明 Islands/Lava 或全部 zoom/真机观感。

@@ -141,11 +141,13 @@ final class BattlefieldScene: SKScene {
         terrainNode.removeAllChildren()
 
         // Keep node count fixed by collecting all tiles into material and boundary paths.
-        let variationCount = 3
-        var fillPaths: [TerrainKind: [CGMutablePath]] = [:]
-        for kind in TerrainKind.allCases {
-            fillPaths[kind] = (0..<variationCount).map { _ in CGMutablePath() }
-        }
+        let fillPaths = Dictionary(
+            uniqueKeysWithValues: TerrainKind.allCases.map { ($0, CGMutablePath()) }
+        )
+
+        let landSurfaceKinds: [TerrainKind] = [.grass, .dirt, .sand, .rock]
+        let landSoftPaths = Dictionary(uniqueKeysWithValues: landSurfaceKinds.map { ($0, CGMutablePath()) })
+        let landFinePaths = Dictionary(uniqueKeysWithValues: landSurfaceKinds.map { ($0, CGMutablePath()) })
 
         let grassDetailPath = CGMutablePath()
         let dirtDetailPath = CGMutablePath()
@@ -168,10 +170,7 @@ final class BattlefieldScene: SKScene {
                     width: tileSize,
                     height: tileSize
                 )
-                let variationBucket = isWaterTerrain(kind)
-                    ? 1
-                    : terrainVariationBucket(column: column, row: row)
-                fillPaths[kind]?[variationBucket].addRect(rect.insetBy(dx: -0.22, dy: -0.22))
+                fillPaths[kind]?.addRect(rect.insetBy(dx: -0.22, dy: -0.22))
 
                 let detailGate = terrainUnitNoise(column: column, row: row, salt: 41)
                 let detailX = rect.minX + 7 + terrainUnitNoise(column: column, row: row, salt: 53) * 30
@@ -240,20 +239,33 @@ final class BattlefieldScene: SKScene {
             highlightPath: waterHighlightPath,
             wavePath: waterWavePath
         )
+        appendLandSurfaceDetails(
+            terrain: terrain,
+            softPaths: landSoftPaths,
+            finePaths: landFinePaths
+        )
 
         for kind in TerrainKind.allCases {
-            for bucket in 0..<variationCount {
-                guard let path = fillPaths[kind]?[bucket], !path.isEmpty else {
-                    continue
-                }
-                let node = SKShapeNode(path: path)
-                let color = terrainColor(for: kind, variationBucket: bucket)
-                node.fillColor = color
-                node.strokeColor = color
-                node.lineWidth = 1
-                node.isAntialiased = false
-                terrainNode.addChild(node)
+            guard let path = fillPaths[kind], !path.isEmpty else {
+                continue
             }
+            let node = SKShapeNode(path: path)
+            let color = terrainColor(for: kind)
+            node.fillColor = color
+            node.strokeColor = color
+            node.lineWidth = 1
+            node.isAntialiased = false
+            terrainNode.addChild(node)
+        }
+
+        for kind in landSurfaceKinds {
+            guard let softPath = landSoftPaths[kind],
+                  let finePath = landFinePaths[kind] else {
+                continue
+            }
+            let colors = landSurfaceColors(for: kind)
+            addTerrainStroke(path: softPath, color: colors.soft, lineWidth: 4.2)
+            addTerrainStroke(path: finePath, color: colors.fine, lineWidth: 1.05)
         }
 
         addTerrainStroke(path: grassDetailPath, color: SKColor(red: 0.62, green: 0.76, blue: 0.45, alpha: 0.24), lineWidth: 1.1)
@@ -269,6 +281,75 @@ final class BattlefieldScene: SKScene {
         addTerrainStroke(path: depthPath, color: SKColor(red: 0.27, green: 0.62, blue: 0.84, alpha: 0.34), lineWidth: 1.4)
         addTerrainStroke(path: lavaBankPath, color: SKColor(red: 0.09, green: 0.035, blue: 0.025, alpha: 0.78), lineWidth: 5.5)
         addTerrainStroke(path: lavaBankPath, color: SKColor(red: 1, green: 0.42, blue: 0.08, alpha: 0.58), lineWidth: 1.5)
+    }
+
+    private func appendLandSurfaceDetails(
+        terrain: TerrainGrid,
+        softPaths: [TerrainKind: CGMutablePath],
+        finePaths: [TerrainKind: CGMutablePath]
+    ) {
+        let tileSize = GameConstants.tileSize
+
+        for row in 0..<terrain.rows {
+            var column = 0
+            while column < terrain.columns {
+                guard let kind = landSurfaceKind(
+                    for: terrain.terrain(column: column, row: row)
+                ) else {
+                    column += 1
+                    continue
+                }
+                guard let softPath = softPaths[kind],
+                      let finePath = finePaths[kind] else {
+                    column += 1
+                    continue
+                }
+
+                let runStart = column
+                while column < terrain.columns,
+                      landSurfaceKind(for: terrain.terrain(column: column, row: row)) == kind {
+                    column += 1
+                }
+
+                let runEnd = column
+                guard terrainUnitNoise(column: runStart, row: row, salt: 113) > 0.34 else {
+                    continue
+                }
+
+                let minX = Double(runStart) * tileSize + 8
+                let maxX = Double(runEnd) * tileSize - 8
+                guard maxX - minX >= 20 else {
+                    continue
+                }
+
+                let rowBottom = -Double(row + 1) * tileSize
+                let baselineY = rowBottom + 11
+                    + terrainUnitNoise(column: runStart, row: row, salt: 127) * 22
+                let amplitude = 1.6
+                    + terrainUnitNoise(column: runEnd, row: row, salt: 131) * 2.8
+                let span = maxX - minX
+                let start = CGPoint(x: minX, y: baselineY)
+                let end = CGPoint(x: maxX, y: baselineY - amplitude * 0.12)
+
+                softPath.move(to: start)
+                softPath.addCurve(
+                    to: end,
+                    control1: CGPoint(x: minX + span * 0.30, y: baselineY + amplitude),
+                    control2: CGPoint(x: minX + span * 0.68, y: baselineY - amplitude)
+                )
+
+                let inset = min(9, span * 0.14)
+                let fineStart = CGPoint(x: minX + inset, y: baselineY + 0.8)
+                let fineEnd = CGPoint(x: maxX - inset, y: end.y + 0.8)
+                let fineSpan = fineEnd.x - fineStart.x
+                finePath.move(to: fineStart)
+                finePath.addCurve(
+                    to: fineEnd,
+                    control1: CGPoint(x: fineStart.x + fineSpan * 0.32, y: fineStart.y + amplitude * 0.68),
+                    control2: CGPoint(x: fineStart.x + fineSpan * 0.72, y: fineStart.y - amplitude * 0.58)
+                )
+            }
+        }
     }
 
     private func appendWaterSurfaceDetails(
@@ -365,6 +446,17 @@ final class BattlefieldScene: SKScene {
         terrain == .water || terrain == .deep
     }
 
+    private func landSurfaceKind(for terrain: TerrainKind) -> TerrainKind? {
+        switch terrain {
+        case .grass, .grass2:
+            .grass
+        case .dirt, .sand, .rock:
+            terrain
+        case .water, .deep, .lava:
+            nil
+        }
+    }
+
     private func addTerrainStroke(path: CGPath, color: SKColor, lineWidth: CGFloat) {
         guard !path.isEmpty else {
             return
@@ -387,10 +479,6 @@ final class BattlefieldScene: SKScene {
         node.strokeColor = .clear
         node.lineWidth = 0
         terrainNode.addChild(node)
-    }
-
-    private func terrainVariationBucket(column: Int, row: Int) -> Int {
-        Int(stableTerrainHash(column: column, row: row, salt: 17) % 3)
     }
 
     private func terrainUnitNoise(column: Int, row: Int, salt: Int) -> CGFloat {
@@ -3728,13 +3816,11 @@ final class BattlefieldScene: SKScene {
         }
     }
 
-    private func terrainColor(for terrain: TerrainKind, variationBucket: Int) -> SKColor {
+    private func terrainColor(for terrain: TerrainKind) -> SKColor {
         let base: (red: CGFloat, green: CGFloat, blue: CGFloat)
         switch terrain {
-        case .grass:
-            base = (0.20, 0.43, 0.22)
-        case .grass2:
-            base = (0.24, 0.49, 0.25)
+        case .grass, .grass2:
+            base = (0.22, 0.46, 0.235)
         case .dirt:
             base = (0.49, 0.39, 0.30)
         case .sand:
@@ -3749,14 +3835,38 @@ final class BattlefieldScene: SKScene {
             base = (0.58, 0.12, 0.075)
         }
 
-        let offset = isWaterTerrain(terrain)
-            ? 0
-            : CGFloat(variationBucket - 1) * 0.026
         return SKColor(
-            red: min(1, max(0, base.red + offset)),
-            green: min(1, max(0, base.green + offset)),
-            blue: min(1, max(0, base.blue + offset)),
+            red: base.red,
+            green: base.green,
+            blue: base.blue,
             alpha: 1
         )
+    }
+
+    private func landSurfaceColors(for terrain: TerrainKind) -> (soft: SKColor, fine: SKColor) {
+        switch terrain {
+        case .grass, .grass2:
+            (
+                SKColor(red: 0.72, green: 0.82, blue: 0.47, alpha: 0.075),
+                SKColor(red: 0.64, green: 0.78, blue: 0.42, alpha: 0.16)
+            )
+        case .dirt:
+            (
+                SKColor(red: 0.20, green: 0.14, blue: 0.11, alpha: 0.10),
+                SKColor(red: 0.76, green: 0.64, blue: 0.49, alpha: 0.12)
+            )
+        case .sand:
+            (
+                SKColor(red: 0.39, green: 0.31, blue: 0.23, alpha: 0.08),
+                SKColor(red: 0.94, green: 0.84, blue: 0.66, alpha: 0.16)
+            )
+        case .rock:
+            (
+                SKColor(red: 0.12, green: 0.14, blue: 0.14, alpha: 0.12),
+                SKColor(red: 0.70, green: 0.72, blue: 0.69, alpha: 0.12)
+            )
+        case .water, .deep, .lava:
+            (.clear, .clear)
+        }
     }
 }

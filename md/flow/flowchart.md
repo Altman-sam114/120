@@ -609,6 +609,22 @@ flowchart LR
   B --> V["Fog and combat layers remain above"]
 ```
 
+## v2.35 Coherent land materials
+
+```mermaid
+flowchart LR
+  T["TerrainGrid exact kinds"] --> B["One base path per TerrainKind"]
+  G["grass + grass2"] --> F["Shared grass surface family"]
+  T --> R["Contiguous land-family row runs"]
+  F --> R
+  R --> S["Compound soft cross-tile traces"]
+  R --> H["Compound fine highlights"]
+  B --> V["Continuous land surface"]
+  S --> V
+  H --> V
+  V --> C["Coast / fog / entities / combat remain above"]
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid
