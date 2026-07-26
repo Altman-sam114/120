@@ -103,6 +103,8 @@ v2.28 只替换 `BattlefieldScene.drawResources` 的程序化 presentation：每
 
 v2.29 保留 Core 默认命中半径，仅为 `selectionTarget` / `selectionTargetVisibleToPlayer` 和 `GameEngine.select` / `selectVisibleToPlayer` 增加默认为 0 的 `minimumHitRadius`。iOS 主战场将 44pt 直径的半径按 `camera.zoom` 转成 world radius，供普通 tap、长按上下文和 Attack / Guard / Repair pending target 共用。选择仍按最近实体中心，敌方仍必须通过真实视野门控；空地仍是 v2.11 Attack Move，Tactical Map 继续使用原 world-space 命中。
 
+v2.30 将 v2.12 内联的双指几何仲裁移到 `MultitouchIntentClassifier`：有限坐标下，明显 12pt 张合或反向移动返回 pinch；两指同向、质心至少 8pt、领先手指至少 10pt、跟随手指至少 5pt 且间距稳定时返回 selection；pending 命令只阻止 selection，不充分/非法输入返回 undecided，明确 pinch 仍可缩放。`BattlefieldView` 只管理 touch id、锁定状态、预览和提交，既有 MagnifyGesture、第三指拒绝、tap 抑制及 Core 区域选择不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
@@ -118,7 +120,7 @@ RustwarCore MapPreset / GameState / GameEngine
   -> 程序化单位与建筑复合几何 + 选中订单线深色 underlay + 共享高对比生命条 + 武器差异弹道 + 分层受击/摧毁爆炸
   -> bounded decal/entity/effect layers 位于当前可见/已探索战争迷雾下，radar signal 语义保持不变
   -> GitHub Actions fixed Simulator -> production launch/ios-home.png -> combat relaunch/ios-combat.png -> dual ImageIO metrics gates
-  -> SpatialTapGesture / LongPressGesture / DragGesture / MagnifyGesture / TacticalMap drag-tap-long-press
+  -> SpatialTapGesture / LongPressGesture / DragGesture / MagnifyGesture / Core MultitouchIntentClassifier / TacticalMap drag-tap-long-press
   -> Battlefield 44pt screen radius / camera zoom -> Core minimumHitRadius -> pending priority -> friendly selection / visible-enemy Attack / open-ground Attack Move
   -> CameraState / KeyboardCameraDirection / UserDefaults save payload / pause-speed gate / SelectionMutation replace/add / Battlefield context command / TacticalMap point commands and pending feedback / WorldRect area selection with building fallback / GameEngine.select / GameEngine.selectIdlePlayerBuilders / GameEngine.selectPlayerCombatUnits / GameEngine.selectPlayerCombatUnits(in:) / GameEngine.selectPlayerUnits(in:) / GameEngine.selectPlayerEntities(in:) / GameEngine.selectPlayerUnitsMatchingPrimarySelection / GameEngine.selectPlayerUnitsMatching(unitID:within:) / GameEngine.storeControlGroup / GameEngine.recallControlGroup / GameEngine.issueMove with formation targets / GameEngine.issueAttackMove with formation targets / GameEngine.issuePatrol with formation targets / GameEngine.issueGuard with formation offsets / GameEngine.issueRepair with dynamic approach points / GameEngine.issueReclaim with dynamic approach points / GameEngine.issueBuild with dynamic approach points / GameEngine.setAttackStance / GameEngine.issueBuildExtractor / GameEngine.issueBuildTurret / GameEngine.issueBuildLandFactory / GameEngine.issueStop / GameEngine.issueAttack / GameEngine.queueUnit / GameEngine.queueBuildingUpgrade / GameEngine.cancelBuildingUpgrade / GameEngine.cancelLastProduction / GameEngine.setRepeatProduction / GameEngine.setRally / GameEngine.setEnemyAIEnabled / GameEngine.update / GameEngine(state:) / GameState.visibility(for:)
   -> GameEngine visible target selection filters unseen enemies for iOS player hit-tests; turret defensive fire targets units/buildings and enemy AI repairs friendly targets, expands resource nodes, builds Land Factories, Turrets and Radar Stations, reclaims nearby wrecks, queues production and assigns attack orders with Web-lite target scoring

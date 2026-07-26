@@ -2,6 +2,70 @@ import Foundation
 import Testing
 @testable import RustwarCore
 
+@Test func multitouchIntentClassifierFavorsAlignedSelectionWithFingerLag() {
+    let intent = MultitouchIntentClassifier.classify(
+        firstStart: WorldPoint(20, 30),
+        secondStart: WorldPoint(80, 30),
+        firstCurrent: WorldPoint(32, 32),
+        secondCurrent: WorldPoint(87, 31)
+    )
+    #expect(intent == .selection)
+}
+
+@Test func multitouchIntentClassifierKeepsClearPinchAndOpposedMotion() {
+    #expect(
+        MultitouchIntentClassifier.classify(
+            firstStart: WorldPoint(20, 30),
+            secondStart: WorldPoint(80, 30),
+            firstCurrent: WorldPoint(8, 30),
+            secondCurrent: WorldPoint(92, 30)
+        ) == .pinch
+    )
+    #expect(
+        MultitouchIntentClassifier.classify(
+            firstStart: WorldPoint(20, 30),
+            secondStart: WorldPoint(80, 30),
+            firstCurrent: WorldPoint(30, 30),
+            secondCurrent: WorldPoint(70, 30)
+        ) == .pinch
+    )
+}
+
+@Test func multitouchIntentClassifierPreservesPendingAndInvalidInputGates() {
+    let alignedArguments = (
+        firstStart: WorldPoint(20, 30),
+        secondStart: WorldPoint(80, 30),
+        firstCurrent: WorldPoint(32, 30),
+        secondCurrent: WorldPoint(92, 30)
+    )
+    #expect(
+        MultitouchIntentClassifier.classify(
+            firstStart: alignedArguments.firstStart,
+            secondStart: alignedArguments.secondStart,
+            firstCurrent: alignedArguments.firstCurrent,
+            secondCurrent: alignedArguments.secondCurrent,
+            isTargetCommandPending: true
+        ) == .undecided
+    )
+    #expect(
+        MultitouchIntentClassifier.classify(
+            firstStart: WorldPoint(.nan, 30),
+            secondStart: alignedArguments.secondStart,
+            firstCurrent: alignedArguments.firstCurrent,
+            secondCurrent: alignedArguments.secondCurrent
+        ) == .undecided
+    )
+    #expect(
+        MultitouchIntentClassifier.classify(
+            firstStart: WorldPoint(20, 30),
+            secondStart: WorldPoint(80, 30),
+            firstCurrent: WorldPoint(8, 30),
+            secondCurrent: WorldPoint(92, 30),
+            isTargetCommandPending: true
+        ) == .pinch
+    )
+}
+
 @Test func coastSkirmishInitializesFromPreset() {
     let state = GameState(mapID: .coast)
 

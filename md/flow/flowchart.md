@@ -541,6 +541,19 @@ flowchart LR
   D["Default Core and Tactical Map"] --> O["Existing world-space radius"]
 ```
 
+## v2.30 Multitouch intent tolerance
+
+```mermaid
+flowchart TD
+  P["Two active touches"] --> C["Core MultitouchIntentClassifier"]
+  C --> Z{"Distance change >= 12pt or opposed?"}
+  Z -->|yes| M["Pinch lock -> MagnifyGesture"]
+  Z -->|no| A{"Aligned centroid >= 8pt<br/>leader >= 10pt / follower >= 5pt?"}
+  A -->|yes, no pending| S["Selection lock + box preview"]
+  A -->|no| U["Undecided"]
+  S --> R["Existing WorldRect Replace/Add selection"]
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid

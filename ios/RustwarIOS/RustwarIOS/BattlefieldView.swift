@@ -1,12 +1,10 @@
 import SpriteKit
 import SwiftUI
+import RustwarCore
 
 struct BattlefieldView: View {
     private static let contextTapSuppressionDuration: TimeInterval = 0.18
     private static let multitouchTapSuppressionDuration: TimeInterval = 0.32
-    private static let multitouchIntentTravelThreshold: CGFloat = 10
-    private static let multitouchPinchDistanceThreshold: CGFloat = 10
-    private static let multitouchSelectionAlignmentThreshold: CGFloat = 0.65
 
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     let controller: GameController
@@ -225,43 +223,19 @@ struct BattlefieldView: View {
             return
         }
 
-        let firstDelta = CGPoint(x: firstCurrent.x - firstStart.x, y: firstCurrent.y - firstStart.y)
-        let secondDelta = CGPoint(x: secondCurrent.x - secondStart.x, y: secondCurrent.y - secondStart.y)
-        let firstTravel = hypot(firstDelta.x, firstDelta.y)
-        let secondTravel = hypot(secondDelta.x, secondDelta.y)
-        let minimumTravel = min(firstTravel, secondTravel)
-        let startDistance = hypot(secondStart.x - firstStart.x, secondStart.y - firstStart.y)
-        let currentDistance = hypot(secondCurrent.x - firstCurrent.x, secondCurrent.y - firstCurrent.y)
-        let distanceChange = abs(currentDistance - startDistance)
-        let centroidTravel = hypot(
-            ((firstDelta.x + secondDelta.x) / 2),
-            ((firstDelta.y + secondDelta.y) / 2)
+        let intent = MultitouchIntentClassifier.classify(
+            firstStart: WorldPoint(Double(firstStart.x), Double(firstStart.y)),
+            secondStart: WorldPoint(Double(secondStart.x), Double(secondStart.y)),
+            firstCurrent: WorldPoint(Double(firstCurrent.x), Double(firstCurrent.y)),
+            secondCurrent: WorldPoint(Double(secondCurrent.x), Double(secondCurrent.y)),
+            isTargetCommandPending: controller.isAwaitingTargetCommand
         )
-        let alignment: CGFloat
-        if minimumTravel > 0 {
-            alignment = ((firstDelta.x * secondDelta.x) + (firstDelta.y * secondDelta.y)) /
-                (firstTravel * secondTravel)
-        } else {
-            alignment = -1
-        }
-
-        if (distanceChange >= Self.multitouchPinchDistanceThreshold &&
-            (distanceChange >= centroidTravel * 0.65 || alignment < 0.2)) ||
-            (minimumTravel >= Self.multitouchIntentTravelThreshold && alignment < -0.2) {
+        if intent == .pinch {
             isMultitouchPinch = true
             clearMultitouchSelectionPreview()
             return
         }
-
-        guard minimumTravel >= Self.multitouchIntentTravelThreshold,
-              centroidTravel >= Self.multitouchIntentTravelThreshold,
-              alignment >= Self.multitouchSelectionAlignmentThreshold,
-              distanceChange <= max(18, centroidTravel * 0.5),
-              !controller.isAwaitingTargetCommand else {
-            return
-        }
-
-        isMultitouchSelection = true
+        isMultitouchSelection = intent == .selection
     }
 
     private func updateMultitouchSelectionPreview() {

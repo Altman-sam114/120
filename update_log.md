@@ -5034,3 +5034,22 @@
 遗留事项：
 
 - 固定 Simulator 截图不执行真实 tap、长按或缩放；44pt 在真机手指遮挡、密集单位和极限 zoom 下的手感仍需未来 XCUITest 或人工真机验收。
+
+### v2.30 / iOS tolerant two-finger selection arbitration
+
+日期：2026-07-26
+
+核心变更：
+
+- 新增纯 Swift `MultitouchIntentClassifier`，把两指位移、质心、间距变化和方向点积统一分类为 selection、pinch 或 undecided。
+- 框选允许领先手指至少 10pt、跟随手指至少 5pt 的轻微不同步；明显 12pt 张合或反向移动仍优先缩放，pending 只阻止框选，非法输入不锁定任何意图。
+- `BattlefieldView` 保留 touch id、第三指/cancel、preview、tap 抑制和 MagnifyGesture ownership，只移除内联几何数学。
+- Core tests 新增同向错位拖动、明显 pinch/反向移动、pending 和 NaN 门控，suite 预期至少 316 tests。
+
+验证状态：
+
+- 按用户要求未运行任何本地验证；待提交 push 后只使用精确 SHA 的 GitHub Actions artifact 复判。
+
+遗留事项：
+
+- 固定 Simulator workflow 没有合成多指 XCUITest；阈值仍需未来人工真机或 UI 自动化验证。
