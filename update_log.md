@@ -5264,3 +5264,22 @@
 遗留事项：
 
 - 命令线 isSelected 门控无法被 combat fixture PNG 证明（cloud scenario 本就跳过命令线），只有代码审查覆盖；真实混战中选中/未选中的命令线层级需真机复看。
+
+### v2.40 / iOS refined building models
+
+日期：2026-07-26
+
+核心变更：
+
+- `buildingBody` 三类核心建筑精细化：Command Center 增加装甲板拼缝线、双组通风格栅、外圈队色能量环、偏移指挥穹顶高光和四角基脚螺栓；Land Factory 增加出车口舱门 + 四道黄色警示斜纹、屋顶双组通风格栅、后墙纵向供给管；Turret 基座增加八颗铆钉环、内圈阴影环、炮管根部套筒与口部高光。
+- 全部细节为确定性静态 path，每建筑新增节点 ≤ 12；Extractor / Radar、turret heading/recoil 结构、construction frame、damage smoke、选择角标与 Core 不变。
+
+验证状态：
+
+- 按云端唯一验证制度未运行任何本地测试。
+- 实现提交 `94a56fa5a7c84d12aec0ab2c455d201677684752` 的 GitHub Actions run `30209046557` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-94a56fa-run30209046557-attempt1` 到 `/private/tmp/rustwar-c-review-30209046557/`，约 1.6 MB。Manifest 与 SHA/run 完全一致；Core 324 tests 全绿，双架构 build、双 launch/probe 成功。
+- Home/Combat PNG SHA-256 分别为 `2e5f91413f99a9fd52919b2268f82a89693472cef5fe01590b7fcc19e9b205b0` 和 `8ecc817d42cd76fe1adabd11ace5b747f8af43432adb86d4f9f6d0f43ce5a7c0`。与 v2.39 人工对照：Command Center 甲板出现格栅/能量环/穹顶/螺栓，Factory 出车口警示纹清晰可辨，Combat 双方 Turret 铆钉与阴影环增强立体感；密度提升但未显脏乱，弹道、爆点、地形、HUD 无回退。
+
+遗留事项：
+
+- Extractor / Radar 精细化留待后续轮次；细节在最小 zoom 下的可读性需真机复看。
