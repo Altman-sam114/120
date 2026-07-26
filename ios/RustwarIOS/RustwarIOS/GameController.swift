@@ -1675,7 +1675,7 @@ final class GameController {
             return false
         }
 
-        let nextIndex = candidateIDs.index(after: previousIndex) == candidateIDs.end
+        let nextIndex = candidateIDs.index(after: previousIndex) == candidateIDs.endIndex
             ? candidateIDs.startIndex
             : candidateIDs.index(after: previousIndex)
         let nextTarget = playerUnitCandidates[nextIndex]

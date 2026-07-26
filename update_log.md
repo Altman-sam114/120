@@ -5071,7 +5071,9 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括格式检查、Swift tests、Xcode、Simulator、Preview 或截图。
-- 等待实现提交对应的 GitHub Actions 精确 SHA artifact 验收。
+- 实现提交 `bfbeac48f7336a89948d71ff84fd130e9eb25589` 的 run `30191222744` / attempt 1 失败；Agent C 下载 artifact `rustwar-ci-v1.2-main-bfbeac4-run30191222744-attempt1` 到 `/private/tmp/rustwar-c-review-30191222744/`，约 280 KB。Manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5、iOS 26.5 和 Swift 6.3.2 完全匹配。
+- 该 run 的 `git diff --check`、Node、319 项 Core tests 和 Xcode list 成功；唯一代码错误是 `GameController.swift` 把数组结束索引写成不存在的 `.end`，导致 x86_64 Swift compile 失败，继而没有 Simulator 截图。JUnit 为 8/2/1，不能验收通过。
+- 追加修复把该表达式改为 `.endIndex`，等待新提交对应的云端结果包复验。
 
 遗留事项：
 
