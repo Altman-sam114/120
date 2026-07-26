@@ -5027,7 +5027,9 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
-- 待实现提交直接 push `origin/main` 后，以最新精确 SHA 对应的 GitHub Actions artifact 完成 Agent C 复判。
+- 实现提交 `2c1a55939f313861ec075814b06cdf21e8b8c9f9` 的 run `30189279427` / attempt 1 失败；Agent C 下载 artifact `rustwar-ci-v1.2-main-2c1a559-run30189279427-attempt1` 到 `/private/tmp/rustwar-c-review-30189279427/`，约 1.4 MB。Manifest 的 branch、SHA、run id 和 attempt 完全匹配；唯一失败是新增测试把 mutating engine selection 直接放入 `#require`，Swift Testing 宏展开后以 immutable `$0` 调用而编译失败。该 run 的静态检查、Node、Xcode list、iOS build 和双 launch/orientation/probe 均成功，但 JUnit 为 8/1/1，不能验收通过。
+- 测试修复提交 `eec06fada7224bc8bf6ccb79bf574c03d1855b14` 先保存 mutating 调用结果再执行 `#require`，不改生产行为。对应 run `30189530261` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-eec06fa-run30189530261-attempt1` 到 `/private/tmp/rustwar-c-review-30189530261/`，约 1.5 MB。Manifest 为 `branch=main`、精确 SHA/run/attempt、Xcode 26.5、iOS 26.5 和 Swift 6.3.2；JUnit 8/0/1，云端 `git diff --check`、Node、313 项 Core tests、Xcode list、arm64/x86_64 build、production/combat 双 launch、landscape normalization 和双像素探针全部成功，日志包含 `BUILD SUCCEEDED`。
+- 新增 `minimumSelectionHitRadiusFindsNearestTargetOutsideDefaultGeometry`、`minimumVisibleSelectionHitRadiusPreservesFogAndUpdatesEngineSelection` 与扩展后的 radar-only test 均有独立通过记录。Home/Combat PNG 人工复看无 HUD、Production、模型、选择层级、弹道、爆点或 Tactical Map 回退，SHA-256 分别保持 `7ad8a52e2255825ef9158d098b21d3895179e8411884a1d4a33c6ec780c92023` 和 `170fee4107f4001d982f78035f653de75cff0557a63552555da0520487554e56`。
 
 遗留事项：
 
