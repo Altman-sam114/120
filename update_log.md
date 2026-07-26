@@ -5098,7 +5098,9 @@
 验证状态：
 
 - 按用户要求未运行任何本地验证，包括格式检查、Swift tests、Xcode、Simulator、Preview 或截图。
-- 等待实现提交对应的 GitHub Actions 精确 SHA artifact 验收。
+- 实现提交 `a1e1fdbb0c75506f0846f57961f860316aeb96be` 的 GitHub Actions run `30192376277` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-a1e1fdb-run30192376277-attempt1` 到 `/private/tmp/rustwar-c-review-30192376277/`，约 1.5 MB。Manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5、iOS 26.5 和 Swift 6.3.2 完全一致。
+- JUnit 为 8/0/1；云端 `git diff --check`、Node、322 项 Core tests、Xcode list、arm64/x86_64 universal build、production/combat 双 launch、landscape normalization 和双像素探针全部成功，日志证明 `RepeatTapCycleResolver.swift` 进入 SwiftPM 与双架构编译、`GameController.swift` 双架构编译并包含 `BUILD SUCCEEDED`。
+- Home/Combat PNG SHA-256 分别保持 `7ad8a52e2255825ef9158d098b21d3895179e8411884a1d4a33c6ec780c92023` 和 `170fee4107f4001d982f78035f653de75cff0557a63552555da0520487554e56`，与 v2.31 已人工复看的像素基线逐字节一致；没有静态 HUD、模型、选择层级、弹道、爆点或 Tactical Map 回退。
 
 遗留事项：
 
