@@ -568,6 +568,19 @@ flowchart LR
   M["Command / area / reset / load"] --> X["Clear transient cycle state"]
 ```
 
+## v2.32 Friendly entity tap cycling
+
+```mermaid
+flowchart LR
+  C["Visible ranked candidates"] --> F["Live friendly units + buildings"]
+  F --> R["RepeatTapCycleResolver"]
+  P["Previous IDs / entity / elapsed / screen distance"] --> R
+  R -->|"valid 0.38...1.4s and <=44pt"| N["Next ID with wrap"]
+  N --> S["Exact Replace/Add selection"]
+  S --> U["Unit controls or building Production / Upgrade"]
+  D["<=0.32s same live unit"] --> T["Nearby same-type remains first"]
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid

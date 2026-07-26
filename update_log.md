@@ -5079,3 +5079,27 @@
 遗留事项：
 
 - 当前 CI 没有 XCUITest，静态截图和 Core tests 不能证明真实重复点按节奏、手指遮挡或所有密集阵型的真机手感。
+
+### v2.32 / iOS friendly entity tap cycling
+
+日期：2026-07-26
+
+核心变更：
+
+- 新增纯 Swift `RepeatTapCycleResolver`，集中验证候选一致性、上一实体、`0.38...1.4s`、44pt、有限数值和末尾环回，不依赖 SwiftUI、UIKit、timer 或持久状态。
+- iOS 慢速重复点按候选从存活己方单位扩展为全部存活己方单位和建筑；默认 Replace 模式下，单位与 Factory / Command Center 重叠时可按稳定顺序切到 Production、升级和建筑详情，再循环回单位。
+- Add 模式仍只追加有效实体并保留既有 primary，循环状态会区分 added 与 already selected；快速 `<=0.32s` 双击附近同类仍仅对单位优先。敌方 Attack、空地 Attack Move、区域选择、真实视野、Tactical Map、Core state/JSON 和存档保持。
+- 三项 Core tests 覆盖单位/建筑前进与环回、上下文不匹配拒绝、闭区间阈值与非法数值，suite 预期至少 322 tests。
+
+参考核对：
+
+- 继续使用 Rusted Warfare 官方 Steam 战场截图和公开移动版实机视频 `Is Rusted Warfare The Full Classic RTS Experience on Mobile??` 作为战场实体点选后快速进入上下文操作的方向参考；具体阈值、候选算法和 Production/Upgrade 内容为 Rustwar 原生实现。
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括格式检查、Swift tests、Xcode、Simulator、Preview 或截图。
+- 等待实现提交对应的 GitHub Actions 精确 SHA artifact 验收。
+
+遗留事项：
+
+- 当前 CI 没有重叠实体 XCUITest；Core resolver 与静态 PNG 不能证明真实手指节奏、手指遮挡或建筑上下文切换手感。

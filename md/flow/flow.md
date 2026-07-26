@@ -107,6 +107,8 @@ v2.30 将 v2.12 内联的双指几何仲裁移到 `MultitouchIntentClassifier`�
 
 v2.31 将单点命中从“只返回最近实体”扩展为全部候选列表：`GameState.selectionTargets` / `selectionTargetsVisibleToPlayer` 统一按距离升序、再按 units-first 的原始实体顺序稳定排序，原单目标 API 只取第一项，因此旧调用语义保持。`GameEngine.select(entityID:)` 让 `GameController` 能在不重新做坐标命中的情况下精确选择循环目标。主战场普通 tap 先保留 v2.11 敌方 Attack / 空地 Attack Move 与 v2.29 真实视野/44pt 门控，随后让 `<=0.32s` 双击同类优先；只有候选 ID 集合和 44pt 屏幕区域保持相同、间隔位于 `0.38...1.4s` 时，才在己方单位候选中循环。循环状态是 controller 私有瞬态，不进入 Core state/JSON，并在命令、区域选择、地图重置、读档、候选变化或超时后失效。
 
+v2.32 将慢速循环候选从“己方单位”扩展为全部存活己方 `SelectionTarget`，单位与建筑继续沿用 v2.31 的距离/稳定顺序和 `GameEngine.select(entityID:)`，所以默认 Replace 模式下单位覆盖 Factory / Command Center 的 44pt 区域时能按序进入建筑上下文，建筑最近时也能继续循环到单位；Add 仍只追加有效实体并保留既有 primary。`RepeatTapCycleResolver` 纯函数统一验证有限 elapsed/distance、闭区间 `0.38...1.4s`、44pt 最大屏幕距离、候选数组完全一致、上一实体存在和末尾环回；controller 只负责可见候选过滤、时间/CGPoint 转换和命令状态。快速 `<=0.32s` 双击仍先于慢速循环且仅识别存活己方单位；敌方 Attack、空地 Attack Move、区域选择、Tactical Map、Core state/JSON 和存档不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

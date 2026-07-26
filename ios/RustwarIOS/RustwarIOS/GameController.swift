@@ -18,9 +18,6 @@ final class GameController {
     private static let currentSaveVersion = 1
     private static let doubleTapSameTypeInterval: TimeInterval = 0.32
     private static let doubleTapSameTypeMaximumDistance: CGFloat = 44
-    private static let repeatTapCycleMinimumInterval: TimeInterval = 0.38
-    private static let repeatTapCycleMaximumInterval: TimeInterval = 1.4
-    private static let repeatTapCycleMaximumDistance: CGFloat = 44
     private static let nearbySameTypeSelectionRadius = 760.0
     private static let minimumBattlefieldTouchTargetDiameter = 44.0
 
@@ -1609,7 +1606,6 @@ final class GameController {
               target.kind == .unit,
               target.team == .player,
               engine.state.units.contains(where: { $0.id == target.id && $0.team == .player && $0.hitPoints > 0 }) else {
-            clearLastBattlefieldTap()
             return false
         }
 
@@ -1652,40 +1648,44 @@ final class GameController {
         candidates: [SelectionTarget],
         screenPoint: CGPoint
     ) -> Bool {
-        guard let target, target.kind == .unit, target.team == .player else {
+        guard let target, isLivePlayerSelectionTarget(target) else {
             return false
         }
 
-        let playerUnitCandidates = candidates.filter { candidate in
-            candidate.kind == .unit &&
-                candidate.team == .player &&
-                engine.state.units.contains { $0.id == candidate.id && $0.hitPoints > 0 }
-        }
-        let candidateIDs = playerUnitCandidates.map(\.id)
+        let playerCandidates = candidates.filter { isLivePlayerSelectionTarget($0) }
+        let candidateIDs = playerCandidates.map(\.id)
         let now = ProcessInfo.processInfo.systemUptime
-        guard candidateIDs.count > 1,
-              candidateIDs == lastBattlefieldTapCandidateIDs,
-              let lastBattlefieldTapScreenPoint,
+        guard let lastBattlefieldTapScreenPoint,
               let lastBattlefieldTapTime,
-              let lastBattlefieldCycleEntityID,
-              now - lastBattlefieldTapTime >= Self.repeatTapCycleMinimumInterval,
-              now - lastBattlefieldTapTime <= Self.repeatTapCycleMaximumInterval,
-              hypot(screenPoint.x - lastBattlefieldTapScreenPoint.x, screenPoint.y - lastBattlefieldTapScreenPoint.y) <= Self.repeatTapCycleMaximumDistance,
-              let previousIndex = candidateIDs.firstIndex(of: lastBattlefieldCycleEntityID) else {
+              let nextCandidateID = RepeatTapCycleResolver.nextCandidateID(
+                  candidateIDs: candidateIDs,
+                  previousCandidateIDs: lastBattlefieldTapCandidateIDs,
+                  previousEntityID: lastBattlefieldCycleEntityID,
+                  elapsed: now - lastBattlefieldTapTime,
+                  screenDistance: hypot(
+                      screenPoint.x - lastBattlefieldTapScreenPoint.x,
+                      screenPoint.y - lastBattlefieldTapScreenPoint.y
+                  )
+              ),
+              let nextIndex = candidateIDs.firstIndex(of: nextCandidateID) else {
             return false
         }
 
-        let nextIndex = candidateIDs.index(after: previousIndex) == candidateIDs.endIndex
-            ? candidateIDs.startIndex
-            : candidateIDs.index(after: previousIndex)
-        let nextTarget = playerUnitCandidates[nextIndex]
+        let nextTarget = playerCandidates[nextIndex]
         let previousSelection = engine.state.selectedEntityIDs
         guard engine.select(entityID: nextTarget.id, mutation: selectionMutation) != nil else {
             clearLastBattlefieldTap()
             return false
         }
 
-        commandStatus = "\(nextTarget.displayName) \(nextIndex + 1)/\(candidateIDs.count)"
+        if selectionMutation == .add {
+            let wasAdded = Set(previousSelection) != Set(engine.state.selectedEntityIDs)
+            commandStatus = wasAdded
+                ? "\(nextTarget.displayName) added \(nextIndex + 1)/\(candidateIDs.count)"
+                : "\(nextTarget.displayName) already selected \(nextIndex + 1)/\(candidateIDs.count)"
+        } else {
+            commandStatus = "\(nextTarget.displayName) \(nextIndex + 1)/\(candidateIDs.count)"
+        }
         recordBattlefieldTap(
             target: target,
             candidates: candidates,
@@ -1705,20 +1705,28 @@ final class GameController {
         time: TimeInterval = ProcessInfo.processInfo.systemUptime
     ) {
         guard let target,
-              target.kind == .unit,
-              target.team == .player,
-              engine.state.units.contains(where: { $0.id == target.id && $0.team == .player && $0.hitPoints > 0 }) else {
+              isLivePlayerSelectionTarget(target) else {
             clearLastBattlefieldTap()
             return
         }
 
-        lastBattlefieldTapUnitID = target.id
+        lastBattlefieldTapUnitID = target.kind == .unit ? target.id : nil
         lastBattlefieldTapScreenPoint = screenPoint
         lastBattlefieldTapTime = time
-        lastBattlefieldTapCandidateIDs = candidates.filter { candidate in
-            candidate.kind == .unit && candidate.team == .player
-        }.map(\.id)
+        lastBattlefieldTapCandidateIDs = candidates.filter { isLivePlayerSelectionTarget($0) }.map(\.id)
         lastBattlefieldCycleEntityID = selectedEntityID ?? target.id
+    }
+
+    private func isLivePlayerSelectionTarget(_ target: SelectionTarget) -> Bool {
+        guard target.team == .player else {
+            return false
+        }
+        switch target.kind {
+        case .unit:
+            return engine.state.units.contains { $0.id == target.id && $0.team == .player && $0.hitPoints > 0 }
+        case .building:
+            return engine.state.buildings.contains { $0.id == target.id && $0.team == .player && $0.hitPoints > 0 }
+        }
     }
 
     private func clearLastBattlefieldTap() {

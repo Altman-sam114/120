@@ -66,6 +66,91 @@ import Testing
     )
 }
 
+@Test func repeatTapCycleResolverAdvancesAcrossUnitsAndBuildingsAndWraps() {
+    let candidateIDs = ["player-tank", "player-factory", "player-builder"]
+
+    #expect(RepeatTapCycleResolver.nextCandidateID(
+        candidateIDs: candidateIDs,
+        previousCandidateIDs: candidateIDs,
+        previousEntityID: "player-tank",
+        elapsed: 0.6,
+        screenDistance: 12
+    ) == "player-factory")
+    #expect(RepeatTapCycleResolver.nextCandidateID(
+        candidateIDs: candidateIDs,
+        previousCandidateIDs: candidateIDs,
+        previousEntityID: "player-builder",
+        elapsed: 0.6,
+        screenDistance: 12
+    ) == "player-tank")
+}
+
+@Test func repeatTapCycleResolverRequiresStableCandidatesAndPreviousEntity() {
+    let candidateIDs = ["player-tank", "player-factory"]
+
+    #expect(RepeatTapCycleResolver.nextCandidateID(
+        candidateIDs: candidateIDs,
+        previousCandidateIDs: ["player-factory", "player-tank"],
+        previousEntityID: "player-tank",
+        elapsed: 0.6,
+        screenDistance: 12
+    ) == nil)
+    #expect(RepeatTapCycleResolver.nextCandidateID(
+        candidateIDs: candidateIDs,
+        previousCandidateIDs: candidateIDs,
+        previousEntityID: "missing",
+        elapsed: 0.6,
+        screenDistance: 12
+    ) == nil)
+    #expect(RepeatTapCycleResolver.nextCandidateID(
+        candidateIDs: ["player-tank"],
+        previousCandidateIDs: ["player-tank"],
+        previousEntityID: "player-tank",
+        elapsed: 0.6,
+        screenDistance: 12
+    ) == nil)
+}
+
+@Test func repeatTapCycleResolverEnforcesInclusiveTimingDistanceAndFiniteInputs() {
+    let candidateIDs = ["player-tank", "player-factory"]
+
+    #expect(RepeatTapCycleResolver.nextCandidateID(
+        candidateIDs: candidateIDs,
+        previousCandidateIDs: candidateIDs,
+        previousEntityID: "player-tank",
+        elapsed: RepeatTapCycleResolver.minimumInterval,
+        screenDistance: RepeatTapCycleResolver.maximumScreenDistance
+    ) == "player-factory")
+    #expect(RepeatTapCycleResolver.nextCandidateID(
+        candidateIDs: candidateIDs,
+        previousCandidateIDs: candidateIDs,
+        previousEntityID: "player-tank",
+        elapsed: RepeatTapCycleResolver.maximumInterval,
+        screenDistance: 0
+    ) == "player-factory")
+    #expect(RepeatTapCycleResolver.nextCandidateID(
+        candidateIDs: candidateIDs,
+        previousCandidateIDs: candidateIDs,
+        previousEntityID: "player-tank",
+        elapsed: RepeatTapCycleResolver.minimumInterval - 0.01,
+        screenDistance: 0
+    ) == nil)
+    #expect(RepeatTapCycleResolver.nextCandidateID(
+        candidateIDs: candidateIDs,
+        previousCandidateIDs: candidateIDs,
+        previousEntityID: "player-tank",
+        elapsed: RepeatTapCycleResolver.maximumInterval + 0.01,
+        screenDistance: 0
+    ) == nil)
+    #expect(RepeatTapCycleResolver.nextCandidateID(
+        candidateIDs: candidateIDs,
+        previousCandidateIDs: candidateIDs,
+        previousEntityID: "player-tank",
+        elapsed: .nan,
+        screenDistance: .infinity
+    ) == nil)
+}
+
 @Test func coastSkirmishInitializesFromPreset() {
     let state = GameState(mapID: .coast)
 
