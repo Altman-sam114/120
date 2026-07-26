@@ -102,16 +102,21 @@ public extension GameState {
         }
     }
 
-    func selectionTarget(at point: WorldPoint, includeEnemies: Bool = true) -> SelectionTarget? {
+    func selectionTarget(
+        at point: WorldPoint,
+        includeEnemies: Bool = true,
+        minimumHitRadius: Double = 0
+    ) -> SelectionTarget? {
         var best: SelectionTarget?
         var bestDistance = Double.infinity
+        let effectiveMinimumHitRadius = minimumHitRadius.isFinite ? max(0, minimumHitRadius) : 0
 
         for unit in units {
             if !includeEnemies, unit.team != .player {
                 continue
             }
             let definition = GameDefinitions.unit(unit.type)
-            let radius = definition.radius + 7
+            let radius = max(definition.radius + 7, effectiveMinimumHitRadius)
             let distance = unit.position.distanceSquared(to: point)
             if distance < radius * radius, distance < bestDistance {
                 best = SelectionTarget(id: unit.id, kind: .unit, team: unit.team, displayName: definition.name, position: unit.position)
@@ -124,7 +129,7 @@ public extension GameState {
                 continue
             }
             let definition = GameDefinitions.building(building.type)
-            let radius = definition.size / 2 + 4
+            let radius = max(definition.size / 2 + 4, effectiveMinimumHitRadius)
             let distance = building.position.distanceSquared(to: point)
             if distance < radius * radius, distance < bestDistance {
                 best = SelectionTarget(id: building.id, kind: .building, team: building.team, displayName: definition.name, position: building.position)
@@ -135,10 +140,15 @@ public extension GameState {
         return best
     }
 
-    func selectionTargetVisibleToPlayer(at point: WorldPoint, includeEnemies: Bool = true) -> SelectionTarget? {
+    func selectionTargetVisibleToPlayer(
+        at point: WorldPoint,
+        includeEnemies: Bool = true,
+        minimumHitRadius: Double = 0
+    ) -> SelectionTarget? {
         let playerVisibility = visibility(for: .player)
         var best: SelectionTarget?
         var bestDistance = Double.infinity
+        let effectiveMinimumHitRadius = minimumHitRadius.isFinite ? max(0, minimumHitRadius) : 0
 
         for unit in units {
             if !includeEnemies, unit.team != .player {
@@ -148,7 +158,7 @@ public extension GameState {
                 continue
             }
             let definition = GameDefinitions.unit(unit.type)
-            let radius = definition.radius + 7
+            let radius = max(definition.radius + 7, effectiveMinimumHitRadius)
             let distance = unit.position.distanceSquared(to: point)
             if distance < radius * radius, distance < bestDistance {
                 best = SelectionTarget(id: unit.id, kind: .unit, team: unit.team, displayName: definition.name, position: unit.position)
@@ -164,7 +174,7 @@ public extension GameState {
                 continue
             }
             let definition = GameDefinitions.building(building.type)
-            let radius = definition.size / 2 + 4
+            let radius = max(definition.size / 2 + 4, effectiveMinimumHitRadius)
             let distance = building.position.distanceSquared(to: point)
             if distance < radius * radius, distance < bestDistance {
                 best = SelectionTarget(id: building.id, kind: .building, team: building.team, displayName: definition.name, position: building.position)

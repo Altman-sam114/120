@@ -62,6 +62,7 @@
 - v2.26 起，点选生产建筑后会先显示 Factory Tech 和全部生产选项，再显示当前队列与管理动作；默认字号使用三列图标优先矩阵，让 T2 Land Factory 的六种单位无需先滚过队列即可直接下单，辅助功能字号自动改为单列完整标签。单位名称、metal、population、真实 build time、Shift+1-9、VoiceOver、44pt 触控和 v2.25 完整队列信息保持。
 - v2.27 起，原生战场多选不再使用压住模型的黄色近整圈：驱动详情与同类选择的主选中己方实体使用青色短分段标记和定位刻度，其余已选己方实体使用绿色短弧；建筑复用青/绿角标，敌方观察选择保持橙/红区分。选择标记位于模型下、阴影上，不遮挡履带、炮塔、伤害状态或血条；tap、双指框选、Replace/Add、命令和 Core 语义不变。
 - v2.28 起，原生主战场的资源点不再使用大面积扁平青色圆盘：未占领资源点改为暗色工业基座、分段青色能量环、四向导轨、六边形核心和多片金属矿脉，保留清晰命中中心但减少对地形的遮挡；已占领资源点沿用黄色归属语义并整体退隐到 Extractor 下方。资源坐标、半径、命中、建造、收入、小地图、Core 和存档保持不变。
+- v2.29 起，原生 iOS 主战场的单位和建筑实体命中按相机 zoom 转换为至少 44pt 的屏幕空间触控目标，远景下点己方选择、点可见敌方 Attack、长按上下文和 Attack / Guard / Repair 目标不再只依赖缩小后的几何半径。最近中心、真实视野、雷达不等于可见、空地 Attack Move、Replace/Add、双指框选、Tactical Map 和 Core 默认命中保持不变。
 
 当前验证制度：
 
@@ -129,7 +130,7 @@
 
 - HUD：顶部 safe-area 状态栏持续显示资源、雷达、Pause/Play 和速度；右侧或底部 command dock 的固定 header 显示当前选择、摘要、命令状态和 Replace/Add，下方可连续滚动六组操作。Tactical Map 始终位于独立战场区域；旋转或 Split View resize 会按容器宽高自动切换布局，不会改变当前选择、等待命令或编队。
 - 建筑操作：点 Command Center / Land Factory 时 Production 自动排到 dock 顶部；点可升级或正在升级的 Extractor / Radar Station 时 Build & Upgrade 自动排到顶部。切换选择会回到 dock 顶部；资源不足的升级仍显示费用并禁用，方便玩家直接理解下一步。
-- Tap：无等待命令时，点己方单位或建筑按 Replace / Add 选择；已有至少一个存活己方单位被选中时，点当前可见敌方直接 Attack，点未命中单位/建筑的战场位置直接 Attack Move，并保持原选择。建筑-only 选择或没有己方单位选择时仍走普通选择；普通 tap 不会自动 Guard、Repair、Reclaim、Build 或 Rally。Move、Attack Move 和 Patrol 等显式模式下仍作为目的地，Guard / Repair / Reclaim / Build Extractor / Attack 等模式下仍作为对应目标点选。
+- Tap：无等待命令时，点己方单位或建筑按 Replace / Add 选择；已有至少一个存活己方单位被选中时，点当前可见敌方直接 Attack，点未命中单位/建筑的战场位置直接 Attack Move，并保持原选择。主战场实体命中会按 zoom 保持至少 44pt 触控直径，但仍只选最近实体且不会穿过战争迷雾命中敌人。建筑-only 选择或没有己方单位选择时仍走普通选择；普通 tap 不会自动 Guard、Repair、Reclaim、Build 或 Rally。Move、Attack Move 和 Patrol 等显式模式下仍作为目的地，Guard / Repair / Reclaim / Build Extractor / Attack 等模式下仍作为对应目标点选。
 - Long press：无等待命令时执行上下文命令；长按敌方单位或建筑会 Attack，长按受损友方单位或建筑会让 Builder Repair，长按健康友方目标会 Guard，长按残骸会 Reclaim，长按空闲资源点会 Build Extractor，长按空地点会对生产建筑设置 Rally 或让己方单位 Move。
 - Selection mode：Replace / Add 分段控件决定主战场 tap、Select Area、Same Type 和双击附近同类的选择方式；Replace 会替换当前选择，Add 会追加命中的存活己方单位或建筑，空点或空框不会清空旧选择。
 - Idle Builders：选择全部空闲己方 Builder，并在主战场和战术小地图高亮多选集合；Move、Attack、Attack Move、Patrol、Guard、Repair、Reclaim、Build Extractor 和 Stop 会作用于所有可执行该命令的选中己方单位，其它生产或 Rally 命令仍沿用 primary selection 单实体语义。

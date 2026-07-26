@@ -19,6 +19,7 @@ final class GameController {
     private static let doubleTapSameTypeInterval: TimeInterval = 0.32
     private static let doubleTapSameTypeMaximumDistance: CGFloat = 44
     private static let nearbySameTypeSelectionRadius = 760.0
+    private static let minimumBattlefieldTouchTargetDiameter = 44.0
 
     var engine: GameEngine
     var camera: CameraState
@@ -997,12 +998,13 @@ final class GameController {
         }
 
         let point = camera.worldPoint(for: screenPoint, viewportSize: viewportSize)
+        let minimumHitRadius = battlefieldTouchTargetWorldRadius
         if handlePointCommand(at: point) {
             clearLastBattlefieldTap()
             return
         }
 
-        if handleSelectionTargetCommand(at: point) {
+        if handleSelectionTargetCommand(at: point, minimumHitRadius: minimumHitRadius) {
             clearLastBattlefieldTap()
             return
         }
@@ -1011,7 +1013,11 @@ final class GameController {
             return
         } else {
             let previousSelection = engine.state.selectedEntityIDs
-            let target = engine.state.selectionTargetVisibleToPlayer(at: point, includeEnemies: true)
+            let target = engine.state.selectionTargetVisibleToPlayer(
+                at: point,
+                includeEnemies: true,
+                minimumHitRadius: minimumHitRadius
+            )
             if handleDirectTapCommand(at: point, target: target) {
                 return
             }
@@ -1019,7 +1025,12 @@ final class GameController {
                 renderRevision += 1
                 return
             }
-            engine.selectVisibleToPlayer(at: point, includeEnemies: true, mutation: selectionMutation)
+            engine.selectVisibleToPlayer(
+                at: point,
+                includeEnemies: true,
+                mutation: selectionMutation,
+                minimumHitRadius: minimumHitRadius
+            )
             commandStatus = nil
             recordBattlefieldTap(target: target, screenPoint: screenPoint)
             reportSelectionChange(from: previousSelection)
@@ -1037,7 +1048,7 @@ final class GameController {
         }
 
         let point = camera.worldPoint(for: screenPoint, viewportSize: viewportSize)
-        issueContextCommand(at: point)
+        issueContextCommand(at: point, minimumHitRadius: battlefieldTouchTargetWorldRadius)
         renderRevision += 1
     }
 
@@ -1761,8 +1772,12 @@ final class GameController {
         count == 1 ? text : "\(text)s"
     }
 
-    private func issueContextCommand(at point: WorldPoint) {
-        if let target = engine.state.selectionTargetVisibleToPlayer(at: point, includeEnemies: true) {
+    private func issueContextCommand(at point: WorldPoint, minimumHitRadius: Double = 0) {
+        if let target = engine.state.selectionTargetVisibleToPlayer(
+            at: point,
+            includeEnemies: true,
+            minimumHitRadius: minimumHitRadius
+        ) {
             issueContextEntityCommand(target)
             return
         }
@@ -1907,9 +1922,13 @@ final class GameController {
         return true
     }
 
-    private func handleSelectionTargetCommand(at point: WorldPoint) -> Bool {
+    private func handleSelectionTargetCommand(at point: WorldPoint, minimumHitRadius: Double = 0) -> Bool {
         if isAwaitingGuardTarget {
-            let target = engine.state.selectionTargetVisibleToPlayer(at: point, includeEnemies: true)
+            let target = engine.state.selectionTargetVisibleToPlayer(
+                at: point,
+                includeEnemies: true,
+                minimumHitRadius: minimumHitRadius
+            )
             let result: UnitCommandResult
             if let target {
                 result = engine.issueGuard(targetID: target.id)
@@ -1920,7 +1939,11 @@ final class GameController {
             commandStatus = statusText(forGuard: result)
             reportCommandFeedback(for: result, confirmation: .guardTarget, at: target?.position ?? point)
         } else if isAwaitingRepairTarget {
-            let target = engine.state.selectionTargetVisibleToPlayer(at: point, includeEnemies: true)
+            let target = engine.state.selectionTargetVisibleToPlayer(
+                at: point,
+                includeEnemies: true,
+                minimumHitRadius: minimumHitRadius
+            )
             let result: UnitCommandResult
             let targetID: String?
             if let target {
@@ -1934,7 +1957,11 @@ final class GameController {
             commandStatus = statusText(forRepair: result, targetID: targetID)
             reportCommandFeedback(for: result, confirmation: .repair, at: target?.position ?? point)
         } else if isAwaitingAttackTarget {
-            let target = engine.state.selectionTargetVisibleToPlayer(at: point, includeEnemies: true)
+            let target = engine.state.selectionTargetVisibleToPlayer(
+                at: point,
+                includeEnemies: true,
+                minimumHitRadius: minimumHitRadius
+            )
             let result: UnitCommandResult
             if let target {
                 result = engine.issueAttack(targetID: target.id)
@@ -1956,6 +1983,13 @@ final class GameController {
             return nil
         }
         return engine.state.units.first { $0.id == selectedEntityID && $0.team == .player && $0.hitPoints > 0 }
+    }
+
+    private var battlefieldTouchTargetWorldRadius: Double {
+        guard camera.zoom.isFinite, camera.zoom > 0 else {
+            return 0
+        }
+        return (Self.minimumBattlefieldTouchTargetDiameter / 2) / camera.zoom
     }
 
     private func updateKeyboardCameraPan(deltaTime: TimeInterval) -> Bool {

@@ -4993,8 +4993,42 @@
 验证状态：
 
 - 报告中的规模事实已只读核对：`app.js` 6,998 行、`GameEngine.swift` 2,588 行、iOS Swift 源码约 9,553 行、现有 CI workflow 560 行。
-- 按用户要求未运行任何本地测试或格式检查；本轮为文档-only，待提交并 push 后由 GitHub Actions 生成最新 SHA 对应结果包供 Agent C 复判。
+- 按用户要求未运行任何本地测试或格式检查。首次文档提交 `d5b7140854dc925ae42ddd47224cca3d24481cb5` 的 run `30188485762` / attempt 1 失败；Agent C 下载 artifact `rustwar-ci-v1.2-main-d5b7140-run30188485762-attempt1` 到 `/private/tmp/rustwar-c-review-30188485762/`，确认唯一失败是报告第 3、4 行 Markdown 尾随空格导致 `git diff --check` exit 2；Node、311 Core tests、Xcode list、双架构 build 和双 smoke/probe 均成功。
+- 追加修复提交 `cb0f3c82231c6191dc7c6553f253f4d8a92526f1` 的 run `30188735628` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-cb0f3c8-run30188735628-attempt1` 到 `/private/tmp/rustwar-c-review-30188735628/`，约 1.4 MB。Manifest 的 `branch=main`、SHA、run id、attempt、Xcode 26.5 和 iOS 26.5 完全一致；JUnit 8/0/1、`git diff --check`、Node、311 Core tests、Xcode list、双架构 build、双 launch/orientation/probe 全部成功。Home/Combat PNG 人工复看无回退，SHA-256 分别保持 `7ad8a52e2255825ef9158d098b21d3895179e8411884a1d4a33c6ec780c92023` 和 `170fee4107f4001d982f78035f653de75cff0557a63552555da0520487554e56`。
 
 遗留事项：
 
 - Unity 平台目标、最低设备、最大实体数、是否联机/回放、商业授权、团队 owner 与预算尚未由人工确认，因此本决策不构成 Unity 立项授权。
+
+### v2.29 / iOS screen-space touch targets
+
+日期：2026-07-26
+
+核心变更：
+
+- `GameState` / `GameEngine` 的单点选择 API 增加默认为 0 的 `minimumHitRadius`，单位和建筑保留旧几何半径，仅在调用者明确要求时扩大并仍按最近中心选择。
+- 原生 iOS 主战场把 44pt 直径按当前 zoom 转成 world radius，统一用于 tap 选择/直接 Attack、长按上下文与 Attack / Guard / Repair pending 目标，改善远景小单位和建筑难以点中的问题。
+- 真实视野、雷达 contact、空地 Attack Move、Replace/Add、双指框选、Tactical Map、Core 默认命中、战斗、AI 和存档保持不变。
+- Core tests 增加扩大命中的最近实体、负数/无限值退化、雾内敌人拒绝和 engine selection 更新覆盖，suite 预期从 311 增长到至少 313 tests。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/GameStateSelection.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.29-ios-screen-space-touch-targets.md`
+- `update_log.md`
+
+验证状态：
+
+- 按用户要求未运行任何本地验证，包括 `git diff --check`、Node/Swift check、Swift tests、Xcode、Simulator、Preview、截图、浏览器游戏验证或测试脚本。
+- 待实现提交直接 push `origin/main` 后，以最新精确 SHA 对应的 GitHub Actions artifact 完成 Agent C 复判。
+
+遗留事项：
+
+- 固定 Simulator 截图不执行真实 tap、长按或缩放；44pt 在真机手指遮挡、密集单位和极限 zoom 下的手感仍需未来 XCUITest 或人工真机验收。

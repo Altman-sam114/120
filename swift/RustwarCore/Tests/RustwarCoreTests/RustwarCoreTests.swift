@@ -1533,6 +1533,88 @@ import Testing
     #expect(visibleEnemyBuildingTarget.id == enemyTurret.id)
 }
 
+@Test func minimumSelectionHitRadiusFindsNearestTargetOutsideDefaultGeometry() throws {
+    let scoutDefinition = GameDefinitions.unit(.scout)
+    let tankDefinition = GameDefinitions.unit(.tank)
+    let scout = UnitSnapshot(
+        id: "touch-radius-scout",
+        type: .scout,
+        team: .player,
+        position: WorldPoint(600, 600),
+        hitPoints: scoutDefinition.hitPoints,
+        maxHitPoints: scoutDefinition.hitPoints
+    )
+    let tank = UnitSnapshot(
+        id: "touch-radius-tank",
+        type: .tank,
+        team: .player,
+        position: WorldPoint(680, 600),
+        hitPoints: tankDefinition.hitPoints,
+        maxHitPoints: tankDefinition.hitPoints
+    )
+    var state = GameState(mapID: .coast)
+    state.units = [scout, tank]
+    state.buildings = []
+    let query = WorldPoint(650, 600)
+
+    #expect(state.selectionTarget(at: query, includeEnemies: true) == nil)
+    #expect(state.selectionTarget(at: query, includeEnemies: true, minimumHitRadius: -1) == nil)
+    #expect(state.selectionTarget(at: query, includeEnemies: true, minimumHitRadius: .infinity) == nil)
+
+    let expandedTarget = try #require(
+        state.selectionTarget(at: query, includeEnemies: true, minimumHitRadius: 60)
+    )
+    #expect(expandedTarget.id == tank.id)
+}
+
+@Test func minimumVisibleSelectionHitRadiusPreservesFogAndUpdatesEngineSelection() throws {
+    let scoutDefinition = GameDefinitions.unit(.scout)
+    let tankDefinition = GameDefinitions.unit(.tank)
+    let playerScout = UnitSnapshot(
+        id: "touch-visible-scout",
+        type: .scout,
+        team: .player,
+        position: WorldPoint(600, 600),
+        hitPoints: scoutDefinition.hitPoints,
+        maxHitPoints: scoutDefinition.hitPoints
+    )
+    let enemyTank = UnitSnapshot(
+        id: "touch-visible-enemy",
+        type: .tank,
+        team: .enemy,
+        position: WorldPoint(1_200, 600),
+        hitPoints: tankDefinition.hitPoints,
+        maxHitPoints: tankDefinition.hitPoints
+    )
+    var state = GameState(mapID: .coast)
+    state.units = [playerScout, enemyTank]
+    state.buildings = []
+    let query = WorldPoint(1_155, 600)
+
+    #expect(
+        state.selectionTargetVisibleToPlayer(
+            at: query,
+            includeEnemies: true,
+            minimumHitRadius: 60
+        ) == nil
+    )
+
+    state.units[0].position = WorldPoint(900, 600)
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.selectVisibleToPlayer(at: query, includeEnemies: true) == nil)
+
+    let selected = try #require(
+        engine.selectVisibleToPlayer(
+            at: query,
+            includeEnemies: true,
+            minimumHitRadius: 60
+        )
+    )
+    #expect(selected.id == enemyTank.id)
+    #expect(engine.state.selectedEntityID == enemyTank.id)
+    #expect(engine.state.selectedEntityIDs == [enemyTank.id])
+}
+
 @Test func visibleSelectionTargetRejectsRadarOnlyEnemies() throws {
     let radarDefinition = GameDefinitions.building(.radar)
     let tankDefinition = GameDefinitions.unit(.tank)
@@ -1566,6 +1648,13 @@ import Testing
     let rawTarget = try #require(state.selectionTarget(at: radarOnlyEnemyPosition, includeEnemies: true))
     #expect(rawTarget.id == "radar-only-selection-enemy")
     #expect(state.selectionTargetVisibleToPlayer(at: radarOnlyEnemyPosition, includeEnemies: true) == nil)
+    #expect(
+        state.selectionTargetVisibleToPlayer(
+            at: radarOnlyEnemyPosition,
+            includeEnemies: true,
+            minimumHitRadius: 240
+        ) == nil
+    )
     #expect(engine.selectVisibleToPlayer(at: radarOnlyEnemyPosition, includeEnemies: true) == nil)
     #expect(engine.state.selectedEntityID == nil)
 }

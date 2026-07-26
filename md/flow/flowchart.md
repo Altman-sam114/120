@@ -524,6 +524,23 @@ flowchart LR
   F --> Z
 ```
 
+## v2.29 Screen-space touch targets
+
+```mermaid
+flowchart LR
+  S["44pt minimum touch diameter"] --> R["22pt radius / camera zoom"]
+  R --> M["Core minimumHitRadius"]
+  M --> T["Battlefield tap selection / Attack"]
+  M --> C["Battlefield context long press"]
+  M --> P["Attack / Guard / Repair pending target"]
+  T --> N["Nearest entity center"]
+  C --> N
+  P --> N
+  V["Player true visibility"] --> N
+  F["Radar-only / unseen enemy"] --> X["Not targetable"]
+  D["Default Core and Tactical Map"] --> O["Existing world-space radius"]
+```
+
 ## v2.15 装甲战斗视觉与双云端截图
 
 ```mermaid

@@ -57,9 +57,14 @@ public struct GameEngine: Sendable {
     public mutating func select(
         at point: WorldPoint,
         includeEnemies: Bool = true,
-        mutation: SelectionMutation = .replace
+        mutation: SelectionMutation = .replace,
+        minimumHitRadius: Double = 0
     ) -> SelectionTarget? {
-        let target = state.selectionTarget(at: point, includeEnemies: includeEnemies)
+        let target = state.selectionTarget(
+            at: point,
+            includeEnemies: includeEnemies,
+            minimumHitRadius: minimumHitRadius
+        )
         applySelection(target.map { [$0.id] } ?? [], mutation: mutation)
         return target
     }
@@ -68,9 +73,14 @@ public struct GameEngine: Sendable {
     public mutating func selectVisibleToPlayer(
         at point: WorldPoint,
         includeEnemies: Bool = true,
-        mutation: SelectionMutation = .replace
+        mutation: SelectionMutation = .replace,
+        minimumHitRadius: Double = 0
     ) -> SelectionTarget? {
-        let target = state.selectionTargetVisibleToPlayer(at: point, includeEnemies: includeEnemies)
+        let target = state.selectionTargetVisibleToPlayer(
+            at: point,
+            includeEnemies: includeEnemies,
+            minimumHitRadius: minimumHitRadius
+        )
         applySelection(target.map { [$0.id] } ?? [], mutation: mutation)
         return target
     }
