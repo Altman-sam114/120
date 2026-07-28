@@ -5316,3 +5316,35 @@
 遗留事项：
 
 - 固定 Home PNG 只覆盖 Coast 的 T1 Extractor 与 production-only T2 Radar；T2/T3 Extractor、T1 Radar、其它地图、最小 zoom、动态升级和真机性能仍需后续视觉矩阵或人工复看。
+
+### v2.42 / iOS intent-aware touch targets
+
+日期：2026-07-28
+
+核心变更：
+
+- Core 单目标与候选列表命中 API 新增默认 `nil` 的 `targetTeam` 精确阵营过滤；默认调用兼容、距离排序、units-first 稳定顺序、玩家真实视野和 radar-only 拒绝保持。
+- iOS 普通主战场 tap 在已有己方单位选择时，先以原生几何半径命中可见敌军并优先 Attack，再回退既有 44pt 最近候选；避免附近友军扩展触控区遮住实际点中的敌军。
+- 显式 Attack 只取可见敌军；Guard 只取可由至少一个非目标自身的选中单位护航的己方目标；Repair 只取受损且可由至少一个非目标自身的选中 Builder 维修的己方目标。Engine 最终合法性校验与无效目标退出 pending 行为保持。
+- 新增 3 项 Core tests，覆盖跨队距离干扰、同队稳定排序和雾区/radar-only 敌军拒绝，云端预期总数由 324 增至至少 327。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/GameStateSelection.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.42-ios-intent-aware-touch-targets.md`
+- `update_log.md`
+
+验证状态：
+
+- 按云端唯一验证制度未运行任何本地测试、格式检查、Swift/Xcode build、Simulator、Preview、截图或 `git diff --check`。
+- 实现提交、GitHub Actions run、artifact、JUnit/Core/build/probe 和双 PNG 复判结果待本轮 push 后补录。
+
+遗留事项：
+
+- 当前 CI 没有 XCUITest；Core 过滤测试和静态 PNG 不能证明真实重叠实体点按、手指遮挡、无效目标退出等待态的主观反馈或真机触控手感。

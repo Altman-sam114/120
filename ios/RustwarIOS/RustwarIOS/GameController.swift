@@ -1031,6 +1031,16 @@ final class GameController {
             return
         } else {
             let previousSelection = engine.state.selectedEntityIDs
+            if !selectedPlayerUnits.isEmpty,
+               let exactEnemyTarget = engine.state.selectionTargetVisibleToPlayer(
+                   at: point,
+                   includeEnemies: true,
+                   minimumHitRadius: 0,
+                   targetTeam: .enemy
+               ),
+               handleDirectTapCommand(at: point, target: exactEnemyTarget) {
+                return
+            }
             let candidates = engine.state.selectionTargetsVisibleToPlayer(
                 at: point,
                 includeEnemies: true,
@@ -1955,6 +1965,14 @@ final class GameController {
         }
     }
 
+    private func canSelectedPlayerUnitsGuard(_ target: SelectionTarget) -> Bool {
+        target.team == .player && selectedPlayerUnits.contains { $0.id != target.id }
+    }
+
+    private func canSelectedPlayerBuildersRepair(_ target: SelectionTarget) -> Bool {
+        isDamagedPlayerTarget(target) && selectedPlayerBuilders.contains { $0.id != target.id }
+    }
+
     private func handlePointCommand(at point: WorldPoint) -> Bool {
         if isAwaitingMoveTarget {
             let result = engine.issueMove(to: point)
@@ -2036,11 +2054,12 @@ final class GameController {
 
     private func handleSelectionTargetCommand(at point: WorldPoint, minimumHitRadius: Double = 0) -> Bool {
         if isAwaitingGuardTarget {
-            let target = engine.state.selectionTargetVisibleToPlayer(
+            let target = engine.state.selectionTargetsVisibleToPlayer(
                 at: point,
                 includeEnemies: true,
-                minimumHitRadius: minimumHitRadius
-            )
+                minimumHitRadius: minimumHitRadius,
+                targetTeam: .player
+            ).first(where: canSelectedPlayerUnitsGuard)
             let result: UnitCommandResult
             if let target {
                 result = engine.issueGuard(targetID: target.id)
@@ -2051,11 +2070,12 @@ final class GameController {
             commandStatus = statusText(forGuard: result)
             reportCommandFeedback(for: result, confirmation: .guardTarget, at: target?.position ?? point)
         } else if isAwaitingRepairTarget {
-            let target = engine.state.selectionTargetVisibleToPlayer(
+            let target = engine.state.selectionTargetsVisibleToPlayer(
                 at: point,
                 includeEnemies: true,
-                minimumHitRadius: minimumHitRadius
-            )
+                minimumHitRadius: minimumHitRadius,
+                targetTeam: .player
+            ).first(where: canSelectedPlayerBuildersRepair)
             let result: UnitCommandResult
             let targetID: String?
             if let target {
@@ -2072,7 +2092,8 @@ final class GameController {
             let target = engine.state.selectionTargetVisibleToPlayer(
                 at: point,
                 includeEnemies: true,
-                minimumHitRadius: minimumHitRadius
+                minimumHitRadius: minimumHitRadius,
+                targetTeam: .enemy
             )
             let result: UnitCommandResult
             if let target {

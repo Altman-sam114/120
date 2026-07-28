@@ -105,24 +105,28 @@ public extension GameState {
     func selectionTarget(
         at point: WorldPoint,
         includeEnemies: Bool = true,
-        minimumHitRadius: Double = 0
+        minimumHitRadius: Double = 0,
+        targetTeam: Team? = nil
     ) -> SelectionTarget? {
         selectionTargets(
             at: point,
             includeEnemies: includeEnemies,
-            minimumHitRadius: minimumHitRadius
+            minimumHitRadius: minimumHitRadius,
+            targetTeam: targetTeam
         ).first
     }
 
     func selectionTargets(
         at point: WorldPoint,
         includeEnemies: Bool = true,
-        minimumHitRadius: Double = 0
+        minimumHitRadius: Double = 0,
+        targetTeam: Team? = nil
     ) -> [SelectionTarget] {
         rankedSelectionTargets(
             at: point,
             includeEnemies: includeEnemies,
             minimumHitRadius: minimumHitRadius,
+            targetTeam: targetTeam,
             playerVisibility: nil
         )
     }
@@ -130,24 +134,28 @@ public extension GameState {
     func selectionTargetVisibleToPlayer(
         at point: WorldPoint,
         includeEnemies: Bool = true,
-        minimumHitRadius: Double = 0
+        minimumHitRadius: Double = 0,
+        targetTeam: Team? = nil
     ) -> SelectionTarget? {
         selectionTargetsVisibleToPlayer(
             at: point,
             includeEnemies: includeEnemies,
-            minimumHitRadius: minimumHitRadius
+            minimumHitRadius: minimumHitRadius,
+            targetTeam: targetTeam
         ).first
     }
 
     func selectionTargetsVisibleToPlayer(
         at point: WorldPoint,
         includeEnemies: Bool = true,
-        minimumHitRadius: Double = 0
+        minimumHitRadius: Double = 0,
+        targetTeam: Team? = nil
     ) -> [SelectionTarget] {
         rankedSelectionTargets(
             at: point,
             includeEnemies: includeEnemies,
             minimumHitRadius: minimumHitRadius,
+            targetTeam: targetTeam,
             playerVisibility: visibility(for: .player)
         )
     }
@@ -156,13 +164,14 @@ public extension GameState {
         at point: WorldPoint,
         includeEnemies: Bool,
         minimumHitRadius: Double,
+        targetTeam: Team?,
         playerVisibility: VisibilitySnapshot?
     ) -> [SelectionTarget] {
         let effectiveMinimumHitRadius = minimumHitRadius.isFinite ? max(0, minimumHitRadius) : 0
         var candidates: [(target: SelectionTarget, distance: Double, stableOrder: Int)] = []
 
         for (index, unit) in units.enumerated() {
-            guard includeEnemies || unit.team == .player,
+            guard targetTeam.map({ unit.team == $0 }) ?? (includeEnemies || unit.team == .player),
                   unit.team == .player || playerVisibility?.isVisible(at: unit.position) != false else {
                 continue
             }
@@ -186,7 +195,7 @@ public extension GameState {
         }
 
         for (index, building) in buildings.enumerated() {
-            guard includeEnemies || building.team == .player,
+            guard targetTeam.map({ building.team == $0 }) ?? (includeEnemies || building.team == .player),
                   building.team == .player || playerVisibility?.isVisible(at: building.position) != false else {
                 continue
             }

@@ -1844,6 +1844,152 @@ import Testing
     #expect(state.selectionTarget(at: query, minimumHitRadius: 44)?.id == targets.first?.id)
 }
 
+@Test func selectionTargetsFilterExactTeamDespiteCrossTeamDistance() throws {
+    let scoutDefinition = GameDefinitions.unit(.scout)
+    let commandDefinition = GameDefinitions.building(.command)
+    let query = WorldPoint(600, 600)
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "team-filter-closer-player",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(605, 600),
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "team-filter-farther-enemy",
+            type: .command,
+            team: .enemy,
+            position: WorldPoint(630, 600),
+            hitPoints: commandDefinition.hitPoints,
+            maxHitPoints: commandDefinition.hitPoints,
+            rally: WorldPoint(630, 600)
+        )
+    ]
+
+    #expect(state.selectionTarget(
+        at: query,
+        includeEnemies: false,
+        minimumHitRadius: 44,
+        targetTeam: .enemy
+    )?.id == "team-filter-farther-enemy")
+    #expect(state.selectionTargets(
+        at: query,
+        minimumHitRadius: 44,
+        targetTeam: .player
+    ).map(\.id) == ["team-filter-closer-player"])
+}
+
+@Test func selectionTargetsKeepStableEntityOrderWithinFilteredTeam() {
+    let scoutDefinition = GameDefinitions.unit(.scout)
+    let commandDefinition = GameDefinitions.building(.command)
+    let query = WorldPoint(600, 600)
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "team-filter-enemy-first",
+            type: .scout,
+            team: .enemy,
+            position: WorldPoint(620, 600),
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        ),
+        UnitSnapshot(
+            id: "team-filter-player-ignored",
+            type: .scout,
+            team: .player,
+            position: WorldPoint(610, 600),
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        ),
+        UnitSnapshot(
+            id: "team-filter-enemy-second",
+            type: .scout,
+            team: .enemy,
+            position: WorldPoint(620, 600),
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "team-filter-enemy-building-third",
+            type: .command,
+            team: .enemy,
+            position: WorldPoint(620, 600),
+            hitPoints: commandDefinition.hitPoints,
+            maxHitPoints: commandDefinition.hitPoints,
+            rally: WorldPoint(620, 600)
+        )
+    ]
+
+    #expect(state.selectionTargets(
+        at: query,
+        minimumHitRadius: 44,
+        targetTeam: .enemy
+    ).map(\.id) == [
+        "team-filter-enemy-first",
+        "team-filter-enemy-second",
+        "team-filter-enemy-building-third"
+    ])
+}
+
+@Test func visibleSelectionTargetsRejectUnseenAndRadarOnlyFilteredEnemies() {
+    let scoutDefinition = GameDefinitions.unit(.scout)
+    let radarDefinition = GameDefinitions.building(.radar)
+    let radarPosition = WorldPoint(600, 600)
+    let radarOnlyPosition = WorldPoint(1_350, 600)
+    let unseenPosition = WorldPoint(3_000, 600)
+    var state = GameState(mapID: .coast)
+    state.units = [
+        UnitSnapshot(
+            id: "team-filter-radar-only-enemy",
+            type: .scout,
+            team: .enemy,
+            position: radarOnlyPosition,
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        ),
+        UnitSnapshot(
+            id: "team-filter-unseen-enemy",
+            type: .scout,
+            team: .enemy,
+            position: unseenPosition,
+            hitPoints: scoutDefinition.hitPoints,
+            maxHitPoints: scoutDefinition.hitPoints
+        )
+    ]
+    state.buildings = [
+        BuildingSnapshot(
+            id: "team-filter-player-radar",
+            type: .radar,
+            team: .player,
+            position: radarPosition,
+            hitPoints: radarDefinition.hitPoints,
+            maxHitPoints: radarDefinition.hitPoints,
+            rally: radarPosition
+        )
+    ]
+
+    #expect(state.radarContacts(for: .player).contains {
+        $0.kind == .unit && $0.position == radarOnlyPosition
+    })
+    #expect(state.selectionTargetVisibleToPlayer(
+        at: radarOnlyPosition,
+        minimumHitRadius: 44,
+        targetTeam: .enemy
+    ) == nil)
+    #expect(state.selectionTargetsVisibleToPlayer(
+        at: unseenPosition,
+        minimumHitRadius: 44,
+        targetTeam: .enemy
+    ).isEmpty)
+}
+
 @Test func visibleSelectionTargetsKeepPlayersAndRejectUnseenEnemies() {
     let scoutDefinition = GameDefinitions.unit(.scout)
     let commandDefinition = GameDefinitions.building(.command)

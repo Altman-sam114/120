@@ -759,3 +759,18 @@ flowchart LR
   S --> P
   C["Core / saves / normal launch unchanged"] --> S
 ```
+
+## v2.42 触控意图目标仲裁
+
+```mermaid
+flowchart TD
+  T["Battlefield tap"] --> P["Existing pending handlers"]
+  P -->|"not consumed + player units selected"| E["Visible enemy at native geometry"]
+  E -->|"hit"| A["Attack exact enemy"]
+  E -->|"miss"| H["Existing 44pt ranked candidates"]
+  H --> F["Friendly select / enemy Attack / empty Attack Move"]
+  C["Explicit Attack / Guard / Repair"] --> Q["Core targetTeam filter"]
+  Q --> V["Visibility gate: no fog or radar-only target"]
+  V --> I["Intent executable candidate"]
+  I --> G["GameEngine final legality check"]
+```

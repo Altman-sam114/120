@@ -127,6 +127,8 @@ v2.40 精细化 `buildingBody` 的三类核心建筑：Command Center 在八角�
 
 v2.41 精细化 `buildingBody` 的 Extractor / Radar：Extractor 的四向夹持块和独立螺栓围绕外环布置，12 道内齿刻痕聚合为一个 compound path，核心增加偏移高光；Radar 的双组基座格栅与两条斜撑分别聚合为 compound path，并增加两个支脚、天线横撑、碟面内圈、馈源臂和馈源点。新增常驻节点分别固定为 10 / 8 个，不使用动画、随机、texture、Core 或存档字段。production cloud fixture 只在 `cloudVisualScenario == .production` 时追加一座完成状态 T2 玩家 Radar，使 Home PNG 同时覆盖 T1 Extractor 和 T2 Radar；普通 `GameController` 初始化、战斗 fixture、升级和雷达玩法不变。
 
+v2.42 为 Core 单目标/候选列表命中 API 增加默认 `nil` 的 `targetTeam`，指定时在距离排序前只保留对应阵营，未指定时继续服从 `includeEnemies`；units-first 稳定顺序、玩家真实视野和 radar-only 拒绝保持。`GameController.handleBattlefieldTap` 在所有 pending handler 之后、44pt 候选之前，只在已有己方单位选择时用原生几何半径查询可见敌军并优先 Attack；无精确敌军时回退既有选择/Attack/Attack Move。显式 Attack 只查询敌军，Guard 查询己方后跳过无法由非自身选中单位护航的目标，Repair 查询己方后跳过非受损或无法由非自身选中 Builder 维修的目标；Engine 保留最终合法性校验，无效目标后退出 pending 的旧行为不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
