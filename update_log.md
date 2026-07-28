@@ -5308,7 +5308,10 @@
 验证状态：
 
 - 按云端唯一验证制度未运行任何本地测试、格式检查、Swift/Xcode build、Simulator、Preview 或截图。
-- 实现提交、GitHub Actions run、artifact、JUnit/Core/build/probe 与双 PNG 复判待本轮 push 后补录；在精确 SHA artifact 通过前不得确认 v2.41 完成。
+- 实现提交 `ad2e6a5b4b4d1abeb964c8d9063a2fd1fcb3199b` 的 GitHub Actions run `30321539240` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-ad2e6a5-run30321539240-attempt1` 到 `/private/tmp/rustwar-c-review-30321539240/`，大小约 `1.7M`。
+- Manifest 已核对 `version=v1.2`、`branch=main`、完整 SHA、run id、run attempt、Xcode 26.5、iOS Simulator SDK 26.5 和 Swift 6.3.2；JUnit 为 8 checks、0 failures、1 个既定 browser skip，324 个 RustwarCore tests 全部通过。`BattlefieldScene.swift` 与 `GameController.swift` 均有 arm64/x86_64 编译证据，universal build 包含 `BUILD SUCCEEDED`，Home/Combat 双 launch、landscape normalization 和 pixel probe 全部成功。
+- `ios-home.png` 为 2622x1206、透明比例 0、亮度标准差 41.374，SHA-256 为 `84d2580a47f033a289bf8dd2c562ab06a616572d58bd6de4ee3c89a715bcdc64`；Agent C 与 v2.40 人工对照确认左上 T1 Extractor 的四向夹持块/螺栓和内齿结构可辨，上方中央新增 T2 Radar 完整露出，双碟、横撑、馈源和基座支撑形成独立轮廓，未遮挡 Factory、Command Center、单位、资源点、HUD 或 Tactical Map。
+- `ios-combat.png` 为 2622x1206、透明比例 0、亮度标准差 41.594，SHA-256 保持 v2.40 的 `8ecc817d42cd76fe1adabd11ace5b747f8af43432adb86d4f9f6d0f43ce5a7c0`；战斗阵型、双方 Turret、残骸、弹道、爆点、地形与 HUD 逐像素无回退。实现 SHA 的 v2.41 云端视觉验收通过。
 
 遗留事项：
 
