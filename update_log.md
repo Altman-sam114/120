@@ -5283,3 +5283,33 @@
 遗留事项：
 
 - Extractor / Radar 精细化留待后续轮次；细节在最小 zoom 下的可读性需真机复看。
+
+### v2.41 / iOS refined extractor and radar models
+
+日期：2026-07-28
+
+核心变更：
+
+- `buildingBody` 补齐 Extractor 工业细节：四向夹持块与独立螺栓围绕外环，12 道齿圈刻痕聚合为单一 compound path，核心增加偏移高光；T2 青环与 T3 八点标记保持。
+- Radar Station 增加聚合基座格栅、聚合斜撑、两个支脚、天线横撑、碟面内圈、馈源臂和馈源点；T2 第二碟保持。Extractor / Radar 新增常驻节点分别为 10 / 8，不使用动画、随机数或 texture。
+- production cloud fixture 仅在固定视觉场景追加一座完成状态 T2 玩家 Radar，使 Home PNG 同时覆盖 T1 Extractor 和 T2 Radar；普通启动、combat fixture、Core、存档、尺寸、命中、升级、建造、损伤和选择语义不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.41-ios-refined-extractor-radar-models.md`
+- `update_log.md`
+
+验证状态：
+
+- 按云端唯一验证制度未运行任何本地测试、格式检查、Swift/Xcode build、Simulator、Preview 或截图。
+- 实现提交、GitHub Actions run、artifact、JUnit/Core/build/probe 与双 PNG 复判待本轮 push 后补录；在精确 SHA artifact 通过前不得确认 v2.41 完成。
+
+遗留事项：
+
+- 固定 Home PNG 只覆盖 Coast 的 T1 Extractor 与 production-only T2 Radar；T2/T3 Extractor、T1 Radar、其它地图、最小 zoom、动态升级和真机性能仍需后续视觉矩阵或人工复看。

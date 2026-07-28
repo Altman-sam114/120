@@ -2723,6 +2723,37 @@ final class BattlefieldScene: SKScene {
         case .extractor:
             body.addChild(circleNode(radius: half * 0.88, fill: armorDarkColor, stroke: outlineColor, lineWidth: 2.2))
             body.addChild(circleNode(radius: half * 0.64, fill: armorMidColor, stroke: highlightColor, lineWidth: 2))
+            // Four clamped extraction arms make the outer machinery read as a working assembly.
+            for angle in stride(from: 0.0, to: Double.pi * 2, by: Double.pi / 2) {
+                let clamp = rectNode(
+                    CGRect(x: -half * 0.13, y: -half * 0.09, width: half * 0.26, height: half * 0.18),
+                    cornerRadius: 1.5,
+                    fill: armorLightColor,
+                    stroke: outlineColor,
+                    lineWidth: 1
+                )
+                clamp.position = CGPoint(x: cos(angle) * half * 0.77, y: sin(angle) * half * 0.77)
+                clamp.zRotation = angle
+                body.addChild(clamp)
+
+                let bolt = circleNode(
+                    radius: half * 0.035,
+                    fill: armorDarkColor,
+                    stroke: highlightColor.withAlphaComponent(0.8),
+                    lineWidth: 0.6
+                )
+                bolt.position = clamp.position
+                body.addChild(bolt)
+            }
+            let extractorTeeth = CGMutablePath()
+            for angle in stride(from: Double.pi / 12, to: Double.pi * 2, by: Double.pi / 6) {
+                extractorTeeth.move(to: CGPoint(x: cos(angle) * half * 0.49, y: sin(angle) * half * 0.49))
+                extractorTeeth.addLine(to: CGPoint(x: cos(angle) * half * 0.57, y: sin(angle) * half * 0.57))
+            }
+            let extractorTeethNode = SKShapeNode(path: extractorTeeth)
+            extractorTeethNode.strokeColor = outlineColor.withAlphaComponent(0.78)
+            extractorTeethNode.lineWidth = 1.2
+            body.addChild(extractorTeethNode)
             let spokes = CGMutablePath()
             for angle in stride(from: 0.0, to: Double.pi * 2, by: Double.pi / 3) {
                 spokes.move(to: CGPoint(x: cos(angle) * half * 0.25, y: sin(angle) * half * 0.25))
@@ -2733,6 +2764,14 @@ final class BattlefieldScene: SKScene {
             spokeNode.lineWidth = 3
             body.addChild(spokeNode)
             body.addChild(circleNode(radius: half * 0.25, fill: armorLightColor, stroke: outlineColor))
+            let extractorCoreHighlight = circleNode(
+                radius: half * 0.075,
+                fill: highlightColor.withAlphaComponent(0.9),
+                stroke: .white.withAlphaComponent(0.55),
+                lineWidth: 0.7
+            )
+            extractorCoreHighlight.position = CGPoint(x: -half * 0.065, y: half * 0.065)
+            body.addChild(extractorCoreHighlight)
             if building.upgradeLevel >= 2 {
                 body.addChild(circleNode(radius: half * 0.76, fill: .clear, stroke: .systemCyan, lineWidth: 2.2))
             }
@@ -2924,6 +2963,38 @@ final class BattlefieldScene: SKScene {
                 CGPoint(x: -half * 0.76, y: half * 0.68),
                 CGPoint(x: -half * 0.9, y: 0)
             ], fill: armorDarkColor, stroke: outlineColor, lineWidth: 2.2))
+            let radarGrilles = CGMutablePath()
+            for x in [-half * 0.48, half * 0.34] {
+                for step in 0..<3 {
+                    let y = -half * 0.34 + Double(step) * half * 0.13
+                    radarGrilles.move(to: CGPoint(x: x, y: y))
+                    radarGrilles.addLine(to: CGPoint(x: x + half * 0.16, y: y))
+                }
+            }
+            let radarGrilleNode = SKShapeNode(path: radarGrilles)
+            radarGrilleNode.strokeColor = armorLightColor.withAlphaComponent(0.66)
+            radarGrilleNode.lineWidth = 1.2
+            body.addChild(radarGrilleNode)
+            let radarBraces = CGMutablePath()
+            radarBraces.move(to: CGPoint(x: -half * 0.58, y: -half * 0.48))
+            radarBraces.addLine(to: CGPoint(x: -half * 0.12, y: half * 0.1))
+            radarBraces.move(to: CGPoint(x: half * 0.58, y: -half * 0.48))
+            radarBraces.addLine(to: CGPoint(x: half * 0.12, y: half * 0.1))
+            let radarBraceNode = SKShapeNode(path: radarBraces)
+            radarBraceNode.strokeColor = highlightColor.withAlphaComponent(0.72)
+            radarBraceNode.lineWidth = 1.6
+            body.addChild(radarBraceNode)
+            for x in [-half * 0.52, half * 0.52] {
+                let support = rectNode(
+                    CGRect(x: -half * 0.08, y: -half * 0.1, width: half * 0.16, height: half * 0.2),
+                    cornerRadius: 1,
+                    fill: armorLightColor,
+                    stroke: outlineColor,
+                    lineWidth: 0.8
+                )
+                support.position = CGPoint(x: x, y: -half * 0.46)
+                body.addChild(support)
+            }
             body.addChild(circleNode(radius: half * 0.24, fill: armorLightColor, stroke: teamColor(building.team), lineWidth: 2))
             body.addChild(rectNode(
                 CGRect(x: -half * 0.07, y: -half * 0.08, width: half * 0.14, height: half * 0.65),
@@ -2938,6 +3009,34 @@ final class BattlefieldScene: SKScene {
                 lineWidth: 1.8
             )
             body.addChild(dish)
+            body.addChild(rectNode(
+                CGRect(x: -half * 0.29, y: half * 0.27, width: half * 0.58, height: half * 0.09),
+                cornerRadius: 1,
+                fill: armorLightColor,
+                stroke: outlineColor,
+                lineWidth: 0.8
+            ))
+            body.addChild(ellipseNode(
+                CGRect(x: -half * 0.38, y: half * 0.25, width: half * 0.76, height: half * 0.28),
+                fill: .clear,
+                stroke: highlightColor.withAlphaComponent(0.75),
+                lineWidth: 1
+            ))
+            let feedArm = CGMutablePath()
+            feedArm.move(to: CGPoint(x: 0, y: half * 0.29))
+            feedArm.addLine(to: CGPoint(x: 0, y: half * 0.47))
+            let feedArmNode = SKShapeNode(path: feedArm)
+            feedArmNode.strokeColor = outlineColor
+            feedArmNode.lineWidth = 1.2
+            body.addChild(feedArmNode)
+            let feed = circleNode(
+                radius: half * 0.055,
+                fill: highlightColor,
+                stroke: .white.withAlphaComponent(0.8),
+                lineWidth: 0.7
+            )
+            feed.position = CGPoint(x: 0, y: half * 0.49)
+            body.addChild(feed)
             if building.upgradeLevel >= 2 {
                 body.addChild(circleNode(radius: half * 0.74, fill: .clear, stroke: .systemCyan, lineWidth: 2))
                 let secondDish = ellipseNode(

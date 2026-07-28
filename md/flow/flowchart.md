@@ -742,3 +742,20 @@ flowchart LR
   W --> C["Reclaim / TTL / metal bar unchanged"]
   F["Combat Tank + Turret wreck fixture"] --> PNG["Cloud ios-combat.png"]
 ```
+
+## v2.41 Extractor / Radar 工业细节
+
+```mermaid
+flowchart LR
+  E["Extractor snapshot"] --> EC["4 clamps + 4 bolts"]
+  E --> ET["Compound gear ticks + core highlight"]
+  R["Radar snapshot"] --> RB["Compound grilles + braces + feet"]
+  R --> RD["Mast crossbar + dish inset + feed"]
+  EC --> S["BattlefieldScene presentation only"]
+  ET --> S
+  RB --> S
+  RD --> S
+  F["Production-only T2 Radar fixture"] --> P["Cloud ios-home.png review"]
+  S --> P
+  C["Core / saves / normal launch unchanged"] --> S
+```

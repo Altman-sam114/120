@@ -74,6 +74,7 @@
 - v2.38 起，原生双指框选新增 Rusted Warfare 式静置取框：两指按住屏幕约 0.22 秒且几乎不动（较忙手指位移小于 12pt、间距漂移小于 8pt）即锁定框选，选择框直接框在两指之间，抬指后按既有 Replace / Add 规则选择框内己方单位（无单位时 fallback 相交己方建筑）。既有两指同向拖动扫框、捏合缩放判定、第三指/取消拒绝、pending 命令阻止框选和 tap/长按抑制全部保持。
 - v2.39 起，参考 Rusted Warfare 的低杂讯战场收紧战斗读法：满血单位和建筑不再常驻血条，血条只在受损后出现并改用更细的深底内缩样式；Move / Attack / Attack Move / Patrol / Guard / Build / Repair / Reclaim 命令线与落点标记只为当前选中的己方单位绘制，未选中单位不再泄露半透明命令线。选中单位命令线的高亮层级、建造/升级进度条、rally 线、弹道、爆点和 Core 语义不变。
 - v2.40 起，Command Center / Land Factory / Turret 模型精细化：Command Center 增加装甲板拼缝、双通风格栅、四角螺栓、队色能量环与指挥穹顶高光；Land Factory 增加带黄色警示纹的出车口舱门、屋顶通风格栅和后侧供给管；Turret 基座增加八颗铆钉环、内圈阴影环、炮管根部套筒和口部高光。全部细节为确定性静态 path，Extractor / Radar、Core 定义、尺寸、命中、炮塔旋转/后坐、建造帧和损伤状态不变。
+- v2.41 起，Extractor / Radar Station 补齐同等级程序化工业细节：Extractor 增加四向夹持臂、独立螺栓、内齿圈刻痕和偏移核心高光；Radar Station 增加基座格栅、斜撑与支脚、天线横撑、碟面内圈和馈源点。T2/T3 既有结构语义、Core 数值、尺寸、命中、建造帧、升级、损伤和选择状态保持不变；production 云端视觉场景额外放置一座 T2 Radar，仅用于固定截图验收，不影响普通启动。
 
 当前验证制度：
 

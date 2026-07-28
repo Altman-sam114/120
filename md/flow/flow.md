@@ -125,6 +125,8 @@ v2.39 收紧战斗表现杂讯：`drawHealthBar` 在 `current >= max` 时直接�
 
 v2.40 精细化 `buildingBody` 的三类核心建筑：Command Center 在八角基座与上层甲板之间加四条拼缝线、两组三线通风格栅、外圈 0.38 半径队色能量环、偏移指挥穹顶高光和四角基脚螺栓；Land Factory 在出车侧加深色舱门 + 四道黄色警示斜纹、屋顶两组三线格栅、后墙纵向供给管；Turret 基座加八颗铆钉环与 0.5 半径内阴影环，炮管根部加套筒、口部加高光短线。全部细节为确定性静态 path 且每建筑新增节点 ≤ 12；Extractor / Radar、turret heading/recoil mount 结构、construction frame、damage smoke、选择角标与 Core 不变。
 
+v2.41 精细化 `buildingBody` 的 Extractor / Radar：Extractor 的四向夹持块和独立螺栓围绕外环布置，12 道内齿刻痕聚合为一个 compound path，核心增加偏移高光；Radar 的双组基座格栅与两条斜撑分别聚合为 compound path，并增加两个支脚、天线横撑、碟面内圈、馈源臂和馈源点。新增常驻节点分别固定为 10 / 8 个，不使用动画、随机、texture、Core 或存档字段。production cloud fixture 只在 `cloudVisualScenario == .production` 时追加一座完成状态 T2 玩家 Radar，使 Home PNG 同时覆盖 T1 Extractor 和 T2 Radar；普通 `GameController` 初始化、战斗 fixture、升级和雷达玩法不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

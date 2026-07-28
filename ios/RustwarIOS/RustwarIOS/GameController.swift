@@ -139,6 +139,21 @@ final class GameController {
                 buildTime: buildTime
             )
         }
+        let radarDefinition = GameDefinitions.building(.radar)
+        let radarHitPoints = radarDefinition.upgrades
+            .first(where: { $0.level == 2 })?
+            .hitPoints ?? radarDefinition.hitPoints
+        let radarPosition = WorldPoint(1_100, 1_950)
+        state.buildings.append(BuildingSnapshot(
+            id: "visual-player-radar-t2",
+            type: .radar,
+            team: .player,
+            position: radarPosition,
+            hitPoints: radarHitPoints,
+            maxHitPoints: radarHitPoints,
+            rally: radarPosition,
+            upgradeLevel: 2
+        ))
         return state
     }
 
