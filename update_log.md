@@ -5343,7 +5343,9 @@
 验证状态：
 
 - 按云端唯一验证制度未运行任何本地测试、格式检查、Swift/Xcode build、Simulator、Preview、截图或 `git diff --check`。
-- 实现提交、GitHub Actions run、artifact、JUnit/Core/build/probe 和双 PNG 复判结果待本轮 push 后补录。
+- 实现提交 `d1e1b7017293afcf4259ba7d0f5a16f7d2096902` 的 GitHub Actions run `30323126139` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-d1e1b70-run30323126139-attempt1` 到 `/private/tmp/rustwar-c-review-30323126139/`，大小约 `1.7M`。
+- Manifest 已核对 `version=v1.2`、`branch=main`、完整 SHA、run id、run attempt、Xcode 26.5、iOS Simulator SDK 26.5 和 Swift 6.3.2；JUnit 为 8 checks、0 failures、1 个既定 browser skip，327 个 RustwarCore tests 全部通过。日志确认 `GameStateSelection.swift` 进入 Core 编译，`GameController.swift` 进入 iOS 编译，arm64/x86_64 universal build 包含 `BUILD SUCCEEDED`，Home/Combat 双 launch、landscape normalization 和 pixel probe 全部成功。
+- `ios-home.png` 为 2622x1206、透明比例 0、亮度标准差 41.374，SHA-256 为 `84d2580a47f033a289bf8dd2c562ab06a616572d58bd6de4ee3c89a715bcdc64`；`ios-combat.png` 为 2622x1206、透明比例 0、亮度标准差 41.594，SHA-256 为 `8ecc817d42cd76fe1adabd11ace5b747f8af43432adb86d4f9f6d0f43ce5a7c0`。两张图与 v2.41 基线逐字节一致，人工复判确认 HUD、建筑、单位、弹道、爆点和地形无视觉回退。实现 SHA 的 v2.42 云端验收通过。
 
 遗留事项：
 
