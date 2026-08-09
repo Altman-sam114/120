@@ -137,6 +137,8 @@ v2.44.4 收紧 `BattlefieldView` 的手势结束与迟到回调边界：`finishM
 
 v2.45 只收敛 `BattlefieldScene` 的 presentation-only 火力可读性：`spawnUnitFireEffect` 将 Tank / Heavy Tank / Artillery / Gunboat 的 `trailLength` 收至 10 / 16 / 14 / 11，Hover `beamWidth` 收至 2.5；`addBeamEffect` 将 glow alpha 收至 0.30、宽度比例收至 `width * 2.5`。projectile vapor/main 结构、white core 0.92、line cap、生命周期、effect/decal 上限、fog 层级和 Reduce Motion 分支保持；Core cooldown / HP / target / damage、命令、HUD、存档和 Home production fixture 不变。Combat fixture 只改变尾迹和光束的静态表现，Home PNG 保持原样。
 
+v2.46 将 `BattlefieldView` 的并行 SwiftUI 手势收敛为单一 `BattlefieldTouchIntent` owner。单指 pan 只有跨过 12pt 才激活；第二指达到 Spatial active、第三指、取消或触点 ID 替换会抢占当前 owner，清理 context location、area overlay 和 pan 增量，并让迟到的 tap/long-press/drag end 只能被丢弃。`MagnifyGesture` 只在 pinch owner 下缩放，双指同向/静置框选仍交给既有 `MultitouchIntentClassifier`，pending target 仍禁止提交区域选择；area drag end 只有 owner 仍为 `.areaSelection` 且存在活动起点时才调用 controller。地图 reset 记录被取消的 Spatial touch ID 集、递增 `battlefieldTouchSequence`、清空当前 touch ID 并保持 cancelled epoch，旧 Spatial/context 回调在新 Spatial 触点确认前不能重获 owner；context end 以起点和时间门控区分迟到旧回调，清理当前生命周期但不拆除新手势。Core、命令优先级、选择/建筑 dock、战斗、存档和 JSON 合同不变；该轮无真实 XCUITest，云端静态 smoke 不能证明真机触摸手感。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

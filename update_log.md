@@ -5579,3 +5579,32 @@
 
 - CI 仍没有 XCUITest；固定 Home/Combat PNG 与 327 个 Core tests 不能证明真机触摸手感、动态战斗密度下长期帧率、最小 zoom、Reduce Motion 主观体验或所有设备方向。
 - Hover core 与尾迹在极小缩放下仍需后续真实设备视觉矩阵确认；本轮只验证固定 iPhone 17 Pro Simulator fixture。
+
+### v2.46 / iOS touch intent owner and reset epoch
+
+日期：2026-08-09
+
+核心变更：
+
+- `BattlefieldView` 新增私有 `BattlefieldTouchIntent` owner，统一 tap、long press、pan、Select Area、双指框选、pinch 和 cancelled 生命周期；普通 pan 激活距离由 8pt 提高到 12pt，降低轻微抖动抢占长按的概率。
+- 第二指达到 active、第三指、取消或触点 ID 替换会立即抢占并取消旧单指 context/pan，清理 area overlay、context location 和 pan 增量；`MagnifyGesture` 只在 pinch owner 下消费，area drag end 只有 owner 仍为 `.areaSelection` 且有活动起点时才提交。
+- 地图 reset 记录被取消的 `SpatialEventCollection.Event.ID`、递增 `battlefieldTouchSequence`、清空 `battlefieldTouchID` 并保持 cancelled epoch；旧 Spatial/context 回调在新 Spatial 触点确认前不能重新获得 owner。context end 以起点和时间门控区分迟到旧回调，拆除当前生命周期而不覆盖新手势。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.46-ios-touch-intent-owner.md`
+- `update_log.md`
+
+验证状态：
+
+- 按云端唯一验证制度主线未运行任何本地测试、Swift/Xcode build、Simulator、Preview、截图、浏览器验证或测试脚本；只读复审代理误执行过一次 `git diff --check`，无输出、无文件修改且不作为本轮验收证据。`git status` / `git diff` 仅用于控制本轮范围。
+- 实现提交 push 后，Agent C 必须只下载与最新 `origin/main` commit 完全一致的 `Rustwar CI Results` artifact，核对 manifest、JUnit、主日志、失败摘要、repo state 和 Home/Combat PNG；本轮没有 XCUITest，静态 smoke 不可代替真实触摸注入。
+
+遗留事项：
+
+- CI 仍没有 SwiftUI/XCUITest 触摸注入，无法自动证明第二指抢占、触点替换、迟到 context 顺序、长按/拖动主观手感、VoiceOver、Dynamic Type、旋转或真机长期帧率；后续可把 owner reducer 抽为可注入时钟/触点 ID 的纯 Swift 模块，再增加云端 Swift Testing 覆盖。

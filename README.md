@@ -78,6 +78,7 @@
 - v2.42 起，iOS 主战场触控按当前意图仲裁密集实体：已有己方单位选择时，真实几何范围内的可见敌军会优先于附近友军的 44pt 扩展触控区进入 Attack；没有精确敌军时仍按既有 44pt 最近候选执行己方选择、敌方 Attack 或空地 Attack Move。显式 Attack 只命中可见敌军，Guard 只命中可实际护航的己方目标，Repair 只命中可由当前 Builder 维修的受损己方目标；雾外和 radar-only 敌军仍不可精确点选。
 - v2.43 起，Tank / Heavy Tank / AA Tank / Artillery 的履带改为外带、内带、compound 负重轮和 compound 履带齿分层绘制，并补充车体拼缝与发动机格栅；Tank 增加舱盖、AA Tank 增加双侧供弹箱、Artillery 增加炮闩与聚合驻锄。细节只存在于 presentation 层，炮塔转向、炮管后坐、命中、战斗数值、雾、HUD 和存档保持不变。
 - v2.44 起，iOS 单指拖动镜头跨过 8pt 后会持续抑制 tap，并阻止误触长按上下文命令；多指框选在触点替换时拒绝当前序列，仍与捏合缩放互斥。直接点存活己方建筑在 Replace/Add 或重复点按循环中都会聚焦为单建筑上下文，dock 自动显示生产、队列、集结点和可用升级；紧凑 dock 的生产按钮改为两列以保留可读的单位名、成本和 44pt 命中高度。无等待命令时点己方单位仍选择，点可见敌人直接 Attack，点空地复用 Attack-Move 自动接敌；Hover / Gunboat 增加确定性下腹、座舱、喷口、船体内衬、舱口和窗舷细节，炮塔 heading、炮管后坐、Core、战斗数值和存档不变。
+- v2.46 起，主战场触摸由单一 `BattlefieldTouchIntent` owner 仲裁 tap、long press、pan、Select Area、双指框选和 pinch：普通 pan 激活阈值提高到 12pt，第二指/第三指、取消或触点 ID 替换会立即抢占并取消旧单指回调，pinch 只由 pinch owner 缩放；框选结束只在 area owner 仍有效时提交。地图切换或重置会记录旧 Spatial touch ID、递增取消 epoch 并清空 touch ID，旧 Spatial/context 回调在新 Spatial 触点确认前不能重新获得 owner；context 结束会拆除当前手势生命周期而不覆盖新手势。
 
 当前验证制度：
 
@@ -157,7 +158,7 @@
 - 双击己方单位：选择该单位附近半径内的存活己方同类型单位；等待 Move、Attack、Build、Rally 或 Select Area 等命令目标时不会触发双击选择。
 - Save 1-9 / Group 1-9：保存或召回 1-9 号控制编队；外接键盘可用 Control + 1-9 保存、1-9 召回；召回会过滤已死亡、缺失或非己方目标，并恢复为当前多选集合。
 - 外接键盘：WASD / 方向键移动视野，Space 回到己方 Command Center，P 暂停/恢复，R 重开当前地图，E 选择空闲 Builder，F 选择当前屏幕内作战单位，Control + A 选择全部战斗单位，Option + A 选择同类型单位，A 进入 Attack Move，G 进入 Patrol，H 进入 Guard，C 进入 Reclaim，S 停止或取消当前等待命令，Z / X / V 切换选中有武器己方单位为 Aggressive / Defensive / Hold Fire；Shift + 1-9 按当前 HUD 顺序生产单位，Shift + E / T / F / D 进入 Build Extractor / Turret / Factory / Radar，Shift + C / P / R 执行 Cancel Last / Repeat / Rally。
-- 拖拽：平移战场视角。
+- 拖拽：移动超过 12pt 后平移战场视角；同一触摸序列会持续抑制 tap/长按，轻微抖动仍可保留长按语义。
 - 捏合：缩放战场视角。
 - Move：选中己方单位时显示；点按后进入移动落点模式，再 tap 战场下达移动命令；多选时所有选中己方单位会按稳定方阵获得围绕目标点的目的地。
 - Attack Move：选中己方单位时显示；点按后进入攻击移动目的地模式，再 tap 战场下达攻击移动命令；多选时所有选中己方单位会按稳定方阵获得围绕目标点的攻击移动目的地，单位会向各自目的地移动，并只在自身视野范围内获取敌方单位或建筑作为临时攻击目标。

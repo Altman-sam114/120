@@ -845,3 +845,22 @@ flowchart LR
   F["Production fixture"] --> A["Home PNG unchanged"]
   S["Core cooldown / HP / target / damage"] --> X["No behavior change"]
 ```
+
+## v2.46 iOS touch intent owner
+
+```mermaid
+flowchart TD
+  T["Spatial / Drag / Tap / LongPress / Magnify events"] --> O{"BattlefieldTouchIntent owner"}
+  O -->|"possible + drag >= 12pt"| P["pan or areaSelection owner"]
+  O -->|"possible + long press"| L["longPress owner -> context command"]
+  O -->|"two active IDs"| M["claim multitouch; cancel context/pan; clear area overlay"]
+  M --> C{"Classifier"}
+  C -->|"stable same-direction / static dwell"| S["multitouch selection preview + commit"]
+  C -->|"spacing change / reverse"| Z["pinch owner; Magnify only here"]
+  C -->|"third ID / cancellation / replacement"| X["cancelled owner; suppress stale callbacks"]
+  R["Map reset"] --> E["save cancelled Spatial IDs + increment sequence + clear touch ID"]
+  E --> F["old Spatial/context frames rejected"]
+  F --> N["fresh Spatial ID clears epoch and re-seeds possible"]
+  P --> D["drag end commits area only if area owner + active start"]
+  L --> Q["context end teardown keyed by start location/time"]
+```
