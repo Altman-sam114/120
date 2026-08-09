@@ -5459,8 +5459,62 @@
 验证状态：
 
 - 按云端唯一验证制度未运行任何本地测试、格式检查、Swift/Xcode build、Simulator、Preview、截图或 `git diff --check`。
-- 修复提交、GitHub Actions run、artifact、JUnit/Core/build/probe 和 Home/Combat PNG 复判结果待修复 SHA push 后补录。
+- 修复提交 `135695b501288f644f61881807af3e95130d31d6` 的 Actions run `31291912539` / attempt 1 成功；artifact `rustwar-ci-v1.2-main-135695b-run31291912539-attempt1` 已下载到 `/private/tmp/rustwar-c-review-31291912539/`，大小约 1.7M。
+- Manifest 匹配 `main`、完整 SHA、run/attempt、Xcode 26.5、iOS Simulator SDK 26.5 和 Swift 6.3.2；JUnit 为 8 checks、0 failures、1 个既定 browser skip，327 个 RustwarCore tests 全部通过；双架构 build、Home/Combat 双启动、方向归一化和 PNG probe 成功。
+- Home/Combat PNG 均为 2622x1206，亮度标准差分别为 41.716 和 41.601；代码与静态截图复判未见 HUD、建筑、单位、弹道、爆点、地形或 Tactical Map 回退。
 
 遗留事项：
 
 - 当前 CI 没有 XCUITest；固定 PNG 不能证明真实触摸节奏、长按/拖动主观手感、VoiceOver、Dynamic Type、最小 zoom、密集战斗长期帧率或所有地图。
+
+### v2.44.2 / iOS gesture lifecycle suppression fix
+
+日期：2026-08-09
+
+核心变更：
+
+- `BattlefieldView` 新增 context gesture started 生命周期；单指 pan 在拖动或 context 手势结束时清理 active 标志，pan 内回到起点不会重新放行长按上下文命令。
+- `cancelSelectionGestures()` 只有在 pan、框选、多指序列或 context 手势实际活动时才写入 0.32 秒 tap suppression；普通地图 reset 不再吞掉新地图首个合法 tap。
+- 多指框选/捏合、pending command、建筑 Replace/Add 和既有 controller/Core 合同不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `md/prompt/v1-ios-swift-port/v2.44.2-ios-gesture-lifecycle-suppression.md`
+
+验证状态：
+
+- 按云端唯一验证制度未运行任何本地测试、格式检查、Swift/Xcode build、Simulator、Preview、截图或 `git diff --check`。
+- 提交 `85c1d3c789b6bc9eab937af99a21c823c8661670` 的 Actions run `31292160515` / attempt 1 成功；artifact `rustwar-ci-v1.2-main-85c1d3c-run31292160515-attempt1` 已下载到 `/private/tmp/rustwar-c-review-31292160515/`，大小约 1.7M。
+- Manifest 匹配 `main`、完整 SHA、run/attempt、Xcode 26.5、iOS Simulator SDK 26.5 和 Swift 6.3.2；JUnit 为 8 checks、0 failures、1 个既定 browser skip，327 个 RustwarCore tests 全部通过；双架构 build、Home/Combat 双启动、方向归一化和 PNG probe 成功。
+- Home/Combat PNG 均为 2622x1206，亮度标准差分别为 41.716 和 41.601；代码与静态截图复判未见 HUD、建筑、单位、弹道、爆点、地形或 Tactical Map 回退。
+
+遗留事项：
+
+- 当前 CI 没有 XCUITest；静态 PNG 和 Core tests 不能证明真实触摸节奏、取消时序、VoiceOver、Dynamic Type、真机性能或所有旋转场景。
+
+### v2.44.3 / persistent pan tap cancellation and touch sequence guard
+
+日期：2026-08-09
+
+核心变更：
+
+- 为当前触摸序列记录 `battlefieldPanOccurredForCurrentTouch`；tap 和 long-press 即使短时间 suppression 已过期，也不会把已发生 pan 的拖动误派成地图命令或上下文命令。
+- 复用 `SpatialEventGesture` 的触点 ID 派生触摸序列世代：首次登记和双指替换不把同一段触摸误判为新世代，整段 touch finish 后才递增；地图取消后旧 context generation 保持拒绝，下一段触摸可重新播种。
+- 取消序列的 context `onEnded` 保留 cancellation 哨兵，避免旧地图上的迟到 tap 在 suppression 过期后重新放行；既有多指分类、pending command、selection、建筑 dock 和 Core/JSON/存档语义不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `md/prompt/v1-ios-swift-port/v2.44.3-ios-pan-tap-cancellation.md`
+
+验证状态：
+
+- 按云端唯一验证制度未运行任何本地测试、格式检查、Swift/Xcode build、Simulator、Preview、截图或 `git diff --check`。
+- 提交 `28daee91ad4359d71d506fc140e2824f1afff71d` 的 Actions run `31292602869` / attempt 1 成功；artifact `rustwar-ci-v1.2-main-28daee9-run31292602869-attempt1` 已下载到 `/private/tmp/rustwar-c-review-31292602869/`，大小约 1.7M。
+- Manifest 匹配 `main`、完整 SHA、run/attempt、Xcode 26.5、iOS Simulator SDK 26.5 和 Swift 6.3.2；JUnit 为 8 checks、0 failures、1 个既定 browser skip，327 个 RustwarCore tests 全部通过；arm64/x86_64 build、Home/Combat 双启动、方向归一化和 PNG probe 全部成功。
+- `ios-home.png` / `ios-combat.png` 均为 2622x1206，透明像素比例 0，亮度标准差分别为 41.716 和 41.601，SHA-256 分别为 `cf6dfcdedd88673c854085c6248d156a53ff50dbffbaa3b816037d419a3b4a97` 和 `d1db61a198cd32ce27bed2fc2242990dd4a2d75dbbaa6cdcefdb7790a53ab56e`；人工复判未见模型、HUD、弹道、爆点、地形或 Tactical Map 回退。
+
+遗留事项：
+
+- CI 没有 XCUITest，`DragGesture`/`SpatialEventGesture` 回调顺序、旧 context 回调缺少触点 ID、Spatial finish 丢失时的极端取消恢复仍不能由静态 PNG 或 Core tests 证明；后续若继续收敛，可用 `DragGesture.Value.time` 做延迟回调过滤，但需单独云端轮次验证。
