@@ -1,3 +1,4 @@
+import Foundation
 import SpriteKit
 import SwiftUI
 import RustwarCore
@@ -22,6 +23,9 @@ struct BattlefieldView: View {
     @State private var contextGestureTouchSequence = -1
     @State private var cancelledContextTouchSequence: Int?
     @State private var contextGestureCancelled = false
+    @State private var contextGestureStartTime: Date?
+    @State private var contextGestureLastEventTime: Date?
+    @State private var contextGestureCancelledAt: Date?
     @State private var battlefieldPanOccurredForCurrentTouch = false
     @State private var battlefieldTouchID: SpatialEventCollection.Event.ID?
     @State private var battlefieldTouchSequence = 0
@@ -119,16 +123,21 @@ struct BattlefieldView: View {
     private func contextLocationGesture() -> some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
+                guard acceptsContextGestureEvent(at: value.time) else {
+                    return
+                }
                 let startsNewGesture = !contextGestureStarted ||
                     contextGestureTouchSequence != battlefieldTouchSequence
                 if startsNewGesture {
                     contextGestureStarted = true
                     contextGestureTouchSequence = battlefieldTouchSequence
+                    contextGestureStartTime = value.time
                     let isCancelledSequence = contextGestureCancelled &&
                         cancelledContextTouchSequence == battlefieldTouchSequence
                     if !isCancelledSequence {
                         cancelledContextTouchSequence = nil
                         contextGestureCancelled = false
+                        contextGestureCancelledAt = nil
                         contextGestureGeneration = battlefieldGestureGeneration
                         battlefieldPanOccurredForCurrentTouch = false
                     }
@@ -138,17 +147,40 @@ struct BattlefieldView: View {
                 }
                 contextPressLocation = value.location
             }
-            .onEnded { _ in
+            .onEnded { value in
+                guard contextGestureStarted,
+                      acceptsContextGestureEvent(at: value.time) else {
+                    return
+                }
                 let wasCancelled = contextGestureCancelled
                 contextPressLocation = nil
                 contextGestureStarted = false
                 contextGestureTouchSequence = -1
+                contextGestureStartTime = nil
                 if !wasCancelled {
                     cancelledContextTouchSequence = nil
                     contextGestureCancelled = false
+                    contextGestureCancelledAt = nil
                 }
                 isBattlefieldPanActive = false
             }
+    }
+
+    private func acceptsContextGestureEvent(at time: Date) -> Bool {
+        if let lastEventTime = contextGestureLastEventTime,
+           time < lastEventTime {
+            return false
+        }
+        if let startTime = contextGestureStartTime,
+           time < startTime {
+            return false
+        }
+        if let cancelledAt = contextGestureCancelledAt,
+           time <= cancelledAt {
+            return false
+        }
+        contextGestureLastEventTime = time
+        return true
     }
 
     private func dragGesture(in viewportSize: CGSize) -> some Gesture {
@@ -347,10 +379,16 @@ struct BattlefieldView: View {
             !controller.isAwaitingTargetCommand
         let startPoint = multitouchSelectionStart
         let endPoint = multitouchSelectionCurrent
+        let eventTouchIDs = Set(events.filter { $0.kind == .touch }.map(\.id))
+        let hadMultitouchSequence = isMultitouchSequenceActive ||
+            multitouchIDs.count >= 2 ||
+            eventTouchIDs.count >= 2
         resetMultitouchSelectionState()
         battlefieldTouchID = nil
         battlefieldTouchSequence &+= 1
-        suppressTapAfterMultitouch()
+        if hadMultitouchSequence {
+            suppressTapAfterMultitouch()
+        }
 
         guard shouldSelect, let startPoint, let endPoint else {
             return
@@ -415,9 +453,13 @@ struct BattlefieldView: View {
         battlefieldGestureGeneration &+= 1
         contextGestureGeneration = -1
         contextPressLocation = nil
+        contextGestureStartTime = nil
         if !hasActiveGesture {
             contextGestureStarted = false
             contextGestureTouchSequence = -1
+            contextGestureCancelledAt = nil
+        } else {
+            contextGestureCancelledAt = .now
         }
         suppressTapUntil = hasActiveGesture
             ? ProcessInfo.processInfo.systemUptime + Self.multitouchTapSuppressionDuration
