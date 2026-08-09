@@ -139,6 +139,8 @@ v2.45 只收敛 `BattlefieldScene` 的 presentation-only 火力可读性：`spaw
 
 v2.46 将 `BattlefieldView` 的并行 SwiftUI 手势收敛为单一 `BattlefieldTouchIntent` owner。单指 pan 只有跨过 12pt 才激活；第二指达到 Spatial active、第三指、取消或触点 ID 替换会抢占当前 owner，清理 context location、area overlay 和 pan 增量，并让迟到的 tap/long-press/drag end 只能被丢弃。`MagnifyGesture` 只在 pinch owner 下缩放，双指同向/静置框选仍交给既有 `MultitouchIntentClassifier`，pending target 仍禁止提交区域选择；area drag end 只有 owner 仍为 `.areaSelection` 且存在活动起点时才调用 controller。地图 reset 记录被取消的 Spatial touch ID 集、递增 `battlefieldTouchSequence`、清空当前 touch ID 并保持 cancelled epoch，旧 Spatial/context 回调在新 Spatial 触点确认前不能重获 owner；context end 以起点和时间门控区分迟到旧回调，清理当前生命周期但不拆除新手势。Core、命令优先级、选择/建筑 dock、战斗、存档和 JSON 合同不变；该轮无真实 XCUITest，云端静态 smoke 不能证明真机触摸手感。
 
+v2.46.1 继续修正取消 epoch 的两个边界：context 起点比较改为 1pt 容差并显式转换为 `Double`；context end 若时间迟到或已取消，结束单指序列时保留 `.cancelled`，不再把旧 pan 或 touch ID 重新释放为 `.possible`，迟到的 drag changed 也必须满足当前 pan 仍活动或本序列尚未发生 pan 才能 acquire。当 Select Area 仍持有活动起点时，context end 不抢先结束 area owner，交由 drag end 完成一次合法区域选择。地图 reset 尚未登记 Spatial touch ID 时，未知 active touch 必须先经过 context seed 才能清除 cancellation epoch，防止旧 Spatial 首帧误被视为 fresh；已登记的取消 ID 仍只允许未取消 ID 重新播种。Core、命令、HUD、战斗、存档和 JSON 合同保持不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

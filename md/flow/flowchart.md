@@ -864,3 +864,23 @@ flowchart TD
   P --> D["drag end commits area only if area owner + active start"]
   L --> Q["context end teardown keyed by start location/time"]
 ```
+
+## v2.46.1 iOS cancellation epoch hardening
+
+```mermaid
+flowchart TD
+  C["context end: accepted / cancelled / late"] --> A{"area owner + active start?"}
+  A -->|"yes"| DA["leave Select Area to drag end"]
+  A -->|"no"| S{"accepted and not cancelled?"}
+  S -->|"yes"| P["finish single touch -> possible"]
+  S -->|"no"| X["finish single touch -> cancelled"]
+  DG["Drag changed"] --> D2{"pan active or no pan occurred?"}
+  D2 -->|"no, stale drag changed"| Q2["reject old pan callback"]
+  D2 -->|"yes"| N2["allow pan/area acquire"]
+  R["map reset without Spatial touch ID"] --> G["require context seed"]
+  G -->|"unknown active touch before seed"| Q["reject stale Spatial frame"]
+  G -->|"seeded unknown active touch"| F["accept fresh sequence"]
+  I["cancelled Spatial IDs present"] --> U["filter only IDs not in cancelled set"]
+  U --> F
+  T["context start location drift <= 1pt"] --> H["accept with explicit Double distance"]
+```

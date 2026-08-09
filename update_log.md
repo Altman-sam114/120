@@ -5608,3 +5608,31 @@
 遗留事项：
 
 - CI 仍没有 SwiftUI/XCUITest 触摸注入，无法自动证明第二指抢占、触点替换、迟到 context 顺序、长按/拖动主观手感、VoiceOver、Dynamic Type、旋转或真机长期帧率；后续可把 owner reducer 抽为可注入时钟/触点 ID 的纯 Swift 模块，再增加云端 Swift Testing 覆盖。
+
+### v2.46.1 / iOS cancellation epoch hardening
+
+日期：2026-08-09
+
+核心变更：
+
+- context 起点比较允许 1pt 的浮点误差，并显式将 `CGFloat` 差值转换为 `Double` 后计算距离，避免设备坐标微小漂移造成错误丢弃。
+- context end 若迟到或已取消，在结束单指序列时保留 `.cancelled`，不再把旧 pan 或 touch ID 重新释放为 `.possible`；迟到的 drag changed 还必须满足当前 pan 仍活动或本序列尚未发生 pan，不能重新 acquire 旧 `.pan`；Select Area 仍有活动起点时由 drag end 独占提交，context end 不抢先清理 area owner。
+- 地图 reset 尚未登记 Spatial touch ID 时，未知 active touch 必须先经过 context seed 才能被视为 fresh；已登记取消 ID 的序列只接受不在取消集合中的 touch ID，防止旧 Spatial 首帧重新获得 owner。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.46.1-ios-cancellation-epoch-hardening.md`
+
+验证状态：
+
+- 按云端唯一验证制度未运行本地测试、格式检查、Swift/Xcode build、Simulator、Preview、截图、浏览器验证或测试脚本；仅执行 `git status` / `git diff` 进行范围控制。
+- 本轮提交并 push 后，Agent C 必须只下载与最新 `origin/main` commit 完全一致的 `Rustwar CI Results` artifact，核对 manifest、JUnit、主日志、失败摘要和 Home/Combat PNG；云端结果待本轮 push 后补录。
+
+遗留事项：
+
+- CI 仍没有 XCUITest，无法自动证明真实第二指抢占、context/drag 回调乱序、长按/拖动手感、VoiceOver、Dynamic Type、旋转或真机长期帧率；若云端静态复核通过，后续可把 touch owner reducer 抽成可注入时钟/触点 ID 的纯 Swift 模块并增加云端 Swift Testing。
