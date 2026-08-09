@@ -1154,7 +1154,7 @@ final class BattlefieldScene: SKScene {
             projectileRadius = 2.7
             flashRadius = 4.8
             shotCount = 1
-            trailLength = 12
+            trailLength = 10
             beamWidth = 0
             travelSpeed = 860
         case .heavyTank:
@@ -1162,7 +1162,7 @@ final class BattlefieldScene: SKScene {
             projectileRadius = 4.4
             flashRadius = 7.2
             shotCount = 1
-            trailLength = 21
+            trailLength = 16
             beamWidth = 0
             travelSpeed = 690
         case .hover:
@@ -1171,7 +1171,7 @@ final class BattlefieldScene: SKScene {
             flashRadius = 4
             shotCount = 1
             trailLength = 0
-            beamWidth = 3
+            beamWidth = 2.5
             travelSpeed = 0
         case .aaTank:
             color = SKColor(red: 1, green: 0.84, blue: 0.38, alpha: 1)
@@ -1186,7 +1186,7 @@ final class BattlefieldScene: SKScene {
             projectileRadius = 3.8
             flashRadius = 6.2
             shotCount = 1
-            trailLength = 18
+            trailLength = 14
             beamWidth = 0
             travelSpeed = 620
         case .gunboat:
@@ -1194,7 +1194,7 @@ final class BattlefieldScene: SKScene {
             projectileRadius = 2.9
             flashRadius = 5
             shotCount = 1
-            trailLength = 14
+            trailLength = 11
             beamWidth = 0
             travelSpeed = 780
         }
@@ -1428,8 +1428,8 @@ final class BattlefieldScene: SKScene {
         path.addLine(to: target)
 
         let glow = SKShapeNode(path: path)
-        glow.strokeColor = color.withAlphaComponent(0.36)
-        glow.lineWidth = width * 3
+        glow.strokeColor = color.withAlphaComponent(0.30)
+        glow.lineWidth = width * 2.5
         glow.lineCap = .round
         container.addChild(glow)
 
