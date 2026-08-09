@@ -1069,7 +1069,7 @@ final class GameController {
             engine.selectVisibleToPlayer(
                 at: point,
                 includeEnemies: true,
-                mutation: selectionMutation,
+                mutation: battlefieldSelectionMutation(for: target),
                 minimumHitRadius: minimumHitRadius
             )
             commandStatus = nil
@@ -1697,13 +1697,14 @@ final class GameController {
         }
 
         let nextTarget = playerCandidates[nextIndex]
+        let tapMutation = battlefieldSelectionMutation(for: nextTarget)
         let previousSelection = engine.state.selectedEntityIDs
-        guard engine.select(entityID: nextTarget.id, mutation: selectionMutation) != nil else {
+        guard engine.select(entityID: nextTarget.id, mutation: tapMutation) != nil else {
             clearLastBattlefieldTap()
             return false
         }
 
-        if selectionMutation == .add {
+        if tapMutation == .add {
             let wasAdded = Set(previousSelection) != Set(engine.state.selectedEntityIDs)
             commandStatus = wasAdded
                 ? "\(nextTarget.displayName) added \(nextIndex + 1)/\(candidateIDs.count)"
@@ -1720,6 +1721,15 @@ final class GameController {
         )
         reportSelectionChange(from: previousSelection)
         return true
+    }
+
+    private func battlefieldSelectionMutation(for target: SelectionTarget?) -> SelectionMutation {
+        guard let target,
+              target.kind == .building,
+              isLivePlayerSelectionTarget(target) else {
+            return selectionMutation
+        }
+        return .replace
     }
 
     private func recordBattlefieldTap(

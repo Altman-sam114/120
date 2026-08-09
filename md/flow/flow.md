@@ -131,6 +131,8 @@ v2.42 为 Core 单目标/候选列表命中 API 增加默认 `nil` 的 `targetTe
 
 v2.43 精修 `BattlefieldScene.unitBody` 的四类履带单位：`addTracks` 每侧由外履带、内带、compound 负重轮和 compound 履带齿组成，常驻节点从每侧 7 个降为 4 个；Tank、Heavy Tank、AA Tank、Artillery 共享两层确定性车体拼缝/发动机格栅，但通过车体形状、履带长度、舱盖、供弹箱、炮闩和驻锄保持轮廓差异。炮塔细节继续挂 `weaponMount`，炮管/炮闩后坐继续挂 `recoilMount`；Core、weapon heading、recoil、伤害、雾、命中、HUD、战斗特效和存档不变。
 
+v2.44 把 iOS 直接操作合同收紧为：无等待态 tap 先走 pending/可见敌人意图，已有己方单位点可见敌人调用 `Attack`，点空地调用既有 `Attack-Move` 自动接敌；单位选择仍支持 44pt 命中、多指框选和 Replace/Add。`BattlefieldView` 在单指拖动超过 8pt 后进入 pan 状态，持续延长 tap 抑制并阻止长按上下文，触点 ID 替换的多指序列直接拒绝；地图切换/重置清理所有瞬态。直接点存活己方建筑统一使用 Replace 聚焦，重复点按循环对建筑也不保留混选 primary，使 `GameHUDView` 的 Production / Build & Upgrade section 立即出现；紧凑 dock 的生产选项改为两列。Hover/Gunboat 只增加 presentation compound path，不改 Core、订单、命中或存档。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

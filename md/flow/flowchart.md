@@ -795,3 +795,22 @@ flowchart LR
   R --> P
   P --> V["Heading / recoil / fog / Core semantics unchanged"]
 ```
+
+## v2.44 iOS 直接操作与建筑焦点
+
+```mermaid
+flowchart TD
+  T["Battlefield tap"] --> P["Pending command handlers"]
+  P -->|"none + selected player units"| E["Visible enemy at exact geometry"]
+  E -->|"hit"| A["Issue Attack"]
+  E -->|"miss / empty ground"| AM["Issue Attack-Move"]
+  P -->|"none + selectable player entity"| S["Replace/Add selection"]
+  S -->|"live player building"| B["Force Replace focus"]
+  B --> D["Dock scrolls to Production / Upgrade context"]
+  G["Single-finger drag >= 8pt"] --> H["Pan active + extend tap suppression"]
+  H --> L["Long press blocked while pan active"]
+  M["Two-finger events"] --> C{"Classifier"}
+  C -->|"same-direction / static dwell"| R["Area selection preview + commit"]
+  C -->|"pinch / reverse"| Z["Zoom"]
+  C -->|"third finger / ID replacement / cancel"| X["Reject and suppress tap"]
+```

@@ -5408,3 +5408,35 @@
 遗留事项：
 
 - 固定 Coast 双截图不能覆盖所有地图、最小 zoom、真机 scale、密集战斗长期帧率或动态后坐恢复；当前 CI 仍没有 XCUITest。
+
+### v2.44 / iOS input, building context and model finish
+
+日期：2026-08-09
+
+核心变更：
+
+- `BattlefieldView` 增加单指 pan 生命周期：拖动跨过 8pt 后持续延长 tap 抑制并阻止长按上下文，地图切换/重置清理状态；多指触点 ID 替换直接拒绝当前序列，既有框选/捏合分类和 pending 命令优先级保持。
+- `GameController` 直接点存活己方建筑时统一使用 Replace，重复点按循环对建筑也强制 Replace，确保 dock 立即进入该建筑的生产、队列、集结点或升级上下文；单位仍遵循 Replace/Add。
+- Hover / Gunboat 增加确定性 compound 车体细节；紧凑 dock 生产选项改为两列，保留既有 production action、快捷键、VoiceOver、Core、命中、订单和存档语义。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.44-ios-input-building-context-and-model-finish.md`
+- `update_log.md`
+
+验证状态：
+
+- 按云端唯一验证制度未运行任何本地测试、格式检查、Swift/Xcode build、Simulator、Preview、截图或 `git diff --check`。
+- 实现提交、GitHub Actions run、artifact、JUnit/Core/build/probe 和 Home/Combat PNG 复判结果待本轮 push 后补录。
+
+遗留事项：
+
+- 当前 CI 没有 XCUITest；固定 PNG 不能证明真实触摸节奏、长按/拖动主观手感、VoiceOver、Dynamic Type、最小 zoom、密集战斗长期帧率或所有地图。

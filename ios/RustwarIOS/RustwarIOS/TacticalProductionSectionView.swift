@@ -8,7 +8,10 @@ struct TacticalProductionSectionView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var productionColumnCount: Int {
-        dynamicTypeSize.isAccessibilitySize ? 1 : 3
+        if dynamicTypeSize.isAccessibilitySize {
+            return 1
+        }
+        return columns == 1 ? 2 : 3
     }
 
     var body: some View {

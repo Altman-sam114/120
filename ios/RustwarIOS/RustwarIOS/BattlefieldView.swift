@@ -11,6 +11,7 @@ struct BattlefieldView: View {
     @State private var scene = BattlefieldScene()
     @State private var lastDragTranslation = CGSize.zero
     @State private var lastMagnification = 1.0
+    @State private var isBattlefieldPanActive = false
     @State private var selectionDragStart: CGPoint?
     @State private var selectionDragCurrent: CGPoint?
     @State private var contextPressLocation: CGPoint?
@@ -59,7 +60,13 @@ struct BattlefieldView: View {
                     .simultaneousGesture(magnifyGesture())
                     .simultaneousGesture(multitouchSelectionGesture(in: proxy.size))
                     .onLongPressGesture(minimumDuration: 0.45, maximumDistance: 18) {
-                        guard !isMultitouchSequenceActive, let contextPressLocation else {
+                        if let suppressTapUntil,
+                           ProcessInfo.processInfo.systemUptime <= suppressTapUntil {
+                            return
+                        }
+                        guard !isMultitouchSequenceActive,
+                              !isBattlefieldPanActive,
+                              let contextPressLocation else {
                             return
                         }
                         suppressTapUntil = ProcessInfo.processInfo.systemUptime + Self.contextTapSuppressionDuration
@@ -96,6 +103,12 @@ struct BattlefieldView: View {
     private func contextLocationGesture() -> some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
+                if hypot(
+                    value.location.x - value.startLocation.x,
+                    value.location.y - value.startLocation.y
+                ) <= 0.5 {
+                    isBattlefieldPanActive = false
+                }
                 contextPressLocation = value.location
             }
             .onEnded { _ in
@@ -110,6 +123,11 @@ struct BattlefieldView: View {
                     lastDragTranslation = .zero
                     return
                 }
+                if !isBattlefieldPanActive {
+                    isBattlefieldPanActive = true
+                    lastDragTranslation = .zero
+                }
+                suppressTapAfterBattlefieldPan()
                 if controller.isAwaitingAreaSelection {
                     if selectionDragStart == nil {
                         selectionDragStart = value.startLocation
@@ -202,6 +220,12 @@ struct BattlefieldView: View {
                 multitouchCurrentLocations[touch.id] = touch.location
             }
         } else {
+            guard Set(activeTouches.map(\.id)) == Set(multitouchIDs) else {
+                isMultitouchRejected = true
+                isMultitouchPinch = false
+                clearMultitouchSelectionPreview()
+                return
+            }
             for touch in activeTouches where multitouchIDs.contains(touch.id) {
                 multitouchCurrentLocations[touch.id] = touch.location
             }
@@ -295,6 +319,10 @@ struct BattlefieldView: View {
         suppressTapUntil = ProcessInfo.processInfo.systemUptime + Self.multitouchTapSuppressionDuration
     }
 
+    private func suppressTapAfterBattlefieldPan() {
+        suppressTapUntil = ProcessInfo.processInfo.systemUptime + Self.contextTapSuppressionDuration
+    }
+
     private func clearMultitouchSelectionPreview() {
         isMultitouchSelection = false
         multitouchSelectionStart = nil
@@ -319,6 +347,7 @@ struct BattlefieldView: View {
         selectionDragCurrent = nil
         lastDragTranslation = .zero
         lastMagnification = 1
+        isBattlefieldPanActive = false
         resetMultitouchSelectionState()
     }
 }

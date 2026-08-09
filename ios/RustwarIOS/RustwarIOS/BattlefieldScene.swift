@@ -2484,6 +2484,73 @@ final class BattlefieldScene: SKScene {
                 CGPoint(x: -radius * 0.78, y: 0),
                 CGPoint(x: 0, y: -radius * 0.7)
             ], fill: armorMidColor, stroke: outlineColor))
+            let hoverBellyPath = CGMutablePath()
+            hoverBellyPath.move(to: CGPoint(x: -radius * 0.58, y: -radius * 0.18))
+            hoverBellyPath.addLine(to: CGPoint(x: radius * 0.48, y: -radius * 0.18))
+            hoverBellyPath.addLine(to: CGPoint(x: radius * 0.68, y: -radius * 0.04))
+            hoverBellyPath.addLine(to: CGPoint(x: radius * 0.48, y: radius * 0.18))
+            hoverBellyPath.addLine(to: CGPoint(x: -radius * 0.58, y: radius * 0.18))
+            hoverBellyPath.addLine(to: CGPoint(x: -radius * 0.68, y: radius * 0.04))
+            hoverBellyPath.closeSubpath()
+            for y in [-radius * 0.55, radius * 0.55] {
+                hoverBellyPath.addRect(CGRect(
+                    x: -radius * 0.56,
+                    y: y - radius * 0.1,
+                    width: radius * 1.08,
+                    height: radius * 0.2
+                ))
+            }
+            let hoverBelly = SKShapeNode(path: hoverBellyPath)
+            hoverBelly.fillColor = armorDarkColor.withAlphaComponent(0.94)
+            hoverBelly.strokeColor = outlineColor.withAlphaComponent(0.88)
+            hoverBelly.lineWidth = 1
+            hoverBelly.zPosition = 0.1
+            body.addChild(hoverBelly)
+
+            let hoverCockpit = polygonNode([
+                CGPoint(x: -radius * 0.42, y: -radius * 0.24),
+                CGPoint(x: -radius * 0.08, y: -radius * 0.26),
+                CGPoint(x: radius * 0.08, y: -radius * 0.13),
+                CGPoint(x: radius * 0.11, y: 0),
+                CGPoint(x: radius * 0.08, y: radius * 0.13),
+                CGPoint(x: -radius * 0.08, y: radius * 0.26),
+                CGPoint(x: -radius * 0.42, y: radius * 0.24)
+            ], fill: armorLightColor.withAlphaComponent(0.8), stroke: outlineColor, lineWidth: 1.1)
+            hoverCockpit.zPosition = 0.24
+            body.addChild(hoverCockpit)
+            let hoverWindow = polygonNode([
+                CGPoint(x: -radius * 0.34, y: -radius * 0.14),
+                CGPoint(x: -radius * 0.11, y: -radius * 0.16),
+                CGPoint(x: radius * 0.01, y: -radius * 0.07),
+                CGPoint(x: radius * 0.04, y: 0),
+                CGPoint(x: radius * 0.01, y: radius * 0.07),
+                CGPoint(x: -radius * 0.11, y: radius * 0.16),
+                CGPoint(x: -radius * 0.34, y: radius * 0.14)
+            ], fill: SKColor.systemCyan.withAlphaComponent(0.42), stroke: highlightColor.withAlphaComponent(0.78), lineWidth: 0.8)
+            hoverWindow.zPosition = 0.3
+            body.addChild(hoverWindow)
+
+            let hoverRearPath = CGMutablePath()
+            hoverRearPath.addRect(CGRect(
+                x: -radius * 0.72,
+                y: -radius * 0.11,
+                width: radius * 0.14,
+                height: radius * 0.22
+            ))
+            for y in [-radius * 0.22, radius * 0.22] {
+                hoverRearPath.addRect(CGRect(
+                    x: -radius * 0.7,
+                    y: y - radius * 0.045,
+                    width: radius * 0.2,
+                    height: radius * 0.09
+                ))
+            }
+            let hoverRear = SKShapeNode(path: hoverRearPath)
+            hoverRear.fillColor = armorDarkColor
+            hoverRear.strokeColor = SKColor.systemCyan.withAlphaComponent(0.8)
+            hoverRear.lineWidth = 0.8
+            hoverRear.zPosition = 0.32
+            body.addChild(hoverRear)
             weaponMount.addChild(ellipseNode(
                 CGRect(x: -radius * 0.28, y: -radius * 0.31, width: radius * 0.7, height: radius * 0.62),
                 fill: armorLightColor,
@@ -2622,6 +2689,35 @@ final class BattlefieldScene: SKScene {
                 CGPoint(x: -radius * 0.78, y: -radius * 0.44),
                 CGPoint(x: radius * 0.48, y: -radius * 0.52)
             ], fill: armorMidColor, stroke: outlineColor))
+            let gunboatInsetPath = CGMutablePath()
+            gunboatInsetPath.move(to: CGPoint(x: radius * 0.78, y: 0))
+            gunboatInsetPath.addLine(to: CGPoint(x: radius * 0.38, y: radius * 0.36))
+            gunboatInsetPath.addLine(to: CGPoint(x: -radius * 0.67, y: radius * 0.31))
+            gunboatInsetPath.addLine(to: CGPoint(x: -radius * 0.84, y: radius * 0.15))
+            gunboatInsetPath.addLine(to: CGPoint(x: -radius * 0.84, y: -radius * 0.15))
+            gunboatInsetPath.addLine(to: CGPoint(x: -radius * 0.67, y: -radius * 0.31))
+            gunboatInsetPath.addLine(to: CGPoint(x: radius * 0.38, y: -radius * 0.36))
+            gunboatInsetPath.closeSubpath()
+            let gunboatInset = SKShapeNode(path: gunboatInsetPath)
+            gunboatInset.fillColor = armorDarkColor.withAlphaComponent(0.74)
+            gunboatInset.strokeColor = armorLightColor.withAlphaComponent(0.7)
+            gunboatInset.lineWidth = 0.9
+            gunboatInset.zPosition = 0.08
+            body.addChild(gunboatInset)
+
+            let gunboatDeckPath = CGMutablePath()
+            gunboatDeckPath.move(to: CGPoint(x: -radius * 0.56, y: -radius * 0.11))
+            gunboatDeckPath.addLine(to: CGPoint(x: radius * 0.47, y: -radius * 0.09))
+            gunboatDeckPath.addLine(to: CGPoint(x: radius * 0.62, y: 0))
+            gunboatDeckPath.addLine(to: CGPoint(x: radius * 0.47, y: radius * 0.09))
+            gunboatDeckPath.addLine(to: CGPoint(x: -radius * 0.56, y: radius * 0.11))
+            gunboatDeckPath.closeSubpath()
+            let gunboatDeck = SKShapeNode(path: gunboatDeckPath)
+            gunboatDeck.fillColor = armorLightColor.withAlphaComponent(0.38)
+            gunboatDeck.strokeColor = highlightColor.withAlphaComponent(0.72)
+            gunboatDeck.lineWidth = 0.75
+            gunboatDeck.zPosition = 0.16
+            body.addChild(gunboatDeck)
             for y in [-radius * 0.38, radius * 0.38] {
                 body.addChild(lineNode(
                     from: CGPoint(x: -radius * 0.65, y: y),
@@ -2630,6 +2726,39 @@ final class BattlefieldScene: SKScene {
                     width: 2
                 ))
             }
+            let gunboatHatchesPath = CGMutablePath()
+            for x in [-radius * 0.52, -radius * 0.18] {
+                for y in [-radius * 0.3, radius * 0.3] {
+                    gunboatHatchesPath.addRect(CGRect(
+                        x: x,
+                        y: y - radius * 0.045,
+                        width: radius * 0.14,
+                        height: radius * 0.09
+                    ))
+                }
+            }
+            let gunboatHatches = SKShapeNode(path: gunboatHatchesPath)
+            gunboatHatches.fillColor = armorDarkColor.withAlphaComponent(0.92)
+            gunboatHatches.strokeColor = armorLightColor.withAlphaComponent(0.7)
+            gunboatHatches.lineWidth = 0.65
+            gunboatHatches.zPosition = 0.22
+            body.addChild(gunboatHatches)
+
+            let gunboatWindowsPath = CGMutablePath()
+            for x in [-radius * 0.46, -radius * 0.22, radius * 0.02] {
+                gunboatWindowsPath.addRect(CGRect(
+                    x: x,
+                    y: radius * 0.17,
+                    width: radius * 0.14,
+                    height: radius * 0.075
+                ))
+            }
+            let gunboatWindows = SKShapeNode(path: gunboatWindowsPath)
+            gunboatWindows.fillColor = SKColor.systemCyan.withAlphaComponent(0.48)
+            gunboatWindows.strokeColor = .white.withAlphaComponent(0.64)
+            gunboatWindows.lineWidth = 0.7
+            gunboatWindows.zPosition = 0.24
+            body.addChild(gunboatWindows)
             weaponMount.addChild(circleNode(radius: radius * 0.3, fill: armorLightColor, stroke: outlineColor))
             let gunboatCabin = polygonNode([
                 CGPoint(x: -radius * 0.22, y: -radius * 0.24),
