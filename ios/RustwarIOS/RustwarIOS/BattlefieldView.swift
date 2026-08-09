@@ -16,6 +16,8 @@ struct BattlefieldView: View {
     @State private var selectionDragCurrent: CGPoint?
     @State private var contextPressLocation: CGPoint?
     @State private var suppressTapUntil: TimeInterval?
+    @State private var battlefieldGestureGeneration = 0
+    @State private var contextGestureGeneration = -1
     @State private var multitouchIDs: [SpatialEventCollection.Event.ID] = []
     @State private var multitouchStartLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
     @State private var multitouchCurrentLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
@@ -66,6 +68,7 @@ struct BattlefieldView: View {
                         }
                         guard !isMultitouchSequenceActive,
                               !isBattlefieldPanActive,
+                              contextGestureGeneration == battlefieldGestureGeneration,
                               let contextPressLocation else {
                             return
                         }
@@ -108,6 +111,7 @@ struct BattlefieldView: View {
                     value.location.y - value.startLocation.y
                 ) <= 0.5 {
                     isBattlefieldPanActive = false
+                    contextGestureGeneration = battlefieldGestureGeneration
                 }
                 contextPressLocation = value.location
             }
@@ -348,6 +352,10 @@ struct BattlefieldView: View {
         lastDragTranslation = .zero
         lastMagnification = 1
         isBattlefieldPanActive = false
+        battlefieldGestureGeneration &+= 1
+        contextGestureGeneration = -1
+        contextPressLocation = nil
+        suppressTapUntil = ProcessInfo.processInfo.systemUptime + Self.multitouchTapSuppressionDuration
         resetMultitouchSelectionState()
     }
 }
