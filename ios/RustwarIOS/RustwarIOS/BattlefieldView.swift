@@ -18,6 +18,7 @@ struct BattlefieldView: View {
     @State private var suppressTapUntil: TimeInterval?
     @State private var battlefieldGestureGeneration = 0
     @State private var contextGestureGeneration = -1
+    @State private var contextGestureStarted = false
     @State private var multitouchIDs: [SpatialEventCollection.Event.ID] = []
     @State private var multitouchStartLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
     @State private var multitouchCurrentLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
@@ -106,17 +107,16 @@ struct BattlefieldView: View {
     private func contextLocationGesture() -> some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
-                if hypot(
-                    value.location.x - value.startLocation.x,
-                    value.location.y - value.startLocation.y
-                ) <= 0.5 {
-                    isBattlefieldPanActive = false
+                if !contextGestureStarted {
+                    contextGestureStarted = true
                     contextGestureGeneration = battlefieldGestureGeneration
                 }
                 contextPressLocation = value.location
             }
             .onEnded { _ in
                 contextPressLocation = nil
+                contextGestureStarted = false
+                isBattlefieldPanActive = false
             }
     }
 
@@ -161,6 +161,7 @@ struct BattlefieldView: View {
                     scene.renderNow()
                 }
                 lastDragTranslation = .zero
+                isBattlefieldPanActive = false
             }
     }
 
@@ -347,6 +348,12 @@ struct BattlefieldView: View {
     }
 
     private func cancelSelectionGestures() {
+        let hasActiveGesture = isBattlefieldPanActive ||
+            isMultitouchSequenceActive ||
+            !multitouchIDs.isEmpty ||
+            selectionDragStart != nil ||
+            selectionDragCurrent != nil ||
+            contextGestureStarted
         selectionDragStart = nil
         selectionDragCurrent = nil
         lastDragTranslation = .zero
@@ -355,7 +362,9 @@ struct BattlefieldView: View {
         battlefieldGestureGeneration &+= 1
         contextGestureGeneration = -1
         contextPressLocation = nil
-        suppressTapUntil = ProcessInfo.processInfo.systemUptime + Self.multitouchTapSuppressionDuration
+        suppressTapUntil = hasActiveGesture
+            ? ProcessInfo.processInfo.systemUptime + Self.multitouchTapSuppressionDuration
+            : nil
         resetMultitouchSelectionState()
     }
 }
