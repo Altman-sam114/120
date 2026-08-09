@@ -133,6 +133,8 @@ v2.43 精修 `BattlefieldScene.unitBody` 的四类履带单位：`addTracks` 每
 
 v2.44 把 iOS 直接操作合同收紧为：无等待态 tap 先走 pending/可见敌人意图，已有己方单位点可见敌人调用 `Attack`，点空地调用既有 `Attack-Move` 自动接敌；单位选择仍支持 44pt 命中、多指框选和 Replace/Add。`BattlefieldView` 在单指拖动超过 8pt 后进入 pan 状态，持续延长 tap 抑制并阻止长按上下文，触点 ID 替换的多指序列直接拒绝；地图切换/重置清理所有瞬态。直接点存活己方建筑统一使用 Replace 聚焦，重复点按循环对建筑也不保留混选 primary，使 `GameHUDView` 的 Production / Build & Upgrade section 立即出现；紧凑 dock 的生产选项改为两列。Hover/Gunboat 只增加 presentation compound path，不改 Core、订单、命中或存档。
 
+v2.44.4 收紧 `BattlefieldView` 的手势结束与迟到回调边界：`finishMultitouchSelection` 仍为每次 Spatial touch finish 推进 `battlefieldTouchSequence`，但只有活动多指、两个已跟踪触点或结束事件中存在两个唯一 touch ID 时才建立多指 tap suppression，普通单指结束不再无理由吞 tap。context `DragGesture` 保存当前开始时间、最近事件时间和活动 reset 取消时间，`onChanged` / `onEnded` 先拒绝早于时间围栏的旧回调，避免旧 context 覆盖新触摸；活动地图 reset 保留取消序列并记录取消时间，无活动 reset 不建立 suppression。`DragGesture.Value.time` 只作迟到过滤辅助，不冒充触点 ID；若 Spatial finish 与旧 context 回调同时丢失且新旧手指无法区分，仍保守拦截同一取消序列。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

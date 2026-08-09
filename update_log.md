@@ -5518,3 +5518,33 @@
 遗留事项：
 
 - CI 没有 XCUITest，`DragGesture`/`SpatialEventGesture` 回调顺序、旧 context 回调缺少触点 ID、Spatial finish 丢失时的极端取消恢复仍不能由静态 PNG 或 Core tests 证明；后续若继续收敛，可用 `DragGesture.Value.time` 做延迟回调过滤，但需单独云端轮次验证。
+
+### v2.44.4 / iOS gesture time gate and true multitouch suppression
+
+日期：2026-08-09
+
+核心变更：
+
+- `BattlefieldView.finishMultitouchSelection` 记录活动多指、已跟踪触点和结束事件 touch ID，只有真实双指/多指序列才建立 0.32 秒 tap suppression；普通单指 `SpatialEventGesture` 结束仍清理状态并推进 `battlefieldTouchSequence`，不再无理由吞掉合法 tap。
+- context `DragGesture` 新增开始时间、最近事件时间和活动 reset 取消时间。`onChanged` / `onEnded` 先拒绝早于最近事件、当前手势开始或 reset 取消围栏的旧回调，防止迟到旧 context 清除或覆盖新手势；活动地图 reset 继续保留取消序列，无活动 reset 不建立 suppression。
+- 显式 `import Foundation` 支持 `Date` 时间门控；`DragGesture.Value.time` 仅作为迟到过滤辅助，不改变 tap、pan、long press、双指框选/捏合、pending command、Replace/Add、建筑 dock 或 Core/JSON/存档合同。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `md/prompt/v1-ios-swift-port/v2.44.4-ios-gesture-time-gate.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `update_log.md`
+
+验证状态：
+
+- 按云端唯一验证制度未运行任何本地测试、格式检查、Swift/Xcode build、Simulator、Preview、截图或 `git diff --check`。
+- 实现提交 `30b5cbb6e0677c8267762be92c313ab7bcb91f66` 的 GitHub Actions run `31295078378` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-30b5cbb-run31295078378-attempt1` 到 `/private/tmp/rustwar-c-review-31295078378/`，大小约 1.7M。
+- Manifest 已核对 `branch=main`、完整 SHA、run id、run attempt、Xcode 26.5 / iOS Simulator SDK 26.5、Swift 6.3.2 和 ARM64 macOS 26.5.2；JUnit 为 8 checks、0 failures、1 个既定 browser skip，RustwarCore 327 tests 全部通过。`git diff --check`、`node --check app.js`、xcode project list、双架构 iOS build、Home/Combat 双启动、landscape normalization 和两张 PNG probe 全部成功。
+- `ios-home.png` / `ios-combat.png` 均为 2622x1206，透明比例 0，亮度标准差分别为 41.71567287350822 / 41.60088693117128，SHA-256 分别为 `cf6dfcdedd88673c854085c6248d156a53ff50dbffbaa3b816037d419a3b4a97` / `d1db61a198cd32ce27bed2fc2242990dd4a2d75dbbaa6cdcefdb7790a53ab56e`；与 v2.44.3 artifact 逐字节一致，人工查看未见 HUD、建筑、单位、弹道、爆点、地形或 Tactical Map 回退。
+
+遗留事项：
+
+- CI 没有 XCUITest，固定 PNG/Core tests 不能证明真机触摸节奏、长按/拖动主观手感、VoiceOver、Dynamic Type、旋转、长期帧率或所有回调顺序。
+- `DragGesture.Value.time` 不是触点 ID；若 Spatial finish 与旧 context 回调同时丢失，且新旧手指无法由 SwiftUI 暴露的 ID 区分，同一取消序列仍会被保守拦截。后续若要恢复该极端场景，需要额外保存被取消的 Spatial touch ID 集并确认其结束，不能只按时间放行旧手指。

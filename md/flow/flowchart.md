@@ -814,3 +814,18 @@ flowchart TD
   C -->|"pinch / reverse"| Z["Zoom"]
   C -->|"third finger / ID replacement / cancel"| X["Reject and suppress tap"]
 ```
+
+## v2.44.4 手势时间围栏与真实多指结束
+
+```mermaid
+flowchart TD
+  E["SpatialEventGesture finish"] --> I{"真实多指证据?"}
+  I -->|"否，普通单指"| N["推进 battlefieldTouchSequence，不建立多指 suppression"]
+  I -->|"是，双指/多指"| M["推进 touch sequence + suppressTapAfterMultitouch"]
+  D["Context DragGesture value.time"] --> F["acceptsContextGestureEvent"]
+  F -->|"早于最近/开始/取消时间"| X["丢弃迟到旧回调"]
+  F -->|"合法新事件"| S["记录 start/last time，更新当前 context"]
+  R["活动地图 reset"] --> Q["记录取消时间 + 保留 cancelled touch sequence"]
+  Q --> F
+  S --> L["tap / long press 只消费当前 gesture generation"]
+```
