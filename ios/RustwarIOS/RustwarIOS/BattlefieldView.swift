@@ -19,6 +19,12 @@ struct BattlefieldView: View {
     @State private var battlefieldGestureGeneration = 0
     @State private var contextGestureGeneration = -1
     @State private var contextGestureStarted = false
+    @State private var contextGestureTouchSequence = -1
+    @State private var cancelledContextTouchSequence: Int?
+    @State private var contextGestureCancelled = false
+    @State private var battlefieldPanOccurredForCurrentTouch = false
+    @State private var battlefieldTouchID: SpatialEventCollection.Event.ID?
+    @State private var battlefieldTouchSequence = 0
     @State private var multitouchIDs: [SpatialEventCollection.Event.ID] = []
     @State private var multitouchStartLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
     @State private var multitouchCurrentLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
@@ -69,6 +75,8 @@ struct BattlefieldView: View {
                         }
                         guard !isMultitouchSequenceActive,
                               !isBattlefieldPanActive,
+                              !battlefieldPanOccurredForCurrentTouch,
+                              !contextGestureCancelled,
                               contextGestureGeneration == battlefieldGestureGeneration,
                               let contextPressLocation else {
                             return
@@ -93,6 +101,10 @@ struct BattlefieldView: View {
     private func tapGesture(in viewportSize: CGSize) -> some Gesture {
         SpatialTapGesture()
             .onEnded { value in
+                guard !battlefieldPanOccurredForCurrentTouch,
+                      !contextGestureCancelled else {
+                    return
+                }
                 if let suppressTapUntil {
                     guard ProcessInfo.processInfo.systemUptime > suppressTapUntil else {
                         return
@@ -107,15 +119,34 @@ struct BattlefieldView: View {
     private func contextLocationGesture() -> some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
-                if !contextGestureStarted {
+                let startsNewGesture = !contextGestureStarted ||
+                    contextGestureTouchSequence != battlefieldTouchSequence
+                if startsNewGesture {
                     contextGestureStarted = true
-                    contextGestureGeneration = battlefieldGestureGeneration
+                    contextGestureTouchSequence = battlefieldTouchSequence
+                    let isCancelledSequence = contextGestureCancelled &&
+                        cancelledContextTouchSequence == battlefieldTouchSequence
+                    if !isCancelledSequence {
+                        cancelledContextTouchSequence = nil
+                        contextGestureCancelled = false
+                        contextGestureGeneration = battlefieldGestureGeneration
+                        battlefieldPanOccurredForCurrentTouch = false
+                    }
+                }
+                guard !contextGestureCancelled else {
+                    return
                 }
                 contextPressLocation = value.location
             }
             .onEnded { _ in
+                let wasCancelled = contextGestureCancelled
                 contextPressLocation = nil
                 contextGestureStarted = false
+                contextGestureTouchSequence = -1
+                if !wasCancelled {
+                    cancelledContextTouchSequence = nil
+                    contextGestureCancelled = false
+                }
                 isBattlefieldPanActive = false
             }
     }
@@ -129,6 +160,7 @@ struct BattlefieldView: View {
                 }
                 if !isBattlefieldPanActive {
                     isBattlefieldPanActive = true
+                    battlefieldPanOccurredForCurrentTouch = true
                     lastDragTranslation = .zero
                 }
                 suppressTapAfterBattlefieldPan()
@@ -200,6 +232,15 @@ struct BattlefieldView: View {
         }
 
         let activeTouches = touchEvents.filter { $0.phase == .active }
+        let activeTouchIDs = Set(activeTouches.map(\.id))
+        if let currentTouchID = battlefieldTouchID,
+           activeTouchIDs.contains(currentTouchID) {
+            // Keep the first active touch as the stable identity for this sequence.
+        } else if let replacementTouch = activeTouches.first {
+            battlefieldTouchID = replacementTouch.id
+        } else if touchEvents.contains(where: { $0.phase == .ended || $0.phase == .cancelled }) {
+            battlefieldTouchID = nil
+        }
         guard activeTouches.count >= 2 || isMultitouchSequenceActive else {
             return
         }
@@ -307,6 +348,8 @@ struct BattlefieldView: View {
         let startPoint = multitouchSelectionStart
         let endPoint = multitouchSelectionCurrent
         resetMultitouchSelectionState()
+        battlefieldTouchID = nil
+        battlefieldTouchSequence &+= 1
         suppressTapAfterMultitouch()
 
         guard shouldSelect, let startPoint, let endPoint else {
@@ -354,6 +397,16 @@ struct BattlefieldView: View {
             selectionDragStart != nil ||
             selectionDragCurrent != nil ||
             contextGestureStarted
+        if hasActiveGesture {
+            cancelledContextTouchSequence = contextGestureStarted
+                ? contextGestureTouchSequence
+                : battlefieldTouchSequence
+            contextGestureCancelled = true
+        } else {
+            cancelledContextTouchSequence = nil
+            contextGestureCancelled = false
+            battlefieldPanOccurredForCurrentTouch = false
+        }
         selectionDragStart = nil
         selectionDragCurrent = nil
         lastDragTranslation = .zero
@@ -362,6 +415,10 @@ struct BattlefieldView: View {
         battlefieldGestureGeneration &+= 1
         contextGestureGeneration = -1
         contextPressLocation = nil
+        if !hasActiveGesture {
+            contextGestureStarted = false
+            contextGestureTouchSequence = -1
+        }
         suppressTapUntil = hasActiveGesture
             ? ProcessInfo.processInfo.systemUptime + Self.multitouchTapSuppressionDuration
             : nil
