@@ -5548,3 +5548,34 @@
 
 - CI 没有 XCUITest，固定 PNG/Core tests 不能证明真机触摸节奏、长按/拖动主观手感、VoiceOver、Dynamic Type、旋转、长期帧率或所有回调顺序。
 - `DragGesture.Value.time` 不是触点 ID；若 Spatial finish 与旧 context 回调同时丢失，且新旧手指无法由 SwiftUI 暴露的 ID 区分，同一取消序列仍会被保守拦截。后续若要恢复该极端场景，需要额外保存被取消的 Spatial touch ID 集并确认其结束，不能只按时间放行旧手指。
+
+### v2.45 / iOS combat tracer readability
+
+日期：2026-08-09
+
+核心变更：
+
+- `BattlefieldScene.spawnUnitFireEffect` 将 Tank / Heavy Tank / Artillery / Gunboat 的 `trailLength` 从 12 / 21 / 18 / 14 收至 10 / 16 / 14 / 11，Hover `beamWidth` 从 3 收至 2.5。
+- `addBeamEffect` 将 Hover glow alpha 从 0.36 收至 0.30、glow 宽度从 `width * 3` 收至 `width * 2.5`；白色 core 0.92、line cap、生命周期、bounded effect/decal 上限和 Reduce Motion 分支保持。
+- 本轮只改 SpriteKit presentation，不改变 projectile vapor/main 结构、命中时序、Core cooldown / HP / target / damage、爆点层级、HUD、选择、命令、存档、生产 fixture 或 Home 画面。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `md/prompt/v1-ios-swift-port/v2.45-ios-combat-tracer-readability.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `update_log.md`
+
+验证状态：
+
+- 主线未运行本地测试、Swift/Xcode build、Simulator、Preview 或本地截图；一次并行只读复审代理误执行了 `git diff --check`（无输出、无修改），不作为验收依据。唯一验收来源为 GitHub Actions artifact。
+- 实现提交 `81bde0899502d178b364d709e730849998edd3d3` 的 `Rustwar CI Results` run `31296787254` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-81bde08-run31296787254-attempt1`（约 1.37 MB，目录 `/private/tmp/rustwar-c-review-31296787254/`，`du -sh` 约 1.7M）。
+- Manifest 已核对 `branch=main`、完整 `commitSha`、run id、attempt、Xcode 26.5、iOS Simulator SDK 26.5、Swift 6.3.2 和 ARM64 macOS 26.5.2；static checks、Core Swift tests、xcode project list/build、双架构 build、Home/Combat 双启动、landscape normalization 和两张 PNG probe 均为 success。JUnit 为 8 checks、0 failures、1 个既定 browser skip；RustwarCore 为 327 tests。
+- `ios-home.png` 为 2622x1206、透明比例 0、mean luminance 79.77828765459367、亮度标准差 41.71567287350822，SHA-256 为 `cf6dfcdedd88673c854085c6248d156a53ff50dbffbaa3b816037d419a3b4a97`，与 v2.44.4 artifact 逐字节一致。`ios-combat.png` 同为 2622x1206、透明比例 0、mean luminance 73.07129770705122、亮度标准差 41.39721525130831，SHA-256 为 `c923dbb821f222de9d622358072088409afdda0013d61cdfd7595a4558d5009b`；人工复判确认 tracer/beam 更收敛，但 HUD、单位轮廓、弹道层级和爆点仍清晰、无遮挡。
+- 结果包仅有已知环境提示：`upload-artifact` Node20 -> Node24 deprecation warning、Xcode destination 多匹配/无 AppIntents metadata warning；无失败项。
+
+遗留事项：
+
+- CI 仍没有 XCUITest；固定 Home/Combat PNG 与 327 个 Core tests 不能证明真机触摸手感、动态战斗密度下长期帧率、最小 zoom、Reduce Motion 主观体验或所有设备方向。
+- Hover core 与尾迹在极小缩放下仍需后续真实设备视觉矩阵确认；本轮只验证固定 iPhone 17 Pro Simulator fixture。

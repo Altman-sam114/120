@@ -829,3 +829,19 @@ flowchart TD
   Q --> F
   S --> L["tap / long press 只消费当前 gesture generation"]
 ```
+
+## v2.45 Combat tracer readability
+
+```mermaid
+flowchart LR
+  U["Unit fire profile"] --> P["Tank 10 / Heavy 16 / Artillery 14 / Gunboat 11 trailLength"]
+  U --> H["Hover beamWidth 2.5"]
+  P --> E["Existing bounded projectile effect"]
+  H --> G["Beam glow alpha .30 / width *2.5"]
+  G --> E
+  C["White core .92 + cap/lifetime unchanged"] --> E
+  R["Reduce Motion / fog / effect cap"] --> E
+  E --> B["Combat PNG: shorter, quieter tracers"]
+  F["Production fixture"] --> A["Home PNG unchanged"]
+  S["Core cooldown / HP / target / damage"] --> X["No behavior change"]
+```

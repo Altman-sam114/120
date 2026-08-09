@@ -135,6 +135,8 @@ v2.44 把 iOS 直接操作合同收紧为：无等待态 tap 先走 pending/可�
 
 v2.44.4 收紧 `BattlefieldView` 的手势结束与迟到回调边界：`finishMultitouchSelection` 仍为每次 Spatial touch finish 推进 `battlefieldTouchSequence`，但只有活动多指、两个已跟踪触点或结束事件中存在两个唯一 touch ID 时才建立多指 tap suppression，普通单指结束不再无理由吞 tap。context `DragGesture` 保存当前开始时间、最近事件时间和活动 reset 取消时间，`onChanged` / `onEnded` 先拒绝早于时间围栏的旧回调，避免旧 context 覆盖新触摸；活动地图 reset 保留取消序列并记录取消时间，无活动 reset 不建立 suppression。`DragGesture.Value.time` 只作迟到过滤辅助，不冒充触点 ID；若 Spatial finish 与旧 context 回调同时丢失且新旧手指无法区分，仍保守拦截同一取消序列。
 
+v2.45 只收敛 `BattlefieldScene` 的 presentation-only 火力可读性：`spawnUnitFireEffect` 将 Tank / Heavy Tank / Artillery / Gunboat 的 `trailLength` 收至 10 / 16 / 14 / 11，Hover `beamWidth` 收至 2.5；`addBeamEffect` 将 glow alpha 收至 0.30、宽度比例收至 `width * 2.5`。projectile vapor/main 结构、white core 0.92、line cap、生命周期、effect/decal 上限、fog 层级和 Reduce Motion 分支保持；Core cooldown / HP / target / damage、命令、HUD、存档和 Home production fixture 不变。Combat fixture 只改变尾迹和光束的静态表现，Home PNG 保持原样。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)
