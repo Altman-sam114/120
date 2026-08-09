@@ -785,8 +785,8 @@ flowchart LR
   T --> W["Compound load wheels"]
   T --> G["Compound track teeth"]
   B --> H["Compound hull seams + engine grille"]
-  B --> M["weaponMount: hatch / feed boxes / breech"]
-  B --> R["recoilMount: barrel / recoil layer"]
+  B --> M["weaponMount: hatch / feed boxes"]
+  B --> R["recoilMount: barrel / breech / recoil layer"]
   O --> P["Presentation-only SpriteKit nodes"]
   W --> P
   G --> P

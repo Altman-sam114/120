@@ -5379,3 +5379,28 @@
 遗留事项：
 
 - 固定 Coast 双截图不能覆盖所有地图、最小 zoom、真机 scale、密集战斗长期帧率或动态后坐恢复；当前 CI 仍没有 XCUITest。
+
+### v2.43.1 / artillery breech recoil mount fix
+
+日期：2026-08-09
+
+核心变更：
+
+- 修正 v2.43 Artillery 炮闩的 SpriteKit 层级：从 `weaponMount` 移到 `recoilMount`，与炮管共享炮塔 heading 和开火后坐位移，避免动态开火时炮闩与炮管脱节。
+- 同步流程图和版本化提示词；履带、车体细节、Core、战斗数值、命中、弹道、选择、雾、HUD、存档和生产 fixture 均不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `md/flow/flowchart.md`
+- `md/prompt/v1-ios-swift-port/v2.43.1-ios-recoil-breech-fix.md`
+- `update_log.md`
+
+验证状态：
+
+- 按云端唯一验证制度未运行任何本地测试、格式检查、Swift/Xcode build、Simulator、Preview、截图或 `git diff --check`。
+- 修复提交、GitHub Actions run、artifact、JUnit/Core/build/probe 和 Home/Combat PNG 复判结果待修复 SHA push 后补录。
+
+遗留事项：
+
+- 固定 Coast 双截图不能覆盖所有地图、最小 zoom、真机 scale、密集战斗长期帧率或动态后坐恢复；当前 CI 仍没有 XCUITest。

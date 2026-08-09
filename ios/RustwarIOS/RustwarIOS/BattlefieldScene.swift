@@ -2600,7 +2600,7 @@ final class BattlefieldScene: SKScene {
                 stroke: highlightColor,
                 lineWidth: 1
             )
-            weaponMount.addChild(artilleryBreech)
+            recoilMount.addChild(artilleryBreech)
             let stabilizerPath = CGMutablePath()
             for y in [-radius * 0.42, radius * 0.42] {
                 stabilizerPath.move(to: CGPoint(x: -radius * 0.5, y: y))
