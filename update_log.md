@@ -5631,7 +5631,7 @@
 验证状态：
 
 - 按云端唯一验证制度未运行本地测试、格式检查、Swift/Xcode build、Simulator、Preview、截图、浏览器验证或测试脚本；仅执行 `git status` / `git diff` 进行范围控制。
-- 本轮提交并 push 后，Agent C 必须只下载与最新 `origin/main` commit 完全一致的 `Rustwar CI Results` artifact，核对 manifest、JUnit、主日志、失败摘要和 Home/Combat PNG；云端结果待本轮 push 后补录。
+- 实现提交 `edbf8392f879ca12594eae1c81c0492285840bca` 的 Actions run `31300599491` / attempt 1 / job `93212644018` 成功；Agent C 已下载 artifact `rustwar-ci-v1.2-main-edbf839-run31300599491-attempt1` 到 `/private/tmp/rustwar-c-review-31300599491/`，目录约 1.7M。Manifest 的 `branch=main`、完整 `commitSha`、run id 和 attempt 完全匹配；JUnit 为 8 checks、0 failures、1 个既定 browser skip，RustwarCore 327 tests passed，Swift 6.3.2 / Xcode 26.5 / iOS Simulator SDK 26.5，双架构 build、Simulator、Home/Combat 启动、横屏方向归一化和 pixel probe 全部成功。Home PNG SHA 为 `cf6dfcdedd88673c854085c6248d156a53ff50dbffbaa3b816037d419a3b4a97`（mean 79.77828765459367 / std 41.71567287350822）；Combat PNG SHA 为 `c923dbb821f222de9d622358072088409afdda0013d61cdfd7595a4558d5009b`（mean 73.07129770705122 / std 41.39721525130831），与 v2.46 一致且无视觉回退。
 
 遗留事项：
 
