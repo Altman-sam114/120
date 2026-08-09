@@ -5374,7 +5374,9 @@
 验证状态：
 
 - 按云端唯一验证制度未运行任何本地测试、格式检查、Swift/Xcode build、Simulator、Preview、截图或 `git diff --check`。
-- 实现提交、GitHub Actions run、artifact、JUnit/Core/build/probe 和 Home/Combat PNG 复判结果待本轮 push 后补录。
+- 实现提交 `27f3a20e2a8e678e635d3a351be0ed75420dbbb1` 的 GitHub Actions run `31290558029` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-27f3a20-run31290558029-attempt1` 到 `/private/tmp/rustwar-c-review-31290558029/`，大小约 `1.7M`。
+- Manifest 已核对 `version=v1.2`、`branch=main`、完整 SHA、run id、run attempt、Xcode 26.5、iOS Simulator SDK 26.5 和 Swift 6.3.2；JUnit 为 8 checks、0 failures、1 个既定 browser skip，327 个 RustwarCore tests 全部通过。日志确认 arm64/x86_64 build、Home/Combat 双 launch、landscape normalization 和 pixel probe 全部成功。
+- `ios-home.png` 为 2622x1206、透明比例 0、亮度标准差 41.377，SHA-256 为 `c6bcbf4aac04776ae081259783ce392f98cf1de88ccb85bae4c7e999bcfc7530`；`ios-combat.png` 为 2622x1206、透明比例 0、亮度标准差 41.617，SHA-256 为 `5c7fb1effc87edc0a21b006c3f0f2386e7f764eaed75b688b52357d60dd4b32d`。代码与静态 PNG 复判确认四类履带模型、HUD、建筑、弹道、爆点、地形和 Tactical Map 无编译或视觉回退；随后发现并修正 Artillery 炮闩后坐挂点，最终以 v2.43.1 结果为准。
 
 遗留事项：
 
@@ -5399,7 +5401,9 @@
 验证状态：
 
 - 按云端唯一验证制度未运行任何本地测试、格式检查、Swift/Xcode build、Simulator、Preview、截图或 `git diff --check`。
-- 修复提交、GitHub Actions run、artifact、JUnit/Core/build/probe 和 Home/Combat PNG 复判结果待修复 SHA push 后补录。
+- 修复提交 `c8c0fdd313de13316cc64ceecc6333af5f2a65e3` 的 GitHub Actions run `31290649911` / attempt 1 成功；Agent C 下载 artifact `rustwar-ci-v1.2-main-c8c0fdd-run31290649911-attempt1` 到 `/private/tmp/rustwar-c-review-31290649911/`，大小约 `1.7M`。
+- Manifest 已核对 `version=v1.2`、`branch=main`、完整 SHA、run id、run attempt、Xcode 26.5、iOS Simulator SDK 26.5 和 Swift 6.3.2；JUnit 为 8 checks、0 failures、1 个既定 browser skip，327 个 RustwarCore tests 全部通过。日志确认 arm64/x86_64 build、Home/Combat 双 launch、landscape normalization 和 pixel probe 全部成功。
+- `ios-home.png` 为 2622x1206、透明比例 0、亮度标准差 41.377，SHA-256 为 `c6bcbf4aac04776ae081259783ce392f98cf1de88ccb85bae4c7e999bcfc7530`；`ios-combat.png` 为 2622x1206、透明比例 0、亮度标准差 41.616，SHA-256 为 `e50721feb2509536b86126dc6e66609ddf7a96ea7cc090f30883e6adc211aab7`。代码审查确认炮闩已与炮管共同挂在 `recoilMount`，静态 Home/Combat PNG 和像素探针无 HUD、建筑、单位、弹道、爆点、地形或 Tactical Map 回退；v2.43.1 云端验收通过。
 
 遗留事项：
 
