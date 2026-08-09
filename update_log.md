@@ -5617,7 +5617,7 @@
 
 - context 起点比较允许 1pt 的浮点误差，并显式将 `CGFloat` 差值转换为 `Double` 后计算距离，避免设备坐标微小漂移造成错误丢弃。
 - context end 若迟到或已取消，在结束单指序列时保留 `.cancelled`，不再把旧 pan 或 touch ID 重新释放为 `.possible`；迟到的 drag changed 还必须满足当前 pan 仍活动或本序列尚未发生 pan，不能重新 acquire 旧 `.pan`；Select Area 仍有活动起点时由 drag end 独占提交，context end 不抢先清理 area owner。
-- 地图 reset 尚未登记 Spatial touch ID 时，未知 active touch 必须先经过 context seed 才能被视为 fresh；已登记取消 ID 的序列只接受不在取消集合中的 touch ID，防止旧 Spatial 首帧重新获得 owner。
+- 地图 reset 尚未登记 Spatial touch ID 时，未知 active touch 必须先经过 context seed 才能被视为 fresh，降低旧 Spatial 首帧重新获得 owner 的风险；seed 后仍无法仅凭 SwiftUI 回调绝对区分迟到旧触点，已登记取消 ID 的序列只接受不在取消集合中的 touch ID。
 
 关键文件：
 
@@ -5635,4 +5635,4 @@
 
 遗留事项：
 
-- CI 仍没有 XCUITest，无法自动证明真实第二指抢占、context/drag 回调乱序、长按/拖动手感、VoiceOver、Dynamic Type、旋转或真机长期帧率；若云端静态复核通过，后续可把 touch owner reducer 抽成可注入时钟/触点 ID 的纯 Swift 模块并增加云端 Swift Testing。
+- CI 仍没有 XCUITest，无法自动证明真实第二指抢占、context/drag 回调乱序，或在 reset 无 Spatial ID 时 seed 后区分迟到旧回调与真实新触点；长按/拖动手感、VoiceOver、Dynamic Type、旋转和真机长期帧率也未覆盖。后续可把 touch owner reducer 抽成可注入时钟/触点 ID 的纯 Swift 模块并增加云端 Swift Testing。
