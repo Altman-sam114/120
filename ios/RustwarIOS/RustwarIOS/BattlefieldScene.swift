@@ -2378,6 +2378,7 @@ final class BattlefieldScene: SKScene {
                 fill: armorMidColor,
                 stroke: outlineColor
             ))
+            addTrackedHullDetails(radius: radius, deckLength: 0.56, grilleCenterX: -0.38, to: body)
             weaponMount.addChild(circleNode(radius: radius * 0.38, fill: armorLightColor, stroke: outlineColor))
             weaponMount.addChild(circleNode(
                 radius: radius * 0.25,
@@ -2385,6 +2386,14 @@ final class BattlefieldScene: SKScene {
                 stroke: highlightColor.withAlphaComponent(0.74),
                 lineWidth: 1.1
             ))
+            let tankHatch = circleNode(
+                radius: radius * 0.105,
+                fill: armorDarkColor,
+                stroke: highlightColor,
+                lineWidth: 0.8
+            )
+            tankHatch.position = CGPoint(x: -radius * 0.08, y: radius * 0.12)
+            weaponMount.addChild(tankHatch)
             recoilMount.addChild(rectNode(
                 CGRect(x: radius * 0.12, y: -radius * 0.145, width: radius * 0.9, height: radius * 0.29),
                 cornerRadius: radius * 0.08,
@@ -2397,14 +2406,6 @@ final class BattlefieldScene: SKScene {
                 fill: highlightColor,
                 stroke: outlineColor
             ))
-            for y in [-radius * 0.37, radius * 0.37] {
-                body.addChild(lineNode(
-                    from: CGPoint(x: -radius * 0.38, y: y),
-                    to: CGPoint(x: radius * 0.28, y: y),
-                    color: armorLightColor.withAlphaComponent(0.8),
-                    width: 1.2
-                ))
-            }
         case .heavyTank:
             addTracks(radius: radius, length: 1.78, to: body)
             body.addChild(polygonNode([
@@ -2424,14 +2425,7 @@ final class BattlefieldScene: SKScene {
                 CGPoint(x: -radius * 0.56, y: -radius * 0.42),
                 CGPoint(x: radius * 0.18, y: -radius * 0.48)
             ], fill: armorLightColor, stroke: outlineColor, lineWidth: 1.2))
-            for y in [-radius * 0.48, radius * 0.48] {
-                body.addChild(lineNode(
-                    from: CGPoint(x: -radius * 0.58, y: y),
-                    to: CGPoint(x: radius * 0.45, y: y),
-                    color: armorLightColor.withAlphaComponent(0.86),
-                    width: 1.8
-                ))
-            }
+            addTrackedHullDetails(radius: radius, deckLength: 0.72, grilleCenterX: -0.48, to: body)
             weaponMount.addChild(polygonNode([
                 CGPoint(x: radius * 0.48, y: 0),
                 CGPoint(x: radius * 0.2, y: radius * 0.4),
@@ -2526,6 +2520,7 @@ final class BattlefieldScene: SKScene {
                 fill: armorMidColor,
                 stroke: outlineColor
             ))
+            addTrackedHullDetails(radius: radius, deckLength: 0.5, grilleCenterX: -0.38, to: body)
             weaponMount.addChild(circleNode(radius: radius * 0.34, fill: armorLightColor, stroke: outlineColor))
             weaponMount.addChild(polygonNode([
                 CGPoint(x: -radius * 0.28, y: -radius * 0.4),
@@ -2534,6 +2529,24 @@ final class BattlefieldScene: SKScene {
                 CGPoint(x: radius * 0.34, y: radius * 0.3),
                 CGPoint(x: -radius * 0.28, y: radius * 0.4)
             ], fill: armorMidColor, stroke: outlineColor, lineWidth: 1.2))
+            let aaFeedPath = CGMutablePath()
+            aaFeedPath.addRect(CGRect(
+                x: -radius * 0.18,
+                y: -radius * 0.47,
+                width: radius * 0.34,
+                height: radius * 0.16
+            ))
+            aaFeedPath.addRect(CGRect(
+                x: -radius * 0.18,
+                y: radius * 0.31,
+                width: radius * 0.34,
+                height: radius * 0.16
+            ))
+            let aaFeed = SKShapeNode(path: aaFeedPath)
+            aaFeed.fillColor = armorDarkColor
+            aaFeed.strokeColor = highlightColor.withAlphaComponent(0.82)
+            aaFeed.lineWidth = 0.8
+            weaponMount.addChild(aaFeed)
             for y in [-radius * 0.22, radius * 0.22] {
                 let mount = circleNode(radius: radius * 0.11, fill: armorDarkColor, stroke: highlightColor, lineWidth: 0.8)
                 mount.position = CGPoint(x: radius * 0.18, y: y)
@@ -2553,6 +2566,7 @@ final class BattlefieldScene: SKScene {
                 fill: armorMidColor,
                 stroke: outlineColor
             ))
+            addTrackedHullDetails(radius: radius, deckLength: 0.58, grilleCenterX: -0.5, to: body)
             weaponMount.addChild(circleNode(radius: radius * 0.35, fill: armorLightColor, stroke: outlineColor))
             weaponMount.addChild(polygonNode([
                 CGPoint(x: -radius * 0.3, y: -radius * 0.34),
@@ -2579,14 +2593,25 @@ final class BattlefieldScene: SKScene {
                 color: .white.withAlphaComponent(0.46),
                 width: 1
             ))
+            let artilleryBreech = rectNode(
+                CGRect(x: radius * 0.12, y: -radius * 0.24, width: radius * 0.3, height: radius * 0.48),
+                cornerRadius: radius * 0.06,
+                fill: armorDarkColor,
+                stroke: highlightColor,
+                lineWidth: 1
+            )
+            weaponMount.addChild(artilleryBreech)
+            let stabilizerPath = CGMutablePath()
             for y in [-radius * 0.42, radius * 0.42] {
-                body.addChild(lineNode(
-                    from: CGPoint(x: -radius * 0.5, y: y),
-                    to: CGPoint(x: -radius * 0.98, y: y * 1.3),
-                    color: armorDarkColor,
-                    width: 3
-                ))
+                stabilizerPath.move(to: CGPoint(x: -radius * 0.5, y: y))
+                stabilizerPath.addLine(to: CGPoint(x: -radius * 0.98, y: y * 1.3))
+                stabilizerPath.addLine(to: CGPoint(x: -radius * 1.08, y: y * 1.3))
             }
+            let stabilizers = SKShapeNode(path: stabilizerPath)
+            stabilizers.strokeColor = armorDarkColor
+            stabilizers.lineWidth = 3
+            stabilizers.lineCap = .round
+            body.addChild(stabilizers)
         case .gunboat:
             body.addChild(polygonNode([
                 CGPoint(x: radius, y: 0),
@@ -3072,16 +3097,68 @@ final class BattlefieldScene: SKScene {
                 stroke: armorLightColor.withAlphaComponent(0.58),
                 lineWidth: 0.8
             ))
-            for segment in -2...2 {
-                let x = Double(segment) * radius * length * 0.16
-                node.addChild(lineNode(
-                    from: CGPoint(x: x, y: y - radius * 0.15),
-                    to: CGPoint(x: x, y: y + radius * 0.15),
-                    color: outlineColor.withAlphaComponent(0.82),
-                    width: 0.9
+
+            let wheelsPath = CGMutablePath()
+            for wheel in 0..<4 {
+                let x = -radius * length * 0.3 + Double(wheel) * radius * length * 0.2
+                wheelsPath.addEllipse(in: CGRect(
+                    x: x - radius * 0.075,
+                    y: y - radius * 0.075,
+                    width: radius * 0.15,
+                    height: radius * 0.15
                 ))
             }
+            let wheels = SKShapeNode(path: wheelsPath)
+            wheels.fillColor = armorLightColor.withAlphaComponent(0.72)
+            wheels.strokeColor = outlineColor
+            wheels.lineWidth = 0.65
+            node.addChild(wheels)
+
+            let teethPath = CGMutablePath()
+            for segment in -3...3 {
+                let x = Double(segment) * radius * length * 0.12
+                teethPath.move(to: CGPoint(x: x, y: y - radius * 0.17))
+                teethPath.addLine(to: CGPoint(x: x, y: y + radius * 0.17))
+            }
+            let teeth = SKShapeNode(path: teethPath)
+            teeth.strokeColor = outlineColor.withAlphaComponent(0.9)
+            teeth.lineWidth = 0.9
+            teeth.lineCap = .square
+            node.addChild(teeth)
         }
+    }
+
+    private func addTrackedHullDetails(
+        radius: Double,
+        deckLength: Double,
+        grilleCenterX: Double,
+        to node: SKNode
+    ) {
+        let seamPath = CGMutablePath()
+        seamPath.move(to: CGPoint(x: radius * 0.32, y: 0))
+        seamPath.addLine(to: CGPoint(x: radius * 0.08, y: radius * 0.34))
+        seamPath.move(to: CGPoint(x: radius * 0.32, y: 0))
+        seamPath.addLine(to: CGPoint(x: radius * 0.08, y: -radius * 0.34))
+        seamPath.move(to: CGPoint(x: -radius * deckLength, y: radius * 0.36))
+        seamPath.addLine(to: CGPoint(x: radius * 0.12, y: radius * 0.36))
+        seamPath.move(to: CGPoint(x: -radius * deckLength, y: -radius * 0.36))
+        seamPath.addLine(to: CGPoint(x: radius * 0.12, y: -radius * 0.36))
+        let seams = SKShapeNode(path: seamPath)
+        seams.strokeColor = armorLightColor.withAlphaComponent(0.78)
+        seams.lineWidth = 1
+        seams.lineCap = .round
+        node.addChild(seams)
+
+        let grillePath = CGMutablePath()
+        for offset in -2...2 {
+            let x = radius * (grilleCenterX + Double(offset) * 0.055)
+            grillePath.move(to: CGPoint(x: x, y: -radius * 0.22))
+            grillePath.addLine(to: CGPoint(x: x, y: radius * 0.22))
+        }
+        let grille = SKShapeNode(path: grillePath)
+        grille.strokeColor = outlineColor.withAlphaComponent(0.82)
+        grille.lineWidth = 0.85
+        node.addChild(grille)
     }
 
     private func addUnitFactionMarking(team: Team, radius: Double, to node: SKNode) {

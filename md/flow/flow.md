@@ -129,6 +129,8 @@ v2.41 精细化 `buildingBody` 的 Extractor / Radar：Extractor 的四向夹持
 
 v2.42 为 Core 单目标/候选列表命中 API 增加默认 `nil` 的 `targetTeam`，指定时在距离排序前只保留对应阵营，未指定时继续服从 `includeEnemies`；units-first 稳定顺序、玩家真实视野和 radar-only 拒绝保持。`GameController.handleBattlefieldTap` 在所有 pending handler 之后、44pt 候选之前，只在已有己方单位选择时用原生几何半径查询可见敌军并优先 Attack；无精确敌军时回退既有选择/Attack/Attack Move。显式 Attack 只查询敌军，Guard 查询己方后跳过无法由非自身选中单位护航的目标，Repair 查询己方后跳过非受损或无法由非自身选中 Builder 维修的目标；Engine 保留最终合法性校验，无效目标后退出 pending 的旧行为不变。
 
+v2.43 精修 `BattlefieldScene.unitBody` 的四类履带单位：`addTracks` 每侧由外履带、内带、compound 负重轮和 compound 履带齿组成，常驻节点从每侧 7 个降为 4 个；Tank、Heavy Tank、AA Tank、Artillery 共享两层确定性车体拼缝/发动机格栅，但通过车体形状、履带长度、舱盖、供弹箱、炮闩和驻锄保持轮廓差异。炮塔细节继续挂 `weaponMount`，炮管/炮闩后坐继续挂 `recoilMount`；Core、weapon heading、recoil、伤害、雾、命中、HUD、战斗特效和存档不变。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

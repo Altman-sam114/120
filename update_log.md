@@ -5350,3 +5350,32 @@
 遗留事项：
 
 - 当前 CI 没有 XCUITest；Core 过滤测试和静态 PNG 不能证明真实重叠实体点按、手指遮挡、无效目标退出等待态的主观反馈或真机触控手感。
+
+### v2.43 / iOS refined tracked unit models
+
+日期：2026-08-09
+
+核心变更：
+
+- 对照 Rusted Warfare Tank 资料页和 Artillery 单位视频，重构 `addTracks`：每侧使用外履带、内带、compound 负重轮和 compound 履带齿四层结构，替代逐线履带齿，常驻节点由每侧 7 个降为 4 个。
+- Tank、Heavy Tank、AA Tank、Artillery 增加共享的确定性车体拼缝与发动机格栅；Tank 增加舱盖，AA Tank 增加聚合双侧供弹箱，Artillery 增加炮闩和聚合驻锄。既有四类车体轮廓、阵营标识、weapon heading 和 recoilMount 层级保持。
+- 本轮只改 presentation 层，不改变 Core、战斗数值、命中、命令、AI、雾、弹道、伤害、HUD、存档或生产 fixture。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.43-ios-refined-tracked-unit-models.md`
+- `update_log.md`
+
+验证状态：
+
+- 按云端唯一验证制度未运行任何本地测试、格式检查、Swift/Xcode build、Simulator、Preview、截图或 `git diff --check`。
+- 实现提交、GitHub Actions run、artifact、JUnit/Core/build/probe 和 Home/Combat PNG 复判结果待本轮 push 后补录。
+
+遗留事项：
+
+- 固定 Coast 双截图不能覆盖所有地图、最小 zoom、真机 scale、密集战斗长期帧率或动态后坐恢复；当前 CI 仍没有 XCUITest。

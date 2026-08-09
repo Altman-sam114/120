@@ -76,6 +76,7 @@
 - v2.40 起，Command Center / Land Factory / Turret 模型精细化：Command Center 增加装甲板拼缝、双通风格栅、四角螺栓、队色能量环与指挥穹顶高光；Land Factory 增加带黄色警示纹的出车口舱门、屋顶通风格栅和后侧供给管；Turret 基座增加八颗铆钉环、内圈阴影环、炮管根部套筒和口部高光。全部细节为确定性静态 path，Extractor / Radar、Core 定义、尺寸、命中、炮塔旋转/后坐、建造帧和损伤状态不变。
 - v2.41 起，Extractor / Radar Station 补齐同等级程序化工业细节：Extractor 增加四向夹持臂、独立螺栓、内齿圈刻痕和偏移核心高光；Radar Station 增加基座格栅、斜撑与支脚、天线横撑、碟面内圈和馈源点。T2/T3 既有结构语义、Core 数值、尺寸、命中、建造帧、升级、损伤和选择状态保持不变；production 云端视觉场景额外放置一座 T2 Radar，仅用于固定截图验收，不影响普通启动。
 - v2.42 起，iOS 主战场触控按当前意图仲裁密集实体：已有己方单位选择时，真实几何范围内的可见敌军会优先于附近友军的 44pt 扩展触控区进入 Attack；没有精确敌军时仍按既有 44pt 最近候选执行己方选择、敌方 Attack 或空地 Attack Move。显式 Attack 只命中可见敌军，Guard 只命中可实际护航的己方目标，Repair 只命中可由当前 Builder 维修的受损己方目标；雾外和 radar-only 敌军仍不可精确点选。
+- v2.43 起，Tank / Heavy Tank / AA Tank / Artillery 的履带改为外带、内带、compound 负重轮和 compound 履带齿分层绘制，并补充车体拼缝与发动机格栅；Tank 增加舱盖、AA Tank 增加双侧供弹箱、Artillery 增加炮闩与聚合驻锄。细节只存在于 presentation 层，炮塔转向、炮管后坐、命中、战斗数值、雾、HUD 和存档保持不变。
 
 当前验证制度：
 

@@ -774,3 +774,24 @@ flowchart TD
   V --> I["Intent executable candidate"]
   I --> G["GameEngine final legality check"]
 ```
+
+## v2.43 履带单位机械层级
+
+```mermaid
+flowchart LR
+  U["UnitSnapshot: Tank / Heavy / AA / Artillery"] --> B["unitBody"]
+  B --> T["Tracks per side"]
+  T --> O["Outer belt + inner belt"]
+  T --> W["Compound load wheels"]
+  T --> G["Compound track teeth"]
+  B --> H["Compound hull seams + engine grille"]
+  B --> M["weaponMount: hatch / feed boxes / breech"]
+  B --> R["recoilMount: barrel / recoil layer"]
+  O --> P["Presentation-only SpriteKit nodes"]
+  W --> P
+  G --> P
+  H --> P
+  M --> P
+  R --> P
+  P --> V["Heading / recoil / fog / Core semantics unchanged"]
+```
