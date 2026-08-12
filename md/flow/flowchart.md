@@ -949,6 +949,9 @@ flowchart TD
 ```
 
 读图说明：v2.49 只收敛命令资格和 presentation 预测，不改变 `UnitOrder`、战斗数值或存档 schema；静态云端 smoke 仍不能证明真实触控注入。
+
+## v2.50 Production focus summary
+
 ```mermaid
 flowchart LR
   S[选择己方生产建筑] --> C[GameController 只读派生]
@@ -957,6 +960,8 @@ flowchart LR
   S --> R[dockSelectionIdentity 变化]
   R --> T[无动画 scrollTo 顶部]
 ```
+
+## v2.51 Water impact material split
 
 ```mermaid
 flowchart LR
@@ -968,3 +973,32 @@ flowchart LR
   C --> F[Core, orders, save schema unchanged]
   E --> F
 ```
+
+读图说明：v2.50 的生产焦点条只读现有 controller 派生值，v2.51 的水面命中只改变 BattlefieldScene presentation；两轮都不改变 Core、命令、存档或 Web 版。
+
+## v2.52 iOS TouchSequenceOwner input lifecycle
+
+```mermaid
+flowchart TD
+  S[Spatial active touch ID] --> O{Owner idle or cancelled?}
+  O -->|yes and ID not quarantined| N[Fresh seed: sequence + primary + context lease]
+  O -->|no| Q[Observe active / ended / cancelled IDs]
+  N --> Q
+  Q -->|second accepted active ID| M[Possible two-finger sequence]
+  Q -->|unknown active replacement or third finger| X[Cancel and quarantine accepted IDs]
+  Q -->|unknown terminal ID| I[Ignore terminal callback]
+  M --> C{Classifier / gesture claim}
+  C -->|pan or area| P[Pan lease updates view or area preview]
+  C -->|long press| L[Long-press lease issues existing context command]
+  C -->|selection| A[Multitouch lease updates selection box]
+  C -->|pinch| Z[Pinch lease updates zoom only]
+  T[Context/tap callback token] --> G{Current generation + sequence?}
+  G -->|no| D[Drop stale callback; sequence-gated preview teardown only]
+  G -->|yes| E[Existing tap/context command path]
+  A --> F{Valid multitouch finish?}
+  F -->|yes once| U[Commit Select Area once]
+  F -->|cancelled or duplicate| R[Finish without command]
+  K[Map revision reset] --> W[Reducer reset + clear presentation/tap cache]
+```
+
+读图说明：v2.52 只收紧 iOS 输入生命周期和并行 callback 代际，不改变 `GameController` 命令语义、Core classifier、命中半径、存档或 Web 版。未知 terminal callback 不会取消当前 owner，未知 active replacement 仍被保守拒绝；CI 仍没有 XCUITest，静态编译和 Core reducer tests 不能证明真实设备上的触点顺序与手感。

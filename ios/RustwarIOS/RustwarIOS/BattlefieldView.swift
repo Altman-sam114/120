@@ -4,20 +4,12 @@ import SwiftUI
 import RustwarCore
 
 struct BattlefieldView: View {
+    private typealias BattlefieldTouchOwner = TouchSequenceOwner<SpatialEventCollection.Event.ID>
+
     private static let contextTapSuppressionDuration: TimeInterval = 0.18
     private static let multitouchTapSuppressionDuration: TimeInterval = 0.32
     private static let battlefieldPanActivationDistance: CGFloat = 12
     private static let contextGestureStartLocationTolerance: CGFloat = 1
-
-    private enum BattlefieldTouchIntent: Equatable {
-        case possible
-        case pan
-        case areaSelection
-        case longPress
-        case multitouch
-        case pinch
-        case cancelled
-    }
 
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     let controller: GameController
@@ -27,26 +19,29 @@ struct BattlefieldView: View {
     @State private var isBattlefieldPanActive = false
     @State private var selectionDragStart: CGPoint?
     @State private var selectionDragCurrent: CGPoint?
+    @State private var selectionDragSequence: Int?
+    @State private var panGestureStartLocation: CGPoint?
     @State private var contextPressLocation: CGPoint?
     @State private var suppressTapUntil: TimeInterval?
-    @State private var battlefieldGestureGeneration = 0
-    @State private var contextGestureGeneration = -1
+    @State private var touchOwner = BattlefieldTouchOwner()
+    @State private var contextGestureLease: BattlefieldTouchOwner.Lease?
+    @State private var panGestureLease: BattlefieldTouchOwner.Lease?
+    @State private var longPressLease: BattlefieldTouchOwner.Lease?
+    @State private var multitouchLease: BattlefieldTouchOwner.Lease?
+    @State private var pinchLease: BattlefieldTouchOwner.Lease?
+    @State private var touchPreviewSequence: Int?
+    @State private var contextGestureCallbackGeneration = 0
+    @State private var panGestureCallbackGeneration = 0
+    @State private var pinchGestureCallbackGeneration = 0
+    @State private var multitouchGestureCallbackGeneration = 0
     @State private var contextGestureStarted = false
-    @State private var contextGestureTouchSequence = -1
-    @State private var cancelledContextTouchSequence: Int?
-    @State private var contextGestureCancelled = false
+    @State private var contextGestureSequence: Int?
+    @State private var contextGestureSeedSequence: Int?
+    @State private var contextGestureSeedLocation: CGPoint?
     @State private var contextGestureStartTime: Date?
     @State private var contextGestureStartLocation: CGPoint?
     @State private var contextGestureLastEventTime: Date?
-    @State private var contextGestureCancelledAt: Date?
     @State private var battlefieldPanOccurredForCurrentTouch = false
-    @State private var battlefieldTouchIntent = BattlefieldTouchIntent.possible
-    @State private var battlefieldTouchSequenceCancelled = false
-    @State private var battlefieldTouchCancellationNeedsContextSeed = false
-    @State private var battlefieldTouchCancellationContextSeeded = false
-    @State private var cancelledBattlefieldTouchIDs: Set<SpatialEventCollection.Event.ID> = []
-    @State private var battlefieldTouchID: SpatialEventCollection.Event.ID?
-    @State private var battlefieldTouchSequence = 0
     @State private var multitouchIDs: [SpatialEventCollection.Event.ID] = []
     @State private var multitouchStartLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
     @State private var multitouchCurrentLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
@@ -59,6 +54,7 @@ struct BattlefieldView: View {
     @State private var multitouchSelectionCurrent: CGPoint?
 
     var body: some View {
+        let longPressCallbackGeneration = contextGestureCallbackGeneration
         GeometryReader { proxy in
             ZStack {
                 SpriteView(scene: scene, options: [.allowsTransparency])
@@ -81,7 +77,6 @@ struct BattlefieldView: View {
                     }
                     .onChange(of: controller.mapRenderRevision) { _, _ in
                         cancelSelectionGestures()
-                        clearBattlefieldTouchPreview()
                     }
                     .onChange(of: accessibilityReduceMotion) { _, reduceMotion in
                         scene.accessibilityReduceMotion = reduceMotion
@@ -92,29 +87,36 @@ struct BattlefieldView: View {
                     .simultaneousGesture(magnifyGesture())
                     .simultaneousGesture(multitouchSelectionGesture(in: proxy.size))
                     .onLongPressGesture(minimumDuration: 0.45, maximumDistance: 18) {
-                        clearBattlefieldTouchPreview()
+                        guard let contextLease = contextGestureLease,
+                              longPressCallbackGeneration == contextGestureCallbackGeneration,
+                              contextGestureSequenceMatches(contextLease),
+                              touchOwner.accepts(contextLease),
+                              touchOwner.phase == .possible,
+                              !isMultitouchSequenceActive,
+                              !isBattlefieldPanActive,
+                              !battlefieldPanOccurredForCurrentTouch,
+                              let contextPressLocation else {
+                            return
+                        }
                         if let suppressTapUntil,
                            ProcessInfo.processInfo.systemUptime <= suppressTapUntil {
                             return
                         }
-                        guard battlefieldTouchIntent == .possible,
-                              !isMultitouchSequenceActive,
-                              !isBattlefieldPanActive,
-                              !battlefieldPanOccurredForCurrentTouch,
-                              !contextGestureCancelled,
-                              !battlefieldTouchSequenceCancelled,
-                              contextGestureGeneration == battlefieldGestureGeneration,
-                              contextGestureTouchSequence == battlefieldTouchSequence,
-                              let contextPressLocation else {
+                        guard let lease = touchOwner.claim(.longPress, source: .longPress) else {
                             return
                         }
-                        battlefieldTouchIntent = .longPress
+                        longPressLease = lease
+                        clearBattlefieldTouchPreview(for: lease.sequence)
                         battlefieldPanOccurredForCurrentTouch = true
                         suppressTapUntil = ProcessInfo.processInfo.systemUptime + Self.contextTapSuppressionDuration
                         controller.handleBattlefieldContextCommand(
                             screenPoint: contextPressLocation,
                             viewportSize: proxy.size
                         )
+                        _ = touchOwner.finish(lease)
+                        longPressLease = nil
+                        invalidateNonContextGestureCallbacks()
+                        resetContextGestureState()
                         scene.renderNow()
                     }
 
@@ -127,174 +129,152 @@ struct BattlefieldView: View {
         }
     }
 
-    private func tapGesture(in viewportSize: CGSize) -> some Gesture {
-        SpatialTapGesture()
-            .onEnded { value in
-                clearBattlefieldTouchPreview()
-                guard battlefieldTouchIntent == .possible,
-                      !battlefieldPanOccurredForCurrentTouch,
-                      !contextGestureCancelled,
-                      !battlefieldTouchSequenceCancelled else {
-                    return
-                }
-                if let suppressTapUntil {
-                    guard ProcessInfo.processInfo.systemUptime > suppressTapUntil else {
-                        return
-                    }
-                    self.suppressTapUntil = nil
-                }
-                controller.handleBattlefieldTap(screenPoint: value.location, viewportSize: viewportSize)
-                scene.renderNow()
-            }
-    }
-
     private func contextLocationGesture(in viewportSize: CGSize) -> some Gesture {
+        let callbackGeneration = contextGestureCallbackGeneration
         DragGesture(minimumDistance: 0)
             .onChanged { value in
-                if battlefieldTouchSequenceCancelled {
-                    guard battlefieldTouchCancellationNeedsContextSeed,
-                          acceptsContextGestureEvent(at: value.time) else {
+                guard callbackGeneration == contextGestureCallbackGeneration else {
+                    return
+                }
+                if contextGestureStarted,
+                   !matchesContextGestureStart(value.startLocation) {
+                    return
+                }
+                guard let lease = contextGestureLease,
+                      contextGestureSequenceMatches(lease),
+                      touchOwner.accepts(lease) else {
+                    return
+                }
+                if !contextGestureStarted {
+                    guard let seedLocation = contextGestureSeedLocation,
+                          contextGestureSeedSequence == lease.sequence,
+                          distance(from: seedLocation, to: value.startLocation) <=
+                            Double(Self.contextGestureStartLocationTolerance) else {
                         return
                     }
-                    let startsNewGesture = !contextGestureStarted ||
-                        contextGestureTouchSequence != battlefieldTouchSequence
-                    if startsNewGesture {
-                        contextGestureStarted = true
-                        contextGestureTouchSequence = battlefieldTouchSequence
-                        contextGestureStartTime = value.time
-                        contextGestureStartLocation = value.startLocation
-                        contextGestureLastEventTime = value.time
-                        contextGestureGeneration = battlefieldGestureGeneration
-                    }
-                    contextPressLocation = value.location
-                    battlefieldTouchCancellationContextSeeded = true
-                    return
                 }
                 guard acceptsContextGestureEvent(at: value.time) else {
                     return
                 }
-                let startsNewGesture = !contextGestureStarted ||
-                    contextGestureTouchSequence != battlefieldTouchSequence
-                if startsNewGesture {
+                if !contextGestureStarted {
                     contextGestureStarted = true
-                    contextGestureTouchSequence = battlefieldTouchSequence
+                    contextGestureSequence = lease.sequence
                     contextGestureStartTime = value.time
                     contextGestureStartLocation = value.startLocation
-                    contextGestureLastEventTime = value.time
-                    let isCancelledSequence = contextGestureCancelled &&
-                        cancelledContextTouchSequence == battlefieldTouchSequence
-                    if !isCancelledSequence {
-                        cancelledContextTouchSequence = nil
-                        contextGestureCancelled = false
-                        contextGestureCancelledAt = nil
-                        contextGestureGeneration = battlefieldGestureGeneration
-                        prepareFreshBattlefieldTouchIntent()
-                        if battlefieldTouchIntent == .possible {
-                            battlefieldPanOccurredForCurrentTouch = false
-                        }
-                    }
-                }
-                guard !contextGestureCancelled else {
-                    return
                 }
                 contextPressLocation = value.location
-                updateBattlefieldTouchPreview(at: value.location, viewportSize: viewportSize)
+                updateBattlefieldTouchPreview(
+                    at: value.location,
+                    viewportSize: viewportSize,
+                    sequence: lease.sequence
+                )
             }
             .onEnded { value in
-                clearBattlefieldTouchPreview()
-                guard contextGestureStarted else {
+                guard callbackGeneration == contextGestureCallbackGeneration else {
                     return
                 }
-                let endingTouchSequence = contextGestureTouchSequence
-                if let contextGestureStartLocation,
-                   hypot(
-                       Double(contextGestureStartLocation.x - value.startLocation.x),
-                       Double(contextGestureStartLocation.y - value.startLocation.y)
-                   ) > Double(Self.contextGestureStartLocationTolerance) {
-                    cancelStaleContextGesture()
+                guard contextGestureStarted,
+                      let lease = contextGestureLease,
+                      contextGestureSequenceMatches(lease) else {
                     return
                 }
-                let isCurrentTouchSequence = endingTouchSequence == battlefieldTouchSequence
-                let isBeforeStart = contextGestureStartTime.map { value.time < $0 } ?? false
-                let accepted = isCurrentTouchSequence &&
-                    !isBeforeStart &&
-                    acceptsContextGestureEvent(at: value.time)
-                let wasCancelled = contextGestureCancelled
-                contextPressLocation = nil
-                contextGestureStarted = false
-                contextGestureTouchSequence = -1
-                contextGestureStartTime = nil
-                contextGestureStartLocation = nil
-                contextGestureLastEventTime = nil
-                contextGestureGeneration = -1
-                guard isCurrentTouchSequence else {
-                    return
-                }
-                let areaSelectionInFlight = battlefieldTouchIntent == .areaSelection &&
-                    selectionDragStart != nil
-                if accepted && !wasCancelled {
-                    cancelledContextTouchSequence = nil
-                    contextGestureCancelled = false
-                    contextGestureCancelledAt = nil
-                    if !isBattlefieldPanActive,
-                       !isMultitouchSequenceActive,
-                       battlefieldTouchIntent != .possible {
-                        battlefieldTouchIntent = .possible
+                guard matchesContextGestureStart(value.startLocation) else {
+                    clearBattlefieldTouchPreview(for: lease.sequence)
+                    if touchOwner.phase == .possible {
+                        _ = touchOwner.cancel()
+                        invalidateNonContextGestureCallbacks()
+                        battlefieldPanOccurredForCurrentTouch = true
                     }
-                } else if !areaSelectionInFlight {
-                    contextGestureCancelled = true
-                    cancelledContextTouchSequence = battlefieldTouchSequence
-                    contextGestureCancelledAt = .now
-                    battlefieldTouchIntent = .cancelled
+                    resetContextGestureState()
+                    return
+                }
+                guard touchOwner.accepts(lease) else {
+                    if lease.sequence == touchOwner.sequence {
+                        clearBattlefieldTouchPreview(for: lease.sequence)
+                        resetContextGestureState()
+                    }
+                    return
+                }
+                guard let startLocation = contextGestureStartLocation,
+                      hypot(
+                          Double(startLocation.x - value.startLocation.x),
+                          Double(startLocation.y - value.startLocation.y)
+                      ) <= Double(Self.contextGestureStartLocationTolerance) else {
+                    return
+                }
+                let isBeforeStart = contextGestureStartTime.map { value.time < $0 } ?? false
+                guard !isBeforeStart,
+                      acceptsContextGestureEvent(at: value.time) else {
+                    _ = touchOwner.cancel()
+                    clearBattlefieldTouchPreview(for: lease.sequence)
+                    invalidateNonContextGestureCallbacks()
+                    resetContextGestureState()
                     battlefieldPanOccurredForCurrentTouch = true
-                    battlefieldGestureGeneration &+= 1
+                    return
                 }
-                let shouldFinishSingleTouch = !areaSelectionInFlight &&
-                    (isBattlefieldPanActive || battlefieldTouchID != nil)
-                if shouldFinishSingleTouch {
-                    isBattlefieldPanActive = false
-                    battlefieldTouchIntent = accepted && !wasCancelled
-                        ? .possible
-                        : .cancelled
-                    battlefieldTouchSequence &+= 1
-                    battlefieldTouchID = nil
+                if commitSingleTouchTap(
+                    at: value.location,
+                    viewportSize: viewportSize,
+                    lease: lease
+                ) {
+                    return
                 }
+                clearBattlefieldTouchPreview(for: lease.sequence)
+                if touchOwner.phase == .possible,
+                   lease.sequence == touchOwner.sequence {
+                    _ = touchOwner.cancel()
+                    invalidateNonContextGestureCallbacks()
+                    battlefieldPanOccurredForCurrentTouch = true
+                }
+                resetContextGestureState()
             }
     }
 
-    private func cancelStaleContextGesture() {
-        let staleSequence = contextGestureTouchSequence
-        let isCurrentTouchSequence = staleSequence == battlefieldTouchSequence
-        let areaSelectionInFlight = battlefieldTouchIntent == .areaSelection &&
-            selectionDragStart != nil
+    private func tapGesture(in viewportSize: CGSize) -> some Gesture {
+        let callbackGeneration = contextGestureCallbackGeneration
+        SpatialTapGesture()
+            .onEnded { value in
+                guard callbackGeneration == contextGestureCallbackGeneration,
+                      let lease = contextGestureLease,
+                      contextGestureSequenceMatches(lease) else {
+                    return
+                }
+                _ = commitSingleTouchTap(
+                    at: value.location,
+                    viewportSize: viewportSize,
+                    lease: lease
+                )
+            }
+    }
 
+    private func resetContextGestureState() {
+        contextGestureCallbackGeneration &+= 1
         contextPressLocation = nil
         contextGestureStarted = false
-        contextGestureTouchSequence = -1
+        contextGestureLease = nil
+        contextGestureSequence = nil
+        contextGestureSeedSequence = nil
+        contextGestureSeedLocation = nil
         contextGestureStartTime = nil
         contextGestureStartLocation = nil
         contextGestureLastEventTime = nil
-        contextGestureGeneration = -1
+    }
 
-        guard isCurrentTouchSequence, !areaSelectionInFlight else {
-            return
-        }
+    private func contextGestureSequenceMatches(_ lease: BattlefieldTouchOwner.Lease) -> Bool {
+        lease.sequence == touchOwner.sequence &&
+            contextGestureSeedSequence == lease.sequence &&
+            (contextGestureSequence == nil || contextGestureSequence == lease.sequence)
+    }
 
-        contextGestureCancelled = true
-        cancelledContextTouchSequence = staleSequence
-        contextGestureCancelledAt = .now
-        battlefieldTouchIntent = .cancelled
-        battlefieldPanOccurredForCurrentTouch = true
-        isBattlefieldPanActive = false
-        lastDragTranslation = .zero
-        battlefieldTouchSequence &+= 1
-        battlefieldTouchID = nil
-        battlefieldGestureGeneration &+= 1
+    private func distance(from first: CGPoint, to second: CGPoint) -> Double {
+        hypot(
+            Double(first.x - second.x),
+            Double(first.y - second.y)
+        )
     }
 
     private func acceptsContextGestureEvent(at time: Date) -> Bool {
-        if contextGestureStarted,
-           let lastEventTime = contextGestureLastEventTime,
+        if let lastEventTime = contextGestureLastEventTime,
            time < lastEventTime {
             return false
         }
@@ -302,40 +282,94 @@ struct BattlefieldView: View {
            time < startTime {
             return false
         }
-        if let cancelledAt = contextGestureCancelledAt,
-           time <= cancelledAt {
-            return false
-        }
         contextGestureLastEventTime = time
         return true
     }
 
+    @discardableResult
+    private func commitSingleTouchTap(
+        at screenPoint: CGPoint,
+        viewportSize: CGSize,
+        lease: BattlefieldTouchOwner.Lease
+    ) -> Bool {
+        guard touchOwner.phase == .possible,
+              !isMultitouchSequenceActive,
+              !isBattlefieldPanActive,
+              !battlefieldPanOccurredForCurrentTouch,
+              contextGestureSequenceMatches(lease),
+              touchOwner.accepts(lease) else {
+            return false
+        }
+        if let startLocation = contextGestureStartLocation ?? contextGestureSeedLocation,
+           distance(from: startLocation, to: screenPoint) > 18 {
+            return false
+        }
+        if let suppressTapUntil {
+            guard ProcessInfo.processInfo.systemUptime > suppressTapUntil else {
+                return false
+            }
+            self.suppressTapUntil = nil
+        }
+        clearBattlefieldTouchPreview(for: lease.sequence)
+        controller.handleBattlefieldTap(
+            screenPoint: screenPoint,
+            viewportSize: viewportSize
+        )
+        _ = touchOwner.finish(lease)
+        invalidateNonContextGestureCallbacks()
+        resetContextGestureState()
+        battlefieldPanOccurredForCurrentTouch = true
+        scene.renderNow()
+        return true
+    }
+
+    private func matchesContextGestureStart(_ location: CGPoint) -> Bool {
+        guard let startLocation = contextGestureStartLocation else {
+            return true
+        }
+        return distance(from: startLocation, to: location) <=
+            Double(Self.contextGestureStartLocationTolerance)
+    }
+
     private func dragGesture(in viewportSize: CGSize) -> some Gesture {
+        let callbackGeneration = panGestureCallbackGeneration
         DragGesture(minimumDistance: Self.battlefieldPanActivationDistance)
             .onChanged { value in
-                guard !isMultitouchSequenceActive,
-                      battlefieldTouchIntent != .multitouch,
-                      battlefieldTouchIntent != .pinch,
-                      battlefieldTouchIntent != .cancelled,
-                      battlefieldTouchIntent != .longPress,
-                      isBattlefieldPanActive || !battlefieldPanOccurredForCurrentTouch else {
-                    lastDragTranslation = .zero
+                guard callbackGeneration == panGestureCallbackGeneration else {
                     return
                 }
-                if !isBattlefieldPanActive {
+                if panGestureLease == nil {
+                    guard touchOwner.phase == .possible,
+                          !isMultitouchSequenceActive,
+                          !battlefieldPanOccurredForCurrentTouch,
+                          let seedLocation = contextGestureSeedLocation,
+                          contextGestureSeedSequence == touchOwner.sequence,
+                          distance(from: seedLocation, to: value.startLocation) <=
+                            Double(Self.contextGestureStartLocationTolerance),
+                          let lease = touchOwner.claim(
+                            controller.isAwaitingAreaSelection ? .areaSelection : .pan,
+                            source: .pan
+                          ) else {
+                        lastDragTranslation = .zero
+                        return
+                    }
+                    panGestureLease = lease
+                    panGestureStartLocation = value.startLocation
                     isBattlefieldPanActive = true
-                    clearBattlefieldTouchPreview()
+                    clearBattlefieldTouchPreview(for: lease.sequence)
                     controller.clearLastBattlefieldTap()
-                    battlefieldTouchIntent = controller.isAwaitingAreaSelection
-                        ? .areaSelection
-                        : .pan
                     battlefieldPanOccurredForCurrentTouch = true
                     lastDragTranslation = .zero
+                }
+                guard let lease = panGestureLease,
+                      touchOwner.accepts(lease) else {
+                    return
                 }
                 suppressTapAfterBattlefieldPan()
                 if controller.isAwaitingAreaSelection {
                     if selectionDragStart == nil {
                         selectionDragStart = value.startLocation
+                        selectionDragSequence = lease.sequence
                     }
                     selectionDragCurrent = value.location
                     return
@@ -350,155 +384,154 @@ struct BattlefieldView: View {
                 scene.renderNow()
             }
             .onEnded { value in
-                clearBattlefieldTouchPreview()
-                let ownedPanIntent = battlefieldTouchIntent == .pan ||
-                    battlefieldTouchIntent == .areaSelection
-                if controller.isAwaitingAreaSelection {
-                    guard battlefieldTouchIntent == .areaSelection,
-                          isBattlefieldPanActive,
-                          selectionDragStart != nil,
-                          !battlefieldTouchSequenceCancelled else {
-                        selectionDragStart = nil
-                        selectionDragCurrent = nil
-                        lastDragTranslation = .zero
-                        isBattlefieldPanActive = false
-                        return
-                    }
-                    let startPoint = selectionDragStart ?? value.startLocation
+                guard callbackGeneration == panGestureCallbackGeneration else {
+                    return
+                }
+                guard let lease = panGestureLease,
+                      touchOwner.accepts(lease) else {
+                    return
+                }
+                guard let startLocation = panGestureStartLocation,
+                      hypot(
+                          Double(startLocation.x - value.startLocation.x),
+                          Double(startLocation.y - value.startLocation.y)
+                      ) <= Double(Self.contextGestureStartLocationTolerance) else {
+                    return
+                }
+                clearBattlefieldTouchPreview(for: lease.sequence)
+                if touchOwner.phase == .areaSelection,
+                   isBattlefieldPanActive,
+                   selectionDragSequence == lease.sequence,
+                   let startPoint = selectionDragStart {
                     controller.handleBattlefieldAreaSelection(
                         from: startPoint,
                         to: value.location,
                         viewportSize: viewportSize
                     )
-                    selectionDragStart = nil
-                    selectionDragCurrent = nil
                     scene.renderNow()
                 }
+                _ = touchOwner.finish(lease)
+                panGestureLease = nil
+                panGestureStartLocation = nil
+                invalidateNonContextGestureCallbacks()
+                resetContextGestureState()
+                selectionDragStart = nil
+                selectionDragCurrent = nil
+                selectionDragSequence = nil
                 lastDragTranslation = .zero
                 isBattlefieldPanActive = false
-                if battlefieldTouchIntent == .pan || battlefieldTouchIntent == .areaSelection {
-                    battlefieldTouchIntent = .possible
-                }
-                if ownedPanIntent {
-                    battlefieldTouchSequence &+= 1
-                    battlefieldTouchID = nil
-                }
             }
     }
 
     private func magnifyGesture() -> some Gesture {
+        let callbackGeneration = pinchGestureCallbackGeneration
         MagnifyGesture()
             .onChanged { value in
-                guard battlefieldTouchIntent == .pinch else {
-                    if isMultitouchSequenceActive {
-                        clearBattlefieldTouchPreview()
-                        controller.clearLastBattlefieldTap()
-                        lastMagnification = Double(value.magnification)
-                    }
+                guard callbackGeneration == pinchGestureCallbackGeneration else {
+                    return
+                }
+                guard let lease = pinchLease,
+                      touchOwner.accepts(lease) else {
                     return
                 }
                 controller.clearLastBattlefieldTap()
+                clearBattlefieldTouchPreview(for: lease.sequence)
                 let incremental = Double(value.magnification) / lastMagnification
                 controller.zoom(by: incremental)
                 lastMagnification = Double(value.magnification)
                 scene.renderNow()
             }
             .onEnded { _ in
-                clearBattlefieldTouchPreview()
+                guard callbackGeneration == pinchGestureCallbackGeneration else {
+                    return
+                }
+                guard let lease = pinchLease,
+                      touchOwner.accepts(lease) else {
+                    return
+                }
+                clearBattlefieldTouchPreview(for: lease.sequence)
+                _ = touchOwner.finish(lease)
+                pinchLease = nil
+                multitouchLease = nil
+                invalidateNonContextGestureCallbacks()
+                resetContextGestureState()
                 lastMagnification = 1.0
+                resetMultitouchSelectionState()
             }
     }
 
     private func multitouchSelectionGesture(in viewportSize: CGSize) -> some Gesture {
+        let callbackGeneration = multitouchGestureCallbackGeneration
         SpatialEventGesture()
             .onChanged { events in
+                guard callbackGeneration == multitouchGestureCallbackGeneration else {
+                    return
+                }
                 updateMultitouchSelection(with: events)
             }
             .onEnded { events in
+                guard callbackGeneration == multitouchGestureCallbackGeneration else {
+                    return
+                }
                 finishMultitouchSelection(with: events, viewportSize: viewportSize)
             }
     }
 
     private func updateMultitouchSelection(with events: SpatialEventCollection) {
-        let touchEvents = events.filter { $0.kind == .touch }
-        let containsCancelledTouch = touchEvents.contains(where: { $0.phase == .cancelled })
-        if containsCancelledTouch && !battlefieldTouchSequenceCancelled {
-            isMultitouchRejected = true
-            battlefieldTouchIntent = .cancelled
-            battlefieldPanOccurredForCurrentTouch = true
-            contextPressLocation = nil
-            contextGestureCancelled = true
-            cancelledContextTouchSequence = battlefieldTouchSequence
-            contextGestureCancelledAt = .now
-            contextGestureGeneration = -1
-            clearMultitouchSelectionPreview()
+        guard synchronizeTouchOwner(with: events, allowFreshSeed: true) else {
+            return
         }
-
-        var activeTouches = touchEvents.filter { $0.phase == .active }
+        let touchEvents = events.filter {
+            $0.kind == .touch && !touchOwner.cancelledIDs.contains($0.id)
+        }
+        let activeTouches = touchEvents.filter { $0.phase == .active }
+        let sequence = touchOwner.sequence
         if activeTouches.count >= 2 || isMultitouchSequenceActive {
-            clearBattlefieldTouchPreview()
+            clearBattlefieldTouchPreview(for: sequence)
             controller.clearLastBattlefieldTap()
         }
-        if battlefieldTouchSequenceCancelled {
-            let hadCancelledTouchIDs = !cancelledBattlefieldTouchIDs.isEmpty
-            let hasFreshUnknownTouch = !hadCancelledTouchIDs &&
-                battlefieldTouchCancellationContextSeeded &&
-                !activeTouches.isEmpty
-            let freshTouches = hadCancelledTouchIDs
-                ? activeTouches.filter { !cancelledBattlefieldTouchIDs.contains($0.id) }
-                : (hasFreshUnknownTouch ? activeTouches : [])
-            guard !freshTouches.isEmpty else {
-                isMultitouchRejected = true
-                let hasFreshContextGesture = contextGestureStarted &&
-                    !contextGestureCancelled &&
-                    contextGestureTouchSequence == battlefieldTouchSequence
-                if !hasFreshContextGesture &&
-                   (battlefieldTouchIntent == .possible || battlefieldTouchIntent == .cancelled) {
-                    battlefieldTouchIntent = .cancelled
-                    battlefieldPanOccurredForCurrentTouch = true
-                }
-                clearMultitouchSelectionPreview()
-                return
-            }
-            acceptFreshBattlefieldTouchSequence()
-            activeTouches = freshTouches
+        if touchOwner.phase == .cancelled {
+            isMultitouchRejected = true
+            isMultitouchPinch = false
+            clearMultitouchSelectionPreview()
+            resetContextGestureState()
+            battlefieldPanOccurredForCurrentTouch = true
+            return
         }
 
         if activeTouches.count == 1,
-           battlefieldTouchIntent == .possible,
+           touchOwner.phase == .possible,
            contextPressLocation == nil {
             contextPressLocation = activeTouches[0].location
-            contextGestureGeneration = battlefieldGestureGeneration
-        }
-
-        let activeTouchIDs = Set(activeTouches.map(\.id))
-        if let currentTouchID = battlefieldTouchID,
-           activeTouchIDs.contains(currentTouchID) {
-            // Keep the first active touch as the stable identity for this sequence.
-        } else if let replacementTouch = activeTouches.first {
-            battlefieldTouchID = replacementTouch.id
-        } else if touchEvents.contains(where: { $0.phase == .ended || $0.phase == .cancelled }) {
-            battlefieldTouchID = nil
         }
         guard activeTouches.count >= 2 || isMultitouchSequenceActive else {
             return
         }
 
         if !isMultitouchSequenceActive {
-            claimMultitouchIntent()
+            guard let lease = touchOwner.claim(.multitouch, source: .multitouch) else {
+                cancelMultitouchSequence()
+                return
+            }
+            multitouchLease = lease
             isMultitouchSequenceActive = true
+            battlefieldPanOccurredForCurrentTouch = true
+            isBattlefieldPanActive = false
+            lastDragTranslation = .zero
+            selectionDragStart = nil
+            selectionDragCurrent = nil
+            selectionDragSequence = nil
+            contextPressLocation = nil
+            resetContextGestureState()
+            invalidatePanAndPinchGestureCallbacks()
+            suppressTapAfterMultitouch()
         } else {
             suppressTapAfterMultitouch()
         }
-        lastDragTranslation = .zero
 
-        guard activeTouches.count == 2, !isMultitouchRejected else {
+        guard activeTouches.count <= 2, !isMultitouchRejected else {
             if activeTouches.count > 2 {
-                isMultitouchRejected = true
-                isMultitouchPinch = false
-                battlefieldTouchIntent = .cancelled
-                battlefieldPanOccurredForCurrentTouch = true
-                clearMultitouchSelectionPreview()
+                cancelMultitouchSequence()
             }
             return
         }
@@ -512,11 +545,7 @@ struct BattlefieldView: View {
             }
         } else {
             guard Set(activeTouches.map(\.id)) == Set(multitouchIDs) else {
-                isMultitouchRejected = true
-                isMultitouchPinch = false
-                battlefieldTouchIntent = .cancelled
-                battlefieldPanOccurredForCurrentTouch = true
-                clearMultitouchSelectionPreview()
+                cancelMultitouchSequence()
                 return
             }
             for touch in activeTouches where multitouchIDs.contains(touch.id) {
@@ -530,10 +559,86 @@ struct BattlefieldView: View {
         }
     }
 
+    private func synchronizeTouchOwner(
+        with events: SpatialEventCollection,
+        allowFreshSeed: Bool
+    ) -> Bool {
+        let touchEvents = events.filter { $0.kind == .touch }
+        guard !touchEvents.isEmpty else {
+            return false
+        }
+        let eventIDs = Set(touchEvents.map(\.id))
+        if touchOwner.hasActiveOwner,
+           eventIDs.intersection(touchOwner.acceptedIDs).isEmpty,
+           eventIDs.subtracting(touchOwner.cancelledIDs).isEmpty {
+            return false
+        }
+        let hasFreshEventID = !eventIDs.subtracting(touchOwner.cancelledIDs).isEmpty
+        let hasKnownAcceptedEventID = !eventIDs.intersection(touchOwner.acceptedIDs).isEmpty
+        guard hasFreshEventID || hasKnownAcceptedEventID else {
+            return false
+        }
+        let activeIDs = Set(touchEvents.filter { $0.phase == .active }.map(\.id))
+        let endedIDs = Set(touchEvents.filter { $0.phase == .ended }.map(\.id))
+        let cancelledIDs = Set(touchEvents.filter { $0.phase == .cancelled }.map(\.id))
+
+        if allowFreshSeed,
+           (touchOwner.phase == .idle || touchOwner.phase == .cancelled) {
+            guard let freshTouch = touchEvents.first(where: {
+                $0.phase == .active && !touchOwner.cancelledIDs.contains($0.id)
+            }),
+            let contextLease = touchOwner.beginFreshSequence(with: freshTouch.id) else {
+                return false
+            }
+            resetMultitouchSelectionState()
+            panGestureLease = nil
+            panGestureStartLocation = nil
+            isBattlefieldPanActive = false
+            contextGestureLease = contextLease
+            contextGestureSeedSequence = contextLease.sequence
+            contextGestureSeedLocation = freshTouch.location
+            contextPressLocation = freshTouch.location
+            battlefieldPanOccurredForCurrentTouch = false
+        }
+
+        guard touchOwner.hasActiveOwner else {
+            return false
+        }
+        let filteredActiveIDs = activeIDs.subtracting(touchOwner.cancelledIDs)
+        let sequenceBeforeObservation = touchOwner.sequence
+        let observation = touchOwner.observe(
+            activeIDs: filteredActiveIDs,
+            endedIDs: endedIDs,
+            cancelledEventIDs: cancelledIDs
+        )
+        switch observation {
+        case .accepted:
+            return true
+        case .ignored:
+            return false
+        case .cancelled, .replacementRejected:
+            isMultitouchRejected = true
+            isMultitouchPinch = false
+            isMultitouchSequenceActive = false
+            clearMultitouchSelectionPreview()
+            clearBattlefieldTouchPreview(for: sequenceBeforeObservation)
+            resetContextGestureState()
+            invalidateNonContextGestureCallbacks()
+            panGestureLease = nil
+            panGestureStartLocation = nil
+            pinchLease = nil
+            multitouchLease = nil
+            isBattlefieldPanActive = false
+            battlefieldPanOccurredForCurrentTouch = true
+            return true
+        }
+    }
+
     private func classifyMultitouchIntent() {
         guard !isMultitouchSelection,
               !isMultitouchPinch,
               !isMultitouchRejected,
+              touchOwner.phase == .multitouch,
               multitouchIDs.count == 2,
               let firstStart = multitouchStartLocations[multitouchIDs[0]],
               let secondStart = multitouchStartLocations[multitouchIDs[1]],
@@ -551,16 +656,17 @@ struct BattlefieldView: View {
             isTargetCommandPending: controller.isAwaitingTargetCommand
         )
         if intent == .pinch {
+            guard let lease = touchOwner.claim(.pinch, source: .pinch) else {
+                cancelMultitouchSequence()
+                return
+            }
+            pinchLease = lease
             isMultitouchPinch = true
-            battlefieldTouchIntent = .pinch
             battlefieldPanOccurredForCurrentTouch = true
             clearMultitouchSelectionPreview()
             return
         }
         isMultitouchSelection = intent == .selection
-        if isMultitouchSelection {
-            battlefieldTouchIntent = .multitouch
-        }
     }
 
     private func updateMultitouchSelectionPreview() {
@@ -584,45 +690,85 @@ struct BattlefieldView: View {
     }
 
     private func finishMultitouchSelection(with events: SpatialEventCollection, viewportSize: CGSize) {
-        for event in events where event.kind == .touch && multitouchIDs.contains(event.id) {
-            multitouchCurrentLocations[event.id] = event.location
+        let hadMultitouchClaim = touchOwner.hasMultitouchClaimed
+        let wasCancelledMultitouch = hadMultitouchClaim && touchOwner.phase == .cancelled
+        if !wasCancelledMultitouch {
+            guard synchronizeTouchOwner(with: events, allowFreshSeed: false) else {
+                return
+            }
         }
-        // A settle-then-lift two-finger frame classifies at release once the dwell elapses.
-        classifyMultitouchIntent()
-        if isMultitouchSelection {
-            updateMultitouchSelectionPreview()
+        let eventTouchIDs = Set(events.filter { $0.kind == .touch }.map(\.id))
+        let hasMultitouchEvidence = hadMultitouchClaim ||
+            touchOwner.acceptedIDs.count >= 2 ||
+            eventTouchIDs.count >= 2 ||
+            isMultitouchSequenceActive
+        guard hasMultitouchEvidence else {
+            return
+        }
+        if !hadMultitouchClaim,
+           touchOwner.phase == .possible,
+           touchOwner.acceptedIDs.count >= 2,
+           let lease = touchOwner.claim(.multitouch, source: .multitouch) {
+            multitouchLease = lease
+            isMultitouchSequenceActive = true
+            battlefieldPanOccurredForCurrentTouch = true
+            invalidateNonContextGestureCallbacks()
+        }
+        if wasCancelledMultitouch || touchOwner.phase == .cancelled {
+            _ = touchOwner.finishCancelledMultitouch()
+            resetMultitouchSelectionState()
+            multitouchLease = nil
+            pinchLease = nil
+            resetContextGestureState()
+            battlefieldPanOccurredForCurrentTouch = true
+            return
+        }
+        let acceptedEventTouchIDs = eventTouchIDs.intersection(touchOwner.acceptedIDs)
+        guard !acceptedEventTouchIDs.isEmpty else {
+            return
+        }
+        let previewSequence = touchOwner.sequence
+        if touchOwner.phase == .multitouch {
+            for event in events where event.kind == .touch && multitouchIDs.contains(event.id) {
+                multitouchCurrentLocations[event.id] = event.location
+            }
+            // A settle-then-lift two-finger frame classifies at release once the dwell elapses.
+            classifyMultitouchIntent()
+            if isMultitouchSelection {
+                updateMultitouchSelectionPreview()
+            }
         }
 
-        let shouldSelect = isMultitouchSelection &&
+        let shouldSelect = touchOwner.phase == .multitouch &&
+            isMultitouchSelection &&
             !isMultitouchRejected &&
-            !events.contains(where: { $0.kind == .touch && $0.phase == .cancelled }) &&
             !controller.isAwaitingTargetCommand
         let startPoint = multitouchSelectionStart
         let endPoint = multitouchSelectionCurrent
-        let eventTouchIDs = Set(events.filter { $0.kind == .touch }.map(\.id))
-        let wasResetCancelled = battlefieldTouchSequenceCancelled
-        let hadMultitouchSequence = isMultitouchSequenceActive ||
-            multitouchIDs.count >= 2 ||
-            eventTouchIDs.count >= 2
-        guard hadMultitouchSequence else {
+        let finishResult: TouchSequenceOwner<SpatialEventCollection.Event.ID>.FinishResult
+        if let lease = pinchLease {
+            finishResult = touchOwner.finish(lease)
+        } else if let lease = multitouchLease {
+            finishResult = touchOwner.finish(lease, commitMultitouch: shouldSelect)
+        } else {
             return
         }
-        resetMultitouchSelectionState()
-        clearBattlefieldTouchPreview()
-        controller.clearLastBattlefieldTap()
-        battlefieldTouchID = nil
-        battlefieldTouchSequence &+= 1
-        if hadMultitouchSequence {
-            suppressTapAfterMultitouch()
-        }
-        if wasResetCancelled {
-            battlefieldTouchIntent = .cancelled
-            battlefieldPanOccurredForCurrentTouch = true
-        } else {
-            battlefieldTouchIntent = .possible
+        guard finishResult != .ignored else {
+            return
         }
 
-        guard shouldSelect, let startPoint, let endPoint else {
+        resetMultitouchSelectionState()
+        multitouchLease = nil
+        pinchLease = nil
+        invalidateNonContextGestureCallbacks()
+        resetContextGestureState()
+        clearBattlefieldTouchPreview(for: previewSequence)
+        controller.clearLastBattlefieldTap()
+        suppressTapAfterMultitouch()
+        battlefieldPanOccurredForCurrentTouch = true
+        guard finishResult == .committed,
+              let startPoint,
+              let endPoint else {
             return
         }
         controller.handleBattlefieldMultitouchAreaSelection(
@@ -633,53 +779,21 @@ struct BattlefieldView: View {
         scene.renderNow()
     }
 
-    private func claimMultitouchIntent() {
-        battlefieldTouchIntent = .multitouch
-        battlefieldPanOccurredForCurrentTouch = true
+    private func cancelMultitouchSequence() {
+        let sequence = touchOwner.sequence
+        _ = touchOwner.cancel()
+        clearMultitouchSelectionPreview()
+        clearBattlefieldTouchPreview(for: sequence)
+        resetContextGestureState()
+        invalidateNonContextGestureCallbacks()
+        panGestureLease = nil
+        panGestureStartLocation = nil
+        pinchLease = nil
+        multitouchLease = nil
         isBattlefieldPanActive = false
-        lastDragTranslation = .zero
-        selectionDragStart = nil
-        selectionDragCurrent = nil
-        contextPressLocation = nil
-        contextGestureCancelled = true
-        cancelledContextTouchSequence = battlefieldTouchSequence
-        contextGestureCancelledAt = .now
-        contextGestureGeneration = -1
-        contextGestureStarted = false
-        contextGestureTouchSequence = -1
-        contextGestureStartTime = nil
-        contextGestureStartLocation = nil
-        contextGestureLastEventTime = nil
-        suppressTapAfterMultitouch()
-    }
-
-    private func prepareFreshBattlefieldTouchIntent() {
-        guard !isBattlefieldPanActive, !isMultitouchSequenceActive else {
-            return
-        }
-        if battlefieldTouchSequenceCancelled || battlefieldTouchIntent != .possible {
-            battlefieldTouchIntent = .possible
-            battlefieldPanOccurredForCurrentTouch = false
-        }
-    }
-
-    private func acceptFreshBattlefieldTouchSequence() {
-        cancelledBattlefieldTouchIDs.removeAll()
-        battlefieldTouchSequenceCancelled = false
-        battlefieldTouchCancellationNeedsContextSeed = false
-        battlefieldTouchCancellationContextSeeded = false
-        battlefieldTouchIntent = .possible
-        battlefieldPanOccurredForCurrentTouch = false
-        contextGestureCancelled = false
-        cancelledContextTouchSequence = nil
-        contextGestureCancelledAt = nil
-        contextGestureGeneration = battlefieldGestureGeneration
-        contextGestureStarted = false
-        contextGestureTouchSequence = -1
-        contextGestureStartTime = nil
-        contextGestureStartLocation = nil
-        contextGestureLastEventTime = nil
-        contextPressLocation = nil
+        battlefieldPanOccurredForCurrentTouch = true
+        resetMultitouchSelectionState()
+        isMultitouchRejected = true
     }
 
     private func suppressTapAfterMultitouch() {
@@ -712,79 +826,60 @@ struct BattlefieldView: View {
     private func cancelSelectionGestures() {
         clearBattlefieldTouchPreview()
         controller.clearLastBattlefieldTap()
-        let cancelledTouchIDs = Set(multitouchIDs).union(
-            battlefieldTouchID.map { Set([$0]) } ?? []
-        )
-        let hasActiveGesture = isBattlefieldPanActive ||
-            isMultitouchSequenceActive ||
-            !multitouchIDs.isEmpty ||
-            selectionDragStart != nil ||
-            selectionDragCurrent != nil ||
-            contextGestureStarted ||
-            battlefieldTouchID != nil ||
-            battlefieldTouchSequenceCancelled ||
-            battlefieldTouchIntent != .possible
-        let cancelledContextSequence = contextGestureStarted
-            ? contextGestureTouchSequence
-            : battlefieldTouchSequence
-        if hasActiveGesture {
-            cancelledBattlefieldTouchIDs.formUnion(cancelledTouchIDs)
-            battlefieldTouchSequenceCancelled = true
-            battlefieldTouchCancellationNeedsContextSeed = cancelledTouchIDs.isEmpty
-            battlefieldTouchCancellationContextSeeded = false
-            battlefieldTouchSequence &+= 1
-            battlefieldTouchID = nil
-            battlefieldTouchIntent = .cancelled
-            battlefieldPanOccurredForCurrentTouch = true
-            cancelledContextTouchSequence = cancelledContextSequence
-            contextGestureCancelled = true
-        } else {
-            battlefieldTouchSequenceCancelled = false
-            battlefieldTouchCancellationNeedsContextSeed = false
-            battlefieldTouchCancellationContextSeeded = false
-            cancelledBattlefieldTouchIDs.removeAll()
-            battlefieldTouchID = nil
-            cancelledContextTouchSequence = nil
-            contextGestureCancelled = false
-            battlefieldPanOccurredForCurrentTouch = false
-            battlefieldTouchIntent = .possible
-        }
+        touchOwner.reset()
+        resetContextGestureState()
+        invalidateNonContextGestureCallbacks()
+        panGestureLease = nil
+        panGestureStartLocation = nil
+        longPressLease = nil
+        multitouchLease = nil
+        pinchLease = nil
         selectionDragStart = nil
         selectionDragCurrent = nil
+        selectionDragSequence = nil
         lastDragTranslation = .zero
         lastMagnification = 1
         isBattlefieldPanActive = false
-        battlefieldGestureGeneration &+= 1
-        contextGestureGeneration = -1
-        contextPressLocation = nil
-        contextGestureStartTime = nil
-        contextGestureStartLocation = nil
-        contextGestureLastEventTime = nil
-        contextGestureStarted = false
-        contextGestureTouchSequence = -1
-        contextGestureCancelledAt = hasActiveGesture ? .now : nil
-        suppressTapUntil = hasActiveGesture
-            ? ProcessInfo.processInfo.systemUptime + Self.multitouchTapSuppressionDuration
-            : nil
+        battlefieldPanOccurredForCurrentTouch = true
+        suppressTapAfterMultitouch()
         resetMultitouchSelectionState()
     }
 
-    private func updateBattlefieldTouchPreview(at screenPoint: CGPoint, viewportSize: CGSize) {
-        guard battlefieldTouchIntent == .possible,
+    private func invalidateNonContextGestureCallbacks() {
+        invalidatePanAndPinchGestureCallbacks()
+        multitouchGestureCallbackGeneration &+= 1
+    }
+
+    private func invalidatePanAndPinchGestureCallbacks() {
+        panGestureCallbackGeneration &+= 1
+        pinchGestureCallbackGeneration &+= 1
+    }
+
+    private func updateBattlefieldTouchPreview(
+        at screenPoint: CGPoint,
+        viewportSize: CGSize,
+        sequence: Int
+    ) {
+        guard touchOwner.sequence == sequence,
+              touchOwner.phase == .possible,
               !battlefieldPanOccurredForCurrentTouch,
-              !battlefieldTouchSequenceCancelled,
               !isMultitouchSequenceActive else {
-            clearBattlefieldTouchPreview()
+            clearBattlefieldTouchPreview(for: sequence)
             return
         }
         scene.touchPreview = controller.battlefieldTouchPreview(
             screenPoint: screenPoint,
             viewportSize: viewportSize
         )
+        touchPreviewSequence = sequence
         scene.renderNow()
     }
 
-    private func clearBattlefieldTouchPreview() {
+    private func clearBattlefieldTouchPreview(for sequence: Int? = nil) {
+        guard sequence == nil || touchPreviewSequence == sequence else {
+            return
+        }
+        touchPreviewSequence = nil
         guard scene.touchPreview != nil else {
             return
         }

@@ -383,3 +383,11 @@ du -sh /private/tmp/rustwar-c-review-<run_id>
 ## v2.51
 
 水陆命中材质分流为 presentation-only：云端必须确认 `BattlefieldScene.swift` 双架构编译、JUnit 8/0/1、至少 331 个 RustwarCore tests、双启动、横屏归一化和双 pixel probe。代码复核确认命中/摧毁位置只读当前 `TerrainGrid`，`.water`/`.deep` 不调用 `addScorchMark`、不绘制陆地火焰/烟尘/碎片，使用单一 bounded root、蓝白波纹、最多三条确定性弧线和两个水滴，动态生命周期不超过 0.55 秒；陆地/熔岩路径与既有效果、64 effects / 32 decals 上限、Reduce Motion、冻结 smoke、雾层、Core 数值、订单、命中和存档保持。Agent C 必须人工查看最新 `ios-combat.png`：水面命中不得出现橙色地面焦痕，陆地爆点仍清楚，单位模型、弹道、HUD、小地图无回退。静态 PNG 不证明真实水面命中时序、所有地图、长局帧率或真机触控。
+
+## v2.52
+
+本轮只认 GitHub Actions 云端验证，不运行本地 SwiftPM test、Xcode build/list、Simulator、Preview、浏览器或本地 `git diff --check`。Agent C 必须确认最新 `origin/main` SHA 对应的 JUnit、manifest、主日志、失败摘要、双架构 iOS build、production/combat 双启动、横屏归一化和双 PNG probe；Core suite 必须包含 `TouchSequenceOwner` 新增 reducer tests，具体总数以最新 artifact 为准，不在提交前伪造固定数量。
+
+代码复核必须覆盖：fresh seed 只接受未 quarantine active ID；primary/accepted/active/cancelled ID 与 sequence 单调边界；第二指加入、第三指/未知 active replacement 取消；未知 ended/cancelled terminal 不取消当前 owner；cancel/reset/finish 幂等；pan、area、long press、multitouch、pinch lease 互斥；context/tap、pan、pinch、Spatial multitouch callback generation 和 sequence/location gate；普通单指 Spatial end 不提交框选；有效多指 finish 最多提交一次；preview 清理不清空新序列；`GameController`、Core classifier、命令、存档、JSON 和 Web 版不变。
+
+本轮 residual risk：CI 没有 XCUITest 或真实多指注入，Core tests 不覆盖 SwiftUI callback 实际排序；seed 后系统仍可能存在无法仅凭 SwiftUI 事件区分迟到旧回调和真实新触点的窗口，真实设备长按、拖拽、pinch、VoiceOver、Dynamic Type、Reduce Motion 和性能仍未证明。

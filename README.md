@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.52：原生 iOS 战场输入新增纯 `TouchSequenceOwner` 生命周期 reducer；单指 tap、长按、拖拽平移、两指框选和 pinch 通过统一 sequence/lease/accepted-ID 门控，旧回调不会自动替换触点或清理新序列预览，多指框选最多提交一次；Core、命令语义、存档和 Web 版不变。CI 仍不包含 XCUITest，云端静态 smoke 不能证明真实设备触控顺序或手感。
+
 v2.51：原生 iOS 水面命中改用蓝白水花、弧线与水滴，陆地保留火焰、烟尘和焦痕；只调整 SpriteKit presentation，不改变 Core 数值、命令、存档或效果上限。
 
 v2.50：原生 iOS 生产建筑 dock 首屏增加只读 Production focus summary，紧凑展示建筑、科技倍率、当前生产、队列后续和升级状态；完整可生产列表继续由 Production section 展示，生产按钮、队列、快捷键与存档语义不变。

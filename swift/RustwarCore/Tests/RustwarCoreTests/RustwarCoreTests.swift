@@ -2,6 +2,153 @@ import Foundation
 import Testing
 @testable import RustwarCore
 
+@Test func touchSequenceOwnerSeedsFreshIDsAndLocksPrimary() {
+    var owner = TouchSequenceOwner<Int>()
+    #expect(owner.phase == .idle)
+    let lease = owner.beginFreshSequence(with: 10)
+    #expect(lease?.sequence == 1)
+    #expect(owner.phase == .possible)
+    #expect(owner.primaryID == 10)
+    #expect(owner.acceptedIDs == Set([10]))
+    #expect(owner.activeIDs == Set([10]))
+
+    #expect(owner.observe(activeIDs: [10, 20]) == .accepted)
+    #expect(owner.acceptedIDs == Set([10, 20]))
+    #expect(owner.primaryID == 10)
+}
+
+@Test func touchSequenceOwnerRejectsReplacementAndRequiresFreshSeed() {
+    var owner = TouchSequenceOwner<Int>()
+    _ = owner.beginFreshSequence(with: 1)
+    #expect(owner.observe(activeIDs: [2]) == .replacementRejected)
+    #expect(owner.phase == .cancelled)
+    #expect(owner.sequence == 2)
+    #expect(owner.cancelledIDs == Set([1, 2]))
+    #expect(owner.beginFreshSequence(with: 1) == nil)
+
+    let freshLease = owner.beginFreshSequence(with: 3)
+    #expect(freshLease?.sequence == 3)
+    #expect(owner.primaryID == 3)
+    #expect(owner.observe(activeIDs: [1, 3]) == .accepted)
+    #expect(owner.activeIDs == Set([3]))
+}
+
+@Test func touchSequenceOwnerCancellationIsIdempotentAndQuarantinesIDs() {
+    var owner = TouchSequenceOwner<Int>()
+    _ = owner.beginFreshSequence(with: 4)
+    #expect(owner.observe(activeIDs: [4, 5]) == .accepted)
+    #expect(owner.cancel())
+    let cancelledSequence = owner.sequence
+    #expect(!owner.cancel())
+    #expect(owner.sequence == cancelledSequence)
+    #expect(owner.phase == .cancelled)
+    #expect(owner.cancelledIDs == Set([4, 5]))
+    #expect(owner.observe(activeIDs: [4, 5]) == .ignored)
+}
+
+@Test func touchSequenceOwnerClaimsPanAreaLongPressAndExclusivePinch() {
+    var owner = TouchSequenceOwner<Int>()
+    _ = owner.beginFreshSequence(with: 1)
+    let pan = owner.claim(.pan, source: .pan)
+    #expect(pan != nil)
+    #expect(owner.claim(.longPress, source: .longPress) == nil)
+    #expect(owner.accepts(pan!))
+    #expect(owner.finish(pan!) == .finished)
+
+    _ = owner.beginFreshSequence(with: 2)
+    _ = owner.observe(activeIDs: [2, 3])
+    let multitouch = owner.claim(.multitouch, source: .multitouch)
+    #expect(multitouch != nil)
+    let pinch = owner.claim(.pinch, source: .pinch)
+    #expect(pinch != nil)
+    #expect(owner.accepts(multitouch!) == false)
+    #expect(owner.accepts(pinch!))
+    #expect(owner.finish(multitouch!, commitMultitouch: true) == .ignored)
+    #expect(owner.finish(pinch!) == .finished)
+}
+
+@Test func touchSequenceOwnerMultitouchFinishCommitsOnceAndStaleLeaseCannotFinishNewOwner() {
+    var owner = TouchSequenceOwner<Int>()
+    _ = owner.beginFreshSequence(with: 10)
+    _ = owner.observe(activeIDs: [10, 20])
+    let lease = owner.claim(.multitouch, source: .multitouch)!
+    #expect(owner.finish(lease, commitMultitouch: true) == .committed)
+    #expect(owner.finish(lease, commitMultitouch: true) == .ignored)
+
+    _ = owner.beginFreshSequence(with: 30)
+    #expect(owner.finish(lease, commitMultitouch: true) == .ignored)
+}
+
+@Test func touchSequenceOwnerResetRejectsOldIDsUntilUnusedFreshSeed() {
+    var owner = TouchSequenceOwner<Int>()
+    _ = owner.beginFreshSequence(with: 7)
+    owner.reset()
+    let resetSequence = owner.sequence
+    #expect(owner.phase == .cancelled)
+    #expect(owner.beginFreshSequence(with: 7) == nil)
+    #expect(owner.beginFreshSequence(with: 8)?.sequence == resetSequence + 1)
+}
+
+@Test func touchSequenceOwnerResetIsIdempotentAtCancellationBoundary() {
+    var owner = TouchSequenceOwner<Int>()
+    _ = owner.beginFreshSequence(with: 11)
+    owner.reset()
+    let resetSequence = owner.sequence
+    owner.reset()
+
+    #expect(owner.sequence == resetSequence)
+    #expect(owner.phase == .cancelled)
+    #expect(owner.cancelledIDs == Set([11]))
+}
+
+@Test func touchSequenceOwnerQuarantinesThirdFingerAndIgnoresStaleIDs() {
+    var owner = TouchSequenceOwner<Int>()
+    _ = owner.beginFreshSequence(with: 10)
+    #expect(owner.observe(activeIDs: [10, 20]) == .accepted)
+    _ = owner.claim(.multitouch, source: .multitouch)
+    #expect(owner.observe(activeIDs: [10, 20, 30]) == .replacementRejected)
+    #expect(owner.phase == .cancelled)
+    #expect(owner.cancelledIDs == Set([10, 20, 30]))
+
+    owner.reset()
+    let freshLease = owner.beginFreshSequence(with: 40)
+    #expect(freshLease != nil)
+    #expect(owner.observe(activeIDs: [30]) == .ignored)
+    #expect(owner.phase == .possible)
+    #expect(owner.primaryID == 40)
+}
+
+@Test func touchSequenceOwnerIgnoresUnknownTerminalEventsWithoutReleasingCurrentOwner() {
+    var owner = TouchSequenceOwner<Int>()
+    _ = owner.beginFreshSequence(with: 12)
+
+    #expect(owner.observe(activeIDs: [12], endedIDs: [99]) == .accepted)
+    #expect(owner.phase == .possible)
+    #expect(owner.sequence == 1)
+    #expect(owner.acceptedIDs == Set([12]))
+    #expect(owner.activeIDs == Set([12]))
+    #expect(owner.cancelledIDs.isEmpty)
+
+    #expect(owner.observe(activeIDs: [12], cancelledEventIDs: [98]) == .accepted)
+    #expect(owner.phase == .possible)
+    #expect(owner.activeIDs == Set([12]))
+
+    #expect(owner.observe(activeIDs: [], endedIDs: [12]) == .accepted)
+    #expect(owner.phase == .possible)
+    let sequenceAfterEnded = owner.sequence
+    #expect(owner.observe(activeIDs: [], cancelledEventIDs: [12]) == .accepted)
+    #expect(owner.phase == .possible)
+    #expect(owner.sequence == sequenceAfterEnded)
+
+    _ = owner.cancel()
+    owner.reset()
+    _ = owner.beginFreshSequence(with: 24)
+    #expect(owner.observe(activeIDs: [24], endedIDs: [12]) == .accepted)
+    #expect(owner.phase == .possible)
+    #expect(owner.primaryID == 24)
+    #expect(owner.activeIDs == Set([24]))
+}
+
 @Test func multitouchIntentClassifierFavorsAlignedSelectionWithFingerLag() {
     let intent = MultitouchIntentClassifier.classify(
         firstStart: WorldPoint(20, 30),

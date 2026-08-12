@@ -5743,6 +5743,7 @@
 
 - 当前 CI 没有 XCUITest；云端 build、Core tests 和静态 PNG 不能证明真实 tap、长按、多指、回调乱序、VoiceOver、Dynamic Type、Reduce Motion 或真机手感。
 - 本轮刻意未改生产焦点条、队列首屏、水面命中、武器材质和残骸可读性，后续按独立小轮次推进。
+
 ## v2.50
 
 - iOS command dock 固定 header 新增 Production focus summary：复用现有 producer、队列、Factory Tech 派生值展示建筑、T级/倍率、NOW、QUEUE、BUILD 与 UPGRADE 状态。
@@ -5756,3 +5757,19 @@
 - `BattlefieldScene` 命中或摧毁位置在 `.water` / `.deep` 时改用蓝白波纹、三条确定性弧线和两个水滴；陆地与熔岩继续使用既有火焰、烟尘、碎片和焦痕。水面效果不新增 decal，单次使用一个 bounded root，动态生命周期最多 0.55 秒。
 - 只读 `TerrainGrid`，不修改 Core、UnitOrder、GameState、JSON/save schema、伤害/命中/AI、触控 owner 或效果上限；云端 CI 负责双架构编译、固定 production/combat smoke、截图和 pixel probe。
 - 实现提交 `3aa4340243d70117b44a8e3235b65bac5a8a3e83` 的 Actions run `31605813541` / attempt 1 / job `94144330811` 已由本轮云端复核下载 artifact `rustwar-ci-v1.2-main-3aa4340-run31605813541-attempt1` 到 `/private/tmp/rustwar-c-review-31605813541/`，目录约 1.7M。manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5、iOS Simulator SDK 26.5 完全匹配；JUnit 为 8 checks、0 failures、1 个既定 browser skip，331 个 RustwarCore tests 通过，`git diff --check`、`node --check app.js`、Xcode list/build、production/combat 双启动、横屏归一化和双 pixel probe 全部 success。Home / Combat PNG 均为 2622x1206，Home mean `79.19431299053907`、std `42.65921361496916`，Combat mean `75.02645376928898`、std `42.153236434519705`；人工复看确认固定 smoke 的 Home 生产焦点条、Combat 单位/弹道/爆点、HUD 和 Tactical Map 无回退。静态 PNG 不证明真实水面命中时序、所有地图、长局帧率或真机触控。
+
+## v2.52 / iOS TouchSequenceOwner input lifecycle
+
+- 新增泛型纯值 reducer `TouchSequenceOwner<ID: Hashable>`，统一管理 touch sequence、phase、primary ID、accepted/active/cancelled ID、multitouch claim 和 source lease。fresh seed 只接受未 quarantine 的 active ID；第二指可加入 possible sequence，第三指、未知 active replacement 或 accepted cancel 会取消并 quarantine 当前序列；未知 ended/cancelled terminal ID 只忽略，不释放当前 owner。
+- `BattlefieldView` 的 tap、context drag、long press、12pt pan/Select Area、Spatial multitouch 和 Magnify callback 全部通过同一 reducer sequence/lease，并各自使用 callback generation。context seed 绑定 sequence/location；迟到 callback 只能被丢弃或清理同序列 preview，不会自动接管新触点、抢占 pan/pinch 或重复派发框选。
+- 有效 multitouch lease finish 最多提交一次 `handleBattlefieldMultitouchAreaSelection`；普通单指 `SpatialEventGesture.onEnded` 不独自完成 owner。地图 revision reset 经 reducer quarantine 旧 IDs，并清除 preview、选择框、multitouch 几何和 Controller tap cache。Core、GameController 命令、classifier、JSON/save、Web 版和玩法状态不变。
+- 新增 reducer tests 覆盖 fresh seed、第二指、replacement/第三指、cancel/reset quarantine、unknown terminal、重复 finish、stale lease 和 pan/area/long press/multitouch/pinch 互斥；实际 Core 测试数量、iOS 编译和双 PNG 结果待本轮 push 后的最新 Actions artifact 记录。
+
+验证状态：
+
+- 按云端唯一验证制度，本轮未运行本地 SwiftPM test、Xcode build/list、Simulator、Preview、浏览器或本地 `git diff --check`；只读 `git status`、`git diff`、`git show`、`rg` 用于审查范围和文档顺序。
+- Agent B 完成本轮后只推送 `main`，Agent C 必须验收与最新 `origin/main` 完全匹配的 Actions run/artifact，核对 manifest、JUnit、主日志、失败摘要、repo state、toolchain、双架构 build、production/combat 双启动、横屏归一化和双 pixel probe；`.wp` 不纳入提交。
+
+已知风险：
+
+- CI 没有 XCUITest 或真实多指注入；Core reducer tests 和静态 PNG 不能证明 SwiftUI callback 实际排序、真实 tap/长按/拖动/pinch、VoiceOver、Dynamic Type、Reduce Motion 或真机性能。fresh seed 之后，系统仍可能存在仅凭 SwiftUI 事件无法绝对区分迟到旧 callback 与真实新触点的窗口。

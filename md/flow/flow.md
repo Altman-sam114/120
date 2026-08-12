@@ -740,3 +740,11 @@ RustwarCore MapPreset / GameState / GameEngine
 ## v2.51 Water impact material split
 
 `BattlefieldScene` 在现有 Core `TerrainGrid.terrain(at:)` 只读判断命中/摧毁位置属于 `.water` 或 `.deep` 时，跳过陆地焦痕、火焰、烟尘和碎片，改用单一 bounded effect container 绘制蓝白水面波纹、三条确定性 splash arc 和两个水滴；陆地路径保持原有橙色爆点。水面效果仍位于 entity/fog 的既有 SpriteKit 层级，动态生命周期最多 0.55 秒，冻结 smoke 使用 persistent effect，root effect 继续受 64 上限约束，decals 不增加；Core 数值、订单、命中、存档和地形 schema 不变。
+
+## v2.52 iOS TouchSequenceOwner input lifecycle
+
+原生战场输入现在由 `TouchSequenceOwner<ID>` 作为唯一生命周期 reducer。`SpatialEventGesture` 观察到未取消的 active ID 时才可建立 fresh seed，并生成单调递增的 sequence、primary ID、accepted ID 集合和 context lease；context、pan、area selection、long press、multitouch 与 pinch 只能通过同一 sequence 的 source lease claim。已接受的第二指可以加入当前 possible sequence，但未知 active replacement、第三指或 accepted cancel 会取消并 quarantine 当前 sequence；未知 ended/cancelled terminal ID 只被忽略，不得释放当前新 owner。
+
+`BattlefieldView` 为 context/tap、pan、pinch 和 Spatial multitouch callback 分别保存 generation token，并额外用 context seed sequence/location 绑定并行 gesture。迟到 callback 不能读取新 sequence 的 lease、更新新 sequence 预览、抢占 pan/pinch 或重复派发框选；preview 清理始终按 sequence 门控。普通单指 `SpatialEventGesture.onEnded` 只同步 terminal bookkeeping，不独自结束单指 owner；有效 multitouch lease 的 finish 才能提交一次 Select Area，cancelled/重复 finish 都不会再次派发。
+
+地图 revision reset 会经 reducer reset boundary 清除 preview、选择框、多指几何和 Controller tap cache，同时保留旧 ID quarantine，直到下一次明确 fresh seed。reducer 只保存输入生命周期状态，不进入 `GameState`、JSON、存档、命令或模拟；真实设备触摸顺序、迟到 callback 的系统层不可区分窗口仍由 CI 之外的 XCUITest/真机测试覆盖。
