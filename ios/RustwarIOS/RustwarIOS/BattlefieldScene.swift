@@ -1,6 +1,24 @@
 import SpriteKit
 import RustwarCore
 
+struct BattlefieldTouchPreview: Equatable {
+    enum Intent: Equatable {
+        case select
+        case move
+        case attackMove
+        case attack
+        case rally
+        case guardTarget
+        case repair
+        case build
+        case reclaim
+        case invalid
+    }
+
+    let point: WorldPoint
+    let intent: Intent
+}
+
 @MainActor
 final class BattlefieldScene: SKScene {
     weak var controller: GameController? {
@@ -15,6 +33,7 @@ final class BattlefieldScene: SKScene {
             }
         }
     }
+    var touchPreview: BattlefieldTouchPreview?
 
     private let worldNode = SKNode()
     private let terrainNode = SKNode()
@@ -23,6 +42,7 @@ final class BattlefieldScene: SKScene {
     private let entityNode = SKNode()
     private let effectNode = SKNode()
     private let fogNode = SKNode()
+    private let touchPreviewNode = SKNode()
     private let radarNode = SKNode()
     private let maximumActiveEffects = 64
     private let maximumActiveDecals = 32
@@ -112,6 +132,7 @@ final class BattlefieldScene: SKScene {
         )
         showCombatVisualSmokeIfNeeded(state)
         drawFog(visibility: playerVisibility, explored: playerExplored)
+        drawTouchPreview(touchPreview)
         drawRadarLayer(coverage: playerRadarCoverage, contacts: playerRadarContacts, selectedIDs: selectedIDs)
     }
 
@@ -125,7 +146,90 @@ final class BattlefieldScene: SKScene {
         worldNode.addChild(entityNode)
         worldNode.addChild(effectNode)
         worldNode.addChild(fogNode)
+        worldNode.addChild(touchPreviewNode)
         worldNode.addChild(radarNode)
+    }
+
+    private func drawTouchPreview(_ preview: BattlefieldTouchPreview?) {
+        touchPreviewNode.removeAllChildren()
+        guard let preview else {
+            return
+        }
+
+        let inverseZoom = 1 / Swift.max(0.01, CGFloat(controller?.camera.zoom ?? 1))
+        let marker = SKNode()
+        marker.position = spritePoint(for: preview.point)
+        marker.setScale(inverseZoom)
+
+        let color: SKColor
+        switch preview.intent {
+        case .select:
+            color = SKColor(red: 0.26, green: 0.96, blue: 0.52, alpha: 1)
+        case .move, .rally, .guardTarget, .repair, .build, .reclaim:
+            color = .systemCyan
+        case .attackMove:
+            color = .systemOrange
+        case .attack:
+            color = SKColor(red: 1, green: 0.28, blue: 0.24, alpha: 1)
+        case .invalid:
+            color = .systemRed
+        }
+
+        let halo = SKShapeNode(circleOfRadius: 30)
+        halo.fillColor = color.withAlphaComponent(preview.intent == .invalid ? 0.08 : 0.12)
+        halo.strokeColor = color.withAlphaComponent(0.34)
+        halo.lineWidth = 1.2
+        marker.addChild(halo)
+
+        let reticlePath = CGMutablePath()
+        for quadrant in 0..<4 {
+            let center = CGFloat(quadrant) * .pi / 2
+            reticlePath.addArc(
+                center: .zero,
+                radius: 21,
+                startAngle: center - 0.34,
+                endAngle: center + 0.34,
+                clockwise: false
+            )
+        }
+        let reticle = SKShapeNode(path: reticlePath)
+        reticle.strokeColor = color
+        reticle.lineWidth = 2.8
+        reticle.lineCap = .round
+        reticle.glowWidth = 1.2
+        marker.addChild(reticle)
+
+        let crosshair = CGMutablePath()
+        crosshair.move(to: CGPoint(x: -10, y: 0))
+        crosshair.addLine(to: CGPoint(x: 10, y: 0))
+        crosshair.move(to: CGPoint(x: 0, y: -10))
+        crosshair.addLine(to: CGPoint(x: 0, y: 10))
+        let crosshairNode = SKShapeNode(path: crosshair)
+        crosshairNode.strokeColor = .white.withAlphaComponent(0.9)
+        crosshairNode.lineWidth = 1.4
+        crosshairNode.lineCap = .round
+        marker.addChild(crosshairNode)
+
+        let center = SKShapeNode(circleOfRadius: preview.intent == .invalid ? 4 : 3)
+        center.fillColor = color
+        center.strokeColor = .white.withAlphaComponent(0.92)
+        center.lineWidth = 1
+        marker.addChild(center)
+
+        if preview.intent == .invalid {
+            let slash = SKShapeNode(path: CGPath(
+                roundedRect: CGRect(x: -17, y: -2, width: 34, height: 4),
+                cornerWidth: 2,
+                cornerHeight: 2,
+                transform: nil
+            ))
+            slash.fillColor = color
+            slash.strokeColor = .clear
+            slash.zRotation = .pi / 4
+            marker.addChild(slash)
+        }
+
+        touchPreviewNode.addChild(marker)
     }
 
     private func syncCamera(_ camera: CameraState) {
@@ -715,6 +819,7 @@ final class BattlefieldScene: SKScene {
         primarySelectedID: String?
     ) {
         entityNode.removeAllChildren()
+        let primaryAttackPreviewID = primarySelectedCombatUnitID(in: state, fallback: primarySelectedID)
         for wreck in state.wrecks {
             drawWreck(wreck)
         }
@@ -730,6 +835,7 @@ final class BattlefieldScene: SKScene {
                 unit,
                 selectedIDs: selectedIDs,
                 primarySelectedID: primarySelectedID,
+                primaryAttackPreviewID: primaryAttackPreviewID,
                 state: state,
                 playerVisibility: playerVisibility
             )
@@ -742,6 +848,21 @@ final class BattlefieldScene: SKScene {
             ids.insert(selectedEntityID)
         }
         return ids
+    }
+
+    private func primarySelectedCombatUnitID(in state: GameState, fallback: String?) -> String? {
+        var orderedIDs = state.selectedEntityIDs
+        if let fallback, !orderedIDs.contains(fallback) {
+            orderedIDs.append(fallback)
+        }
+        return orderedIDs.first { id in
+            guard let unit = state.units.first(where: { $0.id == id }) else {
+                return false
+            }
+            return unit.team == .player &&
+                unit.hitPoints > 0 &&
+                GameDefinitions.unit(unit.type).attackRange > 0
+        }
     }
 
     private func resetVisualHistory(with state: GameState) {
@@ -2206,13 +2327,14 @@ final class BattlefieldScene: SKScene {
         _ unit: UnitSnapshot,
         selectedIDs: Set<String>,
         primarySelectedID: String?,
+        primaryAttackPreviewID: String?,
         state: GameState,
         playerVisibility: VisibilitySnapshot
     ) {
         let definition = GameDefinitions.unit(unit.type)
         let isSelected = selectedIDs.contains(unit.id)
         if isSelected,
-           unit.id == primarySelectedID,
+           unit.id == primaryAttackPreviewID,
            unit.team == .player,
            controller?.isAwaitingAttackTarget == true {
             drawAttackRangePreview(for: unit, attackRange: definition.attackRange)

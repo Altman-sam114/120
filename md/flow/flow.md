@@ -665,6 +665,14 @@ RustwarCore MapPreset / GameState / GameEngine
 12. 若通过，Agent C 输出通过结论、版本号、commit SHA、run id、artifact 名称和验收摘要。
 13. Agent X 基于 Agent C 结论判断继续下一轮、退回 Agent B、暂停或宣布总目标完成；Agent X 不得跳过 Agent C artifact 验收，也不得把旧 run、旧 artifact 或本地输出当作最新云端结果。
 
+## v2.48 iOS direct-touch preview and target retry
+
+1. `BattlefieldView.contextLocationGesture.onChanged` 在普通单指仍由 `.possible` owner 持有、尚未跨过 12pt pan 阈值时，保留当前屏幕位置并请求只读预览；pan、long press、tap end、第二/第三指、pinch、cancel、地图 revision 和多指收尾会清理预览与重复点按缓存。
+2. `GameController.battlefieldTouchPreview(screenPoint:viewportSize:)` 把屏幕坐标转换为世界坐标，按当前 pending command、真实可见实体、44pt 世界命中半径和空地 Attack-Move 优先级派生 `BattlefieldTouchPreview`，不调用 Core 命令、不改变 selection 或存档。
+3. `BattlefieldScene.touchPreviewNode` 位于实体和 fog 之后的 presentation 层，以逆 zoom 绘制选择/移动/Attack-Move/Attack/建筑与 Builder 目标准星；`.invalid` 用红色斜线表达不可用落点。混合选择的攻击范围圈回退到第一个存活己方作战单位，而不是被 primary Builder 隐藏。
+4. context end 或 tap end 才提交原有 `handleBattlefieldTap` / `handleBattlefieldContextCommand`；预览只预测，不提交命令。`handlePointCommand`、`handleBuilderTargetCommand` 和 `handleSelectionTargetCommand` 对无效目标保留 pending target mode，使用户可以修正落点后重试，成功结果仍退出等待态。
+5. combat cloud fixture 仅把 `isAwaitingAttackTarget` 设为 true，以让固定截图同时覆盖攻击范围圈与落点/选择 presentation；普通初始化、Core、战斗数值、AI、生产、JSON/save schema 不变。
+
 ## 3. 架构边界
 
 - Web 前端：`index.html`、`styles.css`、`app.js`。

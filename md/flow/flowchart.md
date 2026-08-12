@@ -906,3 +906,27 @@ flowchart TD
 ```
 
 读图说明：v2.47 只修正 SwiftUI 触控 finish 的 owner 竞态，并增加派生提示与攻击范围 presentation；不新增 Core 命令、存档字段、战斗数值或触控自动化。静态云端 smoke 仍不能证明真实回调顺序和多指手感。
+
+## v2.48 iOS direct-touch preview and target retry
+
+```mermaid
+flowchart TD
+  D["context DragGesture.onChanged"] --> O{"possible owner / < 12pt pan?"}
+  O -->|"yes"| R["GameController read-only preview resolver"]
+  O -->|"no"| C["clear preview; pan/long press owns sequence"]
+  R --> H{"pending command or visible hit?"}
+  H -->|"empty with selected units"| AM["orange Attack-Move reticle"]
+  H -->|"visible enemy"| AT["red Attack reticle"]
+  H -->|"friendly / valid pending target"| V["green/cyan valid reticle"]
+  H -->|"invalid pending target"| I["red invalid reticle; keep pending mode"]
+  AT --> E["tap/context end uses existing command route"]
+  V --> E
+  AM --> E
+  I --> E
+  E -->|"success"| X["clear preview and exit pending"]
+  E -->|"invalid"| P["clear preview; retain pending for retry"]
+  M["second/third touch, pinch, cancel, reset, map revision"] --> X
+  A["combat cloud fixture"] --> G["Attack target pending + primary combat range ring"]
+```
+
+读图说明：v2.48 的 reticle 只存在于 SpriteKit presentation 层；命中预测与最终 tap 共享可见性/命中语义，但真正的命令仍只在既有结束事件提交。当前 CI 没有 XCUITest，不能把静态 PNG 当作真实触控顺序或设备手感证据。

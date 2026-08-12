@@ -198,6 +198,12 @@
 - Base：居中到存活己方 Command Center。
 - Reset：重置战场相机。
 
+### v2.48 原生 iOS 触控意图预览
+
+- 普通单指尚未跨过 12pt 平移阈值时，按住并移动会在抬指前显示 presentation-only 意图准星：己方实体选择为绿色，可见敌方 Attack 为红色，空地 Attack-Move 为橙色；Move、Attack-Move、Patrol、Rally、Guard、Repair、Build 和 Reclaim 等等待目标状态会显示对应落点准星。
+- 无效 Attack / Guard / Repair / Build / Reclaim 目标会显示红色不可用准星，并保留等待目标模式，用户可直接重新指向有效目标；成功命令仍沿用原有结束事件提交和反馈。
+- pan、第二/第三指、pinch、cancel、long press、地图重置和 tap end 都会清理旧预览及重复点按缓存。combat 云端视觉场景会进入 Attack target pending 以展示攻击范围圈；真实多指、长按顺序和真机手感仍需要 XCUITest/设备验证。
+
 ## 下一步复刻方向
 
 - 继续把 Web 版核心 RTS 命令、战斗、AI、存档和沙盒能力分阶段迁移到 `RustwarCore` 与原生 iOS。

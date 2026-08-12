@@ -104,6 +104,7 @@ final class GameController {
             self.camera = CameraState(center: preset.camera.center, zoom: preset.camera.zoom)
         }
         self.isPaused = startsPaused
+        self.isAwaitingAttackTarget = cloudVisualScenario == .combat
         if let initiallySelectedPlayerBuildingType,
            let building = engine.state.buildings.first(where: {
                $0.team == .player &&
@@ -1157,6 +1158,159 @@ final class GameController {
         renderRevision += 1
     }
 
+    func battlefieldTouchPreview(
+        screenPoint: CGPoint,
+        viewportSize: CGSize
+    ) -> BattlefieldTouchPreview? {
+        let point = camera.worldPoint(for: screenPoint, viewportSize: viewportSize)
+
+        if isAwaitingAreaSelection {
+            return nil
+        }
+        if isAwaitingMoveTarget {
+            return BattlefieldTouchPreview(point: point, intent: .move)
+        }
+        if isAwaitingAttackMoveTarget {
+            return BattlefieldTouchPreview(point: point, intent: .attackMove)
+        }
+        if isAwaitingPatrolTarget {
+            return BattlefieldTouchPreview(point: point, intent: .move)
+        }
+        if isAwaitingRallyTarget {
+            return BattlefieldTouchPreview(point: point, intent: .rally)
+        }
+        if isAwaitingBuildTurretTarget {
+            let intent: BattlefieldTouchPreview.Intent = canPreviewBuilding(.turret, at: point)
+                ? .build
+                : .invalid
+            return BattlefieldTouchPreview(point: point, intent: intent)
+        }
+        if isAwaitingBuildFactoryTarget {
+            let intent: BattlefieldTouchPreview.Intent = canPreviewBuilding(.landFactory, at: point)
+                ? .build
+                : .invalid
+            return BattlefieldTouchPreview(point: point, intent: intent)
+        }
+        if isAwaitingBuildRadarTarget {
+            let intent: BattlefieldTouchPreview.Intent = canPreviewBuilding(.radar, at: point)
+                ? .build
+                : .invalid
+            return BattlefieldTouchPreview(point: point, intent: intent)
+        }
+        if isAwaitingBuildExtractorTarget {
+            let intent: BattlefieldTouchPreview.Intent = canPreviewExtractorTarget(at: point)
+                ? .build
+                : .invalid
+            return BattlefieldTouchPreview(point: point, intent: intent)
+        }
+        if isAwaitingReclaimTarget {
+            let intent: BattlefieldTouchPreview.Intent = engine.state.wreckTarget(at: point) == nil
+                ? .invalid
+                : .reclaim
+            return BattlefieldTouchPreview(point: point, intent: intent)
+        }
+        if isAwaitingGuardTarget {
+            let target = engine.state.selectionTargetsVisibleToPlayer(
+                at: point,
+                includeEnemies: true,
+                minimumHitRadius: battlefieldTouchTargetWorldRadius,
+                targetTeam: .player
+            ).first(where: canSelectedPlayerUnitsGuard)
+            return BattlefieldTouchPreview(point: point, intent: target == nil ? .invalid : .guardTarget)
+        }
+        if isAwaitingRepairTarget {
+            let target = engine.state.selectionTargetsVisibleToPlayer(
+                at: point,
+                includeEnemies: true,
+                minimumHitRadius: battlefieldTouchTargetWorldRadius,
+                targetTeam: .player
+            ).first(where: canSelectedPlayerBuildersRepair)
+            return BattlefieldTouchPreview(point: point, intent: target == nil ? .invalid : .repair)
+        }
+        if isAwaitingAttackTarget {
+            let target = engine.state.selectionTargetVisibleToPlayer(
+                at: point,
+                includeEnemies: true,
+                minimumHitRadius: battlefieldTouchTargetWorldRadius,
+                targetTeam: .enemy
+            )
+            return BattlefieldTouchPreview(point: point, intent: target == nil ? .invalid : .attack)
+        }
+
+        if !selectedPlayerUnits.isEmpty,
+           let exactEnemyTarget = engine.state.selectionTargetVisibleToPlayer(
+               at: point,
+               includeEnemies: true,
+               minimumHitRadius: 0,
+               targetTeam: .enemy
+           ) {
+            return BattlefieldTouchPreview(point: exactEnemyTarget.position, intent: .attack)
+        }
+
+        let target = engine.state.selectionTargetsVisibleToPlayer(
+            at: point,
+            includeEnemies: true,
+            minimumHitRadius: battlefieldTouchTargetWorldRadius
+        ).first
+        if let target {
+            return BattlefieldTouchPreview(
+                point: target.position,
+                intent: target.team == .enemy && !selectedPlayerUnits.isEmpty ? .attack : .select
+            )
+        }
+        guard !selectedPlayerUnits.isEmpty else {
+            return nil
+        }
+        return BattlefieldTouchPreview(point: point, intent: .attackMove)
+    }
+
+    private func canPreviewBuilding(_ buildingType: BuildingType, at point: WorldPoint) -> Bool {
+        let position = point.clampedToMap()
+        switch engine.state.terrain.terrain(at: position) {
+        case .water, .deep, .lava:
+            return false
+        case .grass, .grass2, .dirt, .sand, .rock:
+            break
+        }
+
+        let definition = GameDefinitions.building(buildingType)
+        let radius = definition.size / 2
+        for resource in engine.state.resources {
+            let minimumDistance = radius + resource.radius + 12
+            if position.distanceSquared(to: resource.position) < minimumDistance * minimumDistance {
+                return false
+            }
+        }
+        for building in engine.state.buildings where building.hitPoints > 0 {
+            let buildingDefinition = GameDefinitions.building(building.type)
+            let minimumDistance = radius + buildingDefinition.size / 2 + 18
+            if position.distanceSquared(to: building.position) < minimumDistance * minimumDistance {
+                return false
+            }
+        }
+        for unit in engine.state.units where unit.hitPoints > 0 {
+            let unitDefinition = GameDefinitions.unit(unit.type)
+            let minimumDistance = radius + unitDefinition.radius + 10
+            if position.distanceSquared(to: unit.position) < minimumDistance * minimumDistance {
+                return false
+            }
+        }
+        return true
+    }
+
+    private func canPreviewExtractorTarget(at point: WorldPoint) -> Bool {
+        guard let resource = engine.state.resourceTarget(at: point),
+              resource.claimedBy == nil,
+              !engine.state.buildings.contains(where: {
+                  $0.type == .extractor &&
+                      $0.nodeID == resource.id &&
+                      $0.hitPoints > 0
+              }) else {
+            return false
+        }
+        return true
+    }
+
     func handleBattlefieldContextCommand(screenPoint: CGPoint, viewportSize: CGSize) {
         clearLastBattlefieldTap()
         guard !isAwaitingTargetCommand else {
@@ -1842,7 +1996,7 @@ final class GameController {
         }
     }
 
-    private func clearLastBattlefieldTap() {
+    func clearLastBattlefieldTap() {
         lastBattlefieldTapUnitID = nil
         lastBattlefieldTapScreenPoint = nil
         lastBattlefieldTapTime = nil
@@ -2098,17 +2252,17 @@ final class GameController {
             reportCommandFeedback(for: result, confirmation: .rally, at: point)
         } else if isAwaitingBuildTurretTarget {
             let result = engine.issueBuildTurret(at: point)
-            isAwaitingBuildTurretTarget = false
+            isAwaitingBuildTurretTarget = shouldKeepTargetMode(after: result)
             commandStatus = statusText(forBuildTurret: result, position: clampedMapPoint(point))
             reportCommandFeedback(for: result, confirmation: .build, at: clampedMapPoint(point))
         } else if isAwaitingBuildFactoryTarget {
             let result = engine.issueBuildLandFactory(at: point)
-            isAwaitingBuildFactoryTarget = false
+            isAwaitingBuildFactoryTarget = shouldKeepTargetMode(after: result)
             commandStatus = statusText(forBuildFactory: result, position: clampedMapPoint(point))
             reportCommandFeedback(for: result, confirmation: .build, at: clampedMapPoint(point))
         } else if isAwaitingBuildRadarTarget {
             let result = engine.issueBuildRadar(at: point)
-            isAwaitingBuildRadarTarget = false
+            isAwaitingBuildRadarTarget = shouldKeepTargetMode(after: result)
             commandStatus = statusText(forBuildRadar: result, position: clampedMapPoint(point))
             reportCommandFeedback(for: result, confirmation: .build, at: clampedMapPoint(point))
         } else {
@@ -2130,7 +2284,7 @@ final class GameController {
                 wreckID = nil
                 result = .invalidReclaimTarget
             }
-            isAwaitingReclaimTarget = false
+            isAwaitingReclaimTarget = shouldKeepTargetMode(after: result)
             commandStatus = statusText(forReclaim: result, wreckID: wreckID)
             reportCommandFeedback(for: result, confirmation: .reclaim, at: wreck?.position ?? point)
         } else if isAwaitingBuildExtractorTarget {
@@ -2144,7 +2298,7 @@ final class GameController {
                 nodeID = nil
                 result = .invalidBuildTarget
             }
-            isAwaitingBuildExtractorTarget = false
+            isAwaitingBuildExtractorTarget = shouldKeepTargetMode(after: result)
             commandStatus = statusText(forBuildExtractor: result, nodeID: nodeID)
             reportCommandFeedback(for: result, confirmation: .build, at: resource?.position ?? point)
         } else {
@@ -2168,7 +2322,7 @@ final class GameController {
             } else {
                 result = .invalidGuardTarget
             }
-            isAwaitingGuardTarget = false
+            isAwaitingGuardTarget = shouldKeepTargetMode(after: result)
             commandStatus = statusText(forGuard: result)
             reportCommandFeedback(for: result, confirmation: .guardTarget, at: target?.position ?? point)
         } else if isAwaitingRepairTarget {
@@ -2187,7 +2341,7 @@ final class GameController {
                 targetID = nil
                 result = .invalidRepairTarget
             }
-            isAwaitingRepairTarget = false
+            isAwaitingRepairTarget = shouldKeepTargetMode(after: result)
             commandStatus = statusText(forRepair: result, targetID: targetID)
             reportCommandFeedback(for: result, confirmation: .repair, at: target?.position ?? point)
         } else if isAwaitingAttackTarget {
@@ -2203,7 +2357,7 @@ final class GameController {
             } else {
                 result = .invalidAttackTarget
             }
-            isAwaitingAttackTarget = false
+            isAwaitingAttackTarget = shouldKeepTargetMode(after: result)
             commandStatus = statusText(forAttack: result)
             reportCommandFeedback(for: result, confirmation: .attack, at: target?.position ?? point)
         } else {
@@ -2211,6 +2365,16 @@ final class GameController {
         }
         renderRevision += 1
         return true
+    }
+
+    private func shouldKeepTargetMode(after result: UnitCommandResult) -> Bool {
+        switch result {
+        case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget,
+             .invalidRepairTarget, .invalidReclaimTarget, .occupiedResourceNode:
+            return true
+        default:
+            return false
+        }
     }
 
     private var selectedPlayerUnit: UnitSnapshot? {

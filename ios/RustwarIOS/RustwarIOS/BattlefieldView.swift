@@ -81,16 +81,18 @@ struct BattlefieldView: View {
                     }
                     .onChange(of: controller.mapRenderRevision) { _, _ in
                         cancelSelectionGestures()
+                        clearBattlefieldTouchPreview()
                     }
                     .onChange(of: accessibilityReduceMotion) { _, reduceMotion in
                         scene.accessibilityReduceMotion = reduceMotion
                     }
                     .simultaneousGesture(tapGesture(in: proxy.size))
-                    .simultaneousGesture(contextLocationGesture())
+                    .simultaneousGesture(contextLocationGesture(in: proxy.size))
                     .simultaneousGesture(dragGesture(in: proxy.size))
                     .simultaneousGesture(magnifyGesture())
                     .simultaneousGesture(multitouchSelectionGesture(in: proxy.size))
                     .onLongPressGesture(minimumDuration: 0.45, maximumDistance: 18) {
+                        clearBattlefieldTouchPreview()
                         if let suppressTapUntil,
                            ProcessInfo.processInfo.systemUptime <= suppressTapUntil {
                             return
@@ -128,6 +130,7 @@ struct BattlefieldView: View {
     private func tapGesture(in viewportSize: CGSize) -> some Gesture {
         SpatialTapGesture()
             .onEnded { value in
+                clearBattlefieldTouchPreview()
                 guard battlefieldTouchIntent == .possible,
                       !battlefieldPanOccurredForCurrentTouch,
                       !contextGestureCancelled,
@@ -145,7 +148,7 @@ struct BattlefieldView: View {
             }
     }
 
-    private func contextLocationGesture() -> some Gesture {
+    private func contextLocationGesture(in viewportSize: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
                 if battlefieldTouchSequenceCancelled {
@@ -195,8 +198,10 @@ struct BattlefieldView: View {
                     return
                 }
                 contextPressLocation = value.location
+                updateBattlefieldTouchPreview(at: value.location, viewportSize: viewportSize)
             }
             .onEnded { value in
+                clearBattlefieldTouchPreview()
                 guard contextGestureStarted else {
                     return
                 }
@@ -319,6 +324,8 @@ struct BattlefieldView: View {
                 }
                 if !isBattlefieldPanActive {
                     isBattlefieldPanActive = true
+                    clearBattlefieldTouchPreview()
+                    controller.clearLastBattlefieldTap()
                     battlefieldTouchIntent = controller.isAwaitingAreaSelection
                         ? .areaSelection
                         : .pan
@@ -343,6 +350,7 @@ struct BattlefieldView: View {
                 scene.renderNow()
             }
             .onEnded { value in
+                clearBattlefieldTouchPreview()
                 let ownedPanIntent = battlefieldTouchIntent == .pan ||
                     battlefieldTouchIntent == .areaSelection
                 if controller.isAwaitingAreaSelection {
@@ -383,16 +391,20 @@ struct BattlefieldView: View {
             .onChanged { value in
                 guard battlefieldTouchIntent == .pinch else {
                     if isMultitouchSequenceActive {
+                        clearBattlefieldTouchPreview()
+                        controller.clearLastBattlefieldTap()
                         lastMagnification = Double(value.magnification)
                     }
                     return
                 }
+                controller.clearLastBattlefieldTap()
                 let incremental = Double(value.magnification) / lastMagnification
                 controller.zoom(by: incremental)
                 lastMagnification = Double(value.magnification)
                 scene.renderNow()
             }
             .onEnded { _ in
+                clearBattlefieldTouchPreview()
                 lastMagnification = 1.0
             }
     }
@@ -423,6 +435,10 @@ struct BattlefieldView: View {
         }
 
         var activeTouches = touchEvents.filter { $0.phase == .active }
+        if activeTouches.count >= 2 || isMultitouchSequenceActive {
+            clearBattlefieldTouchPreview()
+            controller.clearLastBattlefieldTap()
+        }
         if battlefieldTouchSequenceCancelled {
             let hadCancelledTouchIDs = !cancelledBattlefieldTouchIDs.isEmpty
             let hasFreshUnknownTouch = !hadCancelledTouchIDs &&
@@ -592,6 +608,8 @@ struct BattlefieldView: View {
             return
         }
         resetMultitouchSelectionState()
+        clearBattlefieldTouchPreview()
+        controller.clearLastBattlefieldTap()
         battlefieldTouchID = nil
         battlefieldTouchSequence &+= 1
         if hadMultitouchSequence {
@@ -692,6 +710,8 @@ struct BattlefieldView: View {
     }
 
     private func cancelSelectionGestures() {
+        clearBattlefieldTouchPreview()
+        controller.clearLastBattlefieldTap()
         let cancelledTouchIDs = Set(multitouchIDs).union(
             battlefieldTouchID.map { Set([$0]) } ?? []
         )
@@ -747,6 +767,29 @@ struct BattlefieldView: View {
             ? ProcessInfo.processInfo.systemUptime + Self.multitouchTapSuppressionDuration
             : nil
         resetMultitouchSelectionState()
+    }
+
+    private func updateBattlefieldTouchPreview(at screenPoint: CGPoint, viewportSize: CGSize) {
+        guard battlefieldTouchIntent == .possible,
+              !battlefieldPanOccurredForCurrentTouch,
+              !battlefieldTouchSequenceCancelled,
+              !isMultitouchSequenceActive else {
+            clearBattlefieldTouchPreview()
+            return
+        }
+        scene.touchPreview = controller.battlefieldTouchPreview(
+            screenPoint: screenPoint,
+            viewportSize: viewportSize
+        )
+        scene.renderNow()
+    }
+
+    private func clearBattlefieldTouchPreview() {
+        guard scene.touchPreview != nil else {
+            return
+        }
+        scene.touchPreview = nil
+        scene.renderNow()
     }
 }
 

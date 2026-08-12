@@ -5672,3 +5672,34 @@
 已知风险：
 
 - SwiftUI 在 seed 之后仍可能缺少可区分旧 context 回调和真实新触点的共同 touch ID；本轮用 sequence、时间、取消 epoch 和保守拒绝降低误派命令风险，但不能静态证明极端回调乱序已完全消除。
+
+### v2.48 / iOS direct-touch intent preview and target retry
+
+日期：2026-08-12
+
+核心变更：
+
+- `BattlefieldView` 在普通单指尚未跨过 12pt pan 阈值时持续更新 presentation-only 触控意图；预览覆盖己方选择、可见敌方 Attack、空地 Attack-Move 和 Move / Attack-Move / Patrol / Rally / Guard / Repair / Build / Reclaim 等 pending target 落点。pan、tap end、long press、第二/第三指、pinch、cancel、地图 reset 和 map revision 会清理预览，同时清除旧重复点按缓存。
+- `GameController.battlefieldTouchPreview` 复用当前可见性、敌方优先和 44pt 命中语义，只返回世界坐标与意图，不派发命令。无效 Attack、Guard、Repair、Build、Reclaim 目标提交后保留 pending mode，以红色不可用准星提示用户重试；成功结果仍由既有命令路径退出等待态。
+- `BattlefieldScene` 新增逆 zoom 的准星、中心十字、意图颜色和 invalid 斜线；混合选择的 Attack range preview 会寻找第一个存活己方作战单位。combat cloud fixture 仅进入 Attack target pending，让固定战斗 PNG 同时覆盖攻击范围圈和新的落点 presentation。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.48-ios-direct-touch-preview-and-lifecycle.md`
+
+验证状态：
+
+- 按云端唯一验证制度，本轮未运行本地测试、Swift/Xcode build、Simulator、Preview、截图、浏览器验证或 `git diff --check`；只读 `git status` / `git diff` 用于控制范围。
+- 当前实现尚未 push，新的 Actions run、run attempt 和 artifact 尚不存在；提交后 Agent C 必须只下载与最新 `origin/main` 完全一致的结果包，并核对 manifest、JUnit、主日志、失败摘要、repo state、Home/Combat PNG 及目录大小。
+
+已知风险：
+
+- 当前 CI 没有 XCUITest，静态 build/PNG 不能证明真实 tap、长按、两指框选、pinch、回调乱序、VoiceOver、Dynamic Type、Reduce Motion 或真机手感；seed 后旧触点与新触点的共同回调标识风险仍沿用 v2.46.1/v2.47 的保守围栏。
+- Builder 仍会被现有直接 Attack / Attack-Move Core 路径纳入 selected units，触控预览本轮保持与现有行为一致，后续应单独修复 combat-only command eligibility；生产 dock 和水面/武器/残骸视觉也留待下一轮独立处理。
