@@ -5664,7 +5664,10 @@
 验证状态：
 
 - 按云端唯一验证制度未运行任何本地测试、Swift/Xcode build、Simulator、Preview、截图、浏览器验证或 `git diff --check`；`git status` / `git diff` 仅用于范围控制。
-- 本轮实现提交后，Agent C 必须只下载与最新 `origin/main` 完全一致的 `Rustwar CI Results` artifact，核对 manifest、JUnit、主日志、失败摘要、repo state、production/combat PNG 与 metrics；无 XCUITest 时不得宣称真实触摸回调顺序或手感已验证。
+- 初始实现提交 `57c8ff24666962ce2fc43debbc0114969361254a` 的 run `31578885589` / attempt 1 虽然 CI 成功，但 Agent C 复看 Home PNG 发现生产建筑 hint 挤压生产卡片，未将该提交作为本轮最终视觉验收；追加提交 `9aa20e521c9d99fc1fb810b26acc2b8a0f27fa37` 隐藏生产建筑 hint 并保留 Production / Factory Tech 首屏。
+- 最终提交 `9aa20e5` 的 run `31580022017` / attempt 1 / job `94060726274` 成功；artifact `rustwar-ci-v1.2-main-9aa20e5-run31580022017-attempt1` 已由 Agent C 下载到 `/private/tmp/rustwar-c-review-31580022017/`，目录约 1.7M。manifest 已匹配 `branch=main`、完整 SHA、run/attempt、Xcode 26.5、iOS Simulator SDK 26.5、iPhone 17 Pro UDID 和 Swift 6.3.2；JUnit 为 8 checks、0 failures、1 个既定 browser skip，toolchain/static/Core/xcode list/build、Home/Combat 启动、横屏方向归一化和两份 pixel probe 全部 success。
+- 最终 Home PNG 为 2622x1206、透明比例 0、mean `79.77828765459367`、std `41.71567287350822`，SHA-256 `cf6dfcdedd88673c854085c6248d156a53ff50dbffbaa3b816037d419a3b4a97`，恢复到无 hint 挤压的生产首屏；Combat PNG 为 2622x1206、透明比例 0、mean `73.23839995673475`、std `42.031785196029276`，SHA-256 `659b937370ca5a6a670c482fd6d8bf6a15985fff5d6faa07f87364264957d5af`，可见新的单位操作提示且未见明显静态视觉回退。
+- 该 artifact 没有 XCUITest 或真实触摸注入；静态/确定性代码证据通过，真实 tap、长按、拖动、多指、Attack target range ring、VoiceOver、Dynamic Type、Reduce Motion 和真机手感仍未证明。
 
 已知风险：
 
