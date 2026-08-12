@@ -5698,7 +5698,8 @@
 
 - 按云端唯一验证制度，本轮未运行本地测试、Swift/Xcode build、Simulator、Preview、截图、浏览器验证或 `git diff --check`；只读 `git status` / `git diff` 用于控制范围。
 - 首轮实现提交 `be371367912e8f33d50d7e68a3d091e9111fd717` 的 Actions run `31584331941` / attempt 1 已由 Agent C 下载 artifact `rustwar-ci-v1.2-main-be37136-run31584331941-attempt1` 到 `/private/tmp/rustwar-c-review-31584331941/`，目录约 276K。manifest 的 branch/SHA/run/attempt 与 `origin/main` 一致；toolchain、static checks、Swift Core 327+ tests 和 Xcode project list 成功，但 Xcode build 失败，原因是 iOS target 误调用 Core `fileprivate` 的 `WorldPoint.clampedToMap()`，Simulator/双 PNG 因 build 失败未执行。
-- 本次追加修复改为复用 `GameController.clampedMapPoint(_:)`；修复提交后的 Actions run 与 artifact 仍待 Agent C 按最新 `origin/main` SHA 重新下载核对。
+- 追加修复提交 `b18b9ee21f728ed07ec78f248dd7971625795853` 的 Actions run `31590937480` / attempt 1 / job `94095467130` 成功；Agent C 已用 `Altman-sam114` 下载 artifact `rustwar-ci-v1.2-main-b18b9ee-run31590937480-attempt1` 到 `/private/tmp/rustwar-c-review-31590937480/`，目录约 1.7M。manifest 的 branch/SHA/run/attempt 完全匹配，JUnit 为 8 checks、0 failures、1 个既定 browser skip，toolchain/static/Core/Xcode list/build、双 Simulator 启动、横屏归一化和两份 pixel probe 全部 success；Swift Core 为 327 tests passed。
+- 该 artifact 的 Home PNG 为 2622x1206、mean `79.77828765459367`、std `41.71567287350822`、range `255`；Combat PNG 为 2622x1206、mean `75.1291669470439`、std `42.25349367470018`、range `255`。人工查看确认 Home 的 Production / Factory Tech / 队列首屏未被触控提示挤压，Combat 有 5 个作战单位、Attack target pending HUD、不同车辆轮廓、弹道、爆点和小地图；该静态 smoke 仍不能证明真实触控注入。
 
 已知风险：
 
