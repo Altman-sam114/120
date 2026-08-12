@@ -422,10 +422,38 @@ final class GameController {
     }
 
     var productionFocusQueueSummary: String {
-        let names = productionQueueItems.dropFirst().prefix(3).map { GameDefinitions.unit($0.unitType).name }
+        let names = productionQueueItems.dropFirst().map { GameDefinitions.unit($0.unitType).name }
         guard !names.isEmpty else { return "none" }
-        let suffix = productionQueueItems.count > 4 ? ", +\(productionQueueItems.count - 4)" : ""
-        return names.joined(separator: ", ") + suffix
+        return names.joined(separator: ", ")
+    }
+
+    var productionFocusQueueShortSummary: String {
+        let names = productionQueueItems.dropFirst().prefix(2).map { productionFocusShortName(for: $0.unitType) }
+        guard !names.isEmpty else { return "none" }
+        let remainingCount = max(0, productionQueueItems.count - 1 - names.count)
+        let suffix = remainingCount > 0 ? " +\(remainingCount)" : ""
+        return names.joined(separator: " · ") + suffix
+    }
+
+    private func productionFocusShortName(for unitType: UnitType) -> String {
+        switch unitType {
+        case .builder:
+            "Builder"
+        case .scout:
+            "Scout"
+        case .tank:
+            "Light"
+        case .heavyTank:
+            "Heavy"
+        case .hover:
+            "Hover"
+        case .aaTank:
+            "AA"
+        case .artillery:
+            "Arty"
+        case .gunboat:
+            "Boat"
+        }
     }
 
     var productionFocusUpgradeSummary: String {

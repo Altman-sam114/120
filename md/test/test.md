@@ -378,4 +378,4 @@ du -sh /private/tmp/rustwar-c-review-<run_id>
 - 最终回复必须列出具体命令、结果、云端 run / artifact 状态和未跑测试原因。
 ## v2.50
 
-生产 focus summary 为 presentation-only 派生：应由云端 iOS CI 检查 Swift 编译与既有 smoke；代码复核确认生产按钮、队列、升级、快捷键、VoiceOver 和 44pt 触控目标未改变。本轮 Agent B 按制度不运行本地测试、build、Simulator、Preview、浏览器或 `git diff --check`，仅做 git 状态与范围核对。
+生产 focus summary 为 presentation-only 派生：应由云端 iOS CI 检查 Swift 编译与既有 smoke；代码复核确认固定 header 使用自然宽度的建筑/倍率、NOW、QUEUE、UPGRADE 行，不再使用三列等宽矩阵或完整 BUILD 列表，完整生产列表仍在 Production section；同时确认生产按钮、队列、升级、快捷键、VoiceOver 完整 value 和 44pt 触控目标未改变。本轮 Agent B 按制度不运行本地测试、build、Simulator、Preview、浏览器或 `git diff --check`，仅做 git 状态与范围核对。

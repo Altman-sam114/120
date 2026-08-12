@@ -5747,3 +5747,4 @@
 
 - iOS command dock 固定 header 新增 Production focus summary：复用现有 producer、队列、Factory Tech 派生值展示建筑、T级/倍率、NOW、QUEUE、BUILD 与 UPGRADE 状态。
 - selection identity 改变时 dock 仅以无动画 transaction 回顶；tick 更新不重置滚动位置。生产 action、队列、快捷键、VoiceOver、44pt 和 Core/存档保持不变。
+- 根据首轮云端 Home 截图的裁切反馈收紧焦点条：移除三列等宽 metric 和固定 header 中的完整 BUILD 列表，改为建筑/倍率、NOW、QUEUE（最多两个短名加数量）和 UPGRADE 的自然宽度行；完整生产列表仍由 Production section 提供，VoiceOver value 继续保留完整队列、生产列表和升级语义。

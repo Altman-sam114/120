@@ -952,8 +952,8 @@ flowchart TD
 ```mermaid
 flowchart LR
   S[选择己方生产建筑] --> C[GameController 只读派生]
-  C --> H[固定 Header Production focus summary]
-  C --> P[Production section 原有按钮/队列/action]
+  C --> H[固定 Header 紧凑 focus summary]
+  C --> P[Production section 完整列表/队列/action]
   S --> R[dockSelectionIdentity 变化]
   R --> T[无动画 scrollTo 顶部]
 ```

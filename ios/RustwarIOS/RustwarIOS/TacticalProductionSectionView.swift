@@ -4,6 +4,8 @@ import RustwarCore
 struct TacticalProductionFocusSummaryView: View {
     @Bindable var controller: GameController
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     private var nowSummary: String {
         guard let item = controller.productionQueueItems.first else { return "Idle" }
         let percent = Int((item.progressFraction * 100).rounded())
@@ -13,40 +15,82 @@ struct TacticalProductionFocusSummaryView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-            HStack(spacing: TacticalHUDTheme.compactSpacing) {
-                Image(systemName: "building.2.fill").accessibilityHidden(true)
-                Text(controller.productionFocusBuildingName ?? "Production")
-                    .font(.subheadline.bold())
-                Text("T\(controller.selectedFactoryTechLevel)")
-                    .font(.caption.bold())
-                    .padding(.horizontal, TacticalHUDTheme.denseSpacing)
-                    .background(TacticalHUDTheme.metricBackground, in: Capsule())
-                Text(controller.selectedFactoryProductionSpeedText)
-                    .font(.caption)
-                    .monospacedDigit()
-            }
-            HStack(alignment: .top, spacing: TacticalHUDTheme.compactSpacing) {
-                focusMetric("NOW", nowSummary)
-                focusMetric("QUEUE", "\(controller.productionQueueItems.count) • \(controller.productionFocusQueueSummary)")
-                focusMetric("UPGRADE", controller.productionFocusUpgradeSummary)
-            }
-            focusMetric("BUILD", controller.productionFocusBuildSummary.isEmpty ? "none" : controller.productionFocusBuildSummary)
+            identitySummary
+            focusRow("NOW", nowSummary)
+            focusRow(
+                "QUEUE",
+                "\(controller.productionQueueItems.count) • \(controller.productionFocusQueueShortSummary)"
+            )
+            focusRow("UPGRADE", controller.productionFocusUpgradeSummary)
         }
         .padding(TacticalHUDTheme.compactPadding)
         .foregroundStyle(TacticalHUDTheme.primaryText)
         .background(TacticalHUDTheme.selectionBackground, in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius))
-        .overlay { RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius).stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1) }
+        .overlay {
+            RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
+                .stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1)
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Production focus")
         .accessibilityValue(summaryAccessibilityValue)
     }
 
-    private func focusMetric(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.caption2.bold()).foregroundStyle(TacticalHUDTheme.metricLabel)
-            Text(value).font(.caption).lineLimit(3).minimumScaleFactor(0.75)
+    @ViewBuilder
+    private var identitySummary: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+                identityTitle
+                identityMetrics
+            }
+        } else {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.compactSpacing) {
+                    Image(systemName: "building.2.fill").accessibilityHidden(true)
+                    Text(controller.productionFocusBuildingName ?? "Production")
+                        .font(.subheadline.bold())
+                        .fixedSize(horizontal: true, vertical: false)
+                    Spacer(minLength: 0)
+                    identityMetrics
+                }
+                VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+                    identityTitle
+                    identityMetrics
+                }
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var identityTitle: some View {
+        HStack(spacing: TacticalHUDTheme.compactSpacing) {
+            Image(systemName: "building.2.fill").accessibilityHidden(true)
+            Text(controller.productionFocusBuildingName ?? "Production")
+                .font(.subheadline.bold())
+        }
+    }
+
+    private var identityMetrics: some View {
+        HStack(spacing: TacticalHUDTheme.compactSpacing) {
+            Text("T\(controller.selectedFactoryTechLevel)")
+                .font(.caption.bold())
+                .padding(.horizontal, TacticalHUDTheme.denseSpacing)
+                .background(TacticalHUDTheme.metricBackground, in: Capsule())
+            Text(controller.selectedFactoryProductionSpeedText.replacingOccurrences(of: " production", with: ""))
+                .font(.caption)
+                .monospacedDigit()
+        }
+    }
+
+    private func focusRow(_ title: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.compactSpacing) {
+            Text(title)
+                .font(.caption.bold())
+                .foregroundStyle(TacticalHUDTheme.metricLabel)
+                .fixedSize(horizontal: true, vertical: false)
+            Text(value)
+                .font(.caption)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private var summaryAccessibilityValue: String {
