@@ -957,3 +957,14 @@ flowchart LR
   S --> R[dockSelectionIdentity 变化]
   R --> T[无动画 scrollTo 顶部]
 ```
+
+```mermaid
+flowchart LR
+  H[Unit/Building HP drop or destruction] --> P[BattlefieldScene presentation terrain lookup]
+  P -->|water/deep| W[Blue-white ripple, splash arcs, droplets]
+  P -->|land/lava| L[Existing fire, smoke, debris, scorch]
+  W --> C[One bounded effect root, <= 0.55s]
+  L --> E[Existing 64 effects / 32 decals caps]
+  C --> F[Core, orders, save schema unchanged]
+  E --> F
+```

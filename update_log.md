@@ -5749,3 +5749,9 @@
 - selection identity 改变时 dock 仅以无动画 transaction 回顶；tick 更新不重置滚动位置。生产 action、队列、快捷键、VoiceOver、44pt 和 Core/存档保持不变。
 - 根据首轮云端 Home 截图的裁切反馈收紧焦点条：移除三列等宽 metric 和固定 header 中的完整 BUILD 列表，改为建筑/倍率、NOW、QUEUE（最多两个短名加数量）和 UPGRADE 的自然宽度行；完整生产列表仍由 Production section 提供，VoiceOver value 继续保留完整队列、生产列表和升级语义。
 - 紧凑修复提交 `ba772354e47b17f09b034fe33a529432bc50151f` 的 Actions run `31601302980` / attempt 1 / job `94129112075` 已由本轮云端复核下载 artifact `rustwar-ci-v1.2-main-ba77235-run31601302980-attempt1` 到 `/private/tmp/rustwar-c-review-31601302980/`，目录约 1.8M。manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5、iOS Simulator SDK 26.5 完全匹配；JUnit 为 8 checks、0 failures、1 个既定 browser skip，331 个 RustwarCore tests 通过，`git diff --check`、`node --check app.js`、Xcode list/build、production/combat 双启动、横屏归一化和双 pixel probe 全部 success。Home / Combat PNG 均为 2622x1206，Home mean `79.19431299053907`、std `42.65921361496916`，Combat mean `75.1291669470439`、std `42.25349367470018`；人工复看确认 Home 的焦点条不再裁切或挤压 Factory Tech、Production section、队列和管理入口，Combat 的单位、弹道、爆点、HUD 和 Tactical Map 无视觉回退。
+
+## v2.51 / iOS water impact material split
+
+- Rusted Warfare 公开截图/视频显示水陆混战时的 tracer、爆炸、烟尘、舰船和海岸线具有清晰材质差异；本轮只复用“水面反馈应与地面爆点区分”的交互/可读性原则，不复制原作素材。
+- `BattlefieldScene` 命中或摧毁位置在 `.water` / `.deep` 时改用蓝白波纹、三条确定性弧线和两个水滴；陆地与熔岩继续使用既有火焰、烟尘、碎片和焦痕。水面效果不新增 decal，单次使用一个 bounded root，动态生命周期最多 0.55 秒。
+- 只读 `TerrainGrid`，不修改 Core、UnitOrder、GameState、JSON/save schema、伤害/命中/AI、触控 owner 或效果上限；云端 CI 负责双架构编译、固定 production/combat smoke、截图和 pixel probe。

@@ -1566,6 +1566,11 @@ final class BattlefieldScene: SKScene {
     }
 
     private func spawnImpactEffect(at position: WorldPoint, intensity: Double, isFrozen: Bool = false) {
+        if isWaterImpact(at: position) {
+            spawnWaterImpactEffect(at: position, intensity: intensity, isFrozen: isFrozen)
+            return
+        }
+
         addScorchMark(at: position, radius: 8.5 * intensity, isFrozen: isFrozen)
 
         let container = SKNode()
@@ -1653,6 +1658,147 @@ final class BattlefieldScene: SKScene {
         addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.26 : 0.72)
     }
 
+    private func isWaterImpact(at position: WorldPoint) -> Bool {
+        guard let terrain = controller?.engine.state.terrain.terrain(at: position) else {
+            return false
+        }
+        return isWaterTerrain(terrain)
+    }
+
+    private func spawnWaterImpactEffect(
+        at position: WorldPoint,
+        intensity: Double,
+        isFrozen: Bool
+    ) {
+        let scale = CGFloat(Swift.max(0.72, Swift.min(2.4, intensity)))
+        let container = SKNode()
+        container.position = spritePoint(for: position)
+
+        let surface = SKShapeNode(ellipseOf: CGSize(
+            width: 28 * scale,
+            height: 13 * scale
+        ))
+        surface.fillColor = SKColor.systemBlue.withAlphaComponent(0.18)
+        surface.strokeColor = SKColor.systemCyan.withAlphaComponent(0.72)
+        surface.lineWidth = 1.35
+        surface.zPosition = -3
+        container.addChild(surface)
+
+        let innerRing = SKShapeNode(ellipseOf: CGSize(
+            width: 15 * scale,
+            height: 7 * scale
+        ))
+        innerRing.fillColor = .clear
+        innerRing.strokeColor = .white.withAlphaComponent(0.78)
+        innerRing.lineWidth = 1.05
+        innerRing.zPosition = -2.5
+        container.addChild(innerRing)
+
+        let arcAngles = [-0.95, 0.0, 0.95]
+        for (index, angle) in arcAngles.enumerated() {
+            let arc = waterSplashArcNode(
+                angle: angle,
+                scale: scale,
+                index: index
+            )
+            container.addChild(arc)
+            if !isFrozen && !accessibilityReduceMotion {
+                arc.run(.group([
+                    .fadeOut(withDuration: 0.42),
+                    .scale(to: 1.28, duration: 0.42)
+                ]))
+            } else if !isFrozen {
+                arc.run(.fadeOut(withDuration: 0.18))
+            }
+        }
+
+        for index in 0..<2 {
+            let angle = index == 0 ? -0.56 : 0.56
+            let droplet = SKShapeNode(ellipseOf: CGSize(
+                width: 3.1 * scale,
+                height: 5.2 * scale
+            ))
+            droplet.fillColor = .white.withAlphaComponent(0.9)
+            droplet.strokeColor = SKColor.systemCyan.withAlphaComponent(0.88)
+            droplet.lineWidth = 0.8
+            droplet.zRotation = CGFloat(angle)
+            droplet.position = CGPoint(
+                x: CGFloat(cos(angle)) * 5 * scale,
+                y: CGFloat(sin(angle)) * 5 * scale
+            )
+            container.addChild(droplet)
+            let travel = CGPoint(
+                x: CGFloat(cos(angle)) * 8 * scale,
+                y: CGFloat(7 + Double(index) * 2) * scale
+            )
+            if isFrozen {
+                droplet.position.x += travel.x * 0.7
+                droplet.position.y += travel.y * 0.7
+            } else if accessibilityReduceMotion {
+                droplet.run(.fadeOut(withDuration: 0.18))
+            } else {
+                droplet.run(.group([
+                    .moveBy(x: travel.x, y: travel.y, duration: 0.38),
+                    .fadeOut(withDuration: 0.38),
+                    .scale(to: 0.72, duration: 0.38)
+                ]))
+            }
+        }
+
+        if isFrozen {
+            addPersistentBoundedEffect(container)
+            return
+        }
+
+        if accessibilityReduceMotion {
+            surface.run(.fadeOut(withDuration: 0.2))
+            innerRing.run(.fadeOut(withDuration: 0.18))
+        } else {
+            surface.run(.group([
+                .fadeOut(withDuration: 0.5),
+                .scale(to: 1.42, duration: 0.5)
+            ]))
+            innerRing.run(.group([
+                .fadeOut(withDuration: 0.36),
+                .scale(to: 1.55, duration: 0.36)
+            ]))
+        }
+        addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.22 : 0.55)
+    }
+
+    private func waterSplashArcNode(angle: Double, scale: CGFloat, index: Int) -> SKShapeNode {
+        let direction = CGPoint(x: CGFloat(cos(angle)), y: CGFloat(sin(angle)))
+        let tangent = CGPoint(x: CGFloat(-sin(angle)), y: CGFloat(cos(angle)))
+        let startRadius = CGFloat(2.5 + Double(index) * 0.8) * scale
+        let endRadius = CGFloat(10.5 + Double(index % 2) * 2.1) * scale
+        let start = CGPoint(
+            x: direction.x * startRadius,
+            y: direction.y * startRadius
+        )
+        let end = CGPoint(
+            x: direction.x * endRadius,
+            y: direction.y * endRadius
+        )
+        let control = CGPoint(
+            x: direction.x * (endRadius * 0.58) + tangent.x * 4.2 * scale,
+            y: direction.y * (endRadius * 0.58) + tangent.y * 4.2 * scale
+        )
+        let path = CGMutablePath()
+        path.move(to: start)
+        path.addQuadCurve(to: end, control: control)
+
+        let arc = SKShapeNode(path: path)
+        arc.strokeColor = index == 1
+            ? .white.withAlphaComponent(0.94)
+            : SKColor.systemCyan.withAlphaComponent(0.88)
+        arc.fillColor = .clear
+        arc.lineWidth = (1.25 + (index == 1 ? 0.35 : 0)) * scale
+        arc.lineCap = .round
+        arc.glowWidth = 0.8 * scale
+        arc.zPosition = -1
+        return arc
+    }
+
     private func radialBurstNode(
         pointCount: Int,
         innerRadius: Double,
@@ -1687,6 +1833,11 @@ final class BattlefieldScene: SKScene {
     }
 
     private func spawnDestructionEffect(at position: WorldPoint, intensity: Double, accent: SKColor) {
+        if isWaterImpact(at: position) {
+            spawnWaterImpactEffect(at: position, intensity: intensity * 1.18, isFrozen: false)
+            return
+        }
+
         addScorchMark(at: position, radius: 12 * intensity)
 
         let container = SKNode()

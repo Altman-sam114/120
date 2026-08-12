@@ -379,3 +379,7 @@ du -sh /private/tmp/rustwar-c-review-<run_id>
 ## v2.50
 
 生产 focus summary 为 presentation-only 派生：应由云端 iOS CI 检查 Swift 编译与既有 smoke；代码复核确认固定 header 使用自然宽度的建筑/倍率、NOW、QUEUE、UPGRADE 行，不再使用三列等宽矩阵或完整 BUILD 列表，完整生产列表仍在 Production section；同时确认生产按钮、队列、升级、快捷键、VoiceOver 完整 value 和 44pt 触控目标未改变。本轮 Agent B 按制度不运行本地测试、build、Simulator、Preview、浏览器或 `git diff --check`，仅做 git 状态与范围核对。
+
+## v2.51
+
+水陆命中材质分流为 presentation-only：云端必须确认 `BattlefieldScene.swift` 双架构编译、JUnit 8/0/1、至少 331 个 RustwarCore tests、双启动、横屏归一化和双 pixel probe。代码复核确认命中/摧毁位置只读当前 `TerrainGrid`，`.water`/`.deep` 不调用 `addScorchMark`、不绘制陆地火焰/烟尘/碎片，使用单一 bounded root、蓝白波纹、最多三条确定性弧线和两个水滴，动态生命周期不超过 0.55 秒；陆地/熔岩路径与既有效果、64 effects / 32 decals 上限、Reduce Motion、冻结 smoke、雾层、Core 数值、订单、命中和存档保持。Agent C 必须人工查看最新 `ios-combat.png`：水面命中不得出现橙色地面焦痕，陆地爆点仍清楚，单位模型、弹道、HUD、小地图无回退。静态 PNG 不证明真实水面命中时序、所有地图、长局帧率或真机触控。

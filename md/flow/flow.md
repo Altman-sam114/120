@@ -736,3 +736,7 @@ RustwarCore MapPreset / GameState / GameEngine
 ## v2.50 Production focus summary
 
 选中己方完成生产建筑后，`GameController` 从现有 producer、`productionQueueItems`、Factory Tech 派生值生成只读摘要。固定 dock header 用自然宽度的紧凑行显示建筑名、T级/倍率、当前项目进度与剩余秒、队列数量和最多两个后续短名、升级状态；完整可生产列表仍由可滚动 Production section 展示，真实生产与升级 action 仍只在原 Production/Build section 中执行。VoiceOver value 保留完整队列与生产列表语义。`dockSelectionIdentity` 变化时以无动画 transaction 回顶，模拟 tick 不触发回顶。
+
+## v2.51 Water impact material split
+
+`BattlefieldScene` 在现有 Core `TerrainGrid.terrain(at:)` 只读判断命中/摧毁位置属于 `.water` 或 `.deep` 时，跳过陆地焦痕、火焰、烟尘和碎片，改用单一 bounded effect container 绘制蓝白水面波纹、三条确定性 splash arc 和两个水滴；陆地路径保持原有橙色爆点。水面效果仍位于 entity/fog 的既有 SpriteKit 层级，动态生命周期最多 0.55 秒，冻结 smoke 使用 persistent effect，root effect 继续受 64 上限约束，decals 不增加；Core 数值、订单、命中、存档和地形 schema 不变。
