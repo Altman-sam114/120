@@ -37,9 +37,11 @@ import Testing
     var owner = TouchSequenceOwner<Int>()
     _ = owner.beginFreshSequence(with: 4)
     #expect(owner.observe(activeIDs: [4, 5]) == .accepted)
-    #expect(owner.cancel())
+    let didCancel = owner.cancel()
+    #expect(didCancel)
     let cancelledSequence = owner.sequence
-    #expect(!owner.cancel())
+    let didCancelAgain = owner.cancel()
+    #expect(!didCancelAgain)
     #expect(owner.sequence == cancelledSequence)
     #expect(owner.phase == .cancelled)
     #expect(owner.cancelledIDs == Set([4, 5]))

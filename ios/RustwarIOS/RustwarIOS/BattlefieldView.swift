@@ -131,7 +131,7 @@ struct BattlefieldView: View {
 
     private func contextLocationGesture(in viewportSize: CGSize) -> some Gesture {
         let callbackGeneration = contextGestureCallbackGeneration
-        DragGesture(minimumDistance: 0)
+        return DragGesture(minimumDistance: 0)
             .onChanged { value in
                 guard callbackGeneration == contextGestureCallbackGeneration else {
                     return
@@ -232,7 +232,7 @@ struct BattlefieldView: View {
 
     private func tapGesture(in viewportSize: CGSize) -> some Gesture {
         let callbackGeneration = contextGestureCallbackGeneration
-        SpatialTapGesture()
+        return SpatialTapGesture()
             .onEnded { value in
                 guard callbackGeneration == contextGestureCallbackGeneration,
                       let lease = contextGestureLease,
@@ -333,7 +333,7 @@ struct BattlefieldView: View {
 
     private func dragGesture(in viewportSize: CGSize) -> some Gesture {
         let callbackGeneration = panGestureCallbackGeneration
-        DragGesture(minimumDistance: Self.battlefieldPanActivationDistance)
+        return DragGesture(minimumDistance: Self.battlefieldPanActivationDistance)
             .onChanged { value in
                 guard callbackGeneration == panGestureCallbackGeneration else {
                     return
@@ -425,7 +425,7 @@ struct BattlefieldView: View {
 
     private func magnifyGesture() -> some Gesture {
         let callbackGeneration = pinchGestureCallbackGeneration
-        MagnifyGesture()
+        return MagnifyGesture()
             .onChanged { value in
                 guard callbackGeneration == pinchGestureCallbackGeneration else {
                     return
@@ -462,7 +462,7 @@ struct BattlefieldView: View {
 
     private func multitouchSelectionGesture(in viewportSize: CGSize) -> some Gesture {
         let callbackGeneration = multitouchGestureCallbackGeneration
-        SpatialEventGesture()
+        return SpatialEventGesture()
             .onChanged { events in
                 guard callbackGeneration == multitouchGestureCallbackGeneration else {
                     return
