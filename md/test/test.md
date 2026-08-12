@@ -376,3 +376,6 @@ du -sh /private/tmp/rustwar-c-review-<run_id>
 - 不得伪造测试结果、Actions run、artifact、manifest 或浏览器运行结果。
 - 不得把“未发现问题”写成“完整通过”。
 - 最终回复必须列出具体命令、结果、云端 run / artifact 状态和未跑测试原因。
+## v2.50
+
+生产 focus summary 为 presentation-only 派生：应由云端 iOS CI 检查 Swift 编译与既有 smoke；代码复核确认生产按钮、队列、升级、快捷键、VoiceOver 和 44pt 触控目标未改变。本轮 Agent B 按制度不运行本地测试、build、Simulator、Preview、浏览器或 `git diff --check`，仅做 git 状态与范围核对。

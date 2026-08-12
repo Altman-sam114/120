@@ -413,6 +413,28 @@ final class GameController {
         selectedPlayerProducer?.productionQueue ?? []
     }
 
+    var productionFocusBuildingName: String? {
+        selectedPlayerProducer.map { GameDefinitions.building($0.type).name }
+    }
+
+    var productionFocusBuildSummary: String {
+        productionOptions.map { GameDefinitions.unit($0).name }.joined(separator: ", ")
+    }
+
+    var productionFocusQueueSummary: String {
+        let names = productionQueueItems.dropFirst().prefix(3).map { GameDefinitions.unit($0.unitType).name }
+        guard !names.isEmpty else { return "none" }
+        let suffix = productionQueueItems.count > 4 ? ", +\(productionQueueItems.count - 4)" : ""
+        return names.joined(separator: ", ") + suffix
+    }
+
+    var productionFocusUpgradeSummary: String {
+        if let progress = selectedFactoryUpgradeProgress {
+            return "Upgrading \(Int((progress * 100).rounded()))%"
+        }
+        return showsSelectedFactoryUpgradeControl ? "T2 ready" : "Max tech"
+    }
+
     var canCancelProduction: Bool {
         selectedPlayerProducer?.productionQueue.isEmpty == false
     }

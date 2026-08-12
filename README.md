@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.50：原生 iOS 生产建筑 dock 首屏增加只读 Production focus summary，展示建筑、科技倍率、当前生产、队列后续、可生产列表和升级状态；生产按钮、队列、快捷键与存档语义不变。
+
 一个参考 Rusted Warfare 俯视战场与 RTS 玩法回路的 RTS 原型。当前完整可玩版本仍是纯前端 Canvas：用 Canvas 绘制地图、单位和建筑，用简单符号代替正式素材，重点先落地可玩的经济、生产、建造、战斗和 AI。v1.0 起新增原生 Swift/iOS 迁移地基，用于逐步把核心模型和首屏战场移向原生 App。
 
 ## 运行

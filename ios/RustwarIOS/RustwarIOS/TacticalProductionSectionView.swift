@@ -1,6 +1,59 @@
 import SwiftUI
 import RustwarCore
 
+struct TacticalProductionFocusSummaryView: View {
+    @Bindable var controller: GameController
+
+    private var nowSummary: String {
+        guard let item = controller.productionQueueItems.first else { return "Idle" }
+        let percent = Int((item.progressFraction * 100).rounded())
+        let seconds = max(0, Int((item.buildTime - item.progress).rounded(.up)))
+        return "\(GameDefinitions.unit(item.unitType).name) \(percent)% • \(seconds)s left"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+            HStack(spacing: TacticalHUDTheme.compactSpacing) {
+                Image(systemName: "building.2.fill").accessibilityHidden(true)
+                Text(controller.productionFocusBuildingName ?? "Production")
+                    .font(.subheadline.bold())
+                Text("T\(controller.selectedFactoryTechLevel)")
+                    .font(.caption.bold())
+                    .padding(.horizontal, TacticalHUDTheme.denseSpacing)
+                    .background(TacticalHUDTheme.metricBackground, in: Capsule())
+                Text(controller.selectedFactoryProductionSpeedText)
+                    .font(.caption)
+                    .monospacedDigit()
+            }
+            HStack(alignment: .top, spacing: TacticalHUDTheme.compactSpacing) {
+                focusMetric("NOW", nowSummary)
+                focusMetric("QUEUE", "\(controller.productionQueueItems.count) • \(controller.productionFocusQueueSummary)")
+                focusMetric("UPGRADE", controller.productionFocusUpgradeSummary)
+            }
+            focusMetric("BUILD", controller.productionFocusBuildSummary.isEmpty ? "none" : controller.productionFocusBuildSummary)
+        }
+        .padding(TacticalHUDTheme.compactPadding)
+        .foregroundStyle(TacticalHUDTheme.primaryText)
+        .background(TacticalHUDTheme.selectionBackground, in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius))
+        .overlay { RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius).stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1) }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Production focus")
+        .accessibilityValue(summaryAccessibilityValue)
+    }
+
+    private func focusMetric(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).font(.caption2.bold()).foregroundStyle(TacticalHUDTheme.metricLabel)
+            Text(value).font(.caption).lineLimit(3).minimumScaleFactor(0.75)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var summaryAccessibilityValue: String {
+        "\(controller.productionFocusBuildingName ?? "Production"), T\(controller.selectedFactoryTechLevel), \(controller.selectedFactoryProductionSpeedText). Now \(nowSummary). Queue \(controller.productionQueueItems.count), followed by \(controller.productionFocusQueueSummary). Build \(controller.productionFocusBuildSummary). Upgrade \(controller.productionFocusUpgradeSummary)."
+    }
+}
+
 struct TacticalProductionSectionView: View {
     @Bindable var controller: GameController
     let columns: Int

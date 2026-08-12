@@ -45,7 +45,9 @@ struct TacticalCommandDockView: View {
                 }
                 .scrollIndicators(.visible)
                 .onChange(of: controller.dockSelectionIdentity) { _, _ in
-                    scrollProxy.scrollTo(Self.scrollTopID, anchor: .top)
+                    withTransaction(Transaction(animation: nil)) {
+                        scrollProxy.scrollTo(Self.scrollTopID, anchor: .top)
+                    }
                 }
             }
         }

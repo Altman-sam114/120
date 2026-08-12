@@ -949,3 +949,11 @@ flowchart TD
 ```
 
 读图说明：v2.49 只收敛命令资格和 presentation 预测，不改变 `UnitOrder`、战斗数值或存档 schema；静态云端 smoke 仍不能证明真实触控注入。
+```mermaid
+flowchart LR
+  S[选择己方生产建筑] --> C[GameController 只读派生]
+  C --> H[固定 Header Production focus summary]
+  C --> P[Production section 原有按钮/队列/action]
+  S --> R[dockSelectionIdentity 变化]
+  R --> T[无动画 scrollTo 顶部]
+```

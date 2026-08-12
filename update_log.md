@@ -5743,3 +5743,7 @@
 
 - 当前 CI 没有 XCUITest；云端 build、Core tests 和静态 PNG 不能证明真实 tap、长按、多指、回调乱序、VoiceOver、Dynamic Type、Reduce Motion 或真机手感。
 - 本轮刻意未改生产焦点条、队列首屏、水面命中、武器材质和残骸可读性，后续按独立小轮次推进。
+## v2.50
+
+- iOS command dock 固定 header 新增 Production focus summary：复用现有 producer、队列、Factory Tech 派生值展示建筑、T级/倍率、NOW、QUEUE、BUILD 与 UPGRADE 状态。
+- selection identity 改变时 dock 仅以无动画 transaction 回顶；tick 更新不重置滚动位置。生产 action、队列、快捷键、VoiceOver、44pt 和 Core/存档保持不变。

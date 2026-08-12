@@ -733,3 +733,6 @@ RustwarCore MapPreset / GameState / GameEngine
 - 沙盒放置、删除、导出和导入。
 - 迷你地图跳转和命令入口。
 - 战争迷雾和雷达信息边界。
+## v2.50 Production focus summary
+
+选中己方完成生产建筑后，`GameController` 从现有 producer、`productionQueueItems`、Factory Tech 派生值生成只读摘要。固定 dock header 显示建筑名、T级/倍率、当前项目进度与剩余秒、队列后续、可生产列表和升级状态；真实生产与升级 action 仍只在原 Production/Build section 中执行。`dockSelectionIdentity` 变化时以无动画 transaction 回顶，模拟 tick 不触发回顶。
