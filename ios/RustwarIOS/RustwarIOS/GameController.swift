@@ -305,6 +305,10 @@ final class GameController {
         engine.state.selectionSummary()
     }
 
+    var shouldShowBattlefieldInteractionHint: Bool {
+        selectedPlayerProducer == nil
+    }
+
     var battlefieldInteractionHintTitle: String {
         if isAwaitingAreaSelection {
             return "Area selection"

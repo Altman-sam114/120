@@ -5645,7 +5645,7 @@
 
 - `BattlefieldView.finishMultitouchSelection` 现在只在真实双指/多指序列成立时清理多指状态、推进 `battlefieldTouchSequence`、释放 touch ID 和提交区域框选；普通单指的 `SpatialEventGesture.onEnded` 不再与 context/pan end 争夺 owner。Spatial touch cancel 会同步标记 context cancelled，tap 与 long press 会拒绝 cancelled epoch 或不匹配的 context sequence。
 - context end 保存结束时的 sequence；起点漂移仍走 stale teardown，旧 sequence 结束回调只清理 context 生命周期，当前 sequence 才能更新 `.cancelled`/`.possible` 和单指收尾。保留 12pt pan、第二/第三指抢占、pinch-only zoom、Select Area drag-end 独占提交、pending command 优先级和已知 seed 后无法绝对区分旧触点的保守风险。
-- 长按上下文命中先取真实几何范围内的可见敌方，再使用既有 44pt 扩展命中；选中单位空点优先 Move，只有没有选中单位时才尝试生产建筑 Rally。dock header 在无离散状态时显示派生触控提示，Attack target pending 时主战场在雾层下为 primary 己方作战单位绘制低透明攻击范围圆/四向刻度。
+- 长按上下文命中先取真实几何范围内的可见敌方，再使用既有 44pt 扩展命中；选中单位空点优先 Move，只有没有选中单位时才尝试生产建筑 Rally。dock header 在无离散状态且未选中生产建筑时显示派生触控提示，生产建筑保留 Production / Factory Tech 首屏，避免提示卡挤压生产按钮；Attack target pending 时主战场在雾层下为 primary 己方作战单位绘制低透明攻击范围圆/四向刻度。
 
 关键文件：
 
