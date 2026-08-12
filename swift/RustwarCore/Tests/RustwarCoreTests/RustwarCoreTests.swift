@@ -2191,7 +2191,7 @@ import Testing
         $0.team == .player && $0.type.isCombatUnit && $0.id != attacker.id
     })
     let patroller = try #require(engine.state.units.first {
-        $0.team == .player && $0.type.isCombatUnit && $0.id != attacker.id && $0.id != attackMover.id
+        $0.team == .player && $0.type == .builder && $0.id != movingUnit.id
     })
     let enemyTank = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
     let factory = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .landFactory })

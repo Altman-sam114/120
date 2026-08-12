@@ -5736,7 +5736,8 @@
 
 - 按用户云端唯一验证制度，本轮未运行本地测试、Swift/Xcode build、Simulator、Preview、截图、浏览器验证或 `git diff --check`；只读 `git status` / `git diff` / `rg` 用于范围控制。
 - 首轮实现提交 `eca56e80ee53432284b77bffe48a67f6694be478` 的 Actions run `31593602749` / attempt 1 / job `94103867653` 已由 Agent C 下载 artifact `rustwar-ci-v1.2-main-eca56e8-run31593602749-attempt1` 到 `/private/tmp/rustwar-c-review-31593602749/`，目录约 1.7M。manifest 的 branch/SHA/run/attempt、Xcode 26.5、iOS Simulator SDK 26.5 完全匹配；Xcode list/build、双 Simulator 启动、两份截图和 pixel probe 成功，但 `git diff --check` 因 prompt EOF 多一个空白行失败，Swift Core 331 tests 中 3 个旧测试仍隐式选中 Builder，产生 6 个断言问题（stance、JSON round-trip 和 restored combat fixture）。该 run 不通过，已退回追加测试 fixture/断言修复。
-- 修复提交待完成并重新 push；Agent C 必须以修复后的最新 commit 对应 manifest、JUnit、日志、失败摘要和双 PNG artifact 复判，不能沿用本次失败包或 v2.48 artifact。
+- 修复提交 `83eec750207a9f7a50c31a26a32f106d91e55da5` 的 Actions run `31594256200` / attempt 1 / job `94105937238` 已由 Agent C 下载 artifact `rustwar-ci-v1.2-main-83eec75-run31594256200-attempt1` 到 `/private/tmp/rustwar-c-review-31594256200/`，目录约 1.7M。manifest 的 branch/SHA/run/attempt 完全匹配，`git diff --check`、Xcode list/build、双 Simulator 启动、两份截图和 pixel probe 均成功；Swift Core 只剩 1 个旧 JSON fixture 因 Coast 只有 2 个 combat unit 而要求第三个 combat patroller，已定位并追加最小测试 fixture 修复。该 run 仍不通过。
+- 修复提交待再次 push；Agent C 必须以修复后的最新 commit 对应 manifest、JUnit、日志、失败摘要和双 PNG artifact 复判，不能沿用本次失败包或 v2.48 artifact。
 
 已知风险：
 
