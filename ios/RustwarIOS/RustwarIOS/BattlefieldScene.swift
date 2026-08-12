@@ -2211,6 +2211,12 @@ final class BattlefieldScene: SKScene {
     ) {
         let definition = GameDefinitions.unit(unit.type)
         let isSelected = selectedIDs.contains(unit.id)
+        if isSelected,
+           unit.id == primarySelectedID,
+           unit.team == .player,
+           controller?.isAwaitingAttackTarget == true {
+            drawAttackRangePreview(for: unit, attackRange: definition.attackRange)
+        }
         // Order lines only follow the current selection, matching Rusted Warfare's low-noise battlefield.
         if isSelected, controller?.cloudVisualScenario != .combat {
             switch unit.order {
@@ -2274,6 +2280,56 @@ final class BattlefieldScene: SKScene {
         }
         drawHealthBar(current: unit.hitPoints, max: unit.maxHitPoints, width: definition.radius * 2.4, yOffset: definition.radius + 8, on: node)
         entityNode.addChild(node)
+    }
+
+    private func drawAttackRangePreview(for unit: UnitSnapshot, attackRange: Double) {
+        guard attackRange.isFinite, attackRange > 0 else {
+            return
+        }
+
+        let center = spritePoint(for: unit.position)
+        let path = CGMutablePath()
+        let segmentCount = 32
+        let gapEvery = 4
+        for index in 0..<segmentCount where index % gapEvery != gapEvery - 1 {
+            let startAngle = Double(index) * 2 * Double.pi / Double(segmentCount)
+            let endAngle = Double(index + 1) * 2 * Double.pi / Double(segmentCount)
+            path.move(to: CGPoint(
+                x: center.x + CGFloat(cos(startAngle) * attackRange),
+                y: center.y + CGFloat(sin(startAngle) * attackRange)
+            ))
+            path.addLine(to: CGPoint(
+                x: center.x + CGFloat(cos(endAngle) * attackRange),
+                y: center.y + CGFloat(sin(endAngle) * attackRange)
+            ))
+        }
+
+        let ring = SKShapeNode(path: path)
+        ring.strokeColor = SKColor.systemOrange.withAlphaComponent(0.72)
+        ring.lineWidth = 2
+        ring.lineCap = .round
+        ring.zPosition = -3
+        entityNode.addChild(ring)
+
+        let tickPath = CGMutablePath()
+        let innerRadius = Swift.max(0, attackRange - 8)
+        let outerRadius = attackRange + 8
+        for angle in stride(from: 0.0, to: Double.pi * 2, by: Double.pi / 2) {
+            tickPath.move(to: CGPoint(
+                x: center.x + CGFloat(cos(angle) * innerRadius),
+                y: center.y + CGFloat(sin(angle) * innerRadius)
+            ))
+            tickPath.addLine(to: CGPoint(
+                x: center.x + CGFloat(cos(angle) * outerRadius),
+                y: center.y + CGFloat(sin(angle) * outerRadius)
+            ))
+        }
+        let ticks = SKShapeNode(path: tickPath)
+        ticks.strokeColor = SKColor.systemYellow.withAlphaComponent(0.86)
+        ticks.lineWidth = 2.2
+        ticks.lineCap = .round
+        ticks.zPosition = -2.9
+        entityNode.addChild(ticks)
     }
 
     private func unitBody(

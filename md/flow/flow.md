@@ -141,6 +141,8 @@ v2.46 将 `BattlefieldView` 的并行 SwiftUI 手势收敛为单一 `Battlefield
 
 v2.46.1 继续修正取消 epoch 的两个边界：context 起点比较改为 1pt 容差并显式转换为 `Double`；context end 若时间迟到或已取消，结束单指序列时保留 `.cancelled`，不再把旧 pan 或 touch ID 重新释放为 `.possible`，迟到的 drag changed 也必须满足当前 pan 仍活动或本序列尚未发生 pan 才能 acquire。当 Select Area 仍持有活动起点时，context end 不抢先结束 area owner，交由 drag end 完成一次合法区域选择。地图 reset 尚未登记 Spatial touch ID 时，unknown active touch 必须先经过 context seed 才能清除 cancellation epoch，降低旧 Spatial 首帧误被视为 fresh 的风险；seed 后 SwiftUI 仍无法仅凭现有回调绝对区分迟到旧触点，已登记的取消 ID 仍只允许未取消 ID 重新播种。Core、命令、HUD、战斗、存档和 JSON 合同保持不变。
 
+v2.47 继续收敛 iOS 触控 UX：`SpatialEventGesture.onEnded` 只有在真实双指/多指序列成立时才清理多指状态、推进 `battlefieldTouchSequence` 并提交区域框选，普通单指 finish 不再与 context/pan end 争夺 owner；单指触点取消会同步标记 context cancelled。context end 保存结束时的 touch sequence，旧 sequence 只 teardown，当前 sequence 才能更新 `.cancelled`/`.possible`；tap 与 long press 拒绝取消 epoch 和不匹配的 context sequence。长按上下文命中先尝试真实几何范围内的可见敌方，再使用 44pt 扩展命中；选中单位空点优先 Move，只有没有选中单位时才设置生产建筑 Rally。HUD header 在无离散状态时显示点地/点敌、多指框选、平移和捏合的派生提示；Attack target pending 时 `BattlefieldScene` 在雾层下绘制 primary 己方作战单位的低透明攻击范围圆和四向刻度。所有新增内容仍只读现有 controller/Core 快照，不新增 Core/JSON/存档状态或玩法数值。
+
 ```text
 RustwarCore MapPreset / GameState / GameEngine
   -> ios/RustwarIOS GameController(@Observable)

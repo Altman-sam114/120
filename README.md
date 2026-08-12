@@ -80,6 +80,7 @@
 - v2.44 起，iOS 单指拖动镜头跨过 8pt 后会持续抑制 tap，并阻止误触长按上下文命令；多指框选在触点替换时拒绝当前序列，仍与捏合缩放互斥。直接点存活己方建筑在 Replace/Add 或重复点按循环中都会聚焦为单建筑上下文，dock 自动显示生产、队列、集结点和可用升级；紧凑 dock 的生产按钮改为两列以保留可读的单位名、成本和 44pt 命中高度。无等待命令时点己方单位仍选择，点可见敌人直接 Attack，点空地复用 Attack-Move 自动接敌；Hover / Gunboat 增加确定性下腹、座舱、喷口、船体内衬、舱口和窗舷细节，炮塔 heading、炮管后坐、Core、战斗数值和存档不变。
 - v2.46 起，主战场触摸由单一 `BattlefieldTouchIntent` owner 仲裁 tap、long press、pan、Select Area、双指框选和 pinch：普通 pan 激活阈值提高到 12pt，第二指/第三指、取消或触点 ID 替换会立即抢占并取消旧单指回调，pinch 只由 pinch owner 缩放；框选结束只在 area owner 仍有效时提交。地图切换或重置会记录旧 Spatial touch ID、递增取消 epoch 并清空 touch ID，旧 Spatial/context 回调在新 Spatial 触点确认前不能重新获得 owner；context 结束会拆除当前手势生命周期而不覆盖新手势。
 - v2.46.1 起，继续收紧主战场手势的取消边界：context 起点允许 1pt 的浮点误差但显式按 `Double` 计算；迟到或取消的 context end 在结束单指序列时保留 `.cancelled`，不会把旧 pan 重新放行，迟到的 drag changed 也不能重新取得 `.pan`；Select Area owner 存在时 context end 不会抢先清掉 area drag。地图 reset 若尚未登记 Spatial touch ID，会先等待 context seed 再接受未知 active touch，降低旧 Spatial 首帧被当作新触摸的风险；seed 后仍无法仅凭 SwiftUI 回调绝对区分迟到旧触点，确认 fresh touch 后才清除 cancellation epoch。Core、命令优先级、HUD、战斗和存档合同不变。
+- v2.47 起，原生 iOS 继续收紧触控回调：普通单指的 `SpatialEventGesture` finish 不再无条件推进 touch sequence、清空 touch ID 或释放当前 owner，只有真实双指/多指序列才提交框选并收尾；Spatial cancel 会同步取消 context，tap/long press 还会拒绝 cancelled epoch 与不匹配的 context sequence。迟到旧 context end 只清理自身生命周期，不再改写新触摸；长按上下文对真实可见敌方优先 Attack，选中单位空点优先 Move，单独生产建筑仍可设置 Rally。无 command status 时 dock header 显示操作提示，Attack target pending 时主战场为 primary 己方作战单位显示低透明攻击范围预览圈；均为 presentation/派生状态，不改变 Core、命令、存档或战斗数值。
 
 当前验证制度：
 

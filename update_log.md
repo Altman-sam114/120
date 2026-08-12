@@ -5636,3 +5636,36 @@
 遗留事项：
 
 - CI 仍没有 XCUITest，无法自动证明真实第二指抢占、context/drag 回调乱序，或在 reset 无 Spatial ID 时 seed 后区分迟到旧回调与真实新触点；长按/拖动手感、VoiceOver、Dynamic Type、旋转和真机长期帧率也未覆盖。后续可把 touch owner reducer 抽成可注入时钟/触点 ID 的纯 Swift 模块并增加云端 Swift Testing。
+
+### v2.47 / iOS touch finish and battlefield guidance
+
+日期：2026-08-12
+
+核心变更：
+
+- `BattlefieldView.finishMultitouchSelection` 现在只在真实双指/多指序列成立时清理多指状态、推进 `battlefieldTouchSequence`、释放 touch ID 和提交区域框选；普通单指的 `SpatialEventGesture.onEnded` 不再与 context/pan end 争夺 owner。Spatial touch cancel 会同步标记 context cancelled，tap 与 long press 会拒绝 cancelled epoch 或不匹配的 context sequence。
+- context end 保存结束时的 sequence；起点漂移仍走 stale teardown，旧 sequence 结束回调只清理 context 生命周期，当前 sequence 才能更新 `.cancelled`/`.possible` 和单指收尾。保留 12pt pan、第二/第三指抢占、pinch-only zoom、Select Area drag-end 独占提交、pending command 优先级和已知 seed 后无法绝对区分旧触点的保守风险。
+- 长按上下文命中先取真实几何范围内的可见敌方，再使用既有 44pt 扩展命中；选中单位空点优先 Move，只有没有选中单位时才尝试生产建筑 Rally。dock header 在无离散状态时显示派生触控提示，Attack target pending 时主战场在雾层下为 primary 己方作战单位绘制低透明攻击范围圆/四向刻度。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockHeaderView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalBattlefieldHintView.swift`
+- `ios/RustwarIOS/RustwarIOS.xcodeproj/project.pbxproj`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.47-ios-touch-guidance-and-attack-preview.md`
+
+验证状态：
+
+- 按云端唯一验证制度未运行任何本地测试、Swift/Xcode build、Simulator、Preview、截图、浏览器验证或 `git diff --check`；`git status` / `git diff` 仅用于范围控制。
+- 本轮实现提交后，Agent C 必须只下载与最新 `origin/main` 完全一致的 `Rustwar CI Results` artifact，核对 manifest、JUnit、主日志、失败摘要、repo state、production/combat PNG 与 metrics；无 XCUITest 时不得宣称真实触摸回调顺序或手感已验证。
+
+已知风险：
+
+- SwiftUI 在 seed 之后仍可能缺少可区分旧 context 回调和真实新触点的共同 touch ID；本轮用 sequence、时间、取消 epoch 和保守拒绝降低误派命令风险，但不能静态证明极端回调乱序已完全消除。

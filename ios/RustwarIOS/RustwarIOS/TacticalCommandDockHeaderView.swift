@@ -12,6 +12,13 @@ struct TacticalCommandDockHeaderView: View {
                 radarUpgradeSummary: controller.selectedRadarUpgradeSummary,
                 extractorUpgradeSummary: controller.selectedExtractorUpgradeSummary
             )
+            if controller.commandStatus == nil {
+                TacticalBattlefieldHintView(
+                    title: controller.battlefieldInteractionHintTitle,
+                    detail: controller.battlefieldInteractionHintDetail,
+                    systemImage: controller.battlefieldInteractionHintSystemImage
+                )
+            }
             if let commandStatus = controller.commandStatus {
                 TacticalCommandStatusView(
                     text: commandStatus,

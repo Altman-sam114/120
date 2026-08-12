@@ -305,6 +305,80 @@ final class GameController {
         engine.state.selectionSummary()
     }
 
+    var battlefieldInteractionHintTitle: String {
+        if isAwaitingAreaSelection {
+            return "Area selection"
+        }
+        if isAwaitingAttackTarget {
+            return "Attack target"
+        }
+        if isAwaitingMoveTarget {
+            return "Move target"
+        }
+        if isAwaitingAttackMoveTarget {
+            return "Attack-move target"
+        }
+        if selectedPlayerProducer != nil {
+            return "Factory selected"
+        }
+        if !selectedPlayerUnits.isEmpty {
+            return selectedPlayerUnits.count == 1
+                ? "Quick command"
+                : "Quick command • \(selectedPlayerUnits.count) units"
+        }
+        if hasPlayerSelectableSelection {
+            return "Selection ready"
+        }
+        return "Battlefield controls"
+    }
+
+    var battlefieldInteractionHintSystemImage: String {
+        if isAwaitingAreaSelection {
+            return "rectangle.dashed"
+        }
+        if isAwaitingAttackTarget {
+            return "scope"
+        }
+        if isAwaitingMoveTarget {
+            return "arrow.up.right"
+        }
+        if isAwaitingAttackMoveTarget {
+            return "arrow.up.right.circle"
+        }
+        if selectedPlayerProducer != nil {
+            return "gearshape.2"
+        }
+        if !selectedPlayerUnits.isEmpty {
+            return "hand.tap"
+        }
+        return "hand.draw"
+    }
+
+    var battlefieldInteractionHintDetail: String {
+        if isAwaitingAreaSelection {
+            return "Drag a rectangle on the battlefield to select units."
+        }
+        if isAwaitingAttackTarget {
+            return "Tap a visible enemy unit or building. The ring shows this unit's attack range."
+        }
+        if isAwaitingMoveTarget {
+            return "Tap a destination. Drag empty space to pan and pinch to zoom."
+        }
+        if isAwaitingAttackMoveTarget {
+            return "Tap a destination to move and automatically engage nearby enemies."
+        }
+        if selectedPlayerProducer != nil {
+            return "Tap a unit card to queue it; Build & Upgrade stays below."
+        }
+        if !selectedPlayerUnits.isEmpty {
+            return "Tap empty ground to attack-move • tap a visible enemy to attack."
+        }
+        if hasPlayerSelectableSelection {
+            return "Tap a unit or building; two-finger drag box-selects, drag pans, pinch zooms."
+        }
+        return "Tap a unit or building to select; drag pans, pinch zooms, and two fingers box-select."
+    }
+
     var dockSelectionIdentity: [String] {
         if !engine.state.selectedEntityIDs.isEmpty {
             return engine.state.selectedEntityIDs
@@ -1905,11 +1979,7 @@ final class GameController {
     }
 
     private func issueContextCommand(at point: WorldPoint, minimumHitRadius: Double = 0) {
-        if let target = engine.state.selectionTargetVisibleToPlayer(
-            at: point,
-            includeEnemies: true,
-            minimumHitRadius: minimumHitRadius
-        ) {
+        if let target = contextTarget(at: point, minimumHitRadius: minimumHitRadius) {
             issueContextEntityCommand(target)
             return
         }
@@ -1928,16 +1998,34 @@ final class GameController {
             return
         }
 
-        let rallyResult = engine.setRally(to: point)
-        if case .issued = rallyResult {
-            commandStatus = statusText(forRally: rallyResult)
-            reportCommandFeedback(for: rallyResult, confirmation: .rally, at: point)
-            return
+        if selectedPlayerUnits.isEmpty {
+            let rallyResult = engine.setRally(to: point)
+            if case .issued = rallyResult {
+                commandStatus = statusText(forRally: rallyResult)
+                reportCommandFeedback(for: rallyResult, confirmation: .rally, at: point)
+                return
+            }
         }
 
         let moveResult = engine.issueMove(to: point)
         commandStatus = statusText(for: moveResult)
         reportCommandFeedback(for: moveResult, confirmation: .move, at: point)
+    }
+
+    private func contextTarget(at point: WorldPoint, minimumHitRadius: Double) -> SelectionTarget? {
+        if let exactEnemy = engine.state.selectionTargetVisibleToPlayer(
+            at: point,
+            includeEnemies: true,
+            minimumHitRadius: 0,
+            targetTeam: .enemy
+        ) {
+            return exactEnemy
+        }
+        return engine.state.selectionTargetVisibleToPlayer(
+            at: point,
+            includeEnemies: true,
+            minimumHitRadius: minimumHitRadius
+        )
     }
 
     private func issueContextEntityCommand(_ target: SelectionTarget) {

@@ -884,3 +884,25 @@ flowchart TD
   U --> F
   T["context start location drift <= 1pt"] --> H["accept with explicit Double distance"]
 ```
+
+## v2.47 iOS touch finish and battlefield guidance
+
+```mermaid
+flowchart TD
+  S["SpatialEventGesture.onEnded"] --> M{"real multitouch sequence?"}
+  M -->|"no: ordinary single touch"| K["leave sequence/owner cleanup to context or pan end"]
+  M -->|"yes"| R["commit eligible area preview; reset multitouch; advance sequence"]
+  C["Spatial touch cancelled"] --> X["cancel context owner + reject tap/long press"]
+  E["context onEnded"] --> Q{"ending sequence == current sequence?"}
+  Q -->|"no: stale"| T["teardown context only"]
+  Q -->|"yes"| A["apply accepted/cancelled owner transition"]
+  L["long press context target"] --> V["exact visible enemy first"]
+  V -->|"enemy"| AT["Attack"]
+  V -->|"no enemy"| H["friendly repair/guard or point command"]
+  H -->|"selected units"| MV["empty point -> Move"]
+  H -->|"producer only"| RA["empty point -> Rally"]
+  G["no command status"] --> HUD["derived touch hint in dock header"]
+  P["Attack target pending"] --> AR["primary unit range ring under fog"]
+```
+
+读图说明：v2.47 只修正 SwiftUI 触控 finish 的 owner 竞态，并增加派生提示与攻击范围 presentation；不新增 Core 命令、存档字段、战斗数值或触控自动化。静态云端 smoke 仍不能证明真实回调顺序和多指手感。
