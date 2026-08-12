@@ -5768,7 +5768,10 @@
 验证状态：
 
 - 按云端唯一验证制度，本轮未运行本地 SwiftPM test、Xcode build/list、Simulator、Preview、浏览器或本地 `git diff --check`；只读 `git status`、`git diff`、`git show`、`rg` 用于审查范围和文档顺序。
-- Agent B 完成本轮后只推送 `main`，Agent C 必须验收与最新 `origin/main` 完全匹配的 Actions run/artifact，核对 manifest、JUnit、主日志、失败摘要、repo state、toolchain、双架构 build、production/combat 双启动、横屏归一化和双 pixel probe；`.wp` 不纳入提交。
+- 首轮实现提交 `77f90c8ca461bd7a464ce64a57a6e149722f71a3` 的 Actions run `31625172737` / attempt 1 已上传 artifact `rustwar-ci-v1.2-main-77f90c8-run31625172737-attempt1` 到 `/private/tmp/rustwar-c-review-31625172737/`，但未通过：静态检查和 Xcode project list 成功，Swift Testing 的 mutating `cancel()` 断言与 `BattlefieldView` 五个 `some Gesture` helper 缺少显式 `return`，导致 Core test / iOS build 失败，未生成 PNG。已按真实日志追加最小修复提交 `8b9653994a7de9b30c381b6fe6c9e3aa99e1aab3`。
+- 修复提交 `8b9653994a7de9b30c381b6fe6c9e3aa99e1aab3` 的 Actions run `31626087122` / attempt 1 / job `94212692960` 成功；artifact `rustwar-ci-v1.2-main-8b96539-run31626087122-attempt1` 已用 `Altman-sam114` 上下文下载并核对到 `/private/tmp/rustwar-c-review-31626087122/`，`du -sh` 约 1.7M。manifest 已完全匹配 `branch=main`、完整 `commitSha`、run id、attempt、Xcode 26.5、iOS Simulator SDK 26.5、固定 iPhone 17 Pro；JUnit 为 8 checks、0 failures、1 个既定 browser skip，Swift Core 为 340 tests passed，`git diff --check`、`node --check app.js`、Xcode list、arm64/x86_64 build、production/combat 双启动、横屏归一化和双 pixel probe 全部 success。
+- 最终 Home PNG 为 2622x1206、透明比例 `0.0`、mean luminance `79.19431299053907`、std `42.65921361496916`，SHA-256 `07569aa514ce8735fd60dea90c622bb8febe40c26a362b2b45597f513e25788f`；Combat PNG 为 2622x1206、透明比例 `0.0`、mean luminance `75.02645376928898`、std `42.153236434519705`，SHA-256 `ce9b64b0d1bc9987fbbb6d4d7269f1d95a84f102c040bb4f17c77113f01161f1`。人工复看确认 Home 的 Land Factory T2 / NOW / QUEUE / UPGRADE、生产 section 和小地图未裁切，Combat 的 5 个作战单位、Attack target pending、range ring、弹道、爆点、建筑和 Tactical Map 无明显静态视觉回退。
+- v2.52 实现代码最终以 `8b9653994a7de9b30c381b6fe6c9e3aa99e1aab3` 通过云端验收；`.wp` 保留为未跟踪文件，未进入提交或 artifact。
 
 已知风险：
 
