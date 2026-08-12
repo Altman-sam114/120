@@ -5697,7 +5697,8 @@
 验证状态：
 
 - 按云端唯一验证制度，本轮未运行本地测试、Swift/Xcode build、Simulator、Preview、截图、浏览器验证或 `git diff --check`；只读 `git status` / `git diff` 用于控制范围。
-- 当前实现尚未 push，新的 Actions run、run attempt 和 artifact 尚不存在；提交后 Agent C 必须只下载与最新 `origin/main` 完全一致的结果包，并核对 manifest、JUnit、主日志、失败摘要、repo state、Home/Combat PNG 及目录大小。
+- 首轮实现提交 `be371367912e8f33d50d7e68a3d091e9111fd717` 的 Actions run `31584331941` / attempt 1 已由 Agent C 下载 artifact `rustwar-ci-v1.2-main-be37136-run31584331941-attempt1` 到 `/private/tmp/rustwar-c-review-31584331941/`，目录约 276K。manifest 的 branch/SHA/run/attempt 与 `origin/main` 一致；toolchain、static checks、Swift Core 327+ tests 和 Xcode project list 成功，但 Xcode build 失败，原因是 iOS target 误调用 Core `fileprivate` 的 `WorldPoint.clampedToMap()`，Simulator/双 PNG 因 build 失败未执行。
+- 本次追加修复改为复用 `GameController.clampedMapPoint(_:)`；修复提交后的 Actions run 与 artifact 仍待 Agent C 按最新 `origin/main` SHA 重新下载核对。
 
 已知风险：
 

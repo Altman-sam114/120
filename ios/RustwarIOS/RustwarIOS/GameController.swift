@@ -1265,7 +1265,7 @@ final class GameController {
     }
 
     private func canPreviewBuilding(_ buildingType: BuildingType, at point: WorldPoint) -> Bool {
-        let position = point.clampedToMap()
+        let position = clampedMapPoint(point)
         switch engine.state.terrain.terrain(at: position) {
         case .water, .deep, .lava:
             return false
