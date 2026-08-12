@@ -930,3 +930,22 @@ flowchart TD
 ```
 
 读图说明：v2.48 的 reticle 只存在于 SpriteKit presentation 层；命中预测与最终 tap 共享可见性/命中语义，但真正的命令仍只在既有结束事件提交。当前 CI 没有 XCUITest，不能把静态 PNG 当作真实触控顺序或设备手感证据。
+
+## v2.49 iOS Builder / Combat command eligibility
+
+```mermaid
+flowchart TD
+  S["Selected player units"] --> C{"UnitType.isCombatUnit"}
+  C -->|"Builder-only"| B["Move / Build / Repair / Reclaim\nAttack UI hidden"]
+  C -->|"Combat present"| A["Attack / Attack-Move eligible"]
+  M["Mixed selection"] --> MV["Move -> Builder + Combat"]
+  M --> AT["Attack / Attack-Move -> Combat only"]
+  T["Direct battlefield touch"] --> E{"Enemy target?"}
+  E -->|"yes + Combat present"| EA["Attack preview / Attack"]
+  E -->|"yes + Builder-only"| SEL["Normal selection path"]
+  E -->|"empty + Builder-only"| BM["Move preview / Move"]
+  E -->|"empty + Combat present"| AM["Attack-Move preview / Attack-Move"]
+  L["Legacy Builder attack order"] --> R["Clear attack or downgrade Attack-Move to Move"]
+```
+
+读图说明：v2.49 只收敛命令资格和 presentation 预测，不改变 `UnitOrder`、战斗数值或存档 schema；静态云端 smoke 仍不能证明真实触控注入。

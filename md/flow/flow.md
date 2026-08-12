@@ -673,6 +673,14 @@ RustwarCore MapPreset / GameState / GameEngine
 4. context end 或 tap end 才提交原有 `handleBattlefieldTap` / `handleBattlefieldContextCommand`；预览只预测，不提交命令。`handlePointCommand`、`handleBuilderTargetCommand` 和 `handleSelectionTargetCommand` 对无效目标保留 pending target mode，使用户可以修正落点后重试，成功结果仍退出等待态。
 5. combat cloud fixture 仅把 `isAwaitingAttackTarget` 设为 true，以让固定截图同时覆盖攻击范围圈与落点/选择 presentation；普通初始化、Core、战斗数值、AI、生产、JSON/save schema 不变。
 
+## v2.49 iOS Builder / Combat command eligibility
+
+1. `UnitType.isCombatUnit` 是原生 Core 与 iOS presentation 共用的作战资格判定，当前定义为非 Builder；它不改变单位定义中保留的旧攻击参数。
+2. `GameEngine.issueMove` 继续使用全部存活己方单位，`issueAttack` / `issueAttackMove` 改用 `selectedPlayerCombatUnitIndices()`；Builder-only 返回 `.selectedEntityCannotAttack`，混合选择只给作战单位写入攻击订单。
+3. 读取旧状态后，Builder 的 `.attack` 订单在下一次模拟更新清除，Builder 的 `.attackMove` 先降级为 `.move` 再沿用原移动推进，避免旧存档继续造成 Builder 攻击。
+4. `GameController` 的 Attack / Attack Move 按钮资格、数量文案、敌方精确命中、预览 intent 和直接点按共享 combat selection；Builder-only 空地点按普通 Move，敌方目标回到选择路径；`BattlefieldScene` 的 primary attack range 也只寻找作战单位。
+5. Patrol / Guard / Repair / Reclaim / Build 等既有资格和 v2.48 手势 owner 不在本轮改变；Core 新测试覆盖 Builder-only 拒绝、混合攻击隔离、混合移动保留和旧 Builder Attack 清除。
+
 ## 3. 架构边界
 
 - Web 前端：`index.html`、`styles.css`、`app.js`。

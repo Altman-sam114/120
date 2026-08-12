@@ -3706,6 +3706,78 @@ import Testing
     #expect(engine.issueAttackMove(to: WorldPoint(1_200, 2_000)) == .selectedEntityCannotAttack)
 }
 
+@Test func attackCommandsRejectBuilderOnlySelectionWithoutChangingOrder() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let enemy = try #require(state.units.first { $0.team == .enemy && $0.type != .builder })
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    state.units[builderIndex].order = .move(destination: WorldPoint(1_500, 2_100))
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = [builder.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueAttack(targetID: enemy.id) == .selectedEntityCannotAttack)
+    #expect(engine.issueAttackMove(to: WorldPoint(1_700, 2_100)) == .selectedEntityCannotAttack)
+    if case .move(destination: _)? = engine.state.units.first(where: { $0.id == builder.id })?.order {
+        #expect(Bool(true))
+    } else {
+        #expect(Bool(false))
+    }
+}
+
+@Test func attackCommandsAssignOrdersOnlyToSelectedCombatUnits() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let attacker = try #require(state.units.first { $0.team == .player && $0.type != .builder })
+    let enemy = try #require(state.units.first { $0.team == .enemy && $0.type != .builder })
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = [builder.id, attacker.id]
+    var attackEngine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(attackEngine.issueAttack(targetID: enemy.id) == .issued)
+    if case let .attack(targetID)? = attackEngine.state.units.first(where: { $0.id == attacker.id })?.order {
+        #expect(targetID == enemy.id)
+    } else {
+        #expect(Bool(false))
+    }
+    #expect(attackEngine.state.units.first(where: { $0.id == builder.id })?.order == nil)
+
+    var attackMoveEngine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(attackMoveEngine.issueAttackMove(to: WorldPoint(1_700, 2_100)) == .issued)
+    if case .attackMove(destination: _)? = attackMoveEngine.state.units.first(where: { $0.id == attacker.id })?.order {
+        #expect(Bool(true))
+    } else {
+        #expect(Bool(false))
+    }
+    #expect(attackMoveEngine.state.units.first(where: { $0.id == builder.id })?.order == nil)
+}
+
+@Test func moveCommandStillAppliesToMixedBuilderAndCombatSelection() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let attacker = try #require(state.units.first { $0.team == .player && $0.type != .builder })
+    state.selectedEntityID = builder.id
+    state.selectedEntityIDs = [builder.id, attacker.id]
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    #expect(engine.issueMove(to: WorldPoint(1_700, 2_100)) == .issued)
+    #expect(engine.state.units.first(where: { $0.id == builder.id })?.order != nil)
+    #expect(engine.state.units.first(where: { $0.id == attacker.id })?.order != nil)
+}
+
+@Test func legacyBuilderAttackOrderIsClearedAfterLoad() throws {
+    var state = GameState(mapID: .coast)
+    let builder = try #require(state.units.first { $0.team == .player && $0.type == .builder })
+    let enemy = try #require(state.units.first { $0.team == .enemy && $0.type != .builder })
+    let builderIndex = try #require(state.units.firstIndex { $0.id == builder.id })
+    state.units[builderIndex].order = .attack(targetID: enemy.id)
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+
+    engine.update(deltaTime: 0.1)
+
+    #expect(engine.state.units.first(where: { $0.id == builder.id })?.order == nil)
+}
+
 @Test func attackMoveCommandAppliesToSelectedPlayerCombatGroup() throws {
     let initialState = GameState(mapID: .coast)
     var moveEngine = GameEngine(state: initialState, enemyAIEnabled: false)

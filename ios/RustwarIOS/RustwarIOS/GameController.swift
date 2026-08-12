@@ -468,7 +468,7 @@ final class GameController {
     }
 
     var canSelectCombatUnits: Bool {
-        engine.state.units.contains { $0.team == .player && $0.type != .builder }
+        engine.state.units.contains { $0.team == .player && $0.type.isCombatUnit }
     }
 
     var canSelectScreenCombatUnits: Bool {
@@ -484,7 +484,7 @@ final class GameController {
     }
 
     var combatUnitsButtonTitle: String {
-        let count = engine.state.units.count(where: { $0.team == .player && $0.type != .builder })
+        let count = engine.state.units.count(where: { $0.team == .player && $0.type.isCombatUnit })
         return "Combat Units (\(count))"
     }
 
@@ -506,7 +506,7 @@ final class GameController {
     }
 
     var canIssueAttack: Bool {
-        !selectedPlayerUnits.isEmpty
+        !selectedPlayerCombatUnits.isEmpty
     }
 
     var canSetAttackStance: Bool {
@@ -525,7 +525,7 @@ final class GameController {
     }
 
     var canIssueAttackMove: Bool {
-        !selectedPlayerUnits.isEmpty
+        !selectedPlayerCombatUnits.isEmpty
     }
 
     var canIssuePatrol: Bool {
@@ -1110,7 +1110,7 @@ final class GameController {
             return
         } else {
             let previousSelection = engine.state.selectedEntityIDs
-            if !selectedPlayerUnits.isEmpty,
+            if !selectedPlayerCombatUnits.isEmpty,
                let exactEnemyTarget = engine.state.selectionTargetVisibleToPlayer(
                    at: point,
                    includeEnemies: true,
@@ -1171,7 +1171,10 @@ final class GameController {
             return BattlefieldTouchPreview(point: point, intent: .move)
         }
         if isAwaitingAttackMoveTarget {
-            return BattlefieldTouchPreview(point: point, intent: .attackMove)
+            return BattlefieldTouchPreview(
+                point: point,
+                intent: selectedPlayerCombatUnits.isEmpty ? .invalid : .attackMove
+            )
         }
         if isAwaitingPatrolTarget {
             return BattlefieldTouchPreview(point: point, intent: .move)
@@ -1234,10 +1237,13 @@ final class GameController {
                 minimumHitRadius: battlefieldTouchTargetWorldRadius,
                 targetTeam: .enemy
             )
-            return BattlefieldTouchPreview(point: point, intent: target == nil ? .invalid : .attack)
+            return BattlefieldTouchPreview(
+                point: point,
+                intent: selectedPlayerCombatUnits.isEmpty || target == nil ? .invalid : .attack
+            )
         }
 
-        if !selectedPlayerUnits.isEmpty,
+        if !selectedPlayerCombatUnits.isEmpty,
            let exactEnemyTarget = engine.state.selectionTargetVisibleToPlayer(
                at: point,
                includeEnemies: true,
@@ -1255,13 +1261,16 @@ final class GameController {
         if let target {
             return BattlefieldTouchPreview(
                 point: target.position,
-                intent: target.team == .enemy && !selectedPlayerUnits.isEmpty ? .attack : .select
+                intent: target.team == .enemy && !selectedPlayerCombatUnits.isEmpty ? .attack : .select
             )
         }
         guard !selectedPlayerUnits.isEmpty else {
             return nil
         }
-        return BattlefieldTouchPreview(point: point, intent: .attackMove)
+        return BattlefieldTouchPreview(
+            point: point,
+            intent: selectedPlayerCombatUnits.isEmpty ? .move : .attackMove
+        )
     }
 
     private func canPreviewBuilding(_ buildingType: BuildingType, at point: WorldPoint) -> Bool {
@@ -1391,7 +1400,9 @@ final class GameController {
         } else if canIssueAttack {
             clearPendingTargetCommands()
             isAwaitingAttackTarget = true
-            commandStatus = selectedPlayerUnits.count > 1 ? "Attack target for \(selectedPlayerUnits.count) units" : "Attack target"
+            commandStatus = selectedPlayerCombatUnits.count > 1
+                ? "Attack target for \(selectedPlayerCombatUnits.count) combat units"
+                : "Attack target"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -1420,7 +1431,9 @@ final class GameController {
         } else if canIssueAttackMove {
             clearPendingTargetCommands()
             isAwaitingAttackMoveTarget = true
-            commandStatus = selectedPlayerUnits.count > 1 ? "Attack-move target for \(selectedPlayerUnits.count) units" : "Attack-move target"
+            commandStatus = selectedPlayerCombatUnits.count > 1
+                ? "Attack-move target for \(selectedPlayerCombatUnits.count) combat units"
+                : "Attack-move target"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -2076,11 +2089,19 @@ final class GameController {
             return false
         }
 
+        if target != nil && selectedPlayerCombatUnits.isEmpty {
+            return false
+        }
+
         clearLastBattlefieldTap()
         if let target {
             let result = engine.issueAttack(targetID: target.id)
             commandStatus = statusText(forAttack: result)
             reportCommandFeedback(for: result, confirmation: .attack, at: target.position)
+        } else if selectedPlayerCombatUnits.isEmpty {
+            let result = engine.issueMove(to: point)
+            commandStatus = statusText(for: result)
+            reportCommandFeedback(for: result, confirmation: .move, at: point)
         } else {
             let result = engine.issueAttackMove(to: point)
             commandStatus = statusText(forAttackMove: result)
@@ -2465,7 +2486,7 @@ final class GameController {
     }
 
     private var selectedPlayerCombatUnits: [UnitSnapshot] {
-        selectedPlayerUnits.filter { GameDefinitions.unit($0.type).attackRange > 0 }
+        selectedPlayerUnits.filter { $0.type.isCombatUnit }
     }
 
     private var selectedPlayerProducer: BuildingSnapshot? {
@@ -2548,7 +2569,7 @@ final class GameController {
     private func statusText(forAttack result: UnitCommandResult) -> String? {
         switch result {
         case .issued:
-            let count = selectedPlayerUnits.count
+            let count = selectedPlayerCombatUnits.count
             return count > 1 ? "Attack order issued to \(count) units" : "Attack order issued"
         case .noSelection:
             return "No unit selected"
@@ -2564,7 +2585,7 @@ final class GameController {
     private func statusText(forAttackMove result: UnitCommandResult) -> String? {
         switch result {
         case .issued:
-            let count = selectedPlayerUnits.count
+            let count = selectedPlayerCombatUnits.count
             return count > 1 ? "Attack-move order issued to \(count) units" : "Attack-move order issued"
         case .noSelection:
             return "No unit selected"

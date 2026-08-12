@@ -11,4 +11,8 @@ public enum UnitType: String, CaseIterable, Codable, Hashable, Identifiable, Sen
     public var id: String {
         rawValue
     }
+
+    public var isCombatUnit: Bool {
+        self != .builder
+    }
 }

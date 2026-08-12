@@ -204,6 +204,13 @@
 - 无效 Attack / Guard / Repair / Build / Reclaim 目标会显示红色不可用准星，并保留等待目标模式，用户可直接重新指向有效目标；成功命令仍沿用原有结束事件提交和反馈。
 - pan、第二/第三指、pinch、cancel、long press、地图重置和 tap end 都会清理旧预览及重复点按缓存。combat 云端视觉场景会进入 Attack target pending 以展示攻击范围圈；真实多指、长按顺序和真机手感仍需要 XCUITest/设备验证。
 
+### v2.49 原生 iOS Builder / Combat 命令资格
+
+- Core 现在以 `UnitType.isCombatUnit` 作为作战命令资格：`Attack` 和 `Attack Move` 只向存活己方作战单位派发，Builder-only 选择会得到明确的 attacker required 反馈；`Move` 仍覆盖混合 Builder / Combat 选择。
+- 混合选择执行 Attack 或 Attack Move 时，Builder 保持原订单，不会被错误改写为攻击订单；旧存档中的 Builder Attack 会在模拟 tick 时安全清除，旧 Builder Attack Move 会降级为普通 Move，不需要升级存档 schema。
+- iOS HUD、直接点按和 BattlefieldTouchPreview 共享同一资格：Builder-only 空地直触控显示并提交普通 Move；只有存在作战单位时，敌方目标才显示 Attack、空地才显示 Attack Move；攻击数量文案只统计作战单位。
+- 本轮不改变战斗数值、AI、生产、存档字段、Web 版或 v2.48 手势 owner；生产焦点条、水面命中、武器材质和残骸可读性列入后续独立迭代。
+
 ## 下一步复刻方向
 
 - 继续把 Web 版核心 RTS 命令、战斗、AI、存档和沙盒能力分阶段迁移到 `RustwarCore` 与原生 iOS。

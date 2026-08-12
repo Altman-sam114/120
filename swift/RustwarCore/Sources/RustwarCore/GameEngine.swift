@@ -130,7 +130,7 @@ public struct GameEngine: Sendable {
     @discardableResult
     public mutating func selectPlayerCombatUnits() -> [String] {
         let ids = state.units
-            .filter { $0.team == .player && $0.type != .builder }
+            .filter { $0.team == .player && $0.type.isCombatUnit }
             .map(\.id)
         state.selectedEntityIDs = ids
         state.selectedEntityID = ids.first
@@ -238,7 +238,7 @@ public struct GameEngine: Sendable {
         guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
         }
-        let unitIndices = selectedPlayerUnitIndices()
+        let unitIndices = selectedPlayerCombatUnitIndices()
         guard !unitIndices.isEmpty else {
             return .selectedEntityCannotAttack
         }
@@ -258,7 +258,7 @@ public struct GameEngine: Sendable {
         guard !selectedCommandEntityIDs().isEmpty else {
             return .noSelection
         }
-        let unitIndices = selectedPlayerUnitIndices()
+        let unitIndices = selectedPlayerCombatUnitIndices()
         guard !unitIndices.isEmpty else {
             return .selectedEntityCannotAttack
         }
@@ -937,7 +937,7 @@ public struct GameEngine: Sendable {
     }
 
     private func isAICombatUnit(_ unit: UnitSnapshot) -> Bool {
-        unit.type != .builder
+        unit.type.isCombatUnit
     }
 
     private func enemyAttackTarget(for unit: UnitSnapshot) -> CombatTarget? {
@@ -1238,6 +1238,12 @@ public struct GameEngine: Sendable {
         deltaTime: Double,
         clearsOrderWhenInvalid: Bool
     ) {
+        guard state.units[unitIndex].type.isCombatUnit else {
+            if clearsOrderWhenInvalid {
+                state.units[unitIndex].order = nil
+            }
+            return
+        }
         guard let target = combatTarget(id: targetID),
               target.team != state.units[unitIndex].team else {
             if clearsOrderWhenInvalid {
@@ -1271,6 +1277,11 @@ public struct GameEngine: Sendable {
 
     private mutating func updateAttackMoveOrder(unitIndex: Int, destination: WorldPoint, deltaTime: Double) {
         let unit = state.units[unitIndex]
+        guard unit.type.isCombatUnit else {
+            state.units[unitIndex].order = .move(destination: destination)
+            updateMoveOrder(unitIndex: unitIndex, destination: destination, deltaTime: deltaTime)
+            return
+        }
         let definition = GameDefinitions.unit(unit.type)
         if let target = automaticCombatTarget(for: unit, vision: definition.vision) {
             updateTemporaryAttackTarget(unitIndex: unitIndex, targetID: target.id, deltaTime: deltaTime)
@@ -2367,7 +2378,7 @@ public struct GameEngine: Sendable {
     private func selectedPlayerCombatUnitIndices() -> [Array<UnitSnapshot>.Index] {
         selectedPlayerUnitIndices().filter { index in
             let unit = state.units[index]
-            return unit.hitPoints > 0 && GameDefinitions.unit(unit.type).attackRange > 0
+            return unit.hitPoints > 0 && unit.type.isCombatUnit
         }
     }
 

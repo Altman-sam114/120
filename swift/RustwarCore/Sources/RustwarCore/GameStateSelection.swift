@@ -19,7 +19,7 @@ public extension GameState {
         units.compactMap { unit in
             guard unit.team == .player,
                   unit.hitPoints > 0,
-                  unit.type != .builder,
+                  unit.type.isCombatUnit,
                   rect.contains(unit.position) else {
                 return nil
             }
@@ -238,7 +238,7 @@ public extension GameState {
                 return "\(selectedUnits.count) idle Builders selected"
             }
             if selectedBuildings.isEmpty,
-               selectedUnits.allSatisfy({ $0.team == .player && $0.type != .builder }) {
+               selectedUnits.allSatisfy({ $0.team == .player && $0.type.isCombatUnit }) {
                 return "\(selectedUnits.count) combat units selected"
             }
             return "\(validSelectedEntityIDs.count) entities selected"

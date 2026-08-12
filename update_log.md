@@ -5705,3 +5705,39 @@
 
 - 当前 CI 没有 XCUITest，静态 build/PNG 不能证明真实 tap、长按、两指框选、pinch、回调乱序、VoiceOver、Dynamic Type、Reduce Motion 或真机手感；seed 后旧触点与新触点的共同回调标识风险仍沿用 v2.46.1/v2.47 的保守围栏。
 - Builder 仍会被现有直接 Attack / Attack-Move Core 路径纳入 selected units，触控预览本轮保持与现有行为一致，后续应单独修复 combat-only command eligibility；生产 dock 和水面/武器/残骸视觉也留待下一轮独立处理。
+
+### v2.49 / iOS Builder / Combat command eligibility
+
+日期：2026-08-12
+
+核心变更：
+
+- 新增 `UnitType.isCombatUnit`，把 Core、GameController、直接点按、BattlefieldTouchPreview 和 primary attack range 的作战资格统一到非 Builder 单位。
+- `GameEngine.issueAttack` / `issueAttackMove` 改为只派发给存活作战单位；`issueMove` 仍支持混合 Builder / Combat 选择。Builder-only 返回 `.selectedEntityCannotAttack`，混合选择的 Builder 保持原订单。
+- 对旧状态做兼容：Builder 的 Attack 订单在 update 时清除，Builder 的 Attack-Move 降级为 Move；未新增或改变 UnitOrder、GameState、JSON/save schema。
+- Builder-only 的直接空地触控现在预览并提交 Move；只有作战单位存在时才直接 Attack 或 Attack-Move，HUD 数量只统计实际作战单位。
+- 新增 Core 覆盖：Builder-only 攻击拒绝、混合攻击隔离、混合移动保留和旧 Builder Attack 清除。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/UnitType.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameEngine.swift`
+- `swift/RustwarCore/Sources/RustwarCore/GameStateSelection.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.49-ios-command-eligibility-and-touch-continuity.md`
+
+验证状态：
+
+- 按用户云端唯一验证制度，本轮未运行本地测试、Swift/Xcode build、Simulator、Preview、截图、浏览器验证或 `git diff --check`；只读 `git status` / `git diff` / `rg` 用于范围控制。
+- 当前工作区已完成 v2.49 实现与文档，待提交并推送 `origin/main` 触发最新 Actions；Agent C 必须以最新 commit 对应的 manifest、JUnit、日志、失败摘要和双 PNG artifact 复判，不能沿用 v2.48 artifact。
+
+已知风险：
+
+- 当前 CI 没有 XCUITest；云端 build、Core tests 和静态 PNG 不能证明真实 tap、长按、多指、回调乱序、VoiceOver、Dynamic Type、Reduce Motion 或真机手感。
+- 本轮刻意未改生产焦点条、队列首屏、水面命中、武器材质和残骸可读性，后续按独立小轮次推进。

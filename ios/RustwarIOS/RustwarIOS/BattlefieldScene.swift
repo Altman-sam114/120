@@ -861,7 +861,7 @@ final class BattlefieldScene: SKScene {
             }
             return unit.team == .player &&
                 unit.hitPoints > 0 &&
-                GameDefinitions.unit(unit.type).attackRange > 0
+                unit.type.isCombatUnit
         }
     }
 
