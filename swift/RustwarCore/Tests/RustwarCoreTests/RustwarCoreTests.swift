@@ -2185,11 +2185,13 @@ import Testing
 
 @Test func gameStateJSONRoundTripPreservesActiveNativeState() throws {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
-    let movingUnit = try #require(engine.state.units.first { $0.team == .player })
-    let attacker = try #require(engine.state.units.first { $0.team == .player && $0.id != movingUnit.id })
-    let attackMover = try #require(engine.state.units.first { $0.team == .player && $0.id != movingUnit.id && $0.id != attacker.id })
+    let movingUnit = try #require(engine.state.units.first { $0.team == .player && $0.type == .builder })
+    let attacker = try #require(engine.state.units.first { $0.team == .player && $0.type.isCombatUnit })
+    let attackMover = try #require(engine.state.units.first {
+        $0.team == .player && $0.type.isCombatUnit && $0.id != attacker.id
+    })
     let patroller = try #require(engine.state.units.first {
-        $0.team == .player && $0.id != movingUnit.id && $0.id != attacker.id && $0.id != attackMover.id
+        $0.team == .player && $0.type.isCombatUnit && $0.id != attacker.id && $0.id != attackMover.id
     })
     let enemyTank = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
     let factory = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .landFactory })
@@ -2249,8 +2251,8 @@ import Testing
 
 @Test func restoredEngineContinuesProductionMovementAndCombat() throws {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
-    let movingUnit = try #require(engine.state.units.first { $0.team == .player })
-    let attacker = try #require(engine.state.units.first { $0.team == .player && $0.id != movingUnit.id })
+    let movingUnit = try #require(engine.state.units.first { $0.team == .player && $0.type == .builder })
+    let attacker = try #require(engine.state.units.first { $0.team == .player && $0.type.isCombatUnit })
     let enemyTank = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .tank })
     let factory = try #require(engine.state.buildings.first { $0.team == .player && $0.type == .landFactory })
 
@@ -2600,9 +2602,9 @@ import Testing
 
     let changedIDs = engine.setAttackStance(.defensive)
 
-    #expect(changedIDs == ["stance-attacker", "stance-builder"])
+    #expect(changedIDs == ["stance-attacker"])
     #expect(engine.state.units.first { $0.id == "stance-attacker" }?.attackStance == .defensive)
-    #expect(engine.state.units.first { $0.id == "stance-builder" }?.attackStance == .defensive)
+    #expect(engine.state.units.first { $0.id == "stance-builder" }?.attackStance == .aggressive)
     #expect(engine.state.units.first { $0.id == "stance-dead-tank" }?.attackStance == .aggressive)
     #expect(engine.state.units.first { $0.id == "stance-enemy" }?.attackStance == .aggressive)
 }
