@@ -451,11 +451,10 @@ struct BattlefieldView: View {
                 }
                 clearBattlefieldTouchPreview(for: lease.sequence)
                 _ = touchOwner.finish(lease)
-                pinchLease = nil
+                resetPinchGestureState()
                 multitouchLease = nil
                 invalidateNonContextGestureCallbacks()
                 resetContextGestureState()
-                lastMagnification = 1.0
                 resetMultitouchSelectionState()
             }
     }
@@ -626,7 +625,7 @@ struct BattlefieldView: View {
             invalidateNonContextGestureCallbacks()
             panGestureLease = nil
             panGestureStartLocation = nil
-            pinchLease = nil
+            resetPinchGestureState()
             multitouchLease = nil
             isBattlefieldPanActive = false
             battlefieldPanOccurredForCurrentTouch = true
@@ -718,7 +717,7 @@ struct BattlefieldView: View {
             _ = touchOwner.finishCancelledMultitouch()
             resetMultitouchSelectionState()
             multitouchLease = nil
-            pinchLease = nil
+            resetPinchGestureState()
             resetContextGestureState()
             battlefieldPanOccurredForCurrentTouch = true
             return
@@ -759,7 +758,7 @@ struct BattlefieldView: View {
 
         resetMultitouchSelectionState()
         multitouchLease = nil
-        pinchLease = nil
+        resetPinchGestureState()
         invalidateNonContextGestureCallbacks()
         resetContextGestureState()
         clearBattlefieldTouchPreview(for: previewSequence)
@@ -788,7 +787,7 @@ struct BattlefieldView: View {
         invalidateNonContextGestureCallbacks()
         panGestureLease = nil
         panGestureStartLocation = nil
-        pinchLease = nil
+        resetPinchGestureState()
         multitouchLease = nil
         isBattlefieldPanActive = false
         battlefieldPanOccurredForCurrentTouch = true
@@ -833,16 +832,20 @@ struct BattlefieldView: View {
         panGestureStartLocation = nil
         longPressLease = nil
         multitouchLease = nil
-        pinchLease = nil
+        resetPinchGestureState()
         selectionDragStart = nil
         selectionDragCurrent = nil
         selectionDragSequence = nil
         lastDragTranslation = .zero
-        lastMagnification = 1
         isBattlefieldPanActive = false
         battlefieldPanOccurredForCurrentTouch = true
         suppressTapAfterMultitouch()
         resetMultitouchSelectionState()
+    }
+
+    private func resetPinchGestureState() {
+        pinchLease = nil
+        lastMagnification = 1.0
     }
 
     private func invalidateNonContextGestureCallbacks() {

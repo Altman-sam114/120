@@ -111,8 +111,14 @@ struct TacticalProductionSectionView: View {
         return columns == 1 ? 2 : 3
     }
 
+    private var sectionSpacing: CGFloat {
+        columns == 1 && !dynamicTypeSize.isAccessibilitySize
+            ? TacticalHUDTheme.denseSpacing
+            : TacticalHUDTheme.controlSpacing
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
+        VStack(alignment: .leading, spacing: sectionSpacing) {
             TacticalSectionHeader(section: .production)
             if controller.showsSelectedFactoryTech {
                 TacticalFactoryTechView(controller: controller)

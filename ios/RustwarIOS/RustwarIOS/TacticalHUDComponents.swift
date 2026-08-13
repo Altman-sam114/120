@@ -88,30 +88,43 @@ struct TacticalCommandStatusView: View {
     let isAwaitingTarget: Bool
 
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            if isAwaitingTarget {
-                Label("TARGET MODE", systemImage: "scope")
-                    .font(.caption2.bold())
-                    .foregroundStyle(TacticalHUDTheme.awaitingStatusLabel)
-                    .accessibilityHidden(true)
+        HStack(alignment: .center, spacing: TacticalHUDTheme.compactSpacing) {
+            Image(systemName: isAwaitingTarget ? "viewfinder" : "info.circle")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(
+                    isAwaitingTarget
+                        ? TacticalHUDTheme.awaitingStatusLabel
+                        : TacticalHUDTheme.metricLabel
+                )
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 0) {
+                if isAwaitingTarget {
+                    Text("TARGET MODE")
+                        .font(.caption.bold())
+                        .foregroundStyle(TacticalHUDTheme.awaitingStatusLabel)
+                        .accessibilityHidden(true)
+                }
+                Text(text)
+                    .font(isAwaitingTarget ? .footnote.bold() : .footnote)
+                    .foregroundStyle(
+                        isAwaitingTarget
+                            ? TacticalHUDTheme.awaitingStatusForeground
+                            : TacticalHUDTheme.secondaryText
+                    )
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
             }
-            Label(
-                text,
-                systemImage: isAwaitingTarget ? "viewfinder" : "info.circle"
-            )
-            .font(isAwaitingTarget ? .footnote.weight(.semibold) : .footnote)
-            .foregroundStyle(
-                isAwaitingTarget
-                    ? TacticalHUDTheme.awaitingStatusForeground
-                    : TacticalHUDTheme.secondaryText
-            )
-            .lineLimit(2)
         }
         .padding(.horizontal, TacticalHUDTheme.compactPadding)
-        .padding(.vertical, TacticalHUDTheme.compactSpacing)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, TacticalHUDTheme.denseSpacing)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: TacticalHUDTheme.controlMinimumHeight,
+            alignment: .leading
+        )
         .background(
             isAwaitingTarget
                 ? TacticalHUDTheme.awaitingStatusBackground

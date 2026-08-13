@@ -391,3 +391,11 @@ du -sh /private/tmp/rustwar-c-review-<run_id>
 代码复核必须覆盖：fresh seed 只接受未 quarantine active ID；primary/accepted/active/cancelled ID 与 sequence 单调边界；第二指加入、第三指/未知 active replacement 取消；未知 ended/cancelled terminal 不取消当前 owner；cancel/reset/finish 幂等；pan、area、long press、multitouch、pinch lease 互斥；context/tap、pan、pinch、Spatial multitouch callback generation 和 sequence/location gate；普通单指 Spatial end 不提交框选；有效多指 finish 最多提交一次；preview 清理不清空新序列；`GameController`、Core classifier、命令、存档、JSON 和 Web 版不变。
 
 本轮 residual risk：CI 没有 XCUITest 或真实多指注入，Core tests 不覆盖 SwiftUI callback 实际排序；seed 后系统仍可能存在无法仅凭 SwiftUI 事件区分迟到旧回调和真实新触点的窗口，真实设备长按、拖拽、pinch、VoiceOver、Dynamic Type、Reduce Motion 和性能仍未证明。
+
+## v2.53
+
+本轮继续只认 GitHub Actions 云端验证，不运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`。Agent C 必须只验收最新 `origin/main` SHA 的未加密 artifact，并核对 manifest、JUnit、主日志、失败摘要、repo/toolchain/simulator 信息、双架构 iOS build、production/combat 双启动、横屏归一化与双 PNG probe。
+
+代码复核必须确认 `BattlefieldView` 所有释放 pinch lease 的出口统一执行 `pinchLease = nil` 与 `lastMagnification = 1.0`，且没有改变 `TouchSequenceOwner`、zoom 增量数学或 Controller/Core。HUD 复核必须确认固定 header 不再重复 production focus；Move / Attack Move / Attack / Stop 仍按原 can/awaiting 条件、action 和快捷键进入 primary grid；所有 secondary 命令、Factory Tech、production option 顺序、Shift+1-9、queue、Cancel、Repeat、Rally、44pt、Dynamic Type、VoiceOver、Reduce Motion 和 Differentiate Without Color 保持。
+
+Agent C 必须人工查看最新 `ios-home.png`，确认选中 Land Factory 后 Production 与至少第一行单位入口无需滚动即可见且无裁切/重叠；查看 `ios-combat.png`，确认紧凑 target status 与 Move / Attack Move / Attack / Stop primary grid 在首屏、战场/Tactical Map 未被覆盖。静态 build/PNG 不能证明真实 pinch、点击、滚动、辅助功能字号、VoiceOver 或真机长期手感。

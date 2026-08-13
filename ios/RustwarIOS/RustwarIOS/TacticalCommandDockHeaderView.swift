@@ -12,9 +12,6 @@ struct TacticalCommandDockHeaderView: View {
                 radarUpgradeSummary: controller.selectedRadarUpgradeSummary,
                 extractorUpgradeSummary: controller.selectedExtractorUpgradeSummary
             )
-            if controller.productionFocusBuildingName != nil {
-                TacticalProductionFocusSummaryView(controller: controller)
-            }
             if controller.commandStatus == nil && controller.shouldShowBattlefieldInteractionHint {
                 TacticalBattlefieldHintView(
                     title: controller.battlefieldInteractionHintTitle,

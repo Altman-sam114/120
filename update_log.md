@@ -5776,3 +5776,35 @@
 已知风险：
 
 - CI 没有 XCUITest 或真实多指注入；Core reducer tests 和静态 PNG 不能证明 SwiftUI callback 实际排序、真实 tap/长按/拖动/pinch、VoiceOver、Dynamic Type、Reduce Motion 或真机性能。fresh seed 之后，系统仍可能存在仅凭 SwiftUI 事件无法绝对区分迟到旧 callback 与真实新触点的窗口。
+
+## v2.53 / iOS pinch continuity and context-first command dock
+
+- `BattlefieldView` 新增单一 pinch teardown helper，覆盖正常结束、第三指/replacement/cancel、多指 finish 和地图/选择 reset；释放 lease 时同步把 `lastMagnification` 复位为 `1.0`，不改变既有 zoom 增量、相机 clamp、owner reducer 或命令语义。
+- command dock 固定 header 移除重复的 production focus card，selection identity 与 target status 改为紧凑层级；Commands 将 Move / Attack Move / Attack / Stop 提升为 primary grid，其他动作仍保留在 secondary grid。
+- compact Production section 收紧组间距，让 Factory Tech 后的单位入口更早进入横屏首屏；生产顺序、Shift+1-9、队列、Cancel、Repeat、Rally、升级、44pt、Dynamic Type 和 VoiceOver 保持原 API。
+- Rusted Warfare 官方 Steam 截图作为信息架构参考：保留战场为主体、上下文动作紧凑可达，不复制原作素材；外部参考只读缓存位于 `/private/tmp/rustwar-reference-v2.53/`，未进入仓库。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalBattlefieldHintView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockHeaderView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandsSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDComponents.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalSelectionSummaryView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.53-context-first-command-dock.md`
+
+验证状态：
+
+- 按云端唯一验证制度未运行任何本地测试、Swift/Xcode build、Simulator、Preview、截图、浏览器验证或 `git diff --check`；只读 status/diff/rg 用于范围控制。
+- 本轮实现提交、Actions run、artifact、JUnit、Core test 数量、双架构 build 和双 PNG 结果待 push 后由 Agent C 核对最新 `origin/main` 精确 SHA 后补录。
+
+已知风险：
+
+- 当前 CI 没有 XCUITest 或真实多指注入；代码审查可证明 teardown 统一，静态 build/PNG 不能证明真实 pinch 回调顺序或下一次 pinch 首帧手感。
+- 固定 production/combat PNG 不能证明滚动、Dynamic Type、VoiceOver、Reduce Motion、不同设备尺寸或真实按钮点击；这些仍需未来云端 UI 自动化和真机复核。

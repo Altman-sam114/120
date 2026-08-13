@@ -1002,3 +1002,24 @@ flowchart TD
 ```
 
 读图说明：v2.52 只收紧 iOS 输入生命周期和并行 callback 代际，不改变 `GameController` 命令语义、Core classifier、命中半径、存档或 Web 版。未知 terminal callback 不会取消当前 owner，未知 active replacement 仍被保守拒绝；CI 仍没有 XCUITest，静态编译和 Core reducer tests 不能证明真实设备上的触点顺序与手感。
+
+## v2.53 iOS pinch continuity and context-first command dock
+
+```mermaid
+flowchart TD
+  P[Pinch lease active] --> E{Teardown cause}
+  E -->|normal end| R[resetPinchGestureState]
+  E -->|third finger / replacement / cancel| R
+  E -->|multitouch finish / map reset| R
+  R --> L[pinchLease nil + lastMagnification 1.0]
+  L --> N[Next pinch keeps existing incremental zoom math]
+
+  S[Selection context] --> H[Compact fixed header]
+  H --> C{Selected context}
+  C -->|combat units| G[Primary grid: Move / Attack Move / Attack / Stop]
+  C -->|producer| F[Production: Factory Tech then unit entries]
+  G --> X[Secondary commands remain scrollable]
+  F --> Q[Queue / Cancel / Repeat / Rally remain scrollable]
+```
+
+读图说明：v2.53 不新增命令或生产状态；只归一 pinch presentation teardown，并重排现有 SwiftUI 信息层级。固定云端 PNG 可证明首屏构图，不能证明真实 pinch 回调顺序、按钮点击、Dynamic Type、VoiceOver 或真机手感。

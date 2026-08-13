@@ -748,3 +748,9 @@ RustwarCore MapPreset / GameState / GameEngine
 `BattlefieldView` 为 context/tap、pan、pinch 和 Spatial multitouch callback 分别保存 generation token，并额外用 context seed sequence/location 绑定并行 gesture。迟到 callback 不能读取新 sequence 的 lease、更新新 sequence 预览、抢占 pan/pinch 或重复派发框选；preview 清理始终按 sequence 门控。普通单指 `SpatialEventGesture.onEnded` 只同步 terminal bookkeeping，不独自结束单指 owner；有效 multitouch lease 的 finish 才能提交一次 Select Area，cancelled/重复 finish 都不会再次派发。
 
 地图 revision reset 会经 reducer reset boundary 清除 preview、选择框、多指几何和 Controller tap cache，同时保留旧 ID quarantine，直到下一次明确 fresh seed。reducer 只保存输入生命周期状态，不进入 `GameState`、JSON、存档、命令或模拟；真实设备触摸顺序、迟到 callback 的系统层不可区分窗口仍由 CI 之外的 XCUITest/真机测试覆盖。
+
+## v2.53 iOS pinch continuity and context-first command dock
+
+`BattlefieldView.resetPinchGestureState()` 成为 pinch presentation teardown 的统一出口：正常 Magnify end、owner cancelled/replacement、cancelled multitouch finish、普通 multitouch finish、显式 `cancelMultitouchSequence()` 和地图/选择 reset 都同时释放 `pinchLease` 并把 `lastMagnification` 复位为 `1.0`。下一次 `MagnifyGesture.onChanged` 继续沿用既有 `value.magnification / lastMagnification` 增量和 `GameController.zoom(by:)`，不改变相机 clamp、`TouchSequenceOwner`、Core 或存档。
+
+command dock 的固定 header 只保留紧凑 selection identity、可选状态/提示和 Replace/Add，不再重复显示生产建筑的 NOW/QUEUE/UPGRADE focus card；完整 Factory Tech、生产选项、队列和管理动作仍由 Production section 消费同一 controller 派生值。Commands section 把既有 Move、Attack Move、Attack、Stop 条件按钮提升到两列 primary grid，Select Area、Same Type、Patrol、Guard、姿态、Repair、Reclaim 保留在 secondary grid。所有 action、awaiting 条件、快捷键、44pt frame、Dynamic Type 和 VoiceOver 边界不变；本轮只改变 SwiftUI presentation 与 pinch 累计状态清理。

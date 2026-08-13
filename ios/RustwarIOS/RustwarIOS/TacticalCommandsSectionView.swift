@@ -6,9 +6,61 @@ struct TacticalCommandsSectionView: View {
     let columns: Int
     let showsStop: Bool
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var primaryColumnCount: Int {
+        dynamicTypeSize.isAccessibilitySize ? 1 : 2
+    }
+
+    private var hasPrimaryCommands: Bool {
+        controller.canIssueMove || controller.isAwaitingMoveTarget ||
+            controller.canIssueAttackMove || controller.isAwaitingAttackMoveTarget ||
+            controller.canIssueAttack || controller.isAwaitingAttackTarget ||
+            showsStop
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             TacticalSectionHeader(section: .commands)
+            if hasPrimaryCommands {
+                TacticalCommandGrid(
+                    columns: primaryColumnCount,
+                    spacing: TacticalHUDTheme.denseSpacing
+                ) {
+                    if controller.canIssueMove || controller.isAwaitingMoveTarget {
+                        Button(
+                            controller.moveCommandButtonTitle,
+                            systemImage: controller.isAwaitingMoveTarget ? "xmark.circle" : "arrow.up.right",
+                            action: controller.toggleMoveCommand
+                        )
+                        .tacticalControl()
+                    }
+                    if controller.canIssueAttackMove || controller.isAwaitingAttackMoveTarget {
+                        Button(
+                            controller.attackMoveCommandButtonTitle,
+                            systemImage: controller.isAwaitingAttackMoveTarget ? "xmark.circle" : "arrow.up.right.circle",
+                            action: controller.toggleAttackMoveCommand
+                        )
+                        .tacticalControl()
+                        .keyboardShortcut(commandKey("a"), modifiers: [])
+                        .accessibilityLabel("Attack move")
+                    }
+                    if controller.canIssueAttack || controller.isAwaitingAttackTarget {
+                        Button(
+                            controller.attackCommandButtonTitle,
+                            systemImage: controller.isAwaitingAttackTarget ? "xmark.circle" : "scope",
+                            action: controller.toggleAttackCommand
+                        )
+                        .tacticalControl()
+                    }
+                    if showsStop {
+                        Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
+                            .tacticalControl()
+                            .keyboardShortcut(commandKey("s"), modifiers: [])
+                    }
+                }
+            }
+
             TacticalCommandGrid(columns: columns) {
                 if controller.canIssueAreaSelection || controller.isAwaitingAreaSelection {
                     Button(
@@ -30,24 +82,6 @@ struct TacticalCommandsSectionView: View {
                     .keyboardShortcut(commandKey("a"), modifiers: .option)
                     .accessibilityLabel("Select same type")
                     .accessibilityHint("Selects all player units matching the current selected unit type.")
-                }
-                if controller.canIssueMove || controller.isAwaitingMoveTarget {
-                    Button(
-                        controller.moveCommandButtonTitle,
-                        systemImage: controller.isAwaitingMoveTarget ? "xmark.circle" : "arrow.up.right",
-                        action: controller.toggleMoveCommand
-                    )
-                    .tacticalControl()
-                }
-                if controller.canIssueAttackMove || controller.isAwaitingAttackMoveTarget {
-                    Button(
-                        controller.attackMoveCommandButtonTitle,
-                        systemImage: controller.isAwaitingAttackMoveTarget ? "xmark.circle" : "arrow.up.right.circle",
-                        action: controller.toggleAttackMoveCommand
-                    )
-                    .tacticalControl()
-                    .keyboardShortcut(commandKey("a"), modifiers: [])
-                    .accessibilityLabel("Attack move")
                 }
                 if controller.canIssuePatrol || controller.isAwaitingPatrolTarget {
                     Button(
@@ -72,14 +106,6 @@ struct TacticalCommandsSectionView: View {
                     attackStanceButton(.defensive, systemImage: "shield", key: "x")
                     attackStanceButton(.holdFire, systemImage: "pause.circle", key: "v")
                 }
-                if controller.canIssueAttack || controller.isAwaitingAttackTarget {
-                    Button(
-                        controller.attackCommandButtonTitle,
-                        systemImage: controller.isAwaitingAttackTarget ? "xmark.circle" : "scope",
-                        action: controller.toggleAttackCommand
-                    )
-                    .tacticalControl()
-                }
                 if controller.canIssueRepair || controller.isAwaitingRepairTarget {
                     Button(
                         controller.repairCommandButtonTitle,
@@ -96,11 +122,6 @@ struct TacticalCommandsSectionView: View {
                     )
                     .tacticalControl()
                     .keyboardShortcut(commandKey("c"), modifiers: [])
-                }
-                if showsStop {
-                    Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
-                        .tacticalControl()
-                        .keyboardShortcut(commandKey("s"), modifiers: [])
                 }
             }
         }

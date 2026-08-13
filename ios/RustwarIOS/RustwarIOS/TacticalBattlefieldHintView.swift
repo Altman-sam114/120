@@ -5,27 +5,29 @@ struct TacticalBattlefieldHintView: View {
     let detail: String
     let systemImage: String
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
-        HStack(alignment: .top, spacing: TacticalHUDTheme.compactSpacing) {
+        HStack(alignment: .center, spacing: TacticalHUDTheme.compactSpacing) {
             Image(systemName: systemImage)
                 .font(.body.weight(.semibold))
                 .foregroundStyle(TacticalHUDTheme.accent)
-                .frame(width: 22, height: 22)
+                .frame(width: 22)
+                .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 0) {
                 Text(title)
                     .font(.caption.bold())
                     .foregroundStyle(TacticalHUDTheme.primaryText)
                     .lineLimit(1)
                 Text(detail)
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(TacticalHUDTheme.secondaryText)
-                    .lineLimit(3)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
             }
         }
         .padding(.horizontal, TacticalHUDTheme.compactPadding)
-        .padding(.vertical, TacticalHUDTheme.compactSpacing)
+        .padding(.vertical, TacticalHUDTheme.denseSpacing)
         .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight, alignment: .leading)
         .background(
             TacticalHUDTheme.selectionBackground,

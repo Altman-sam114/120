@@ -1,6 +1,6 @@
 # Rustwar RTS Prototype
 
-v2.52：原生 iOS 战场输入新增纯 `TouchSequenceOwner` 生命周期 reducer；单指 tap、长按、拖拽平移、两指框选和 pinch 通过统一 sequence/lease/accepted-ID 门控，旧回调不会自动替换触点或清理新序列预览，多指框选最多提交一次；Core、命令语义、存档和 Web 版不变。CI 仍不包含 XCUITest，云端静态 smoke 不能证明真实设备触控顺序或手感。
+v2.53：原生 iOS pinch 的正常结束、第三指/replacement/cancel 和地图 reset 统一清除累计 magnification，避免下一次捏合首帧沿用旧倍率跳缩；command dock 去除重复生产摘要，把 Move / Attack Move / Attack / Stop 提升为首组，并让工厂生产入口更早进入横屏首屏。Core、命令语义、存档和 Web 版不变；CI 仍不包含 XCUITest，云端静态 smoke 不能证明真实设备触控顺序或手感。
 
 v2.51：原生 iOS 水面命中改用蓝白水花、弧线与水滴，陆地保留火焰、烟尘和焦痕；只调整 SpriteKit presentation，不改变 Core 数值、命令、存档或效果上限。
 
@@ -152,7 +152,7 @@ v2.50：原生 iOS 生产建筑 dock 首屏增加只读 Production focus summary
 
 ### 原生 iOS 迁移地基
 
-- HUD：顶部 safe-area 状态栏持续显示资源、雷达、Pause/Play 和速度；右侧或底部 command dock 的固定 header 显示当前选择、摘要、命令状态和 Replace/Add，下方可连续滚动六组操作。Tactical Map 始终位于独立战场区域；旋转或 Split View resize 会按容器宽高自动切换布局，不会改变当前选择、等待命令或编队。
+- HUD：顶部 safe-area 状态栏持续显示资源、雷达、Pause/Play 和速度；右侧或底部 command dock 的紧凑固定 header 显示当前选择、命令状态和 Replace/Add，下方按上下文连续滚动操作。作战单位的 Move / Attack Move / Attack / Stop 位于首组，生产建筑不在 header 重复队列摘要，使生产入口更早进入横屏首屏。Tactical Map 始终位于独立战场区域；旋转或 Split View resize 会按容器宽高自动切换布局，不会改变当前选择、等待命令或编队。
 - 建筑操作：点 Command Center / Land Factory 时 Production 自动排到 dock 顶部；点可升级或正在升级的 Extractor / Radar Station 时 Build & Upgrade 自动排到顶部。切换选择会回到 dock 顶部；资源不足的升级仍显示费用并禁用，方便玩家直接理解下一步。
 - Tap：无等待命令时，点己方单位或建筑按 Replace / Add 选择；已有至少一个存活己方单位被选中时，点当前可见敌方直接 Attack，点未命中单位/建筑的战场位置直接 Attack Move，并保持原选择。主战场实体命中会按 zoom 保持至少 44pt 触控直径，但仍只选最近实体且不会穿过战争迷雾命中敌人。建筑-only 选择或没有己方单位选择时仍走普通选择；普通 tap 不会自动 Guard、Repair、Reclaim、Build 或 Rally。Move、Attack Move 和 Patrol 等显式模式下仍作为目的地，Guard / Repair / Reclaim / Build Extractor / Attack 等模式下仍作为对应目标点选。
 - Long press：无等待命令时执行上下文命令；长按敌方单位或建筑会 Attack，长按受损友方单位或建筑会让 Builder Repair，长按健康友方目标会 Guard，长按残骸会 Reclaim，长按空闲资源点会 Build Extractor，长按空地点会对生产建筑设置 Rally 或让己方单位 Move。
@@ -168,7 +168,7 @@ v2.50：原生 iOS 生产建筑 dock 首屏增加只读 Production focus summary
 - 外接键盘：WASD / 方向键移动视野，Space 回到己方 Command Center，P 暂停/恢复，R 重开当前地图，E 选择空闲 Builder，F 选择当前屏幕内作战单位，Control + A 选择全部战斗单位，Option + A 选择同类型单位，A 进入 Attack Move，G 进入 Patrol，H 进入 Guard，C 进入 Reclaim，S 停止或取消当前等待命令，Z / X / V 切换选中有武器己方单位为 Aggressive / Defensive / Hold Fire；Shift + 1-9 按当前 HUD 顺序生产单位，Shift + E / T / F / D 进入 Build Extractor / Turret / Factory / Radar，Shift + C / P / R 执行 Cancel Last / Repeat / Rally。
 - 拖拽：移动超过 12pt 后平移战场视角；同一触摸序列会持续抑制 tap/长按，轻微抖动仍可保留长按语义。
 - 地图重置中的触摸：若 reset 发生在 Spatial touch ID 登记前，context seed 之前的 context/Spatial 首帧会被取消围栏拦截；seed 和 active touch 证据到齐后才恢复普通 tap、pan 或双指手势，但 SwiftUI 没有统一 touch token，seed 后的迟到旧回调仍需真机/XCUITest 进一步区分。
-- 捏合：缩放战场视角。
+- 捏合：缩放战场视角；正常结束或被第三指、系统取消、触点替换、切图/重置中断后都会清除该次累计倍率，下一次捏合从 1.0 基线继续。
 - Move：选中己方单位时显示；点按后进入移动落点模式，再 tap 战场下达移动命令；多选时所有选中己方单位会按稳定方阵获得围绕目标点的目的地。
 - Attack Move：选中己方单位时显示；点按后进入攻击移动目的地模式，再 tap 战场下达攻击移动命令；多选时所有选中己方单位会按稳定方阵获得围绕目标点的攻击移动目的地，单位会向各自目的地移动，并只在自身视野范围内获取敌方单位或建筑作为临时攻击目标。
 - Patrol：选中己方单位时显示；点按后进入巡逻端点模式，再 tap 战场下达巡逻命令；多选时所有选中己方单位会以各自当前位置为起点，并按稳定方阵获得围绕目标点的巡逻端点，在自身视野范围内临时攻击敌方单位或建筑后继续巡逻。
