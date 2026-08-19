@@ -502,3 +502,17 @@ Agent C 必须在最新 `origin/main` SHA 对应 artifact 中核对 manifest 的
 - 物理 map tap、拖动、长按、pending hit radius、callback generation、visibility/fog、TouchSequenceOwner、命令、生产、战斗、存档和 Web 版不变；hint/value 与地图 action 名称保持动态、可读且不以颜色作为唯一反馈。
 
 人工复看 `ios-home.png` 与 `ios-combat.png`，确认 v2.60 已通过的生产首屏、Factory Tech、战斗单位/弹道、攻击等待状态、Tactical Map 和 command dock 无静态回退。artifact 不能证明真实 VoiceOver rotor/action 执行、动态类型、触摸手感或设备性能，最终回复必须明确该 residual risk。
+
+## v2.62
+
+本轮只改 iOS `GameController` 的 direct-touch intent routing 与 hint/status 派生；继续强制云端唯一验证，不运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`。不得修改 Core、存档、Web、`BattlefieldView`/`TacticalMapView` 手势、战斗数值或生产入口。
+
+Agent C 必须只验收最新 `origin/main` SHA 对应的未加密 Actions artifact，并核对 manifest 的 `branch=main`、完整 `commitSha`、run id、attempt、v1.2、固定 Xcode 26.5 / iOS Simulator SDK 26.5 / iPhone 17 Pro；JUnit `8/0/1` 基线、Swift Core 数量、`GameController.swift` 双架构编译、production/combat 双启动、横屏归一化和两份 PNG probe。
+
+代码复判必须确认：
+
+- selected combat 时，resolver 按 visible exact enemy -> existing world hit radius enemy 顺序，敌方候选不与友军混排；battlefield tap、touch preview、主战场 context 和 Tactical Map context 共享该意图，fog/radar-only contact、普通无 combat selection 和 44pt/map radius 不变。
+- 混合 Builder + combat 且所有 Builder `order == nil` 时，direct empty tap 严格复用 `issueMove` 后 `issueAttackMove`；Builder 最终保留 Move、combat 最终保留 Attack-Move；纯 combat、Builder-only、任一 Builder 忙碌、显式 pending Attack-Move 不回归。
+- hint/status 的实际数量和插值准确，组合成功只产生一次主要 feedback/confirmation；Core public API、UnitOrder、存档、TouchSequenceOwner、生产、战斗和 Web 版无改动。
+
+静态云端 build/PNG 不能证明真实设备在敌我实体重叠时的手指命中、长按回调排序、双指框选、VoiceOver、Dynamic Type、Reduce Motion、滚动、动画时序或长局帧率；这些仍是后续 XCUITest/真机风险。

@@ -6088,3 +6088,31 @@
 已知风险：
 
 - 当前 CI 没有真实 VoiceOver/XCUITest、Dynamic Type 全档位、Reduce Motion 或真机性能矩阵；artifact 不能证明辅助功能 action 的实际排序、执行反馈或触摸手感。
+
+## v2.62 / intent-aware direct touch and mixed-unit quick move
+
+日期：2026-08-20
+
+核心变更：
+
+- `GameController` 的主战场 direct tap、touch preview、主战场 context 和 Tactical Map context 共享 selected combat 下的敌方优先解析：先精确可见敌方，再按既有 world hit radius 找敌方，避免 44pt 敌我重叠时近友军遮挡 Attack 意图。
+- Builder 与 combat 混合选择且所有 Builder 空闲时，空地点按先复用既有 `issueMove(to:)`，再复用 `issueAttackMove(to:)` 给 combat 自动索敌；纯 combat、Builder-only、忙碌 Builder 和显式 pending 命令保持旧语义。
+- hint/status 同步说明混合快速命令的 Builder Move 与 combat Attack-Move 分工；不改 Core、UnitOrder、存档、手势 owner、战斗数值、生产或 Web 版。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.62-intent-aware-direct-touch-and-mixed-move.md`
+
+验证状态：
+
+- 本轮遵循云端唯一验证制度，未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；浏览器控制实例不可用，未伪造 Rusted Warfare 外部截图/视频检索结果，沿用仓库已有参考记录。
+- 实现已完成源码与文档范围审查；提交、push、Actions run、artifact 和 Agent C 复判待完成，不能提前宣称通过。
+
+已知风险：
+
+- CI 静态 smoke 不能证明真实 iPhone 在敌我实体重叠时的手指命中、长按回调排序、双指框选、VoiceOver、Dynamic Type、Reduce Motion、滚动、动画时序或长局帧率；这些仍需后续 XCUITest/真机验证。

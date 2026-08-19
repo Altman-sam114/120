@@ -376,6 +376,9 @@ final class GameController {
             return "Tap a unit card to queue it; Build & Upgrade stays below."
         }
         if !selectedPlayerUnits.isEmpty {
+            if shouldMoveIdleBuildersAlongsideQuickAttackMove {
+                return "Tap empty ground to move idle Builders and attack-move combat units • tap a visible enemy to attack."
+            }
             return "Tap empty ground to attack-move • tap a visible enemy to attack."
         }
         if hasPlayerSelectableSelection {
@@ -1255,14 +1258,11 @@ final class GameController {
             return
         } else {
             let previousSelection = engine.state.selectedEntityIDs
-            if !selectedPlayerCombatUnits.isEmpty,
-               let exactEnemyTarget = engine.state.selectionTargetVisibleToPlayer(
-                   at: point,
-                   includeEnemies: true,
-                   minimumHitRadius: 0,
-                   targetTeam: .enemy
-               ),
-               handleDirectTapCommand(at: point, target: exactEnemyTarget) {
+            if let prioritizedEnemyTarget = prioritizedEnemyTarget(
+                at: point,
+                minimumHitRadius: minimumHitRadius
+            ),
+               handleDirectTapCommand(at: point, target: prioritizedEnemyTarget) {
                 return
             }
             let candidates = engine.state.selectionTargetsVisibleToPlayer(
@@ -1391,14 +1391,11 @@ final class GameController {
             )
         }
 
-        if !selectedPlayerCombatUnits.isEmpty,
-           let exactEnemyTarget = engine.state.selectionTargetVisibleToPlayer(
-               at: point,
-               includeEnemies: true,
-               minimumHitRadius: 0,
-               targetTeam: .enemy
-           ) {
-            return BattlefieldTouchPreview(point: exactEnemyTarget.position, intent: .attack)
+        if let prioritizedEnemyTarget = prioritizedEnemyTarget(
+            at: point,
+            minimumHitRadius: battlefieldTouchTargetWorldRadius
+        ) {
+            return BattlefieldTouchPreview(point: prioritizedEnemyTarget.position, intent: .attack)
         }
 
         let target = engine.state.selectionTargetsVisibleToPlayer(
@@ -2262,6 +2259,22 @@ final class GameController {
             let result = engine.issueMove(to: point)
             commandStatus = statusText(for: result)
             reportCommandFeedback(for: result, confirmation: .move, at: point)
+        } else if shouldMoveIdleBuildersAlongsideQuickAttackMove {
+            let moveResult = engine.issueMove(to: point)
+            if moveResult == .issued {
+                let attackMoveResult = engine.issueAttackMove(to: point)
+                commandStatus = attackMoveResult == .issued
+                    ? "Attack-move \(selectedPlayerCombatUnits.count) combat units; move \(selectedPlayerBuilders.count) idle Builders"
+                    : statusText(forAttackMove: attackMoveResult)
+                reportCommandFeedback(
+                    for: attackMoveResult,
+                    confirmation: .attackMove,
+                    at: point
+                )
+            } else {
+                commandStatus = statusText(for: moveResult)
+                reportCommandFeedback(for: moveResult)
+            }
         } else {
             let result = engine.issueAttackMove(to: point)
             commandStatus = statusText(forAttackMove: result)
@@ -2269,6 +2282,32 @@ final class GameController {
         }
         renderRevision += 1
         return true
+    }
+
+    private func prioritizedEnemyTarget(
+        at point: WorldPoint,
+        minimumHitRadius: Double
+    ) -> SelectionTarget? {
+        guard !selectedPlayerCombatUnits.isEmpty else {
+            return nil
+        }
+        return engine.state.selectionTargetVisibleToPlayer(
+            at: point,
+            includeEnemies: true,
+            minimumHitRadius: 0,
+            targetTeam: .enemy
+        ) ?? engine.state.selectionTargetVisibleToPlayer(
+            at: point,
+            includeEnemies: true,
+            minimumHitRadius: minimumHitRadius,
+            targetTeam: .enemy
+        )
+    }
+
+    private var shouldMoveIdleBuildersAlongsideQuickAttackMove: Bool {
+        !selectedPlayerBuilders.isEmpty &&
+            !selectedPlayerCombatUnits.isEmpty &&
+            selectedPlayerBuilders.allSatisfy { $0.order == nil }
     }
 
     private func reportCommandFeedback(for result: ProductionCommandResult) {
@@ -2352,6 +2391,12 @@ final class GameController {
     }
 
     private func contextTarget(at point: WorldPoint, minimumHitRadius: Double) -> SelectionTarget? {
+        if let prioritizedEnemyTarget = prioritizedEnemyTarget(
+            at: point,
+            minimumHitRadius: minimumHitRadius
+        ) {
+            return prioritizedEnemyTarget
+        }
         if let exactEnemy = engine.state.selectionTargetVisibleToPlayer(
             at: point,
             includeEnemies: true,

@@ -1218,3 +1218,32 @@ flowchart TD
 ```
 
 读图说明：v2.61 只让已经暴露为 VoiceOver button 的 Tactical Map 拥有可执行默认和自定义 action；普通触摸手势仍独立走原路径，等待态取消通过 Controller 既有 toggle，不新增 Core 状态、命令或存档字段。CI 静态 smoke 不能证明 VoiceOver action 顺序或真机辅助功能手感。
+
+## v2.62 iOS intent-aware direct touch and mixed-unit quick move
+
+```mermaid
+flowchart TD
+  TAP[Battlefield tap / touch preview / context] --> C{Selected combat unit?}
+  C -->|yes| EXACT[Visible exact enemy target]
+  EXACT -->|none| RADIUS[Visible enemy within existing world hit radius]
+  EXACT -->|found| ATTACK[Attack intent / existing issueAttack]
+  RADIUS -->|found| ATTACK
+  RADIUS -->|none| EXISTING[Existing friendly/mixed selection resolver]
+  C -->|no| EXISTING
+  EXISTING --> EMPTY{Empty ground with selected units?}
+  EMPTY -->|no| SELECT[Existing selection or context target path]
+  EMPTY -->|yes + pure combat| AM[Existing issueAttackMove]
+  EMPTY -->|yes + Builder only| MOVE[Existing issueMove]
+  EMPTY -->|yes + idle Builder + combat| MOVEALL[Existing issueMove for selection]
+  MOVEALL --> AMCOMBAT[Existing issueAttackMove for combat subset]
+  EMPTY -->|yes + busy Builder + combat| AMBUSY[Existing combat-only issueAttackMove]
+  ATTACK --> FEEDBACK[Existing status / confirmation / render feedback]
+  MOVE --> FEEDBACK
+  AM --> FEEDBACK
+  AMCOMBAT --> FEEDBACK
+  AMBUSY --> FEEDBACK
+  SELECT --> KEEP[Core / UnitOrder / save / fog unchanged]
+  FEEDBACK --> KEEP
+```
+
+读图说明：v2.62 只在 `GameController` 集中修正直接点按意图。combat selection 的敌方 resolver 只读当前可见敌方并复用既有命令；混合选择只有在所有 Builder idle 时才先 Move 全选、再 Attack-Move combat，忙碌 Builder、pending 命令、手势 owner、Core、存档和 Web 版不变。云端 PNG 可确认既有 HUD/战斗构图无回退，不能证明真实重叠目标点按或真机多指手感。

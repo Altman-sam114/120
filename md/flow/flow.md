@@ -813,3 +813,9 @@ compact producer focus 在 `TacticalProductionFocusSummaryView` 使用 `ViewThat
 2. 普通状态下，地图默认 accessibility action 调用 `focusPlayerCommandCenter()`，额外的 `Reset Camera` action 调用 `resetCamera()`；两者只改变既有相机/反馈 presentation，不写 Core 或存档。
 3. 等待 Move、Attack、Attack Move、Patrol、Guard、Repair、Reclaim、Build、Rally 或 Select Area 时，地图默认 action 改为 `cancelPendingTargetCommand()`；Controller 按当前 flag 调用对应既有 toggle，清理既有 pending 状态并保留 feedback/render revision 语义。
 4. `tacticalMapAccessibilityHint` 同步说明地图仍可用于目标选择或相机操作，以及可用默认 action/Cancel 退出等待态；实体目标、命令、TouchSequenceOwner、生产、战斗和 Web 版不变。
+
+## v2.62 iOS intent-aware direct touch and mixed-unit quick move
+
+`GameController` 在无等待命令的主战场 direct tap、touch preview 和长按 context 中复用 `prioritizedEnemyTarget(at:minimumHitRadius:)`。当前选择包含 combat unit 时，resolver 先查 exact、再按调用路径已有的 world hit radius 查当前可见敌方单位/建筑；它只过滤敌方候选，不改变 44pt、fog/radar、Core selection 或普通无 combat selection。敌我实体重叠时，敌方不再被更近友军候选遮挡，tap/preview/context 都进入 Attack 意图。
+
+空地点按仍复用既有 Core 命令：纯 combat 走 `issueAttackMove(to:)`，Builder-only 走 `issueMove(to:)`；混合且所有 Builder idle 时先走 `issueMove(to:)`，再让 combat 走 `issueAttackMove(to:)`，因此 Builder 保留 Move、combat 保留自动索敌。存在忙碌 Builder、显式 pending 命令、Tactical Map 普通点按、TouchSequenceOwner、UnitOrder、存档、战斗数值和 Web 版保持不变。

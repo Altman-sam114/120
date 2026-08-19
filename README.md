@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.62：原生 iOS 直接点按改为意图感知：选中作战单位时，44pt 容错区内的可见敌方单位/建筑优先于重叠友军进入 Attack，主战场 tap、预览和长按上下文保持一致；Builder 与作战单位混选且 Builder 空闲时点空地会让 Builder 移动、作战单位 Attack-Move 自动索敌。Core、存档、手势 owner、战斗数值和 Web 版不变；生产入口不可用态留待下一轮。
+
 v2.61：Tactical Map 的 VoiceOver 元素补齐默认 action：普通状态可直接聚焦玩家 Command Center，并提供 Reset Camera；等待目标或框选时默认 action 改为取消当前等待命令。地图真实 tap、拖动、长按、pending 命令与 Core/存档语义不变；commit `fcfa9d9604c00e7a03e3dddf7ad2e2044372d807` 对应 run `32293798139` / attempt `1` 的 Actions artifact 已通过。
 
 v2.60：compact 横屏生产建筑把 Factory Tech 收敛为高密度但保留升级语义的卡片，让首排生产按钮完整进入建筑首屏；Tactical Map 长按加入 callback generation gate，取消或迟到旧回调不会抑制下一次独立点按、拖动或等待目标。只改 iOS presentation/input 生命周期，不改 Core、命令、生产队列、战斗数值、存档或 Web 版；仍以最新 Actions artifact 验收。
