@@ -6143,7 +6143,10 @@
 验证状态：
 
 - 本轮继续遵循云端唯一验证制度，未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 git diff --check；公开 Rusted Warfare 浏览器连接不可用，未伪造新的外部截图/视频结果，沿用仓库已有参考截图和 v1.91 公开参考记录。
-- 当前实现尚未完成提交与云端验收；待网络恢复后只在 main 上提交、push origin/main，并以最新 SHA 对应的 Actions artifact 核对 manifest、JUnit、日志、双场景 PNG 和锁定生产卡布局。
+- 实现 commit `9b4a3894aa5b38a2b94ad9aea7426e2a5690335c` 先完成生产可用性投影；云端 Home PNG 复看发现锁定卡位于首屏滚动内容下方，追加 commit `56f9c7c9109058e9da5eeb60c200ecfcc3d43992` 只把 production visual fixture 金属从 240 调整为 100，让首排 Scout 保持可用、Light Tank 直接显示锁图标与 `NEED 180M`。普通对局初始资源、Core 生产规则和生产 UI 逻辑不变。
+- `56f9c7c9109058e9da5eeb60c200ecfcc3d43992` 已推送到 `origin/main`；Agent C 使用 `Altman-sam114` 上下文验收 Actions run `32306599749` / attempt `1` / job `96240595862`，下载 artifact `rustwar-ci-v1.2-main-56f9c7c-run32306599749-attempt1` 到 `/private/tmp/rustwar-c-review-32306599749/`，目录约 1.7M。manifest 的 `branch=main`、完整 SHA、run id、attempt、v1.2、Xcode 26.5、iOS Simulator SDK 26.5 和 iPhone 17 Pro 与 `origin/main` 完全匹配。
+- JUnit 为 `8 tests / 0 failures / 1 skipped`；固定工具链、`git diff --check`、`node --check app.js`、Swift Core、Xcode list/build、production/combat 双场景 Simulator 启动、横屏归一化和两份 PNG probe 全部 success，唯一 skipped 是仓库尚无 headless browser CI。
+- Home / Combat PNG 均为 `2622x1206`、透明比例 `0.0`；Home mean `79.5656694990583`、std `42.11632398145603`，Combat mean `74.32042234151058`、std `42.05154833636994`。人工复看确认 Home 的 Metal `100`、Production、Factory Tech、NOW/QUEUE/UPGRADE、Scout 可用卡、Light Tank 灰置锁定卡与 `NEED 180M` badge 可读；Combat 的单位模型、弹道、Attack target、Tactical Map 和 command dock 无静态回退。
 
 已知风险：
 
