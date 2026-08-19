@@ -1147,3 +1147,27 @@ flowchart TD
 ```
 
 读图说明：v2.59 只在当前 claim 仍属于多指序列时为无法同步的结束帧做取消收尾，迟到旧回调不会抢占新单指；战斗火花、残骸透明度和生产摘要都是 presentation/accessibility 派生层。静态云端 PNG 能核对构图与确定性分布，不能替代真实多指注入、VoiceOver、Dynamic Type、动画时序或帧率验证。
+
+## v2.59.1 iOS stale terminal callback and tap suppression scope
+
+```mermaid
+flowchart TD
+  END[Spatial multitouch end] --> IDS[Save terminal touch IDs]
+  IDS --> SYNC{Synchronize owner}
+  SYNC -->|accepted| FIN[Existing finish / selection path]
+  SYNC -->|failed| LEASE{Current lease sequence and accepted ID match?}
+  LEASE -->|no| IGNORE[Ignore stale callback]
+  LEASE -->|yes| CANCEL[cancel + finishCancelledMultitouch]
+  CANCEL --> CLEAR[Clear lease preview gestures and tap scope]
+  CLEAR --> FRESH[Fresh single touch can seed]
+  SCOPE[context / pan / multitouch suppression] --> KEY[Store suppression sequence]
+  KEY --> CHECK[tapIsSuppressed for current lease]
+  CHECK -->|different or expired| DROP[Clear old suppression]
+  CHECK -->|same active sequence| BLOCK[Block duplicate tap]
+  FIN --> CORE[Commands / Core / save unchanged]
+  FRESH --> CORE
+  DROP --> CORE
+  BLOCK --> CORE
+```
+
+读图说明：v2.59.1 把 stale terminal callback 和 tap suppression 都绑定到当前触点生命周期；不改变有效框选、pinch、pan、context、tap 或命令语义。静态云端 artifact 不能证明系统真实回调不可区分窗口，仍需真机/XCUITest覆盖。

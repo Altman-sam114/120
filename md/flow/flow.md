@@ -794,3 +794,9 @@ v2.57 只在 iOS `GameController` 与 `TacticalMapView` 传递 pending Extractor
 `BattlefieldScene.addImpactSparks` 继续使用稳定索引分布，但角度步长由半圆 `π / count` 修正为完整圆 `2π / count`；Reduce Motion 仍不生成飞散火花。`drawWreck` 的 salvage bar 复用本体 TTL alpha，避免残骸淡出时资源条悬浮在战场上；wreck 来源、金属、TTL、回收命令和 32/64 bounded effect 约束不变。
 
 compact producer focus 在 `TacticalProductionFocusSummaryView` 使用 `ViewThatFits` 优先显示两行三列的 NOW / QUEUE / UPGRADE 短摘要，宽度不足或 Dynamic Type accessibility 时回退既有完整多行语义；`accessibilityValue` 仍朗读完整当前项目、队列、可生产列表和升级状态。`Factory Tech`、首排生产按钮、队列和管理动作仍消费既有 Controller action，不新增状态或第二套命令入口。
+
+## v2.59.1 iOS stale terminal callback and tap suppression scope
+
+`BattlefieldView.finishMultitouchSelection` 先保存结束帧 touch IDs；无法同步时，取消条件同时要求 `multitouchLease`/`pinchLease` 的 sequence 匹配当前 owner，且结束帧 ID 与当前 `acceptedIDs` 有交集。旧 callback 即使撞到一个新 lease，也不会清理新 owner；当前序列仍通过既有 `cancel()` + `finishCancelledMultitouch()` 和局部 teardown 完整收尾。
+
+`suppressTapUntil` 现在与 `suppressTapSequence` 成对派生。context、pan 和多指结束沿现有路径写入所属 sequence，`tapIsSuppressed(for:)` 遇到不同 sequence 或过期值立即清除；多指取消也清除 suppression。下一次 fresh seed 不会继承旧 0.32 秒窗口，原有当前手势 tap/long press 防串发仍保留。

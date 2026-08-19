@@ -462,3 +462,17 @@ Agent C 必须核对最新 artifact 的 manifest `branch=main`、完整 SHA、ru
 - compact producer focus 以 `ViewThatFits` 优先显示 NOW / QUEUE / UPGRADE 短摘要，窄宽或 accessibility Dynamic Type 回退完整行；Factory Tech、首排生产按钮、升级、队列、Cancel/Repeat/Rally 的 action、快捷键、VoiceOver 完整 value、44pt 和存档不变。
 
 静态云端 smoke 可核对双架构编译、完整圆形火花、残骸透明度、production/combat 首屏和摘要无裁切/重叠；不能证明真实多指顺序、迟到回调窗口、VoiceOver、Dynamic Type、滚动、动画时序或真机性能。
+
+## v2.59.1
+
+本轮只收紧 iOS 多指 stale terminal callback 的 touch-ID/lease 门控和 tap suppression sequence scope；不改 Core、命令、存档、战斗数值或 Web 版。继续禁止本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图和 `git diff --check`，只认最新 `origin/main` 对应的 Actions artifact。
+
+Agent C 必须核对最新 artifact 的 manifest `branch=main`、完整 SHA、run id、attempt、v1.2、Xcode 26.5/iOS Simulator SDK 26.5/iPhone 17 Pro；JUnit `8/0/1`、Swift Core 数量、`BattlefieldView`/`BattlefieldScene`/HUD 双架构 build、production/combat 双启动、横屏归一化和双 pixel probe。
+
+代码复核必须确认：
+
+- `finishMultitouchSelection` 的同步失败分支保存结束帧 touch IDs，只有当前 `multitouchLease`/`pinchLease.sequence` 匹配 `touchOwner.sequence` 且结束帧 IDs 与 `acceptedIDs` 相交时才取消；无交集 stale callback 不会重置新 owner。当前路径完成 `cancel()`/`finishCancelledMultitouch()`，有效双指框选和 pinch 仍最多收尾一次。
+- `suppressTapUntil` 与 `suppressTapSequence` 成对使用；context、pan、多指完成、地图 reset 的现有抑制语义保留，不同 sequence、过期窗口和多指取消会清理 suppression，下一次 fresh single touch 不被旧窗口吞掉。
+- v2.59 已通过的完整圆形火花、残骸 alpha、compact producer summary、Factory Tech、生产/升级 action、VoiceOver value、44pt、Combat/Home 构图不得回退。
+
+静态 artifact 能证明编译、双启动与 PNG 无结构性回退，不能证明真实多指旧回调排序、ID 重用、VoiceOver、Dynamic Type、滚动或真机性能。

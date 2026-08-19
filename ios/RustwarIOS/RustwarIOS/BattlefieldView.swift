@@ -23,6 +23,7 @@ struct BattlefieldView: View {
     @State private var panGestureStartLocation: CGPoint?
     @State private var contextPressLocation: CGPoint?
     @State private var suppressTapUntil: TimeInterval?
+    @State private var suppressTapSequence: Int?
     @State private var touchOwner = BattlefieldTouchOwner()
     @State private var contextGestureLease: BattlefieldTouchOwner.Lease?
     @State private var panGestureLease: BattlefieldTouchOwner.Lease?
@@ -98,8 +99,7 @@ struct BattlefieldView: View {
                               let contextPressLocation else {
                             return
                         }
-                        if let suppressTapUntil,
-                           ProcessInfo.processInfo.systemUptime <= suppressTapUntil {
+                        if tapIsSuppressed(for: contextLease.sequence) {
                             return
                         }
                         guard let lease = touchOwner.claim(.longPress, source: .longPress) else {
@@ -109,6 +109,7 @@ struct BattlefieldView: View {
                         clearBattlefieldTouchPreview(for: lease.sequence)
                         battlefieldPanOccurredForCurrentTouch = true
                         suppressTapUntil = ProcessInfo.processInfo.systemUptime + Self.contextTapSuppressionDuration
+                        suppressTapSequence = lease.sequence
                         controller.handleBattlefieldContextCommand(
                             screenPoint: contextPressLocation,
                             viewportSize: proxy.size
@@ -304,11 +305,8 @@ struct BattlefieldView: View {
            distance(from: startLocation, to: screenPoint) > 18 {
             return false
         }
-        if let suppressTapUntil {
-            guard ProcessInfo.processInfo.systemUptime > suppressTapUntil else {
-                return false
-            }
-            self.suppressTapUntil = nil
+        guard !tapIsSuppressed(for: lease.sequence) else {
+            return false
         }
         clearBattlefieldTouchPreview(for: lease.sequence)
         controller.handleBattlefieldTap(
@@ -365,7 +363,7 @@ struct BattlefieldView: View {
                       touchOwner.accepts(lease) else {
                     return
                 }
-                suppressTapAfterBattlefieldPan()
+                suppressTapAfterBattlefieldPan(for: lease.sequence)
                 if controller.isAwaitingAreaSelection {
                     if selectionDragStart == nil {
                         selectionDragStart = value.startLocation
@@ -689,10 +687,12 @@ struct BattlefieldView: View {
     }
 
     private func finishMultitouchSelection(with events: SpatialEventCollection, viewportSize: CGSize) {
+        let eventTouchIDs = Set(events.filter { $0.kind == .touch }.map(\.id))
         let hadMultitouchClaim = touchOwner.hasMultitouchClaimed
         let hasCurrentMultitouchLease = touchOwner.hasMultitouchClaimed &&
             (multitouchLease?.sequence == touchOwner.sequence ||
-             pinchLease?.sequence == touchOwner.sequence)
+             pinchLease?.sequence == touchOwner.sequence) &&
+            !eventTouchIDs.intersection(touchOwner.acceptedIDs).isEmpty
         let wasCancelledMultitouch = hadMultitouchClaim && touchOwner.phase == .cancelled
         if !wasCancelledMultitouch {
             guard synchronizeTouchOwner(with: events, allowFreshSeed: false) else {
@@ -702,7 +702,6 @@ struct BattlefieldView: View {
                 return
             }
         }
-        let eventTouchIDs = Set(events.filter { $0.kind == .touch }.map(\.id))
         let hasMultitouchEvidence = hadMultitouchClaim ||
             touchOwner.acceptedIDs.count >= 2 ||
             eventTouchIDs.count >= 2 ||
@@ -769,7 +768,7 @@ struct BattlefieldView: View {
         resetContextGestureState()
         clearBattlefieldTouchPreview(for: previewSequence)
         controller.clearLastBattlefieldTap()
-        suppressTapAfterMultitouch()
+        suppressTapAfterMultitouch(for: previewSequence)
         battlefieldPanOccurredForCurrentTouch = true
         guard finishResult == .committed,
               let startPoint,
@@ -788,6 +787,7 @@ struct BattlefieldView: View {
         let sequence = touchOwner.sequence
         _ = touchOwner.cancel()
         _ = touchOwner.finishCancelledMultitouch()
+        clearTapSuppression()
         clearMultitouchSelectionPreview()
         clearBattlefieldTouchPreview(for: sequence)
         resetContextGestureState()
@@ -802,12 +802,34 @@ struct BattlefieldView: View {
         isMultitouchRejected = true
     }
 
-    private func suppressTapAfterMultitouch() {
+    private func suppressTapAfterMultitouch(for sequence: Int? = nil) {
         suppressTapUntil = ProcessInfo.processInfo.systemUptime + Self.multitouchTapSuppressionDuration
+        suppressTapSequence = sequence ?? touchOwner.sequence
     }
 
-    private func suppressTapAfterBattlefieldPan() {
+    private func suppressTapAfterBattlefieldPan(for sequence: Int) {
         suppressTapUntil = ProcessInfo.processInfo.systemUptime + Self.contextTapSuppressionDuration
+        suppressTapSequence = sequence
+    }
+
+    private func tapIsSuppressed(for sequence: Int) -> Bool {
+        guard let suppressTapUntil else {
+            return false
+        }
+        guard suppressTapSequence == sequence else {
+            clearTapSuppression()
+            return false
+        }
+        guard ProcessInfo.processInfo.systemUptime <= suppressTapUntil else {
+            clearTapSuppression()
+            return false
+        }
+        return true
+    }
+
+    private func clearTapSuppression() {
+        suppressTapUntil = nil
+        suppressTapSequence = nil
     }
 
     private func clearMultitouchSelectionPreview() {
@@ -846,7 +868,7 @@ struct BattlefieldView: View {
         lastDragTranslation = .zero
         isBattlefieldPanActive = false
         battlefieldPanOccurredForCurrentTouch = true
-        suppressTapAfterMultitouch()
+        suppressTapAfterMultitouch(for: touchOwner.sequence)
         resetMultitouchSelectionState()
     }
 

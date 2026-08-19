@@ -6015,3 +6015,16 @@
 已知风险：
 
 - CI 仍无真实多指/迟到 callback 注入、VoiceOver、Dynamic Type、Reduce Motion 自动化或性能矩阵；静态 PNG 和云端 build 不能证明真机触控时序、滚动和长局帧率。
+
+## v2.59.1 / stale touch callback and suppression scope
+
+日期：2026-08-20
+
+复核修正：
+
+- `finishMultitouchSelection` 保存结束帧 touch IDs；同步失败时只有当前 lease sequence 匹配且 terminal IDs 与 owner `acceptedIDs` 相交才取消，避免旧 callback 撞到新 owner。
+- `cancelMultitouchSequence` 统一执行 `cancel()` + `finishCancelledMultitouch()`，并清除 tap suppression；context、pan、多指完成的 suppression 改为存储所属 `suppressTapSequence`，不同/过期 sequence 自动放行并清理。
+
+验证状态：
+
+- v2.59 run `32285939741` / attempt `1` 已成功，但 Agent C 代码复核发现上述 residual risk；v2.59.1 待提交、推送后只验收对应最新 SHA 的 Actions artifact。
