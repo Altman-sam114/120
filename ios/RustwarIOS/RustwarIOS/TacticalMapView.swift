@@ -15,8 +15,10 @@ struct TacticalMapView: View {
     @GestureState private var isMapGestureActive = false
     @State private var animatedCommandConfirmationRevision = 0
     @State private var commandConfirmationProgress: CGFloat = 1
+    @State private var mapGestureCallbackGeneration = 0
 
     var body: some View {
+        let callbackGeneration = mapGestureCallbackGeneration
         GeometryReader { proxy in
             let state = controller.engine.state
             let resources = state.resources
@@ -80,22 +82,27 @@ struct TacticalMapView: View {
                 }
             }
             .contentShape(Rectangle())
-            .simultaneousGesture(mapGesture(in: proxy.size))
+            .simultaneousGesture(
+                mapGesture(in: proxy.size)
+            )
             .onChange(of: isMapGestureActive) { _, isActive in
                 guard !isActive else {
                     return
                 }
-                mapGestureStartLocation = nil
-                contextPressLocation = nil
-                didRecognizeContextPress = false
-                isDraggingCamera = false
+                resetMapGestureState()
             }
             .onLongPressGesture(minimumDuration: 0.45, maximumDistance: 18) {
+                guard callbackGeneration == mapGestureCallbackGeneration,
+                      !isDraggingCamera else {
+                    return
+                }
                 didRecognizeContextPress = true
                 guard let contextPressLocation else {
+                    finishContextPressCallback()
                     return
                 }
                 handleContextPress(at: contextPressLocation, in: proxy.size)
+                finishContextPressCallback()
             }
             .overlay(alignment: .topLeading) {
                 if let pendingCommandLabel {
@@ -159,7 +166,16 @@ struct TacticalMapView: View {
                 isActive = true
             }
             .onChanged { value in
-                if mapGestureStartLocation == nil {
+                if let start = mapGestureStartLocation,
+                   hypot(
+                       value.startLocation.x - start.x,
+                       value.startLocation.y - start.y
+                   ) > 0.5 {
+                    mapGestureCallbackGeneration &+= 1
+                    mapGestureStartLocation = value.startLocation
+                    didRecognizeContextPress = false
+                    isDraggingCamera = false
+                } else if mapGestureStartLocation == nil {
                     mapGestureStartLocation = value.startLocation
                     didRecognizeContextPress = false
                     isDraggingCamera = false
@@ -188,16 +204,26 @@ struct TacticalMapView: View {
             }
             .onEnded { value in
                 defer {
-                    mapGestureStartLocation = nil
-                    contextPressLocation = nil
-                    didRecognizeContextPress = false
-                    isDraggingCamera = false
+                    resetMapGestureState()
                 }
                 guard !isDraggingCamera, !didRecognizeContextPress else {
                     return
                 }
                 handleTap(at: value.location, in: size)
             }
+    }
+
+    private func finishContextPressCallback() {
+        contextPressLocation = nil
+        mapGestureCallbackGeneration &+= 1
+    }
+
+    private func resetMapGestureState() {
+        mapGestureCallbackGeneration &+= 1
+        mapGestureStartLocation = nil
+        contextPressLocation = nil
+        didRecognizeContextPress = false
+        isDraggingCamera = false
     }
 
     private func handleTap(at location: CGPoint, in size: CGSize) {

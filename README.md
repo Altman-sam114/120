@@ -1,6 +1,8 @@
 # Rustwar RTS Prototype
 
-v2.59.1：进一步收紧原生 iOS 多指结束回调：只有当前 accepted touch ID 与 lease sequence 同时匹配才允许取消收尾，迟到旧 callback 不会抢占新多指/单指 owner；tap suppression 按 touch sequence 作用域化，取消后立即释放。只修正 iOS 输入生命周期，不改 Core、命令、存档或 Web 版；v2.59 云端 build/PNG 已通过，v2.59.1 仍待最新 Actions artifact。
+v2.60：compact 横屏生产建筑把 Factory Tech 收敛为高密度但保留升级语义的卡片，让首排生产按钮完整进入建筑首屏；Tactical Map 长按加入 callback generation gate，取消或迟到旧回调不会抑制下一次独立点按、拖动或等待目标。只改 iOS presentation/input 生命周期，不改 Core、命令、生产队列、战斗数值、存档或 Web 版；仍以最新 Actions artifact 验收。
+
+v2.59.1：进一步收紧原生 iOS 多指结束回调：只有当前 accepted touch ID 与 lease sequence 同时匹配才允许取消收尾，迟到旧 callback 不会抢占新多指/单指 owner；tap suppression 按 touch sequence 作用域化，取消后立即释放。只修正 iOS 输入生命周期，不改 Core、命令、存档或 Web 版；对应 run `32287789956` 的云端 build/PNG 已通过。
 
 v2.59：原生 iOS 多指框选在结束回调无法同步时会安全取消仍存活的多指序列，避免下一次单指点选被吞；战斗受击火花改为完整 360° 确定性分布，残骸回收条与残骸本体同步淡出；compact 生产上下文用 NOW / QUEUE / UPGRADE 三列摘要压缩首屏，让 Factory Tech、首排生产入口和建筑升级更快可达。只改 iOS 输入/presentation，不改 Core、命令、命中、伤害、存档或 Web 版；仍以云端 Actions 验收。
 

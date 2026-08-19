@@ -476,3 +476,15 @@ Agent C 必须核对最新 artifact 的 manifest `branch=main`、完整 SHA、ru
 - v2.59 已通过的完整圆形火花、残骸 alpha、compact producer summary、Factory Tech、生产/升级 action、VoiceOver value、44pt、Combat/Home 构图不得回退。
 
 静态 artifact 能证明编译、双启动与 PNG 无结构性回退，不能证明真实多指旧回调排序、ID 重用、VoiceOver、Dynamic Type、滚动或真机性能。
+
+## v2.60
+
+本轮继续只认 GitHub Actions 云端验证，不运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`。Agent C 必须只下载最新 `origin/main` SHA 对应的未加密 artifact，并核对 manifest、JUnit、主日志、失败摘要、repo state、固定 Xcode 26.5/iOS SDK 26.5/iPhone 17 Pro、双架构 build、production/combat 双启动、横屏归一化和两份 PNG probe。
+
+代码复核必须确认：
+
+- `TacticalFactoryTechView` 仅在 compact 且非 accessibility Dynamic Type 时使用紧凑卡；T2/倍率/状态、升级 ready 按钮、upgrading 进度、cancel、VoiceOver label/value/hint 和 `TacticalHUDTheme.controlMinimumHeight` 44pt 保持。regular/accessibility 路径自然换行，不以 `minimumScaleFactor` 隐藏语义。
+- Production section 仍按 summary、Factory Tech、生产入口、queue、Cancel/Repeat/Rally 排列；首排至少两个生产入口在固定横屏 fixture 的 `ios-home.png` 内完整可见，无底部裁切、重叠或按钮命中区域缩小；production action、快捷键、Core queue 和存档不变。
+- `TacticalMapView` 的新触摸起点、`@GestureState` cancel/end、长按消费与正常 end 都会使旧 callback generation 失效并清理 context location/recognition/drag 状态；长按 callback 必须校验 captured generation。普通 tap、相机拖动、pending target hit radius、context command、visibility/fog、VoiceOver 和 Core/TouchSequenceOwner 不变。
+
+Agent C 必须人工查看最新 `ios-home.png` 与 `ios-combat.png`：Home 的 Production、NOW/QUEUE/UPGRADE、紧凑 Factory Tech 和首排生产卡完整在边框内；Combat 的单位模型、弹道、攻击等待状态、Tactical Map 与 command dock 无结构性回退。静态 artifact 不能证明真实长按/取消回调顺序、滚动、VoiceOver、Dynamic Type、Reduce Motion 或真机性能。

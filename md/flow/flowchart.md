@@ -1171,3 +1171,29 @@ flowchart TD
 ```
 
 读图说明：v2.59.1 把 stale terminal callback 和 tap suppression 都绑定到当前触点生命周期；不改变有效框选、pinch、pan、context、tap 或命令语义。静态云端 artifact 不能证明系统真实回调不可区分窗口，仍需真机/XCUITest覆盖。
+
+## v2.60 iOS producer quick access and Tactical Map callback generation
+
+```mermaid
+flowchart TD
+  B[Single player producer selected] --> S[NOW / QUEUE / UPGRADE focus]
+  S --> C{Compact and non-accessibility type?}
+  C -->|yes| T[Dense Factory Tech card]
+  C -->|no| F[Full natural Factory Tech layout]
+  T --> P[First production row reaches compact dock viewport]
+  F --> P
+  T --> U[Upgrade ready / progress / cancel semantics retained]
+  P --> A[Production buttons queue Repeat/Rally/Cancel]
+  U --> A
+  G[New Tactical Map touch starts] --> N[Increment callback generation]
+  N --> D[Drag / context state for current touch]
+  X[Gesture cancel or end] --> I[Invalidate old generation and clear flags]
+  L[Long-press callback] --> Q{Captured generation still current?}
+  Q -->|no| R[Ignore stale callback]
+  Q -->|yes| H[Dispatch existing context command]
+  I --> V[Next tap / camera drag / pending target remains available]
+  A --> K[Core / command / save unchanged]
+  H --> K
+```
+
+读图说明：v2.60 只压缩 compact producer presentation 并为 Tactical Map 并行手势增加 callback generation 门控。生产 action、升级状态和地图命令仍走既有 Controller/Core 路径；云端 PNG 能验证首排入口不再裁切，不能替代真实回调排序、VoiceOver、Dynamic Type 或真机手感。

@@ -6027,4 +6027,33 @@
 
 验证状态：
 
-- v2.59 run `32285939741` / attempt `1` 已成功，但 Agent C 代码复核发现上述 residual risk；v2.59.1 待提交、推送后只验收对应最新 SHA 的 Actions artifact。
+- v2.59 run `32285939741` / attempt `1` 已成功，但 Agent C 代码复核发现上述 residual risk；v2.59.1 提交 `7a97e23b87513ec3fc767ad2b0bc769c699d43fb` 的 run `32287789956` / attempt `1` 已由 Agent C 下载并核对对应 artifact，通过固定 Xcode 26.5、JUnit `8 tests / 0 failures / 1 expected browser skip`、Swift Core、双架构 iOS build、production/combat 双启动、横屏归一化和双 PNG probe。
+
+## v2.60 / compact producer quick access and Tactical Map callback generation
+
+日期：2026-08-20
+
+核心变更：
+
+- compact command dock 的 `Factory Tech` 改为独立紧凑 presentation：保留 T 级、倍率、T2 ready、升级进度、取消和 VoiceOver 语义，但不再用 regular 版大块纵向卡片占满生产首屏；accessibility Dynamic Type 继续使用完整自然换行布局。
+- Tactical Map 为 DragGesture/long-press callback 增加视图捕获的 generation 门控；新触摸、取消、结束和长按消费都会使旧回调失效，避免迟到长按污染下一次普通 tap、相机拖动或等待目标点按。
+- 生产按钮、队列、Repeat/Rally/Cancel、Core 订单、生产进度、存档、战斗数值和 Web 版不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.60-ios-producer-quick-access-and-map-gesture-generation.md`
+
+验证状态：
+
+- 按云端唯一验证制度，未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；提交后只认最新 `origin/main` SHA 对应的 Actions artifact。
+- Agent C 必须确认 production PNG 中 compact `FACTORY TECH`、NOW/QUEUE/UPGRADE 和首排至少两个生产入口完整位于边框内，并确认 combat PNG、双架构 build、工具链、JUnit 和触控相关源码无回退。
+
+已知风险：
+
+- CI 仍无真实 SwiftUI 多指/长按注入、VoiceOver、Dynamic Type 全档位、Reduce Motion 或性能矩阵；静态 artifact 不能证明系统回调排序和真机手感。

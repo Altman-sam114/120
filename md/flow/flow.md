@@ -800,3 +800,9 @@ compact producer focus 在 `TacticalProductionFocusSummaryView` 使用 `ViewThat
 `BattlefieldView.finishMultitouchSelection` 先保存结束帧 touch IDs；无法同步时，取消条件同时要求 `multitouchLease`/`pinchLease` 的 sequence 匹配当前 owner，且结束帧 ID 与当前 `acceptedIDs` 有交集。旧 callback 即使撞到一个新 lease，也不会清理新 owner；当前序列仍通过既有 `cancel()` + `finishCancelledMultitouch()` 和局部 teardown 完整收尾。
 
 `suppressTapUntil` 现在与 `suppressTapSequence` 成对派生。context、pan 和多指结束沿现有路径写入所属 sequence，`tapIsSuppressed(for:)` 遇到不同 sequence 或过期值立即清除；多指取消也清除 suppression。下一次 fresh seed 不会继承旧 0.32 秒窗口，原有当前手势 tap/long press 防串发仍保留。
+
+## v2.60 iOS compact producer quick access and Tactical Map callback generation
+
+选中单一己方生产建筑时，`TacticalProductionSectionView` 仍按 `summary -> Factory Tech -> production options -> queue -> management actions` 消费同一 `GameController` 派生状态；但在 compact、非 accessibility Dynamic Type 下，`TacticalFactoryTechView` 使用高密度 presentation。它保留 T 级、生产倍率、升级 ready/upgrading/max 状态、升级按钮、进度、取消以及 VoiceOver 语义，regular 和 accessibility 路径仍使用可自然换行的完整布局。这样 production focus 的 NOW/QUEUE/UPGRADE 与首排生产入口不会被大块 Factory Tech 卡片推到 dock 底部；按钮、队列、快捷键、Core 和存档不变。
+
+`TacticalMapView` 为地图拖拽/长按并行手势增加 view-captured callback generation。新独立 DragGesture 起点递增 generation，`@GestureState` 结束/取消、长按消费和正常 end 清除 context location、recognition flag、相机拖动状态并使旧 generation 失效；长按回调必须匹配当前 generation 才能派发上下文命令。迟到旧回调因此不能设置当前消费 flag，也不能吞掉下一次普通 map tap、相机拖动或 pending target tap。普通 map tap 居中、无等待拖动、等待命中半径、visibility/fog、VoiceOver、Controller、TouchSequenceOwner、Core 和命令状态流保持不变。

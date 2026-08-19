@@ -185,7 +185,7 @@ struct TacticalProductionSectionView: View {
                 )
             }
             if controller.showsSelectedFactoryTech {
-                TacticalFactoryTechView(controller: controller)
+                TacticalFactoryTechView(controller: controller, isCompact: columns == 1)
             }
             if !controller.productionOptions.isEmpty {
                 TacticalCommandGrid(
@@ -365,9 +365,140 @@ private struct TacticalProductionButtonLabel: View {
 
 private struct TacticalFactoryTechView: View {
     @Bindable var controller: GameController
+    let isCompact: Bool
+
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
+    @ViewBuilder
     var body: some View {
+        if isCompact && !dynamicTypeSize.isAccessibilitySize {
+            compactBody
+        } else {
+            regularBody
+        }
+    }
+
+    @ViewBuilder
+    private var compactBody: some View {
+        VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+            compactFactoryHeader
+            if controller.showsSelectedFactoryUpgradeControl {
+                compactUpgradeControl
+            } else if let progress = controller.selectedFactoryUpgradeProgress {
+                compactUpgradeProgress(progress: progress)
+            }
+        }
+        .padding(.horizontal, TacticalHUDTheme.compactPadding)
+        .padding(.vertical, TacticalHUDTheme.denseSpacing)
+        .foregroundStyle(TacticalHUDTheme.primaryText)
+        .background(
+            TacticalHUDTheme.selectionBackground,
+            in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
+                .stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var compactFactoryHeader: some View {
+        HStack(alignment: .center, spacing: TacticalHUDTheme.denseSpacing) {
+            factoryIcon
+            VStack(alignment: .leading, spacing: 0) {
+                Text("FACTORY TECH")
+                    .font(.caption2.bold())
+                    .foregroundStyle(TacticalHUDTheme.metricLabel)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.compactSpacing) {
+                    Text("T\(controller.selectedFactoryTechLevel)")
+                        .font(.headline.bold())
+                        .monospacedDigit()
+                    Text(compactProductionSpeedText)
+                        .font(.caption)
+                        .foregroundStyle(TacticalHUDTheme.secondaryText)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                }
+            }
+            Spacer(minLength: 0)
+            Text(compactFactoryStatusTitle)
+                .font(.caption2.bold())
+                .foregroundStyle(factoryStatusForeground)
+                .padding(.horizontal, TacticalHUDTheme.denseSpacing)
+                .padding(.vertical, TacticalHUDTheme.denseSpacing)
+                .background(
+                    factoryStatusBackground,
+                    in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
+                )
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
+    }
+
+    private var compactProductionSpeedText: String {
+        controller.selectedFactoryProductionSpeedText.replacing(" production", with: "")
+    }
+
+    private var compactFactoryStatusTitle: String {
+        if controller.selectedFactoryUpgradeProgress != nil {
+            return "UPGRADING"
+        }
+        return controller.showsSelectedFactoryUpgradeControl ? "T2 READY" : "MAX"
+    }
+
+    private var compactUpgradeControl: some View {
+        Button(action: controller.upgradeSelectedFactory) {
+            HStack(spacing: TacticalHUDTheme.denseSpacing) {
+                Image(systemName: "arrow.up.circle.fill")
+                    .accessibilityHidden(true)
+                Text(controller.upgradeFactoryButtonTitle)
+                    .font(.caption.bold())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .frame(
+                maxWidth: .infinity,
+                minHeight: TacticalHUDTheme.controlMinimumHeight,
+                alignment: .leading
+            )
+        }
+        .tacticalProminentControl()
+        .disabled(!controller.canUpgradeSelectedFactory)
+        .accessibilityLabel("Upgrade land factory to tech level 2")
+        .accessibilityValue(controller.factoryUpgradeBenefitText ?? "")
+        .accessibilityHint("Increases factory armor, vision, and future unit production speed.")
+    }
+
+    private func compactUpgradeProgress(progress: Double) -> some View {
+        HStack(spacing: TacticalHUDTheme.compactSpacing) {
+            VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+                HStack(spacing: TacticalHUDTheme.compactSpacing) {
+                    Text("UPGRADING TO T\(controller.selectedFactoryTechLevel + 1)")
+                        .font(.caption.bold())
+                        .foregroundStyle(TacticalHUDTheme.metricLabel)
+                    Text(progress, format: .percent.precision(.fractionLength(0)))
+                        .font(.caption.bold())
+                        .monospacedDigit()
+                }
+                ProgressView(value: progress)
+                    .tint(TacticalHUDTheme.attention)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Button("Cancel", systemImage: "xmark.circle", action: controller.cancelFactoryUpgrade)
+                .tacticalIconControl()
+                .labelStyle(.iconOnly)
+                .accessibilityLabel("Cancel factory upgrade")
+                .accessibilityHint("Stops the factory upgrade and refunds remaining metal.")
+        }
+        .frame(minHeight: TacticalHUDTheme.controlMinimumHeight, alignment: .center)
+    }
+
+    @ViewBuilder
+    private var regularBody: some View {
         let layout = dynamicTypeSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: TacticalHUDTheme.compactSpacing))
             : AnyLayout(HStackLayout(alignment: .center, spacing: TacticalHUDTheme.compactSpacing))
