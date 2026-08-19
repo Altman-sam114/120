@@ -3,6 +3,7 @@ import SwiftUI
 struct TacticalSelectionSummaryView: View {
     let selectedSummary: String
     let attackStanceSummary: String?
+    let attackStanceAccessibilitySummary: String?
     let radarUpgradeSummary: String?
     let extractorUpgradeSummary: String?
 
@@ -14,7 +15,10 @@ struct TacticalSelectionSummaryView: View {
                 VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
                     selectionLabel
                     if let attackStanceSummary {
-                        attackStanceLabel(attackStanceSummary, usesCompactLayout: false)
+                        attackStanceLabel(
+                            attackStanceSummary,
+                            accessibilitySummary: attackStanceAccessibilitySummary
+                        )
                     }
                 }
             } else {
@@ -22,15 +26,18 @@ struct TacticalSelectionSummaryView: View {
                     selectionLabel
                     Spacer(minLength: 0)
                     if let attackStanceSummary {
-                        attackStanceLabel(attackStanceSummary, usesCompactLayout: true)
+                        attackStanceLabel(
+                            attackStanceSummary,
+                            accessibilitySummary: attackStanceAccessibilitySummary
+                        )
                     }
                 }
             }
 
             Text(selectedSummary)
                 .font(.subheadline.bold())
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
-                .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.82)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
                 .foregroundStyle(TacticalHUDTheme.primaryText)
                 .accessibilityLabel("Selected")
                 .accessibilityValue(selectedSummary)
@@ -39,13 +46,15 @@ struct TacticalSelectionSummaryView: View {
                 Label(radarUpgradeSummary, systemImage: "dot.radiowaves.left.and.right")
                     .font(.caption)
                     .foregroundStyle(TacticalHUDTheme.secondaryText)
-                    .lineLimit(2)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if let extractorUpgradeSummary {
                 Label(extractorUpgradeSummary, systemImage: "arrow.up.circle")
                     .font(.caption)
                     .foregroundStyle(TacticalHUDTheme.secondaryText)
-                    .lineLimit(2)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -60,12 +69,16 @@ struct TacticalSelectionSummaryView: View {
 
     private func attackStanceLabel(
         _ summary: String,
-        usesCompactLayout: Bool
+        accessibilitySummary: String?
     ) -> some View {
         Label(summary, systemImage: "scope")
             .font(.caption)
             .foregroundStyle(TacticalHUDTheme.secondaryText)
-            .lineLimit(usesCompactLayout ? 1 : nil)
-            .minimumScaleFactor(usesCompactLayout ? 0.82 : 1)
+            .lineLimit(nil)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Attack stance")
+            .accessibilityValue(accessibilitySummary ?? summary)
+            .accessibilityHint("Current stance for selected combat units.")
     }
 }

@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.54：原生 iOS 紧凑横屏 command dock 修正 primary action 的宽度策略与文字可读性，Attack Move 不再被错误省略；stance 与 target hint/status 允许自然换行，pending Cancel 保留完整命令的 VoiceOver 语义。只改 HUD presentation/accessibility，不改 Core、命令、触控 owner、战斗、存档或 Web 版；云端静态 smoke 仍不能证明真实按钮点击、滚动或真机手感。
+
 v2.53：原生 iOS pinch 的正常结束、第三指/replacement/cancel 和地图 reset 统一清除累计 magnification，避免下一次捏合首帧沿用旧倍率跳缩；command dock 去除重复生产摘要，把 Move / Attack Move / Attack / Stop 提升为首组，并让工厂生产入口更早进入横屏首屏。Core、命令语义、存档和 Web 版不变；CI 仍不包含 XCUITest，云端静态 smoke 不能证明真实设备触控顺序或手感。
 
 v2.51：原生 iOS 水面命中改用蓝白水花、弧线与水滴，陆地保留火焰、烟尘和焦痕；只调整 SpriteKit presentation，不改变 Core 数值、命令、存档或效果上限。
@@ -152,7 +154,7 @@ v2.50：原生 iOS 生产建筑 dock 首屏增加只读 Production focus summary
 
 ### 原生 iOS 迁移地基
 
-- HUD：顶部 safe-area 状态栏持续显示资源、雷达、Pause/Play 和速度；右侧或底部 command dock 的紧凑固定 header 显示当前选择、命令状态和 Replace/Add，下方按上下文连续滚动操作。作战单位的 Move / Attack Move / Attack / Stop 位于首组，生产建筑不在 header 重复队列摘要，使生产入口更早进入横屏首屏。Tactical Map 始终位于独立战场区域；旋转或 Split View resize 会按容器宽高自动切换布局，不会改变当前选择、等待命令或编队。
+- HUD：顶部 safe-area 状态栏持续显示资源、雷达、Pause/Play 和速度；右侧或底部 command dock 的紧凑固定 header 显示当前选择、命令状态和 Replace/Add，下方按上下文连续滚动操作。作战单位的 Move / Attack Move / Attack / Stop 位于首组，compact 横屏 primary tile 会消费一列/宽度感知策略，避免 Attack Move 错误省略；stance 与 target status 支持自然换行并保留完整 VoiceOver 语义。生产建筑不在 header 重复队列摘要，使生产入口更早进入横屏首屏。Tactical Map 始终位于独立战场区域；旋转或 Split View resize 会按容器宽高自动切换布局，不会改变当前选择、等待命令或编队。
 - 建筑操作：点 Command Center / Land Factory 时 Production 自动排到 dock 顶部；点可升级或正在升级的 Extractor / Radar Station 时 Build & Upgrade 自动排到顶部。切换选择会回到 dock 顶部；资源不足的升级仍显示费用并禁用，方便玩家直接理解下一步。
 - Tap：无等待命令时，点己方单位或建筑按 Replace / Add 选择；已有至少一个存活己方单位被选中时，点当前可见敌方直接 Attack，点未命中单位/建筑的战场位置直接 Attack Move，并保持原选择。主战场实体命中会按 zoom 保持至少 44pt 触控直径，但仍只选最近实体且不会穿过战争迷雾命中敌人。建筑-only 选择或没有己方单位选择时仍走普通选择；普通 tap 不会自动 Guard、Repair、Reclaim、Build 或 Rally。Move、Attack Move 和 Patrol 等显式模式下仍作为目的地，Guard / Repair / Reclaim / Build Extractor / Attack 等模式下仍作为对应目标点选。
 - Long press：无等待命令时执行上下文命令；长按敌方单位或建筑会 Attack，长按受损友方单位或建筑会让 Builder Repair，长按健康友方目标会 Guard，长按残骸会 Reclaim，长按空闲资源点会 Build Extractor，长按空地点会对生产建筑设置 Rally 或让己方单位 Move。

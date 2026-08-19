@@ -88,10 +88,13 @@ struct TacticalCommandStatusView: View {
     let isAwaitingTarget: Bool
 
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var readableText: String {
+        text.replacingOccurrences(of: "Attack-move", with: "Attack Move")
+    }
 
     var body: some View {
-        HStack(alignment: .center, spacing: TacticalHUDTheme.compactSpacing) {
+        HStack(alignment: .top, spacing: TacticalHUDTheme.compactSpacing) {
             Image(systemName: isAwaitingTarget ? "viewfinder" : "info.circle")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(
@@ -108,14 +111,15 @@ struct TacticalCommandStatusView: View {
                         .foregroundStyle(TacticalHUDTheme.awaitingStatusLabel)
                         .accessibilityHidden(true)
                 }
-                Text(text)
+                Text(readableText)
                     .font(isAwaitingTarget ? .footnote.bold() : .footnote)
                     .foregroundStyle(
                         isAwaitingTarget
                             ? TacticalHUDTheme.awaitingStatusForeground
                             : TacticalHUDTheme.secondaryText
                     )
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.horizontal, TacticalHUDTheme.compactPadding)
@@ -144,7 +148,12 @@ struct TacticalCommandStatusView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(isAwaitingTarget ? "Awaiting target command status" : "Command status")
-        .accessibilityValue(text)
+        .accessibilityValue(readableText)
+        .accessibilityHint(
+            isAwaitingTarget
+                ? "Choose a target on the battlefield, or activate the command button again to cancel."
+                : ""
+        )
     }
 }
 
@@ -306,7 +315,8 @@ extension View {
             .buttonBorderShape(.roundedRectangle(radius: TacticalHUDTheme.cornerRadius))
             .controlSize(.regular)
             .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
-            .lineLimit(2)
+            .lineLimit(nil)
+            .allowsTightening(false)
             .multilineTextAlignment(.leading)
     }
 
@@ -315,7 +325,8 @@ extension View {
             .buttonBorderShape(.roundedRectangle(radius: TacticalHUDTheme.cornerRadius))
             .controlSize(.regular)
             .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
-            .lineLimit(2)
+            .lineLimit(nil)
+            .allowsTightening(false)
             .multilineTextAlignment(.leading)
     }
 

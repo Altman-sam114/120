@@ -9,7 +9,14 @@ struct TacticalCommandsSectionView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var primaryColumnCount: Int {
-        dynamicTypeSize.isAccessibilitySize ? 1 : 2
+        dynamicTypeSize.isAccessibilitySize ? 1 : max(1, columns)
+    }
+
+    private var attackMoveButtonTitle: String {
+        guard !controller.isAwaitingAttackMoveTarget else {
+            return controller.attackMoveCommandButtonTitle
+        }
+        return primaryColumnCount == 1 ? controller.attackMoveCommandButtonTitle : "Attack\nMove"
     }
 
     private var hasPrimaryCommands: Bool {
@@ -34,16 +41,25 @@ struct TacticalCommandsSectionView: View {
                             action: controller.toggleMoveCommand
                         )
                         .tacticalControl()
+                        .tacticalCommandAccessibility(
+                            command: "Move",
+                            isAwaitingTarget: controller.isAwaitingMoveTarget,
+                            idleHint: "Choose a destination on the battlefield."
+                        )
                     }
                     if controller.canIssueAttackMove || controller.isAwaitingAttackMoveTarget {
                         Button(
-                            controller.attackMoveCommandButtonTitle,
+                            attackMoveButtonTitle,
                             systemImage: controller.isAwaitingAttackMoveTarget ? "xmark.circle" : "arrow.up.right.circle",
                             action: controller.toggleAttackMoveCommand
                         )
                         .tacticalControl()
                         .keyboardShortcut(commandKey("a"), modifiers: [])
-                        .accessibilityLabel("Attack move")
+                        .tacticalCommandAccessibility(
+                            command: "Attack Move",
+                            isAwaitingTarget: controller.isAwaitingAttackMoveTarget,
+                            idleHint: "Choose a destination to move and automatically engage nearby enemies."
+                        )
                     }
                     if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                         Button(
@@ -52,6 +68,11 @@ struct TacticalCommandsSectionView: View {
                             action: controller.toggleAttackCommand
                         )
                         .tacticalControl()
+                        .tacticalCommandAccessibility(
+                            command: "Attack",
+                            isAwaitingTarget: controller.isAwaitingAttackTarget,
+                            idleHint: "Choose a visible enemy unit or building."
+                        )
                     }
                     if showsStop {
                         Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
@@ -69,8 +90,13 @@ struct TacticalCommandsSectionView: View {
                         action: controller.toggleAreaSelectionCommand
                     )
                     .tacticalControl()
-                    .accessibilityLabel("Select area")
-                    .accessibilityHint("Drag on the battlefield to select player units in an area.")
+                    .tacticalCommandAccessibility(
+                        command: "Select Area",
+                        isAwaitingTarget: controller.isAwaitingAreaSelection,
+                        pendingLabel: "Cancel area selection",
+                        pendingValue: "Waiting for an area selection",
+                        idleHint: "Drag on the battlefield to select player units in an area."
+                    )
                 }
                 if controller.canSelectSameTypeUnits {
                     Button(
@@ -91,6 +117,11 @@ struct TacticalCommandsSectionView: View {
                     )
                     .tacticalControl()
                     .keyboardShortcut(commandKey("g"), modifiers: [])
+                    .tacticalCommandAccessibility(
+                        command: "Patrol",
+                        isAwaitingTarget: controller.isAwaitingPatrolTarget,
+                        idleHint: "Choose a patrol destination on the battlefield."
+                    )
                 }
                 if controller.canIssueGuard || controller.isAwaitingGuardTarget {
                     Button(
@@ -100,6 +131,11 @@ struct TacticalCommandsSectionView: View {
                     )
                     .tacticalControl()
                     .keyboardShortcut(commandKey("h"), modifiers: [])
+                    .tacticalCommandAccessibility(
+                        command: "Guard",
+                        isAwaitingTarget: controller.isAwaitingGuardTarget,
+                        idleHint: "Choose a friendly unit or building to guard."
+                    )
                 }
                 if controller.canSetAttackStance {
                     attackStanceButton(.aggressive, systemImage: "scope", key: "z")
@@ -113,6 +149,11 @@ struct TacticalCommandsSectionView: View {
                         action: controller.toggleRepairCommand
                     )
                     .tacticalControl()
+                    .tacticalCommandAccessibility(
+                        command: "Repair",
+                        isAwaitingTarget: controller.isAwaitingRepairTarget,
+                        idleHint: "Choose a damaged friendly unit or building to repair."
+                    )
                 }
                 if controller.canIssueReclaim || controller.isAwaitingReclaimTarget {
                     Button(
@@ -122,6 +163,11 @@ struct TacticalCommandsSectionView: View {
                     )
                     .tacticalControl()
                     .keyboardShortcut(commandKey("c"), modifiers: [])
+                    .tacticalCommandAccessibility(
+                        command: "Reclaim",
+                        isAwaitingTarget: controller.isAwaitingReclaimTarget,
+                        idleHint: "Choose a battlefield wreck to reclaim."
+                    )
                 }
             }
         }
@@ -147,5 +193,52 @@ struct TacticalCommandsSectionView: View {
 
     private func commandKey(_ value: String) -> KeyEquivalent {
         KeyEquivalent(Character(value))
+    }
+}
+
+private struct TacticalCommandAccessibilityModifier: ViewModifier {
+    let command: String
+    let isAwaitingTarget: Bool
+    let pendingLabel: String?
+    let pendingValue: String?
+    let idleHint: String
+
+    func body(content: Content) -> some View {
+        content
+            .accessibilityLabel(
+                isAwaitingTarget
+                    ? (pendingLabel ?? "Cancel \(command) target")
+                    : command
+            )
+            .accessibilityValue(
+                isAwaitingTarget
+                    ? (pendingValue ?? "Waiting for \(command) target")
+                    : ""
+            )
+            .accessibilityHint(
+                isAwaitingTarget
+                    ? "Cancels \(command) target selection."
+                    : idleHint
+            )
+    }
+}
+
+private extension View {
+    func tacticalCommandAccessibility(
+        command: String,
+        isAwaitingTarget: Bool,
+        pendingLabel: String? = nil,
+        pendingValue: String? = nil,
+        idleHint: String
+    ) -> some View {
+        modifier(
+            TacticalCommandAccessibilityModifier(
+                command: command,
+                isAwaitingTarget: isAwaitingTarget,
+                pendingLabel: pendingLabel,
+                pendingValue: pendingValue,
+                idleHint: idleHint
+            )
+        )
     }
 }

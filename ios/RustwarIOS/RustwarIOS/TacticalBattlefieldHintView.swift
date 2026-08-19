@@ -5,8 +5,6 @@ struct TacticalBattlefieldHintView: View {
     let detail: String
     let systemImage: String
 
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
     var body: some View {
         HStack(alignment: .center, spacing: TacticalHUDTheme.compactSpacing) {
             Image(systemName: systemImage)
@@ -19,11 +17,13 @@ struct TacticalBattlefieldHintView: View {
                 Text(title)
                     .font(.caption.bold())
                     .foregroundStyle(TacticalHUDTheme.primaryText)
-                    .lineLimit(1)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(detail)
                     .font(.caption)
                     .foregroundStyle(TacticalHUDTheme.secondaryText)
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.horizontal, TacticalHUDTheme.compactPadding)

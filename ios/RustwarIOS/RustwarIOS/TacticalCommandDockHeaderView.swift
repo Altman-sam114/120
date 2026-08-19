@@ -8,7 +8,8 @@ struct TacticalCommandDockHeaderView: View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.compactSpacing) {
             TacticalSelectionSummaryView(
                 selectedSummary: controller.selectedSummary,
-                attackStanceSummary: controller.selectedAttackStanceSummary,
+                attackStanceSummary: controller.selectedAttackStanceCompactSummary,
+                attackStanceAccessibilitySummary: controller.selectedAttackStanceSummary,
                 radarUpgradeSummary: controller.selectedRadarUpgradeSummary,
                 extractorUpgradeSummary: controller.selectedExtractorUpgradeSummary
             )

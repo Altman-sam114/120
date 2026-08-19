@@ -574,6 +574,17 @@ final class GameController {
         return "Stance Mixed"
     }
 
+    var selectedAttackStanceCompactSummary: String? {
+        let stances = Set(selectedPlayerCombatUnits.map(\.attackStance))
+        guard !stances.isEmpty else {
+            return nil
+        }
+        if stances.count == 1, let stance = stances.first {
+            return stance.shortLabel
+        }
+        return "Mixed"
+    }
+
     var canIssueAttackMove: Bool {
         !selectedPlayerCombatUnits.isEmpty
     }
@@ -2324,17 +2335,29 @@ final class GameController {
         } else if isAwaitingBuildTurretTarget {
             let result = engine.issueBuildTurret(at: point)
             isAwaitingBuildTurretTarget = shouldKeepTargetMode(after: result)
-            commandStatus = statusText(forBuildTurret: result, position: clampedMapPoint(point))
+            commandStatus = pendingTargetStatus(
+                command: "Turret",
+                status: statusText(forBuildTurret: result, position: clampedMapPoint(point)),
+                isAwaiting: isAwaitingBuildTurretTarget
+            )
             reportCommandFeedback(for: result, confirmation: .build, at: clampedMapPoint(point))
         } else if isAwaitingBuildFactoryTarget {
             let result = engine.issueBuildLandFactory(at: point)
             isAwaitingBuildFactoryTarget = shouldKeepTargetMode(after: result)
-            commandStatus = statusText(forBuildFactory: result, position: clampedMapPoint(point))
+            commandStatus = pendingTargetStatus(
+                command: "Factory",
+                status: statusText(forBuildFactory: result, position: clampedMapPoint(point)),
+                isAwaiting: isAwaitingBuildFactoryTarget
+            )
             reportCommandFeedback(for: result, confirmation: .build, at: clampedMapPoint(point))
         } else if isAwaitingBuildRadarTarget {
             let result = engine.issueBuildRadar(at: point)
             isAwaitingBuildRadarTarget = shouldKeepTargetMode(after: result)
-            commandStatus = statusText(forBuildRadar: result, position: clampedMapPoint(point))
+            commandStatus = pendingTargetStatus(
+                command: "Radar",
+                status: statusText(forBuildRadar: result, position: clampedMapPoint(point)),
+                isAwaiting: isAwaitingBuildRadarTarget
+            )
             reportCommandFeedback(for: result, confirmation: .build, at: clampedMapPoint(point))
         } else {
             return false
@@ -2356,7 +2379,11 @@ final class GameController {
                 result = .invalidReclaimTarget
             }
             isAwaitingReclaimTarget = shouldKeepTargetMode(after: result)
-            commandStatus = statusText(forReclaim: result, wreckID: wreckID)
+            commandStatus = pendingTargetStatus(
+                command: "Reclaim",
+                status: statusText(forReclaim: result, wreckID: wreckID),
+                isAwaiting: isAwaitingReclaimTarget
+            )
             reportCommandFeedback(for: result, confirmation: .reclaim, at: wreck?.position ?? point)
         } else if isAwaitingBuildExtractorTarget {
             let resource = engine.state.resourceTarget(at: point)
@@ -2370,7 +2397,11 @@ final class GameController {
                 result = .invalidBuildTarget
             }
             isAwaitingBuildExtractorTarget = shouldKeepTargetMode(after: result)
-            commandStatus = statusText(forBuildExtractor: result, nodeID: nodeID)
+            commandStatus = pendingTargetStatus(
+                command: "Extractor",
+                status: statusText(forBuildExtractor: result, nodeID: nodeID),
+                isAwaiting: isAwaitingBuildExtractorTarget
+            )
             reportCommandFeedback(for: result, confirmation: .build, at: resource?.position ?? point)
         } else {
             return false
@@ -2394,7 +2425,11 @@ final class GameController {
                 result = .invalidGuardTarget
             }
             isAwaitingGuardTarget = shouldKeepTargetMode(after: result)
-            commandStatus = statusText(forGuard: result)
+            commandStatus = pendingTargetStatus(
+                command: "Guard",
+                status: statusText(forGuard: result),
+                isAwaiting: isAwaitingGuardTarget
+            )
             reportCommandFeedback(for: result, confirmation: .guardTarget, at: target?.position ?? point)
         } else if isAwaitingRepairTarget {
             let target = engine.state.selectionTargetsVisibleToPlayer(
@@ -2413,7 +2448,11 @@ final class GameController {
                 result = .invalidRepairTarget
             }
             isAwaitingRepairTarget = shouldKeepTargetMode(after: result)
-            commandStatus = statusText(forRepair: result, targetID: targetID)
+            commandStatus = pendingTargetStatus(
+                command: "Repair",
+                status: statusText(forRepair: result, targetID: targetID),
+                isAwaiting: isAwaitingRepairTarget
+            )
             reportCommandFeedback(for: result, confirmation: .repair, at: target?.position ?? point)
         } else if isAwaitingAttackTarget {
             let target = engine.state.selectionTargetVisibleToPlayer(
@@ -2429,7 +2468,11 @@ final class GameController {
                 result = .invalidAttackTarget
             }
             isAwaitingAttackTarget = shouldKeepTargetMode(after: result)
-            commandStatus = statusText(forAttack: result)
+            commandStatus = pendingTargetStatus(
+                command: "Attack",
+                status: statusText(forAttack: result),
+                isAwaiting: isAwaitingAttackTarget
+            )
             reportCommandFeedback(for: result, confirmation: .attack, at: target?.position ?? point)
         } else {
             return false
@@ -2446,6 +2489,17 @@ final class GameController {
         default:
             return false
         }
+    }
+
+    private func pendingTargetStatus(
+        command: String,
+        status: String?,
+        isAwaiting: Bool
+    ) -> String? {
+        guard isAwaiting, let status, !status.isEmpty else {
+            return status
+        }
+        return "\(command) target: \(status)"
     }
 
     private var selectedPlayerUnit: UnitSnapshot? {

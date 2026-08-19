@@ -399,3 +399,16 @@ du -sh /private/tmp/rustwar-c-review-<run_id>
 代码复核必须确认 `BattlefieldView` 所有释放 pinch lease 的出口统一执行 `pinchLease = nil` 与 `lastMagnification = 1.0`，且没有改变 `TouchSequenceOwner`、zoom 增量数学或 Controller/Core。HUD 复核必须确认固定 header 不再重复 production focus；Move / Attack Move / Attack / Stop 仍按原 can/awaiting 条件、action 和快捷键进入 primary grid；所有 secondary 命令、Factory Tech、production option 顺序、Shift+1-9、queue、Cancel、Repeat、Rally、44pt、Dynamic Type、VoiceOver、Reduce Motion 和 Differentiate Without Color 保持。
 
 Agent C 必须人工查看最新 `ios-home.png`，确认选中 Land Factory 后 Production 与至少第一行单位入口无需滚动即可见且无裁切/重叠；查看 `ios-combat.png`，确认紧凑 target status 与 Move / Attack Move / Attack / Stop primary grid 在首屏、战场/Tactical Map 未被覆盖。静态 build/PNG 不能证明真实 pinch、点击、滚动、辅助功能字号、VoiceOver 或真机长期手感。
+
+## v2.54
+
+本轮只改 iOS HUD presentation/accessibility，继续禁止本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图和 `git diff --check`；只允许读取状态、diff、源码和云端结果包。
+
+Agent C 必须在最新 `origin/main` SHA 对应 artifact 中核对：
+
+- manifest 的 `branch=main`、完整 `commitSha`、run id、attempt、v1.2 schema、固定 Xcode 26.5 / iOS Simulator SDK 26.5 / iPhone 17 Pro；
+- JUnit `8 checks / 0 failures / 1 expected browser skip`、Swift Core test 数量、`BattlefieldView`/`BattlefieldScene`/HUD 双架构 build、production/combat 双启动、横屏归一化和两份 pixel probe；
+- `ios-combat.png` 的 `Attack Move` 不出现 `At-tac...` 或错误断词，Move / Attack Move / Attack / Stop 都保持可识别，target pending 状态/黄色边框不被遮挡，stance/selection summary 无明显截断或重叠；
+- `ios-home.png` 的 Production、Factory Tech、首行生产卡片、队列和 Tactical Map 无回退。
+
+代码复核还必须确认 compact primary layout 消费父级一列 policy，pending Cancel 的 VoiceOver label/value/hint 保留具体命令身份，stance 完整名与 compact short label 分离，hint/status 使用自然换行；所有 action、快捷键、disabled gate、44pt hit target、Differentiate Without Color、Reduce Motion、Core、命令、存档、JSON、触控 owner 和 Web 版不变。静态 smoke 不能证明真实 tap、滚动、VoiceOver、Dynamic Type、Reduce Motion 或真机手感。

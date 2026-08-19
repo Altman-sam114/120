@@ -1023,3 +1023,22 @@ flowchart TD
 ```
 
 读图说明：v2.53 不新增命令或生产状态；只归一 pinch presentation teardown，并重排现有 SwiftUI 信息层级。固定云端 PNG 可证明首屏构图，不能证明真实 pinch 回调顺序、按钮点击、Dynamic Type、VoiceOver 或真机手感。
+
+## v2.54 iOS compact primary command readability
+
+```mermaid
+flowchart TD
+  R["Compact trailing dock columns=1"] --> P["Primary command layout consumes width policy"]
+  P --> M["Move / Attack Move / Attack / Stop remain first-class"]
+  M --> A["Attack Move full readable label; no At-tac ellipsis"]
+  S["UnitAttackStance.shortLabel"] --> V["Compact visual stance summary"]
+  F["Full stance label"] --> VO["VoiceOver value/hint"]
+  H["Pending target status / battlefield hint"] --> W["Natural vertical wrapping"]
+  W --> T["Command identity + next step + cancel semantics"]
+  A --> X["HUD presentation only"]
+  VO --> X
+  T --> X
+  X --> C["Core / orders / touch owner / save unchanged"]
+```
+
+读图说明：v2.54 修正 compact dock 的布局策略和可访问性文字，不扩大 dock、不侵占 Battlefield、不新增第二套命令状态；静态云端 PNG 仍不能证明真实滚动、点击、VoiceOver、Dynamic Type 或真机手感。
