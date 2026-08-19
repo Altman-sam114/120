@@ -73,7 +73,7 @@ struct TacticalCommandDockView: View {
         if showsQuickCommandRail {
             return hasSecondaryCommandControls
         }
-        hasPrimaryCommandControls || hasSecondaryCommandControls
+        return hasPrimaryCommandControls || hasSecondaryCommandControls
     }
 
     private var hasPrimaryCommandControls: Bool {
@@ -94,7 +94,10 @@ struct TacticalCommandDockView: View {
     }
 
     private var showsQuickCommandRail: Bool {
-        !controller.selectedPlayerUnits.isEmpty
+        controller.canIssueMove || controller.isAwaitingMoveTarget ||
+            controller.canIssueAttackMove || controller.isAwaitingAttackMoveTarget ||
+            controller.canIssueAttack || controller.isAwaitingAttackTarget ||
+            controller.canIssueStop
     }
 
     private var hasBuildControls: Bool {
