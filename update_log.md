@@ -6080,8 +6080,10 @@
 
 验证状态：
 
-- 本轮遵循云端唯一验证制度，未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；待提交、推送后只认最新 `origin/main` SHA 对应的 Actions artifact。
-- Agent C 必须核对 manifest、JUnit、repo/toolchain/simulator info、`GameController`/`TacticalMapView` 双架构 build、production/combat 双启动、横屏归一化和两份 PNG probe，并人工确认 v2.60 生产/战斗静态构图无回退。
+- 本轮遵循云端唯一验证制度，未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`。
+- 实现 commit `fcfa9d9604c00e7a03e3dddf7ad2e2044372d807` 的 Actions run `32293798139` / attempt `1` / job `96200376997` 已成功；Agent C 使用 `Altman-sam114` 下载并核对 artifact `rustwar-ci-v1.2-main-fcfa9d9-run32293798139-attempt1` 到 `/private/tmp/rustwar-c-review-32293798139/`，目录约 1.7M。
+- manifest 的 `branch=main`、完整 SHA、run id、attempt、v1.2、Xcode 26.5、iOS SDK 26.5、iPhone 17 Pro 与 `origin/main` 完全匹配；JUnit 为 `8 checks / 0 failures / 1 expected browser skip`，`git diff --check`、`node --check app.js`、Swift Core、Xcode list/build、双架构 SwiftCompile、production/combat 双启动、横屏归一化和两份 pixel probe 全部 success。
+- Home / Combat PNG 均为 `2622x1206`、透明比例 `0.0`；Home mean `79.51133340025322`、std `42.46663672916753`、SHA-256 `7377d5a39e42ef8fcaa7168d8b75e5066699f6ec53a744c9e9321db48b4020a5`，Combat mean `74.32042234151058`、std `42.05154833636994`、SHA-256 `e0956e94f182a47bece629fde4b12349d13cb2994f039fd2ab9ba638d6ebed49`。人工复看确认 v2.60 生产首屏、Factory Tech、战斗单位/弹道、攻击等待状态、Tactical Map 和 command dock 无静态回退；PNG 与 v2.60 artifact 对应截图 SHA 完全一致。
 
 已知风险：
 
