@@ -766,3 +766,9 @@ v2.54 继续只在 SwiftUI HUD presentation/accessibility 层修正窄横屏可�
 v2.55 继续沿用 presentation-only 边界。`TacticalBattlefieldHintView` 与 `TacticalCommandStatusView` 在已有 44pt 下限后增加垂直 intrinsic sizing 和 layout priority，让标题、详情、`TARGET MODE` 与多行错误状态由 header 自己增高，边框/背景包住完整内容；不恢复截断、不固定高度、不侵占 Battlefield 的横向 dock 宽度。
 
 Tactical Map 的 DragGesture 仍在等待命令时禁止相机拖动；普通 tap 仍只居中相机或沿既有点位命令处理。只有 `isAwaitingAttackTarget` 的 map tap 从 view 尺寸把约 16pt 屏幕直径换算为世界 `minimumHitRadius`，传入既有 `handleSelectionTargetCommand` / `selectionTargetVisibleToPlayer`；Guard、Repair、Builder target、Move、Attack Move、Patrol、Rally、Context command、雾门控、最近目标排序、Core、TouchSequenceOwner 和存档均不变。
+
+## v2.56 iOS projectile terminal feedback
+
+v2.56 继续保持 `BattlefieldScene` presentation-only 边界。`addProjectileEffect` 在既有弹丸、尾迹和目标坐标不变的前提下，增加一个独立的终点反馈层：普通运行会在弹道完成后显示短暂白色核心、队伍色环和放射 burst，冻结 combat fixture 会在目标点保留静态终点层，便于云端截图辨识弹道落点。该层复用现有 bounded effect 容器，不写入 Core、`GameState`、命中/伤害/订单或存档。
+
+Reduce Motion 下终点层只执行短暂透明度反馈，不执行放大、旋转或跨屏移动；动态效果仍受既有效果生命周期与数量上限约束，雾层/可见性门控、Beam 路径、水面命中、战斗数值、单位模型和 Web 版保持不变。固定 combat PNG 可证明终点反馈与现有炮口焰、弹道、爆点层级没有遮挡，不能证明真实设备的动画时序、长局帧率或触控手感。

@@ -5882,3 +5882,30 @@
 已知风险：
 
 - CI 没有 XCUITest、真实 map marker 点按、VoiceOver、Dynamic Type/Reduce Motion 自动化或多设备矩阵；云端静态 PNG 不能证明实际地图命中率、长按/拖动手感或真机性能。
+
+## v2.56 / iOS projectile terminal feedback
+
+日期：2026-08-19
+
+核心变更：
+
+- `BattlefieldScene.addProjectileEffect` 复用既有弹道容器，在目标点增加独立终点反馈层：白色核心、队伍色环与放射 burst。普通运行在弹道完成后短暂显现，冻结 combat fixture 保留静态终点层，让炮弹落点在固定云端截图中更容易辨识。
+- Reduce Motion 下终点层只执行透明度反馈，不执行放大、旋转或跨屏移动；效果继续使用既有 bounded root、生命周期和数量上限。Beam、火炮/单位命中、陆地/水面分流、雾层/可见性、Core 命中伤害、订单、存档、JSON 和 Web 版不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.56-projectile-terminal-feedback.md`
+
+验证状态：
+
+- 本轮按云端唯一验证制度未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；v2.55 已完成实现与云端 artifact 验收记录，v2.56 Actions artifact 尚未产生。
+- Agent C 后续必须只验收最新 `origin/main` SHA 的未加密 artifact，核对 manifest、JUnit、主日志、失败摘要、双架构 build、production/combat 双启动、横屏归一化和双 PNG；固定 combat PNG 需复看终点层与既有爆点/模型/HUD 无遮挡。
+
+已知风险：
+
+- 静态 PNG 不能证明终点闪光与 HP-diff 爆点的真实时序、连续战斗性能或真机 Reduce Motion 行为；当前 CI 仍无 XCUITest、真实触摸注入或性能矩阵。

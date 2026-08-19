@@ -1058,3 +1058,22 @@ flowchart TD
 ```
 
 读图说明：v2.55 只修正 target feedback 的外层布局和 Tactical Map pending Attack 的触控容错；普通 map camera tap、其它 target command、战争迷雾、命令 owner 与 Core 均沿用既有路径。云端静态 PNG 能证明容器构图和 build，不能证明真实 marker 点按命中率。
+
+## v2.56 iOS projectile terminal feedback
+
+```mermaid
+flowchart TD
+  F[Existing projectile + trail] --> T[Target-point terminal layer]
+  T --> C[White core + team-color ring + radial burst]
+  C --> R{Reduce Motion?}
+  R -->|no| A[Short fade, scale and rotation]
+  R -->|yes| O[Opacity-only feedback]
+  T --> S[Frozen combat fixture keeps static target marker]
+  A --> B[Existing bounded effect container]
+  O --> B
+  S --> B
+  B --> V[Existing fog, visibility and combat presentation layers]
+  V --> K[Core / orders / damage / save unchanged]
+```
+
+读图说明：v2.56 只把终点可读性加入既有 SpriteKit 弹道容器；不新增 Core projectile event，不改变命中位置、伤害、命令或水面/陆地分流。云端 combat PNG 可核对落点层级，不能替代真实动画时序和性能验证。

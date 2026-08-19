@@ -960,6 +960,7 @@ final class BattlefieldScene: SKScene {
                     heading: weaponHeading,
                     radius: definition.radius,
                     type: unit.type,
+                    team: unit.team,
                     target: visibleTarget
                 )
             }
@@ -1006,6 +1007,7 @@ final class BattlefieldScene: SKScene {
                     from: building.position,
                     heading: displayedHeading,
                     size: definition.size,
+                    team: building.team,
                     target: visibleTarget
                 )
             }
@@ -1243,6 +1245,7 @@ final class BattlefieldScene: SKScene {
         heading: CGFloat,
         radius: Double,
         type: UnitType,
+        team: Team,
         target: WorldPoint?,
         isFrozen: Bool = false
     ) {
@@ -1325,6 +1328,7 @@ final class BattlefieldScene: SKScene {
             muzzleDistance: radius * 0.9,
             target: target,
             color: color,
+            teamAccent: teamColor(team),
             projectileRadius: projectileRadius,
             flashRadius: flashRadius,
             shotCount: shotCount,
@@ -1339,6 +1343,7 @@ final class BattlefieldScene: SKScene {
         from source: WorldPoint,
         heading: CGFloat,
         size: Double,
+        team: Team,
         target: WorldPoint?,
         isFrozen: Bool = false
     ) {
@@ -1348,6 +1353,7 @@ final class BattlefieldScene: SKScene {
             muzzleDistance: size * 0.44,
             target: target,
             color: .systemOrange,
+            teamAccent: teamColor(team),
             projectileRadius: 3,
             flashRadius: 5.2,
             shotCount: 1,
@@ -1364,6 +1370,7 @@ final class BattlefieldScene: SKScene {
         muzzleDistance: Double,
         target: WorldPoint?,
         color: SKColor,
+        teamAccent: SKColor,
         projectileRadius: Double,
         flashRadius: Double,
         shotCount: Int,
@@ -1373,6 +1380,7 @@ final class BattlefieldScene: SKScene {
         isFrozen: Bool = false
     ) {
         let container = SKNode()
+        var schedulesProjectileTerminal = false
         let sourcePoint = spritePoint(for: source)
         let direction = CGVector(dx: cos(heading), dy: sin(heading))
         let normal = CGVector(dx: -direction.dy, dy: direction.dx)
@@ -1434,11 +1442,14 @@ final class BattlefieldScene: SKScene {
                 }
             }
 
-            guard (isFrozen || !accessibilityReduceMotion), let target else {
+            guard let target else {
                 continue
             }
             let targetPoint = spritePoint(for: target)
             if beamWidth > 0 {
+                guard isFrozen || !accessibilityReduceMotion else {
+                    continue
+                }
                 addBeamEffect(
                     from: origin,
                     to: targetPoint,
@@ -1447,11 +1458,24 @@ final class BattlefieldScene: SKScene {
                     isFrozen: isFrozen,
                     to: container
                 )
+            } else if accessibilityReduceMotion && !isFrozen {
+                schedulesProjectileTerminal = true
+                addProjectileTerminalFlash(
+                    at: targetPoint,
+                    color: color,
+                    teamAccent: teamAccent,
+                    radius: projectileRadius,
+                    travelDuration: 0,
+                    isFrozen: false,
+                    to: container
+                )
             } else {
+                schedulesProjectileTerminal = true
                 addProjectileEffect(
                     from: origin,
                     to: targetPoint,
                     color: color,
+                    teamAccent: teamAccent,
                     radius: projectileRadius,
                     trailLength: trailLength,
                     travelSpeed: travelSpeed,
@@ -1463,7 +1487,11 @@ final class BattlefieldScene: SKScene {
         if isFrozen {
             addPersistentBoundedEffect(container)
         } else {
-            addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.14 : 0.5)
+            // Extend only roots that own a terminal flash; Beam and muzzle-only roots keep prior lifetimes.
+            let lifetime = schedulesProjectileTerminal
+                ? (accessibilityReduceMotion ? 0.22 : 0.72)
+                : (accessibilityReduceMotion ? 0.14 : 0.5)
+            addBoundedEffect(container, lifetime: lifetime)
         }
     }
 
@@ -1471,6 +1499,7 @@ final class BattlefieldScene: SKScene {
         from origin: CGPoint,
         to target: CGPoint,
         color: SKColor,
+        teamAccent: SKColor,
         radius: Double,
         trailLength: Double,
         travelSpeed: Double,
@@ -1528,10 +1557,86 @@ final class BattlefieldScene: SKScene {
         nose.lineWidth = 0
         projectile.addChild(nose)
         container.addChild(projectile)
+        addProjectileTerminalFlash(
+            at: target,
+            color: color,
+            teamAccent: teamAccent,
+            radius: radius,
+            travelDuration: duration,
+            isFrozen: isFrozen,
+            to: container
+        )
         if !isFrozen {
             projectile.run(.group([
                 .move(to: target, duration: duration),
                 .sequence([.wait(forDuration: duration * 0.76), .fadeOut(withDuration: duration * 0.24)])
+            ]))
+        }
+    }
+
+    private func addProjectileTerminalFlash(
+        at point: CGPoint,
+        color: SKColor,
+        teamAccent: SKColor,
+        radius: Double,
+        travelDuration: TimeInterval,
+        isFrozen: Bool,
+        to container: SKNode
+    ) {
+        let terminal = SKNode()
+        terminal.position = point
+        terminal.alpha = isFrozen ? 0.82 : 0
+        terminal.setScale(isFrozen ? 0.92 : accessibilityReduceMotion ? 1 : 0.46)
+
+        let coreRadius = Swift.max(2.2, radius * 1.55)
+        let core = SKShapeNode(circleOfRadius: coreRadius)
+        core.fillColor = .white.withAlphaComponent(0.86)
+        core.strokeColor = color.withAlphaComponent(0.9)
+        core.lineWidth = Swift.max(0.8, radius * 0.55)
+        terminal.addChild(core)
+
+        let ring = SKShapeNode(circleOfRadius: coreRadius * 2.1)
+        ring.fillColor = .clear
+        ring.strokeColor = teamAccent.withAlphaComponent(0.82)
+        ring.lineWidth = Swift.max(0.9, radius * 0.62)
+        ring.glowWidth = Swift.max(0.4, radius * 0.35)
+        terminal.addChild(ring)
+
+        let burst = radialBurstNode(
+            pointCount: 8,
+            innerRadius: coreRadius * 1.45,
+            outerRadius: coreRadius * 2.7,
+            rotation: 0.2,
+            fill: color.withAlphaComponent(0.24),
+            stroke: color.withAlphaComponent(0.78),
+            lineWidth: Swift.max(0.6, radius * 0.42)
+        )
+        burst.zRotation = 0.12
+        terminal.addChild(burst)
+        container.addChild(terminal)
+
+        guard !isFrozen else {
+            return
+        }
+
+        let revealDelay = Swift.max(0, travelDuration)
+        let reveal = SKAction.sequence([
+            .wait(forDuration: revealDelay),
+            .fadeIn(withDuration: 0.01)
+        ])
+        if accessibilityReduceMotion {
+            terminal.run(.sequence([
+                reveal,
+                .fadeOut(withDuration: 0.16)
+            ]))
+        } else {
+            terminal.run(.sequence([
+                reveal,
+                .group([
+                    .fadeOut(withDuration: 0.2),
+                    .scale(to: 1.55, duration: 0.2),
+                    .rotate(byAngle: 0.24, duration: 0.2)
+                ])
             ]))
         }
     }
@@ -2091,6 +2196,7 @@ final class BattlefieldScene: SKScene {
                 heading: shotHeading,
                 radius: GameDefinitions.unit(source.type).radius,
                 type: source.type,
+                team: source.team,
                 target: target.position,
                 isFrozen: true
             )
@@ -2110,6 +2216,7 @@ final class BattlefieldScene: SKScene {
                 from: source.position,
                 heading: shotHeading,
                 size: GameDefinitions.building(for: source).size,
+                team: source.team,
                 target: target.position,
                 isFrozen: true
             )

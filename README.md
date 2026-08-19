@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.56：原生 iOS 弹道在到达目标时增加轻量终点闪光、环形收束和放射 burst，冻结 combat fixture 也保留终点层；Reduce Motion 退化为透明度反馈，仍沿既有效果上限管理。只改 SpriteKit presentation，不改 Core、命中、伤害、存档或 Web 版；云端 PNG 才能验收构图，不能证明真实时序或真机帧率。
+
 v2.55：原生 iOS target hint/status 在 compact trailing dock 按内容自然增高，避免标题或最后一行脱离信息卡边框；Tactical Map 的 pending Attack 对敌方 marker 提供约 16pt 屏幕直径的最小命中区，保留可见性、最近目标排序和原有命令/触控 owner。只改 HUD presentation 与 map tap hit-area 传递，不改 Core、战斗、存档或 Web 版；云端静态 smoke 仍不能证明真实手指命中手感。
 
 v2.54：原生 iOS 紧凑横屏 command dock 修正 primary action 的宽度策略与文字可读性，Attack Move 不再被错误省略；stance 与 target hint/status 允许自然换行，pending Cancel 保留完整命令的 VoiceOver 语义。只改 HUD presentation/accessibility，不改 Core、命令、触控 owner、战斗、存档或 Web 版；云端静态 smoke 仍不能证明真实按钮点击、滚动或真机手感。
