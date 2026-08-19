@@ -1042,3 +1042,19 @@ flowchart TD
 ```
 
 读图说明：v2.54 修正 compact dock 的布局策略和可访问性文字，不扩大 dock、不侵占 Battlefield、不新增第二套命令状态；静态云端 PNG 仍不能证明真实滚动、点击、VoiceOver、Dynamic Type 或真机手感。
+
+## v2.55 iOS target feedback containment and tactical map hit areas
+
+```mermaid
+flowchart TD
+  H[Hint/status text with natural wrapping] --> F[Outer vertical fixedSize + layoutPriority]
+  F --> B[Border/background encloses full target feedback]
+  M[Tactical Map tap in pending Attack] --> S[Map size to world minimum hit radius]
+  S --> A[Existing selection target ranking + visibility gate]
+  A --> O[Existing Attack order or retry pending mode]
+  F --> C[44pt minimum, VoiceOver, Core unchanged]
+  S --> C
+  O --> C
+```
+
+读图说明：v2.55 只修正 target feedback 的外层布局和 Tactical Map pending Attack 的触控容错；普通 map camera tap、其它 target command、战争迷雾、命令 owner 与 Core 均沿用既有路径。云端静态 PNG 能证明容器构图和 build，不能证明真实 marker 点按命中率。

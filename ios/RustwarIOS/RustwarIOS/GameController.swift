@@ -1395,7 +1395,7 @@ final class GameController {
         renderRevision += 1
     }
 
-    func handleTacticalMapTap(at point: WorldPoint) {
+    func handleTacticalMapTap(at point: WorldPoint, minimumHitRadius: Double = 0) {
         if isAwaitingAreaSelection {
             commandStatus = "Drag on battlefield to select units"
             reportWarningFeedback()
@@ -1409,7 +1409,10 @@ final class GameController {
         if handleBuilderTargetCommand(at: point) {
             return
         }
-        if handleSelectionTargetCommand(at: point) {
+        if handleSelectionTargetCommand(
+            at: point,
+            minimumHitRadius: isAwaitingAttackTarget ? minimumHitRadius : 0
+        ) {
             return
         }
         centerCamera(on: point)

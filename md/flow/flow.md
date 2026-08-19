@@ -760,3 +760,9 @@ command dock 的固定 header 只保留紧凑 selection identity、可选状态/
 v2.54 继续只在 SwiftUI HUD presentation/accessibility 层修正窄横屏可读性。`TacticalCommandDockView` 已经根据 compact trailing 角色提供一列 command policy，primary command layout 必须消费同一 policy，不能再独立硬编码两列；`Move`、`Attack Move`、`Attack`、`Stop` 的条件、action、快捷键和 44pt 触控区不变。`Attack Move` 使用完整可读排版，不以 `At-tac...` 等错误断词替代命令语义。
 
 `UnitAttackStance.shortLabel` 只用于紧凑视觉摘要，完整 stance 名称仍由 accessibility value/hint 暴露；选择摘要、stance、升级摘要、battlefield hint 和 pending target status 允许自然垂直换行，不以过度 `minimumScaleFactor` 或固定单行隐藏内容。pending button 的视觉 `Cancel` 仍可保持紧凑，但 VoiceOver 必须说明被取消的具体 Move/Attack Move/Attack 或其它目标命令。该轮不改变 Core、GameController 命令结果、TouchSequenceOwner、BattlefieldScene、战斗、存档、JSON 或 Web 版。
+
+## v2.55 iOS target feedback containment and tactical map hit areas
+
+v2.55 继续沿用 presentation-only 边界。`TacticalBattlefieldHintView` 与 `TacticalCommandStatusView` 在已有 44pt 下限后增加垂直 intrinsic sizing 和 layout priority，让标题、详情、`TARGET MODE` 与多行错误状态由 header 自己增高，边框/背景包住完整内容；不恢复截断、不固定高度、不侵占 Battlefield 的横向 dock 宽度。
+
+Tactical Map 的 DragGesture 仍在等待命令时禁止相机拖动；普通 tap 仍只居中相机或沿既有点位命令处理。只有 `isAwaitingAttackTarget` 的 map tap 从 view 尺寸把约 16pt 屏幕直径换算为世界 `minimumHitRadius`，传入既有 `handleSelectionTargetCommand` / `selectionTargetVisibleToPlayer`；Guard、Repair、Builder target、Move、Attack Move、Patrol、Rally、Context command、雾门控、最近目标排序、Core、TouchSequenceOwner 和存档均不变。

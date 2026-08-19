@@ -412,3 +412,11 @@ Agent C 必须在最新 `origin/main` SHA 对应 artifact 中核对：
 - `ios-home.png` 的 Production、Factory Tech、首行生产卡片、队列和 Tactical Map 无回退。
 
 代码复核还必须确认 compact primary layout 消费父级一列 policy，pending Cancel 的 VoiceOver label/value/hint 保留具体命令身份，stance 完整名与 compact short label 分离，hint/status 使用自然换行；所有 action、快捷键、disabled gate、44pt hit target、Differentiate Without Color、Reduce Motion、Core、命令、存档、JSON、触控 owner 和 Web 版不变。静态 smoke 不能证明真实 tap、滚动、VoiceOver、Dynamic Type、Reduce Motion 或真机手感。
+
+## v2.55
+
+本轮只改 iOS HUD outer sizing 与 Tactical Map pending Attack hit-area 传递；继续禁止本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图和 `git diff --check`，只认最新 `origin/main` 对应的云端 artifact。
+
+Agent C 必须核对最新 artifact 的 manifest `branch=main`、完整 SHA、run id、attempt、v1.2、Xcode 26.5/iOS Simulator SDK 26.5/iPhone 17 Pro；JUnit `8/0/1`、Swift Core 数量、`BattlefieldView`/`BattlefieldScene`/HUD 双架构 build、production/combat 双启动、横屏归一化和双 pixel probe。人工查看 `ios-combat.png` 时确认 `Attack target` 标题、详情最后一行、`TARGET MODE`/错误状态都在各自边框内，黄色 pending 外框不覆盖文字；`Attack Move`、Move、pending Cancel 和 stance 不回退。查看 `ios-home.png` 确认 Production、Factory Tech、首行生产卡片、队列和 Tactical Map 无回退。
+
+代码复核必须确认 `fixedSize(horizontal:false, vertical:true)` 与 `layoutPriority(1)` 只让 header 增高、保留 44pt 下限和完整 VoiceOver；Tactical Map 只在 `isAwaitingAttackTarget` 时把约 16pt 屏幕直径换算为 world `minimumHitRadius`，默认 map tap 仍居中相机，其他命令仍传 0；既有 visibility/fog gate、最近目标排序、Attack order、invalid retry、TouchSequenceOwner、Core、存档、JSON、Differentiate Without Color、Reduce Motion 和 Web 版不变。静态 smoke 不能证明真实 marker 点按、手指滑动、VoiceOver、Dynamic Type 或真机手感。

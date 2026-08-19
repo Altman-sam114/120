@@ -5849,3 +5849,33 @@
 
 - CI 仍没有 XCUITest、真实触摸注入、VoiceOver、Dynamic Type/Reduce Motion 自动化或多设备矩阵；云端静态截图不能证明真实按钮点击、滚动、辅助功能顺序或真机手感。
 - 公开 Steam 页面在本轮网络环境返回 `ERR_CONNECTION_CLOSED`；参考结论由开发者官网、官方 changelog、截图页、移动版商店和公开视频交叉核对，未下载素材进仓库。
+
+## v2.55 / iOS target feedback containment and tactical map hit areas
+
+日期：2026-08-19
+
+核心变更：
+
+- battlefield hint/status 的 outer frame 在自然换行内容后使用垂直 intrinsic sizing 与 layout priority，避免 compact trailing header 中的 target 标题、详情最后一行或多行错误状态脱离边框；保留 44pt 下限、黄色 pending 外框、VoiceOver 和既有 Dynamic Type 语义。
+- Tactical Map pending Attack 将约 16pt 屏幕直径换算为 world minimum hit radius，沿既有可见性过滤、最近目标排序和 Attack command path 命中敌方 marker；普通 map camera tap 与其它 pending command 不改变。
+- 只修改 iOS HUD/map presentation 与 hit-area 参数传递；Core、GameStateSelection、命令结果、TouchSequenceOwner、战斗、AI、存档/JSON 和 Web 版不变。参考 Rusted Warfare 仍只用于战场主体、直白 pending feedback 和可点击目标层级的信息架构，不复制素材。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalBattlefieldHintView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalHUDComponents.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.55-target-feedback-and-map-hit-areas.md`
+
+验证状态：
+
+- 按云端唯一验证制度未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；只读源码与云端结果包用于范围审查，最新 Actions artifact 待 push 后核对。
+
+已知风险：
+
+- CI 没有 XCUITest、真实 map marker 点按、VoiceOver、Dynamic Type/Reduce Motion 自动化或多设备矩阵；云端静态 PNG 不能证明实际地图命中率、长按/拖动手感或真机性能。

@@ -29,6 +29,8 @@ struct TacticalBattlefieldHintView: View {
         .padding(.horizontal, TacticalHUDTheme.compactPadding)
         .padding(.vertical, TacticalHUDTheme.denseSpacing)
         .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+        .layoutPriority(1)
         .background(
             TacticalHUDTheme.selectionBackground,
             in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)

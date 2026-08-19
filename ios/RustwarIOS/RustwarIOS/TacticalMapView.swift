@@ -4,6 +4,7 @@ import RustwarCore
 struct TacticalMapView: View {
     private static let contextTapSuppressionDuration: TimeInterval = 0.18
     private static let cameraDragActivationDistance: CGFloat = 22
+    private static let pendingTargetTouchDiameter: CGFloat = 16
 
     let controller: GameController
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
@@ -186,7 +187,19 @@ struct TacticalMapView: View {
         guard let worldPoint = worldPoint(for: location, in: size) else {
             return
         }
-        controller.handleTacticalMapTap(at: worldPoint)
+        let minimumHitRadius = controller.isAwaitingAttackTarget
+            ? minimumWorldHitRadius(for: size, screenDiameter: Self.pendingTargetTouchDiameter)
+            : 0
+        controller.handleTacticalMapTap(at: worldPoint, minimumHitRadius: minimumHitRadius)
+    }
+
+    private func minimumWorldHitRadius(for size: CGSize, screenDiameter: CGFloat) -> Double {
+        guard size.width > 0, size.height > 0, screenDiameter > 0 else {
+            return 0
+        }
+        let horizontalRadius = Double(screenDiameter / size.width) * GameConstants.mapWidth / 2
+        let verticalRadius = Double(screenDiameter / size.height) * GameConstants.mapHeight / 2
+        return max(horizontalRadius, verticalRadius)
     }
 
     private func handleContextPress(at location: CGPoint, in size: CGSize) {

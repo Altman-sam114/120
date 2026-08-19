@@ -129,6 +129,8 @@ struct TacticalCommandStatusView: View {
             minHeight: TacticalHUDTheme.controlMinimumHeight,
             alignment: .leading
         )
+        .fixedSize(horizontal: false, vertical: true)
+        .layoutPriority(1)
         .background(
             isAwaitingTarget
                 ? TacticalHUDTheme.awaitingStatusBackground

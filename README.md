@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.55：原生 iOS target hint/status 在 compact trailing dock 按内容自然增高，避免标题或最后一行脱离信息卡边框；Tactical Map 的 pending Attack 对敌方 marker 提供约 16pt 屏幕直径的最小命中区，保留可见性、最近目标排序和原有命令/触控 owner。只改 HUD presentation 与 map tap hit-area 传递，不改 Core、战斗、存档或 Web 版；云端静态 smoke 仍不能证明真实手指命中手感。
+
 v2.54：原生 iOS 紧凑横屏 command dock 修正 primary action 的宽度策略与文字可读性，Attack Move 不再被错误省略；stance 与 target hint/status 允许自然换行，pending Cancel 保留完整命令的 VoiceOver 语义。只改 HUD presentation/accessibility，不改 Core、命令、触控 owner、战斗、存档或 Web 版；云端静态 smoke 仍不能证明真实按钮点击、滚动或真机手感。
 
 v2.53：原生 iOS pinch 的正常结束、第三指/replacement/cancel 和地图 reset 统一清除累计 magnification，避免下一次捏合首帧沿用旧倍率跳缩；command dock 去除重复生产摘要，把 Move / Attack Move / Attack / Stop 提升为首组，并让工厂生产入口更早进入横屏首屏。Core、命令语义、存档和 Web 版不变；CI 仍不包含 XCUITest，云端静态 smoke 不能证明真实设备触控顺序或手感。
