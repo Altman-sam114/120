@@ -5986,3 +5986,32 @@
 验证状态：
 
 - 按云端唯一验证制度未运行本地测试、build、截图或 `git diff --check`；本提交待推送后由 Agent C 仅验收对应最新 `origin/main` Actions artifact。
+
+## v2.59 / touch terminal safety, combat spark spread, and compact producer focus
+
+日期：2026-08-20
+
+核心变更：
+
+- `BattlefieldView.finishMultitouchSelection` 在结束帧无法同步时，只对仍持有多指 claim 的当前序列调用既有取消 teardown；迟到旧 callback 无 current claim 时不清理新单指 owner，避免下一次点选被吞。
+- `BattlefieldScene.addImpactSparks` 将受击火花角度从半圆修正为完整 `2π / count` 确定性分布；`drawWreck` 让 salvage bar 与残骸本体共享 TTL alpha，避免资源条在残骸淡出后悬浮。
+- compact `TacticalProductionFocusSummaryView` 使用 `ViewThatFits` 优先显示两行三列 NOW / QUEUE / UPGRADE 短摘要，窄宽或 accessibility Dynamic Type 回退完整行；完整生产、升级、队列和 VoiceOver 派生语义保持。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.59-ios-touch-terminal-producer-focus.md`
+
+验证状态：
+
+- 按云端唯一验证制度未运行本地测试、build、Simulator、浏览器、截图或 `git diff --check`；v2.59 待提交、推送后由 Agent C 仅验收最新 SHA 对应的 Actions artifact。
+
+已知风险：
+
+- CI 仍无真实多指/迟到 callback 注入、VoiceOver、Dynamic Type、Reduce Motion 自动化或性能矩阵；静态 PNG 和云端 build 不能证明真机触控时序、滚动和长局帧率。

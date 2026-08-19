@@ -2009,7 +2009,7 @@ final class BattlefieldScene: SKScene {
     ) {
         let sparkCount = accessibilityReduceMotion ? 0 : 6
         for index in 0..<sparkCount {
-            let angle = Double(index) * Double.pi / Double(sparkCount) + 0.24
+            let angle = Double(index) * (Double.pi * 2 / Double(sparkCount)) + 0.24
             let distance = (11 + Double(index % 3) * 3.5) * intensity
             let spark = SKShapeNode(rectOf: CGSize(width: 4.5 * intensity, height: 1.6 * intensity), cornerRadius: 0.8)
             spark.fillColor = color
@@ -4116,6 +4116,7 @@ final class BattlefieldScene: SKScene {
         let barWidth = side
         let barBackground = SKShapeNode(rect: CGRect(x: -barWidth / 2, y: -side / 2 - 9, width: barWidth, height: 4), cornerRadius: 2)
         barBackground.position = spritePoint(for: wreck.position)
+        barBackground.alpha = alpha
         barBackground.fillColor = .black.withAlphaComponent(0.58)
         barBackground.strokeColor = barBackground.fillColor
         barBackground.lineWidth = 0
@@ -4123,6 +4124,7 @@ final class BattlefieldScene: SKScene {
 
         let barFill = SKShapeNode(rect: CGRect(x: -barWidth / 2, y: -side / 2 - 9, width: barWidth * fraction, height: 4), cornerRadius: 2)
         barFill.position = spritePoint(for: wreck.position)
+        barFill.alpha = alpha
         barFill.fillColor = SKColor.systemYellow.withAlphaComponent(0.82)
         barFill.strokeColor = barFill.fillColor
         barFill.lineWidth = 0

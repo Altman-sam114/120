@@ -786,3 +786,11 @@ v2.57 只在 iOS `GameController` 与 `TacticalMapView` 传递 pending Extractor
 `BattlefieldScene` 仍只读 Core 快照并保留 presentation-only 边界。重坦、Artillery、Gunboat 的单位类型分别使用 `1.44r`、`1.22r`、`1.04r` 的模型化 muzzle distance，Gunboat 的可见炮管延伸到船体前缘并以炮口 collar 收束，Turret 使用现有炮管末端比例；每次 fire effect 会扣除当前同帧 weapon/turret recoil，使炮口 flash、tracer/beam、projectile terminal feedback 继续从与模型一致的同一个 origin 生成。没有新增 Core projectile event、命中/伤害/冷却/订单、存档字段或效果上限，Reduce Motion、雾层和 bounded effect 生命周期沿既有路径。
 
 选中单一己方生产建筑时，`TacticalProductionSectionView` 在 Production 标题后挂载既有只读 `TacticalProductionFocusSummaryView`，先显示 NOW / QUEUE / UPGRADE，再显示 Factory Tech、生产按钮、队列与 Cancel/Repeat/Rally；单位/建筑混选或多个实体选择不会错误暴露生产操作。摘要消费 `GameController` 的 producer-generic 派生值：Land Factory 显示 T1/T2 与倍率，Command Center 显示 Core、1x production 和 No upgrade；不写状态、不创建第二套 action，生产顺序、升级、快捷键、VoiceOver、44pt 和存档不变。固定云端 smoke 可核对构图，不能证明真实长按回调排序、滚动、动画时序或真机手感。
+
+## v2.59 iOS multitouch terminal safety, combat spark spread, and compact producer focus
+
+`BattlefieldView.finishMultitouchSelection` 在 Spatial 结束帧无法通过 `synchronizeTouchOwner` 时，不再无条件提前返回：只有多指或 pinch lease 的 `sequence` 仍等于当前 `TouchSequenceOwner.sequence` 且 owner 仍持有多指 claim 时才调用既有 `cancelMultitouchSequence()`，统一清除多指 lease、框选预览、context/pan/pinch callback 和 tap suppression；迟到旧 callback 没有当前 lease 时不会取消新单指序列。Core `TouchSequenceOwner`、选择命令、地图/相机状态、存档和 JSON 不变。
+
+`BattlefieldScene.addImpactSparks` 继续使用稳定索引分布，但角度步长由半圆 `π / count` 修正为完整圆 `2π / count`；Reduce Motion 仍不生成飞散火花。`drawWreck` 的 salvage bar 复用本体 TTL alpha，避免残骸淡出时资源条悬浮在战场上；wreck 来源、金属、TTL、回收命令和 32/64 bounded effect 约束不变。
+
+compact producer focus 在 `TacticalProductionFocusSummaryView` 使用 `ViewThatFits` 优先显示两行三列的 NOW / QUEUE / UPGRADE 短摘要，宽度不足或 Dynamic Type accessibility 时回退既有完整多行语义；`accessibilityValue` 仍朗读完整当前项目、队列、可生产列表和升级状态。`Factory Tech`、首排生产按钮、队列和管理动作仍消费既有 Controller action，不新增状态或第二套命令入口。

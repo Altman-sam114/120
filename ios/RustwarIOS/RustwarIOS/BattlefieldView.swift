@@ -690,9 +690,15 @@ struct BattlefieldView: View {
 
     private func finishMultitouchSelection(with events: SpatialEventCollection, viewportSize: CGSize) {
         let hadMultitouchClaim = touchOwner.hasMultitouchClaimed
+        let hasCurrentMultitouchLease = touchOwner.hasMultitouchClaimed &&
+            (multitouchLease?.sequence == touchOwner.sequence ||
+             pinchLease?.sequence == touchOwner.sequence)
         let wasCancelledMultitouch = hadMultitouchClaim && touchOwner.phase == .cancelled
         if !wasCancelledMultitouch {
             guard synchronizeTouchOwner(with: events, allowFreshSeed: false) else {
+                if hasCurrentMultitouchLease {
+                    cancelMultitouchSequence()
+                }
                 return
             }
         }
@@ -781,6 +787,7 @@ struct BattlefieldView: View {
     private func cancelMultitouchSequence() {
         let sequence = touchOwner.sequence
         _ = touchOwner.cancel()
+        _ = touchOwner.finishCancelledMultitouch()
         clearMultitouchSelectionPreview()
         clearBattlefieldTouchPreview(for: sequence)
         resetContextGestureState()

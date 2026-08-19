@@ -1118,3 +1118,32 @@ flowchart TD
 ```
 
 读图说明：v2.58 消除 Tactical Map 长按释放阶段的 tap 串发，修正重型单位/炮塔的 presentation muzzle origin，并让选中生产建筑先看到现有生产上下文摘要；三条路径都不新增 Core 状态或第二套命令入口。云端静态 smoke 不能替代真实长按回调顺序、滚动和动画时序。
+
+## v2.59 iOS multitouch terminal safety, combat spark spread, and compact producer focus
+
+```mermaid
+flowchart TD
+  MT[Multitouch end callback] --> SY{Touch owner synchronized?}
+  SY -->|yes| FN[Existing finish / area selection path]
+  SY -->|no + current multitouch claim| CX[Cancel current multitouch sequence]
+  SY -->|no + no current claim| ST[Ignore stale callback]
+  CX --> CL[Clear lease preview context pan pinch and suppression]
+  CL --> NS[Next fresh single touch remains available]
+  U[Impact spark index] --> A[Deterministic 2π / count angle]
+  A --> SP[Full-circle spark spread]
+  RM{Reduce Motion?} -->|yes| NO[No flying sparks]
+  RM -->|no| SP
+  W[Wreck TTL] --> WA[Shared body and salvage-bar alpha]
+  P[Compact producer focus] --> VF[ViewThatFits short NOW / QUEUE / UPGRADE strip]
+  VF -->|fits| STRIP[Three-column glanceable summary]
+  VF -->|does not fit or accessibility type| FULL[Existing full semantic rows]
+  STRIP --> ACTION[Factory Tech / production / queue actions unchanged]
+  FULL --> ACTION
+  FN --> CORE[Core orders / save / JSON unchanged]
+  NS --> CORE
+  SP --> PRES[Existing bounded SpriteKit presentation]
+  WA --> PRES
+  ACTION --> CORE
+```
+
+读图说明：v2.59 只在当前 claim 仍属于多指序列时为无法同步的结束帧做取消收尾，迟到旧回调不会抢占新单指；战斗火花、残骸透明度和生产摘要都是 presentation/accessibility 派生层。静态云端 PNG 能核对构图与确定性分布，不能替代真实多指注入、VoiceOver、Dynamic Type、动画时序或帧率验证。

@@ -3,6 +3,7 @@ import RustwarCore
 
 struct TacticalProductionFocusSummaryView: View {
     @Bindable var controller: GameController
+    let isCompact: Bool
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -16,12 +17,7 @@ struct TacticalProductionFocusSummaryView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
             identitySummary
-            focusRow("NOW", nowSummary)
-            focusRow(
-                "QUEUE",
-                "\(controller.productionQueueItems.count) • \(controller.productionFocusQueueShortSummary)"
-            )
-            focusRow("UPGRADE", controller.productionFocusUpgradeSummary)
+            focusRows
         }
         .padding(TacticalHUDTheme.compactPadding)
         .foregroundStyle(TacticalHUDTheme.primaryText)
@@ -33,6 +29,68 @@ struct TacticalProductionFocusSummaryView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Production focus")
         .accessibilityValue(summaryAccessibilityValue)
+    }
+
+    @ViewBuilder
+    private var focusRows: some View {
+        if isCompact && !dynamicTypeSize.isAccessibilitySize {
+            ViewThatFits(in: .horizontal) {
+                compactFocusStrip
+                fullFocusRows
+            }
+        } else {
+            fullFocusRows
+        }
+    }
+
+    private var compactFocusStrip: some View {
+        HStack(alignment: .top, spacing: TacticalHUDTheme.denseSpacing) {
+            compactFocusItem("NOW", compactNowSummary)
+            compactFocusItem("QUEUE", "\(controller.productionQueueItems.count)")
+            compactFocusItem("UPGRADE", compactUpgradeSummary)
+        }
+    }
+
+    private var fullFocusRows: some View {
+        VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+            focusRow("NOW", nowSummary)
+            focusRow(
+                "QUEUE",
+                "\(controller.productionQueueItems.count) • \(controller.productionFocusQueueShortSummary)"
+            )
+            focusRow("UPGRADE", controller.productionFocusUpgradeSummary)
+        }
+    }
+
+    private func compactFocusItem(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(title)
+                .font(.caption.bold())
+                .foregroundStyle(TacticalHUDTheme.metricLabel)
+                .lineLimit(1)
+                .minimumScaleFactor(0.68)
+            Text(value)
+                .font(.caption)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.68)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var compactNowSummary: String {
+        guard let item = controller.productionQueueItems.first else { return "Idle" }
+        let percent = Int((item.progressFraction * 100).rounded())
+        let seconds = max(0, Int((item.buildTime - item.progress).rounded(.up)))
+        return "\(percent)% · \(seconds)s"
+    }
+
+    private var compactUpgradeSummary: String {
+        switch controller.productionFocusUpgradeSummary {
+        case "Max tech": "MAX"
+        case "No upgrade": "—"
+        default: controller.productionFocusUpgradeSummary
+        }
     }
 
     @ViewBuilder
@@ -121,7 +179,10 @@ struct TacticalProductionSectionView: View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
             TacticalSectionHeader(section: .production)
             if controller.productionFocusBuildingName != nil {
-                TacticalProductionFocusSummaryView(controller: controller)
+                TacticalProductionFocusSummaryView(
+                    controller: controller,
+                    isCompact: columns == 1
+                )
             }
             if controller.showsSelectedFactoryTech {
                 TacticalFactoryTechView(controller: controller)
