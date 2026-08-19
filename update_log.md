@@ -5840,7 +5840,10 @@
 验证状态：
 
 - 按云端唯一验证制度未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；只读源码、status 和 diff 用于范围审查。
-- v2.54 实现提交、Actions run、artifact、JUnit、Core test 数量、双架构 build 和双 PNG 结果待 push 后由 Agent C 只验收最新 `origin/main` 精确 SHA 并补录。
+- v2.54 实现提交 `c425253a550866184ae43373506b9b38821b804a` 的 Actions run `32233709692` / attempt `1` 已由 Agent C 使用 `Altman-sam114` 上下文下载 artifact `rustwar-ci-v1.2-main-c425253-run32233709692-attempt1` 到 `/private/tmp/rustwar-c-review-32233709692/`，目录约 `1.7M`。manifest 的 `branch=main`、完整 `commitSha`、run id、attempt、v1.2 schema、固定 iPhone 17 Pro UDID、Xcode 26.5、iOS Simulator SDK 26.5 和 Swift 6.3.2 完全匹配。
+- JUnit 为 `8 checks / 0 failures / 1 expected browser skip`；云端 `git diff --check`、Node、Swift Core、Xcode list、arm64/x86_64 build、production/combat 双启动、横屏归一化和两份 pixel probe 全部 success，Swift Core 为 `340 tests passed`，build log 包含 `BUILD SUCCEEDED`。
+- Home PNG 为 `2622x1206`、透明比例 `0.0`、mean `79.73128806571331`、std `41.758285801730494`、range `254.99999999999997`、SHA-256 `c90459c86aa225ee2fb0dc0b9cc4c33908e0c339bd7db1202258c8c33b12b12d`；Combat PNG 为 `2622x1206`、透明比例 `0.0`、mean `74.35128819960805`、std `42.05027998082887`、range `254.99999999999997`、SHA-256 `8d9bd7e10193e7a6aec12a77d9d84159b3c05efdc8beca5b8d8672097d2e7619`。人工复看确认 Home 的 Land Factory `Production`、`Factory Tech` 和首行生产入口无回退，Combat 的 Move / Attack Move / pending Attack Cancel primary tiles、stance、target hint/status、单位模型、弹道、爆点和 Tactical Map 均在首屏且无明显裁切/覆盖。
+- v2.54 实现通过该云端 artifact 验收；CI 仍不包含 XCUITest、真实触摸注入、VoiceOver、Dynamic Type/Reduce Motion 自动化或多设备矩阵，静态 PNG 不能证明真实按钮点击、滚动、辅助功能顺序或真机手感。
 
 已知风险：
 
