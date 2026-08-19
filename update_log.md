@@ -5802,7 +5802,10 @@
 验证状态：
 
 - 按云端唯一验证制度未运行任何本地测试、Swift/Xcode build、Simulator、Preview、截图、浏览器验证或 `git diff --check`；只读 status/diff/rg 用于范围控制。
-- 本轮实现提交、Actions run、artifact、JUnit、Core test 数量、双架构 build 和双 PNG 结果待 push 后由 Agent C 核对最新 `origin/main` 精确 SHA 后补录。
+- 实现提交 `d030848cd9248d8686ffe01ab77db0ff6c731d29` 的 Actions run `31660398976` / attempt `1` 已由 Agent C 使用 `Altman-sam114` 上下文下载 artifact `rustwar-ci-v1.2-main-d030848-run31660398976-attempt1` 到 `/private/tmp/rustwar-c-review-31660398976/`，目录约 `1.7M`。manifest 的 `branch=main`、完整 `commitSha`、run id、attempt、固定 iPhone 17 Pro UDID、Xcode 26.5、iOS Simulator SDK 26.5 和 Swift 6.3.2 完全匹配。
+- JUnit 为 `8 checks / 0 failures / 1 expected browser skip`；云端 `git diff --check`、Node、Swift Core、Xcode list、arm64/x86_64 build、production/combat 双启动、横屏归一化和两份 pixel probe 全部 success。Swift Core build log 的 Swift Testing 汇总为 `340 tests passed`；`BattlefieldScene.swift`、`BattlefieldView.swift` 和 HUD 文件均进入 iOS target 编译。
+- Home PNG 为 `2622x1206`、透明比例 `0.0`、mean `79.73128806571331`、std `41.758285801730494`、range `254.99999999999997`、SHA-256 `c90459c86aa225ee2fb0dc0b9cc4c33908e0c339bd7db1202258c8c33b12b12d`；Combat PNG 为 `2622x1206`、透明比例 `0.0`、mean `74.62456663865079`、std `42.24662763001442`、range `254.99999999999997`、SHA-256 `5e66b4b3bf183773ec439c213a1bc8f9877ed2ccc309645711a479858fa6f675`。人工复看确认 Home 的 Land Factory `Production`、`Factory Tech` 和首行生产入口无需滚动即可见，Combat 的 primary command grid、Attack target pending、单位模型、弹道、爆点和 Tactical Map 均在首屏且未被覆盖。
+- 复看同时记录下一轮可见性问题：窄 dock 中 `Attack Move` 显示为 `At-tac...`，`Stance Aggressive` 与 target detail 仍有截断；固定 combat fixture 正处于 Attack target pending，因此第三个 primary tile 正确显示为 `Cancel`，不是文字错误。
 
 已知风险：
 
