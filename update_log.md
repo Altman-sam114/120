@@ -6111,7 +6111,9 @@
 验证状态：
 
 - 本轮遵循云端唯一验证制度，未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；浏览器控制实例不可用，未伪造 Rusted Warfare 外部截图/视频检索结果，沿用仓库已有参考记录。
-- 实现已完成源码与文档范围审查；本地实现提交为 `bac936ec46a1bda19ee986ef8930a66ec69fc430`。两次 push 与一次 `git ls-remote` 均因连接 GitHub 443 端口超时，`origin/main` 仍停在上一轮 `673f340c731a66f088bc97de98be5cd0e2a0f397`；Actions run、artifact 和 Agent C 复判待网络恢复，不能提前宣称通过。
+- 实现提交 `bac936ec46a1bda19ee986ef8930a66ec69fc430` 与网络恢复后的收尾文档提交 `cfc6505be44d50fe34391fed620a5aa7dc768d0e` 均已在 `main`，`git push origin main` 成功；当前 `origin/main` 为 `cfc6505be44d50fe34391fed620a5aa7dc768d0e`。
+- Agent C 使用 `Altman-sam114` 上下文验收 Actions run `32299780634` / attempt `1` / job `96219435721`，下载 artifact `rustwar-ci-v1.2-main-cfc6505-run32299780634-attempt1` 到 `/private/tmp/rustwar-c-review-32299780634/`，目录约 `1.7M`。manifest 的 `branch=main`、完整 SHA、run id、attempt、v1.2、Xcode 26.5、iOS Simulator SDK 26.5 和 iPhone 17 Pro 与 `origin/main` 完全匹配；JUnit 为 `8 tests / 0 failures / 1 skipped`，静态检查、Swift Core tests、Xcode list/build、production/combat 双场景 Simulator 启动、横屏归一化和两份 PNG probe 全部 success。
+- Home / Combat PNG 均为 `2622x1206`、透明比例 `0.0`；Home mean `79.51133340025322`、std `42.46663672916753`、SHA-256 `7377d5a39e42ef8fcaa7168d8b75e5066699f6ec53a744c9e9321db48b4020a5`，Combat mean `74.32042234151058`、std `42.05154833636994`、SHA-256 `e0956e94f182a47bece629fde4b12349d13cb2994f039fd2ab9ba638d6ebed49`；人工复看确认既有 Home 生产/选择 HUD、Combat 攻击态/单位/弹道、Tactical Map 与 command dock 无静态回退。浏览器 smoke 按项目现状跳过，不能证明真实重叠目标点按或真机多指/VoiceOver 手感。
 
 已知风险：
 
