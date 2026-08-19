@@ -158,6 +158,29 @@ struct TacticalMapView: View {
         .accessibilityValue(controller.tacticalMapAccessibilityValue)
         .accessibilityHint(controller.tacticalMapAccessibilityHint)
         .accessibilityAddTraits(.isButton)
+        .accessibilityAction {
+            performPrimaryAccessibilityAction()
+        }
+        .accessibilityAction(
+            named: Text(
+                controller.isAwaitingTargetCommand
+                    ? "Cancel command"
+                    : "Focus Command Center"
+            )
+        ) {
+            performPrimaryAccessibilityAction()
+        }
+        .accessibilityAction(named: Text("Reset Camera")) {
+            controller.resetCamera()
+        }
+    }
+
+    private func performPrimaryAccessibilityAction() {
+        if controller.isAwaitingTargetCommand {
+            controller.cancelPendingTargetCommand()
+        } else {
+            controller.focusPlayerCommandCenter()
+        }
     }
 
     private func mapGesture(in size: CGSize) -> some Gesture {

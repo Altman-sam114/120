@@ -6057,3 +6057,32 @@
 已知风险：
 
 - CI 仍无真实 SwiftUI 多指/长按注入、VoiceOver、Dynamic Type 全档位、Reduce Motion 或性能矩阵；静态 artifact 不能证明系统回调排序和真机手感。
+
+## v2.61 / iOS Tactical Map VoiceOver actions
+
+日期：2026-08-20
+
+核心变更：
+
+- `TacticalMapView` 已经把 Tactical Map 暴露为 VoiceOver button，但此前没有默认 accessibility action；本轮普通状态增加默认 `Focus Command Center`，并增加 `Reset Camera` custom action，均只调用既有 Controller 相机入口。
+- 任意等待目标/区域选择状态下，地图默认 action 改为 `Cancel command`，通过 `GameController.cancelPendingTargetCommand()` 根据当前等待 flag 调用既有 Move、Attack、Attack Move、Patrol、Guard、Repair、Reclaim、Build、Rally 或 Select Area toggle；不新增状态字段或第二套命令路径。
+- 地图 hint/value 与动态 action name 同步说明正常相机操作、等待目标选择和取消出口；物理 map tap、拖动、长按、callback generation、pending hit radius、visibility/fog、TouchSequenceOwner、Core、生产、战斗、存档/JSON 和 Web 版不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.61-ios-tactical-map-accessibility-actions.md`
+
+验证状态：
+
+- 本轮遵循云端唯一验证制度，未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；待提交、推送后只认最新 `origin/main` SHA 对应的 Actions artifact。
+- Agent C 必须核对 manifest、JUnit、repo/toolchain/simulator info、`GameController`/`TacticalMapView` 双架构 build、production/combat 双启动、横屏归一化和两份 PNG probe，并人工确认 v2.60 生产/战斗静态构图无回退。
+
+已知风险：
+
+- 当前 CI 没有真实 VoiceOver/XCUITest、Dynamic Type 全档位、Reduce Motion 或真机性能矩阵；artifact 不能证明辅助功能 action 的实际排序、执行反馈或触摸手感。

@@ -806,3 +806,10 @@ compact producer focus 在 `TacticalProductionFocusSummaryView` 使用 `ViewThat
 选中单一己方生产建筑时，`TacticalProductionSectionView` 仍按 `summary -> Factory Tech -> production options -> queue -> management actions` 消费同一 `GameController` 派生状态；但在 compact、非 accessibility Dynamic Type 下，`TacticalFactoryTechView` 使用高密度 presentation。它保留 T 级、生产倍率、升级 ready/upgrading/max 状态、升级按钮、进度、取消以及 VoiceOver 语义，regular 和 accessibility 路径仍使用可自然换行的完整布局。这样 production focus 的 NOW/QUEUE/UPGRADE 与首排生产入口不会被大块 Factory Tech 卡片推到 dock 底部；按钮、队列、快捷键、Core 和存档不变。
 
 `TacticalMapView` 为地图拖拽/长按并行手势增加 view-captured callback generation。新独立 DragGesture 起点递增 generation，`@GestureState` 结束/取消、长按消费和正常 end 清除 context location、recognition flag、相机拖动状态并使旧 generation 失效；长按回调必须匹配当前 generation 才能派发上下文命令。迟到旧回调因此不能设置当前消费 flag，也不能吞掉下一次普通 map tap、相机拖动或 pending target tap。普通 map tap 居中、无等待拖动、等待命中半径、visibility/fog、VoiceOver、Controller、TouchSequenceOwner、Core 和命令状态流保持不变。
+
+## v2.61 iOS Tactical Map VoiceOver actions
+
+1. `TacticalMapView` 保留地图的可视拖动、点按、长按、pending badge、fog/radar 和 `.isButton` accessibility trait，并把 VoiceOver action 绑定到现有 `GameController` API。
+2. 普通状态下，地图默认 accessibility action 调用 `focusPlayerCommandCenter()`，额外的 `Reset Camera` action 调用 `resetCamera()`；两者只改变既有相机/反馈 presentation，不写 Core 或存档。
+3. 等待 Move、Attack、Attack Move、Patrol、Guard、Repair、Reclaim、Build、Rally 或 Select Area 时，地图默认 action 改为 `cancelPendingTargetCommand()`；Controller 按当前 flag 调用对应既有 toggle，清理既有 pending 状态并保留 feedback/render revision 语义。
+4. `tacticalMapAccessibilityHint` 同步说明地图仍可用于目标选择或相机操作，以及可用默认 action/Cancel 退出等待态；实体目标、命令、TouchSequenceOwner、生产、战斗和 Web 版不变。

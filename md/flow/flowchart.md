@@ -1197,3 +1197,24 @@ flowchart TD
 ```
 
 读图说明：v2.60 只压缩 compact producer presentation 并为 Tactical Map 并行手势增加 callback generation 门控。生产 action、升级状态和地图命令仍走既有 Controller/Core 路径；云端 PNG 能验证首排入口不再裁切，不能替代真实回调排序、VoiceOver、Dynamic Type 或真机手感。
+
+## v2.61 iOS Tactical Map VoiceOver actions
+
+```mermaid
+flowchart TD
+  VO[VoiceOver focuses Tactical Map] --> WAIT{Pending target or area command?}
+  WAIT -->|no| FOCUS[Default action: focus Command Center]
+  WAIT -->|yes| CANCEL[Default action: cancel current pending command]
+  VO --> RESET[Custom action: Reset Camera]
+  CANCEL --> TOGGLE[Controller calls matching existing toggle]
+  FOCUS --> CAMERA[Existing camera focus and feedback path]
+  RESET --> RESETCAM[Existing camera reset and feedback path]
+  TOGGLE --> CLEAN[Existing pending cleanup and render revision]
+  TAP[Physical map tap / drag / long press] --> GESTURE[Existing Tactical Map gesture path]
+  CAMERA --> PRES[Presentation only]
+  RESETCAM --> PRES
+  CLEAN --> PRES
+  GESTURE --> CORE[Existing map command / Core / save semantics]
+```
+
+读图说明：v2.61 只让已经暴露为 VoiceOver button 的 Tactical Map 拥有可执行默认和自定义 action；普通触摸手势仍独立走原路径，等待态取消通过 Controller 既有 toggle，不新增 Core 状态、命令或存档字段。CI 静态 smoke 不能证明 VoiceOver action 顺序或真机辅助功能手感。

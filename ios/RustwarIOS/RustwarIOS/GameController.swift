@@ -874,6 +874,60 @@ final class GameController {
             isAwaitingAreaSelection
     }
 
+    func cancelPendingTargetCommand() {
+        if isAwaitingMoveTarget {
+            toggleMoveCommand()
+            return
+        }
+        if isAwaitingAttackTarget {
+            toggleAttackCommand()
+            return
+        }
+        if isAwaitingAttackMoveTarget {
+            toggleAttackMoveCommand()
+            return
+        }
+        if isAwaitingPatrolTarget {
+            togglePatrolCommand()
+            return
+        }
+        if isAwaitingGuardTarget {
+            toggleGuardCommand()
+            return
+        }
+        if isAwaitingRepairTarget {
+            toggleRepairCommand()
+            return
+        }
+        if isAwaitingReclaimTarget {
+            toggleReclaimCommand()
+            return
+        }
+        if isAwaitingBuildExtractorTarget {
+            toggleBuildExtractorCommand()
+            return
+        }
+        if isAwaitingBuildTurretTarget {
+            toggleBuildTurretCommand()
+            return
+        }
+        if isAwaitingBuildFactoryTarget {
+            toggleBuildFactoryCommand()
+            return
+        }
+        if isAwaitingBuildRadarTarget {
+            toggleBuildRadarCommand()
+            return
+        }
+        if isAwaitingRallyTarget {
+            toggleRallyCommand()
+            return
+        }
+        if isAwaitingAreaSelection {
+            toggleAreaSelectionCommand()
+        }
+    }
+
     var tacticalMapPendingCommandLabel: String? {
         if isAwaitingMoveTarget {
             return "Move"
@@ -1005,45 +1059,45 @@ final class GameController {
 
     var tacticalMapAccessibilityHint: String {
         if isAwaitingMoveTarget {
-            return "Tap the tactical map to issue the move destination."
+            return "Tap the tactical map to issue the move destination. Activate the map or use Cancel to leave target mode."
         }
         if isAwaitingAttackMoveTarget {
-            return "Tap the tactical map to issue the attack move destination."
+            return "Tap the tactical map to issue the attack move destination. Activate the map or use Cancel to leave target mode."
         }
         if isAwaitingPatrolTarget {
-            return "Tap the tactical map to set the patrol endpoint."
+            return "Tap the tactical map to set the patrol endpoint. Activate the map or use Cancel to leave target mode."
         }
         if isAwaitingRallyTarget {
-            return "Tap the tactical map to set the producer rally point."
+            return "Tap the tactical map to set the producer rally point. Activate the map or use Cancel to leave target mode."
         }
         if isAwaitingReclaimTarget {
-            return "Tap a wreck marker on the tactical map to issue reclaim."
+            return "Tap a wreck marker on the tactical map to issue reclaim. Activate the map or use Cancel to leave target mode."
         }
         if isAwaitingBuildExtractorTarget {
-            return "Tap an unclaimed resource marker on the tactical map to build an extractor."
+            return "Tap an unclaimed resource marker on the tactical map to build an extractor. Activate the map or use Cancel to leave target mode."
         }
         if isAwaitingBuildTurretTarget {
-            return "Tap the tactical map to choose a clear land position for a turret."
+            return "Tap the tactical map to choose a clear land position for a turret. Activate the map or use Cancel to leave target mode."
         }
         if isAwaitingBuildFactoryTarget {
-            return "Tap the tactical map to choose a clear land position for a factory."
+            return "Tap the tactical map to choose a clear land position for a factory. Activate the map or use Cancel to leave target mode."
         }
         if isAwaitingBuildRadarTarget {
-            return "Tap the tactical map to choose a clear land position for a radar station."
+            return "Tap the tactical map to choose a clear land position for a radar station. Activate the map or use Cancel to leave target mode."
         }
         if isAwaitingAttackTarget {
-            return "Tap an enemy unit or building marker on the tactical map to issue attack."
+            return "Tap an enemy unit or building marker on the tactical map to issue attack. Activate the map or use Cancel to leave target mode."
         }
         if isAwaitingGuardTarget {
-            return "Tap a friendly unit or building marker on the tactical map to issue guard."
+            return "Tap a friendly unit or building marker on the tactical map to issue guard. Activate the map or use Cancel to leave target mode."
         }
         if isAwaitingRepairTarget {
-            return "Tap a damaged friendly unit or building marker on the tactical map to issue repair."
+            return "Tap a damaged friendly unit or building marker on the tactical map to issue repair. Activate the map or use Cancel to leave target mode."
         }
         if isAwaitingAreaSelection {
-            return "Drag on the battlefield to select player units in an area."
+            return "Drag on the battlefield to select player units in an area. Activate the map or use Cancel to leave area selection."
         }
-        return "Tap or drag the tactical map to move the battlefield camera."
+        return "Tap or drag the tactical map to move the battlefield camera. Activate the map to focus the player Command Center."
     }
 
     var tacticalMapAccessibilityValue: String {

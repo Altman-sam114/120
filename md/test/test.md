@@ -488,3 +488,17 @@ Agent C 必须核对最新 artifact 的 manifest `branch=main`、完整 SHA、ru
 - `TacticalMapView` 的新触摸起点、`@GestureState` cancel/end、长按消费与正常 end 都会使旧 callback generation 失效并清理 context location/recognition/drag 状态；长按 callback 必须校验 captured generation。普通 tap、相机拖动、pending target hit radius、context command、visibility/fog、VoiceOver 和 Core/TouchSequenceOwner 不变。
 
 Agent C 必须人工查看最新 `ios-home.png` 与 `ios-combat.png`：Home 的 Production、NOW/QUEUE/UPGRADE、紧凑 Factory Tech 和首排生产卡完整在边框内；Combat 的单位模型、弹道、攻击等待状态、Tactical Map 与 command dock 无结构性回退。静态 artifact 不能证明真实长按/取消回调顺序、滚动、VoiceOver、Dynamic Type、Reduce Motion 或真机性能。
+
+## v2.61
+
+本轮只修改 iOS Tactical Map 的 VoiceOver action 与 Controller 入口；继续强制云端唯一验证，不运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`。
+
+Agent C 必须在最新 `origin/main` SHA 对应 artifact 中核对 manifest 的 `branch=main`、完整 `commitSha`、run id、attempt、v1.2、Xcode 26.5/iOS Simulator SDK 26.5/iPhone 17 Pro；JUnit `8/0/1`、`GameController.swift`/`TacticalMapView.swift` 双架构 build、production/combat 双启动、横屏归一化和两份 pixel probe。
+
+代码复核必须确认：
+
+- 普通状态下 Tactical Map 的默认 VoiceOver action 只调用 `focusPlayerCommandCenter()`，`Reset Camera` 只调用 `resetCamera()`；不直接修改 pending state、Core、JSON 或存档。
+- 等待 Move、Attack、Attack Move、Patrol、Guard、Repair、Reclaim、Build、Rally 或 Select Area 时，默认 action 调用单一 `cancelPendingTargetCommand()`，再由当前状态对应的既有 toggle 完成清理/反馈；没有等待命令时该入口安全 no-op。
+- 物理 map tap、拖动、长按、pending hit radius、callback generation、visibility/fog、TouchSequenceOwner、命令、生产、战斗、存档和 Web 版不变；hint/value 与地图 action 名称保持动态、可读且不以颜色作为唯一反馈。
+
+人工复看 `ios-home.png` 与 `ios-combat.png`，确认 v2.60 已通过的生产首屏、Factory Tech、战斗单位/弹道、攻击等待状态、Tactical Map 和 command dock 无静态回退。artifact 不能证明真实 VoiceOver rotor/action 执行、动态类型、触摸手感或设备性能，最终回复必须明确该 residual risk。
