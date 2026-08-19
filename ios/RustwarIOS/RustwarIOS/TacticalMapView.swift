@@ -168,6 +168,9 @@ struct TacticalMapView: View {
                 guard !controller.isAwaitingTargetCommand else {
                     return
                 }
+                guard !didRecognizeContextPress else {
+                    return
+                }
 
                 let dragDistance = hypot(
                     value.location.x - value.startLocation.x,

@@ -1191,7 +1191,7 @@ final class BattlefieldScene: SKScene {
         case .artillery:
             radius * 1.22
         case .gunboat:
-            radius * 0.77
+            radius * 1.04
         default:
             radius * 0.9
         }
@@ -3233,10 +3233,17 @@ final class BattlefieldScene: SKScene {
             ], fill: armorMidColor, stroke: outlineColor, lineWidth: 1)
             weaponMount.addChild(gunboatCabin)
             recoilMount.addChild(rectNode(
-                CGRect(x: radius * 0.05, y: -radius * 0.07, width: radius * 0.72, height: radius * 0.14),
+                CGRect(x: radius * 0.32, y: -radius * 0.09, width: radius * 0.72, height: radius * 0.18),
+                cornerRadius: 1,
+                fill: armorDarkColor,
+                stroke: outlineColor
+            ))
+            recoilMount.addChild(rectNode(
+                CGRect(x: radius * 0.93, y: -radius * 0.14, width: radius * 0.14, height: radius * 0.28),
                 cornerRadius: 1,
                 fill: highlightColor,
-                stroke: outlineColor
+                stroke: outlineColor,
+                lineWidth: 0.9
             ))
         }
         if !recoilMount.children.isEmpty {

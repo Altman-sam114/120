@@ -422,7 +422,7 @@ final class GameController {
             return "Tech"
         }
         let definition = GameDefinitions.building(producer.type)
-        return definition.upgrades?.isEmpty == false
+        return !definition.upgrades.isEmpty
             ? "T\(producer.upgradeLevel)"
             : "Core"
     }
@@ -485,7 +485,7 @@ final class GameController {
         if let nextUpgrade = GameDefinitions.nextUpgrade(for: producer) {
             return "T\(nextUpgrade.level) ready"
         }
-        return GameDefinitions.building(producer.type).upgrades?.isEmpty == false
+        return !GameDefinitions.building(producer.type).upgrades.isEmpty
             ? "Max tech"
             : "No upgrade"
     }
@@ -2645,7 +2645,10 @@ final class GameController {
     }
 
     private var selectedPlayerProducer: BuildingSnapshot? {
-        guard let selectedEntityID = engine.state.selectedEntityID else {
+        let selectedIDs = engine.state.selectedEntityIDs.isEmpty
+            ? engine.state.selectedEntityID.map { [$0] } ?? []
+            : engine.state.selectedEntityIDs
+        guard selectedIDs.count == 1, let selectedEntityID = selectedIDs.first else {
             return nil
         }
         guard let building = engine.state.buildings.first(where: { $0.id == selectedEntityID && $0.team == .player }) else {

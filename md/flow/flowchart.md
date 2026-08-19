@@ -1101,7 +1101,7 @@ flowchart TD
 flowchart TD
   L[Map long press recognized] --> Q[Consume current touch lifecycle]
   Q --> E[DragGesture end cleans up only]
-  C[Gesture cancelled] --> R[GestureState reset clears start / flag / drag state]
+  GC[Gesture cancelled] --> R[GestureState reset clears start / flag / drag state]
   E --> N[No duplicate ordinary map tap]
   T[Next independent touch] --> P[Existing tap / camera drag / pending target path]
   U[Unit type + model radius] --> UM[Scaled muzzle distance - same-frame recoil]
@@ -1110,8 +1110,8 @@ flowchart TD
   TM --> F
   F --> S[Existing bounded SpriteKit presentation]
   G[Selected producer] --> H[Producer-generic production focus summary]
-  H --> C[NOW / QUEUE / UPGRADE]
-  C --> D[Factory Tech + production options + queue/actions]
+  H --> PS[NOW / QUEUE / UPGRADE]
+  PS --> D[Factory Tech + production options + queue/actions]
   N --> K[Core / commands / save unchanged]
   S --> K
   D --> K

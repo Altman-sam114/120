@@ -5948,8 +5948,8 @@
 核心变更：
 
 - `TacticalMapView` 在长按成功识别上下文命令后消费当前触摸，释放阶段的 `DragGesture.onEnded` 只清理、不再串发普通 map tap；触摸起点与 `@GestureState` 生命周期共同清理取消手势遗留状态，下一次独立触摸恢复普通点按、相机拖动和 pending target 提交。
-- `BattlefieldScene` 将重坦、Artillery、Gunboat 的炮口距离对齐到程序化模型的 `1.44r`、`1.22r`、`0.77r`，Turret 复用炮管末端比例；fire effect 起点扣除同帧 weapon/turret recoil，flash、tracer/beam 与 terminal feedback 仍沿同一 presentation origin，Core 命中/伤害/冷却/存档不变。
-- `TacticalProductionSectionView` 在 Production 标题后恢复只读 NOW / QUEUE / UPGRADE summary；`GameController` 为生产者提供通用 tech/speed/upgrade 派生值，Command Center 显示 Core/1x production/No upgrade，Land Factory 保留 T 级/倍率/升级语义，完整生产入口和管理动作顺序不变。
+- `BattlefieldScene` 将重坦、Artillery、Gunboat 的炮口距离对齐到程序化模型的 `1.44r`、`1.22r`、`1.04r`，Gunboat 可见炮管延伸到船体前缘并增加炮口 collar，Turret 复用炮管末端比例；fire effect 起点扣除同帧 weapon/turret recoil，flash、tracer/beam 与 terminal feedback 仍沿同一 presentation origin，Core 命中/伤害/冷却/存档不变。
+- `TacticalProductionSectionView` 在 Production 标题后恢复只读 NOW / QUEUE / UPGRADE summary；`GameController` 为单一己方生产建筑提供通用 tech/speed/upgrade 派生值，单位/建筑混选不再错误显示生产操作；Command Center 显示 Core/1x production/No upgrade，Land Factory 保留 T 级/倍率/升级语义，完整生产入口和管理动作顺序不变。
 
 关键文件：
 
@@ -5965,9 +5965,24 @@
 
 验证状态：
 
-- 本轮按云端唯一验证制度未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；仅做源码、工作区和变更范围审查。
+- 本轮按云端唯一验证制度未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；复核修正了 `BuildingDefinition.upgrades` 的非 optional 访问、混合选择的 producer gate、长按后的地图拖动串发和 Gunboat 炮口锚点，仅做源码、工作区和变更范围审查。
 - v2.58 实现提交及其 Actions run / artifact 待 push 后由 Agent C 以最新 `origin/main` SHA 定位并下载复判；不得以本地输出或 v2.57 artifact 代替本轮结果。
 
 已知风险：
 
 - CI 仍无 XCUITest、真实触摸注入、VoiceOver、Dynamic Type、Reduce Motion 自动化或性能矩阵；静态 PNG 和云端 build 不能证明长按取消回调排序、滚动、动画时序、辅助功能或真机手感。
+
+## v2.58.1 / v2.58 review corrections
+
+日期：2026-08-20
+
+复核修正：
+
+- 修正 `GameController` 对非 optional `BuildingDefinition.upgrades` 的访问，避免生产摘要路径编译失败。
+- 生产上下文现在只对单一己方生产建筑生效；单位/建筑混选不会错误显示生产按钮、队列或升级入口。
+- Tactical Map 长按成功后同时屏蔽同一手势的普通 tap 与相机拖动，保留取消后的完整状态清理。
+- Gunboat 的炮口 presentation origin 调整为 `1.04r`，并让可见炮管延伸到船体前缘，避免炮口焰/弹道从船体内部出现。
+
+验证状态：
+
+- 按云端唯一验证制度未运行本地测试、build、截图或 `git diff --check`；本提交待推送后由 Agent C 仅验收对应最新 `origin/main` Actions artifact。
