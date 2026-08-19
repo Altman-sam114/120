@@ -5903,8 +5903,10 @@
 
 验证状态：
 
-- 本轮按云端唯一验证制度未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；v2.55 已完成实现与云端 artifact 验收记录，v2.56 Actions artifact 尚未产生。
-- Agent C 后续必须只验收最新 `origin/main` SHA 的未加密 artifact，核对 manifest、JUnit、主日志、失败摘要、双架构 build、production/combat 双启动、横屏归一化和双 PNG；固定 combat PNG 需复看终点层与既有爆点/模型/HUD 无遮挡。
+- 本轮按云端唯一验证制度未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；v2.55 与 v2.56 均由最新 `origin/main` 对应的 Actions artifact 验收。
+- v2.56 实现提交 `a02d7a29e45ac1e10fe1efabadfd786546530c88` 已 push 至 `origin/main`；GitHub Actions run `32269505140`、attempt `1`、job `96122195679` 成功，未加密 artifact `rustwar-ci-v1.2-main-a02d7a2-run32269505140-attempt1`（artifact id `9371942881`）已下载到 `/private/tmp/rustwar-c-review-32269505140/`，目录约 `1.7M`。
+- manifest 的 `branch=main`、`commitSha=a02d7a29e45ac1e10fe1efabadfd786546530c88`、run id 和 run attempt 与 `origin/main` 完全一致；JUnit 为 `8 tests / 0 failures / 1 expected browser skip`，Swift Core `340 tests passed`，Xcode `26.5`、iOS SDK `26.5`、Swift `6.3.2`、iPhone 17 Pro，双架构 build、production/combat 启动、横屏归一化和双 pixel probe 全部成功。
+- Home PNG 为 `2622x1206`、SHA-256 `c90459c86aa225ee2fb0dc0b9cc4c33908e0c339bd7db1202258c8c33b12b12d`；Combat PNG 为 `2622x1206`、SHA-256 `2e70e9ce999547bba06504c2a642d2df15adc1ef7af805ae7e8c24724e0eef7c`。人工复看确认终点白色核心、队伍色环和武器色 burst 可辨，Home 生产区、Combat 单位模型、HUD、既有爆点与 Tactical Map 无结构性回退；`actions/upload-artifact@v5` Node 20 弃用 annotation 不影响 gate，v2.56 通过云端 artifact 验收。
 
 已知风险：
 
