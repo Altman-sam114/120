@@ -6151,3 +6151,33 @@
 已知风险：
 
 - 静态 artifact 不能证明真实资源 tick 竞态、键盘 shortcut、VoiceOver 执行顺序、Dynamic Type 全档位、按钮滚动或真机点击手感；Tactical Map stale onEnded callback 和 SpriteKit 摧毁碎片视觉留给后续轮次。
+
+## v2.64 / iOS Tactical Map stale release gate
+
+日期：2026-08-20
+
+核心变更：
+
+- `TacticalMapView.mapGesture(in:)` 为每个 `DragGesture` 捕获当前 callback generation；`onChanged` 与 `onEnded` 只有在 generation 仍有效时才能修改当前手势状态或调用既有 Controller 入口。
+- stale `onEnded` 在 `defer` / `resetMapGestureState()` 之前直接返回，迟到旧 release 不会清理新触摸、移动相机、误提交 pending 目标或串发普通 map tap；首次起点初始化不再错误递增同一手势的 generation。
+- 普通 Tactical Map 点按、拖动、长按上下文、等待命令、VoiceOver、Core、生产、战斗、存档/JSON、主战场输入和 Web 版不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.64-tactical-map-stale-release.md`
+
+验证状态：
+
+- 本轮继续遵循云端唯一验证制度，未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；`.wp` 保持未跟踪。
+- 实现 commit `41bfbaee80407aa16c11a8425472bc30785482dc` 已推送到 `origin/main`；Agent C 使用 `Altman-sam114` 上下文验收 Actions run `32311763452` / attempt `1` / job `96256008823`，下载 artifact `rustwar-ci-v1.2-main-41bfbae-run32311763452-attempt1` 到 `/private/tmp/rustwar-c-review-32311763452/`，目录约 `1.7M`。
+- manifest 的 `branch=main`、完整 SHA、run id、attempt、v1.2、Xcode 26.5、iOS Simulator SDK 26.5 和 iPhone 17 Pro 与 `origin/main` 完全匹配；JUnit 为 `8 tests / 0 failures / 1 skipped`，固定工具链、静态检查、Swift Core、Xcode list/build、production/combat 双启动、横屏归一化和两份 PNG probe 全部成功，唯一 skip 仍是仓库没有 headless browser CI。
+- `ios-combat.png` 人工复看确认战斗单位模型、炮火/弹道、Attack target、爆点、Tactical Map 和 command dock 无静态回退；`ios-home.png` 保持 Production、Factory Tech、Scout 可用卡与 Light Tank 锁定卡布局。
+
+已知风险：
+
+- generation gate 能阻断可区分的迟到 callback，但 SwiftUI 现有回调没有统一触摸 token；旧/新触点在系统不可区分窗口仍不能由静态 CI 绝对证明，需要后续真机/XCUITest 验证。后续候选仍包括摧毁爆炸的装甲碎片视觉和固定 Quick Attack-Move 操作条。

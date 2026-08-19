@@ -1267,3 +1267,25 @@ flowchart TD
 ```
 
 读图说明：v2.63 只增加生产 presentation 的只读可用性投影。不可用卡仍留在原数组位置，因此 Shift+1-9 不漂移；disabled、锁图标、文字原因和 VoiceOver value/hint 共同表达状态。金属与队列人口边界复用 Core enqueueUnit 的规则，不修改 Core、生产扣款、队列、升级、存档或 Web 版。云端 production PNG 可确认可用/锁定卡片都在布局内，不能证明真实资源 tick、键盘 shortcut 或 VoiceOver 执行。
+
+## v2.64 iOS Tactical Map stale release gate
+
+```mermaid
+flowchart TD
+  START[Current Tactical Map DragGesture is created] --> CAPTURE[Capture current callback generation]
+  CHANGE[onChanged callback] --> GATE{Captured generation is current?}
+  END[onEnded callback] --> GATE
+  GATE -->|no| DROP[Drop stale callback immediately]
+  GATE -->|yes + changed| STATE[Update current start / context / drag state]
+  GATE -->|yes + ended| CLEAN[Existing reset defer]
+  STATE --> LONG{Context long press consumed?}
+  LONG -->|yes| KEEP[Keep release tap suppressed]
+  LONG -->|no + camera drag| KEEP
+  LONG -->|no + ordinary tap| TAP[Existing map tap / pending target path]
+  CLEAN --> KEEP
+  TAP --> CORE[Existing Controller / Core / camera semantics]
+  KEEP --> NEXT[Next independent gesture remains isolated]
+  CORE --> NEXT
+```
+
+读图说明：v2.64 让 Tactical Map `onChanged` 与 `onEnded` 共用创建时捕获的 generation；旧 callback 在任何状态清理或命令派发前直接丢弃。首次起点初始化不递增当前 generation，以免误杀同一合法手势。有效手势仍沿既有点按居中、等待目标、相机拖动和长按上下文路径；不新增 Core 状态或第二套命令入口。静态 Actions artifact 能证明编译与首屏构图无回退，不能证明 SwiftUI 真实回调乱序窗口已经在真机上绝对消除。

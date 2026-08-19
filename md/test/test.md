@@ -529,3 +529,18 @@ Agent C 必须只验收最新 `origin/main` SHA 对应的未加密 Actions artif
 - production visual smoke fixture 同时显示可用和金属不足卡片；Agent C 查看 ios-home.png 时确认 Production、Factory Tech、NOW/QUEUE/UPGRADE、队列、锁定 badge 和首排卡片无裁切或重叠。ios-combat.png 的既有模型、弹道、Attack target、Tactical Map 和 command dock 不回退。
 
 最新 Actions artifact 仍需核对 manifest 的 main/full SHA/run/attempt、v1.2、Xcode 26.5、iOS SDK 26.5、iPhone 17 Pro、JUnit 8/0/1、Swift Core、双架构 iOS build、production/combat 双启动、横屏归一化和两份 PNG probe。静态 artifact 不能证明真实资源 tick、键盘 shortcut、VoiceOver 执行、Dynamic Type 全档位或真机点击手感。
+
+## v2.64
+
+本轮只收紧 `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift` 的 stale `DragGesture` release 生命周期；继续执行云端唯一验证，不运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`。`.wp` 必须保持未跟踪，不得进入提交。
+
+Agent C 必须只验收最新 `origin/main` SHA 对应的未加密 Actions artifact，并核对 manifest 的 `branch=main`、完整 `commitSha`、run id、attempt、v1.2、Xcode 26.5、iOS Simulator SDK 26.5、iPhone 17 Pro；JUnit `8/0/1`、Swift Core、Xcode list/build、双架构 iOS build、production/combat 双启动、横屏归一化和两份 PNG probe 全部成功。
+
+代码复判必须确认：
+
+- `mapGesture(in:)` 为当前手势捕获一个稳定 generation；`onChanged` 和 `onEnded` 在修改起点、context、长按消费、相机拖动或调用 Controller 前都检查该 generation。起点变化不会为同一合法手势递增 generation。
+- stale `onChanged` 直接丢弃，不修改当前手势状态、不移动相机、不改变命令；stale `onEnded` 必须在 `defer`、`resetMapGestureState()`、`handleTap` 和任何 Controller 调用前返回。
+- 有效 `onEnded` 仍先清理，再按既有顺序忽略相机拖动/已消费长按，只有普通有效点按才调用 `handleTap`；pending Move、Attack、Attack-Move、Patrol、Rally、Turret、Factory、Radar、Guard、Repair、Reclaim、Build Extractor、普通 map tap 居中和 VoiceOver action 不回归。
+- Tactical Map 的 pending hit radius、fog/radar、marker/highlight、TouchSequenceOwner、BattlefieldView 输入、GameController/Core、生产、战斗、存档/JSON 和 Web 版不得变化。
+
+Agent C 人工查看 `ios-home.png` 与 `ios-combat.png`：Home 保持 v2.63 Production、Factory Tech、可用/锁定生产卡和 Tactical Map；Combat 保持单位模型、弹道、Attack target、爆点、Tactical Map 和 command dock。静态 PNG、Core tests 和源码 generation gate 不能证明真实 SwiftUI 回调乱序、触摸 ID 复用、VoiceOver、Dynamic Type、滚动或真机手感；最终结论必须保留该 residual risk。

@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.64：原生 iOS Tactical Map 的 DragGesture `onChanged` / `onEnded` 现在都受当前 callback generation 保护；迟到旧回调会被丢弃，不会清理新触摸、移动相机、误提交等待目标或串发普通点按。当前合法手势仍保持点按居中、拖动相机、长按上下文和 pending 命令语义；Core、生产、战斗、存档、JSON、Web 版和主战场输入不变。实现 commit `41bfbaee80407aa16c11a8425472bc30785482dc`；对应 Actions run `32311763452` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-41bfbae-run32311763452-attempt1` 已由 Agent C 下载并核对通过。
+
 v2.63：原生 iOS 生产卡现在会按当前金属、所有己方生产队列预留人口和目标单位 supply 派生可用态；不足时保留卡片但禁用按钮，并显示锁图标、NEED 金属或 POP 人口提示，VoiceOver 会朗读具体原因。生产列表顺序、Shift+1-9、队列/升级/Repeat/Rally、Core、存档和 Web 版不变。实现 commit `9b4a3894aa5b38a2b94ad9aea7426e2a5690335c`，首屏 visual fixture 收尾 commit `56f9c7c9109058e9da5eeb60c200ecfcc3d43992`；对应 Actions run `32306599749` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-56f9c7c-run32306599749-attempt1` 已由 Agent C 下载并核对通过。
 
 v2.62：原生 iOS 直接点按改为意图感知：选中作战单位时，44pt 容错区内的可见敌方单位/建筑优先于重叠友军进入 Attack，主战场 tap、预览和长按上下文保持一致；Builder 与作战单位混选且 Builder 空闲时点空地会让 Builder 移动、作战单位 Attack-Move 自动索敌。Core、存档、手势 owner、战斗数值和 Web 版不变；生产入口不可用态留待下一轮。对应 Actions run `32299780634` / attempt `1` 的云端 artifact 已通过。

@@ -827,3 +827,11 @@ GameController 新增只读 ProductionAvailability 投影。它沿用 Core enque
 TacticalProductionSectionView 保留全部 tech 合法生产项、原有数组顺序和 Shift+1-9 映射；可用项沿原有 queueUnit action 运行，不可用项保留卡片但使用 SwiftUI disabled。卡片以 lock 图标和 NEED metal / POP used-cap 文字表达原因，VoiceOver value/hint 同步朗读 Available、金属不足或人口不足；disabled 仍经过既有 tacticalControl，因此 44pt 最小触控区不变。生产队列、Repeat、Rally、Cancel、升级、Core、存档和 Web 版不变。
 
 云端 production visual fixture 只把玩家 metal 调整为能同时显示可用和锁定卡片的展示状态，普通对局初始资源与生产规则不变。该轮仍不能证明真实资源 tick、键盘 shortcut、VoiceOver 执行、Dynamic Type 全档位或真机点击手感。
+
+## v2.64 iOS Tactical Map stale release gate
+
+`TacticalMapView.mapGesture(in:)` 在建立当前 `DragGesture` 时捕获 `mapGestureCallbackGeneration`。同一有效手势的 `onChanged` 与 `onEnded` 只能在 token 仍是当前 generation 时修改起点、长按识别、相机拖动状态或派发 map tap；首次起点初始化不会因为 SwiftUI 重绘而递增 generation，避免吞掉当前合法触摸。
+
+`onEnded` 先做 generation guard，再进入既有 `defer { resetMapGestureState() }`。因此迟到旧 release 只会返回，不会清理下一次独立手势，也不会居中相机、提交 pending Move / Attack / Attack-Move / Patrol / Rally / Builder target 或串发普通 tap。当前合法 release 仍按原顺序忽略相机拖动和已消费长按，否则调用既有 `handleTap`。
+
+本轮只收紧 Tactical Map presentation/input 生命周期；地图点按命中半径、pending badge、fog/radar、VoiceOver action、TouchSequenceOwner、GameController/Core 命令、生产、战斗、存档/JSON、主战场输入和 Web 版不变。generation gate 能阻断可区分的迟到 callback，但 SwiftUI 现有回调没有统一触摸 token，旧/新触点在平台不可区分的窗口仍需真机/XCUITest验证，不能宣称绝对时序证明。
