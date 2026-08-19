@@ -819,3 +819,11 @@ compact producer focus 在 `TacticalProductionFocusSummaryView` 使用 `ViewThat
 `GameController` 在无等待命令的主战场 direct tap、touch preview 和长按 context 中复用 `prioritizedEnemyTarget(at:minimumHitRadius:)`。当前选择包含 combat unit 时，resolver 先查 exact、再按调用路径已有的 world hit radius 查当前可见敌方单位/建筑；它只过滤敌方候选，不改变 44pt、fog/radar、Core selection 或普通无 combat selection。敌我实体重叠时，敌方不再被更近友军候选遮挡，tap/preview/context 都进入 Attack 意图。
 
 空地点按仍复用既有 Core 命令：纯 combat 走 `issueAttackMove(to:)`，Builder-only 走 `issueMove(to:)`；混合且所有 Builder idle 时先走 `issueMove(to:)`，再让 combat 走 `issueAttackMove(to:)`，因此 Builder 保留 Move、combat 保留自动索敌。存在忙碌 Builder、显式 pending 命令、Tactical Map 普通点按、TouchSequenceOwner、UnitOrder、存档、战斗数值和 Web 版保持不变。
+
+## v2.63 iOS production availability and accessibility
+
+GameController 新增只读 ProductionAvailability 投影。它沿用 Core enqueueUnit 的资源边界：当前玩家 metal 必须不低于目标 UnitDefinition.metalCost，且当前已用人口加所有己方生产建筑 productionQueue 的预留 supply，再加目标单位 supply，不得超过当前 supplyCap。这样多个生产建筑同时排队时，生产卡不会错误地把另一座工厂的预留人口当成可用人口。
+
+TacticalProductionSectionView 保留全部 tech 合法生产项、原有数组顺序和 Shift+1-9 映射；可用项沿原有 queueUnit action 运行，不可用项保留卡片但使用 SwiftUI disabled。卡片以 lock 图标和 NEED metal / POP used-cap 文字表达原因，VoiceOver value/hint 同步朗读 Available、金属不足或人口不足；disabled 仍经过既有 tacticalControl，因此 44pt 最小触控区不变。生产队列、Repeat、Rally、Cancel、升级、Core、存档和 Web 版不变。
+
+云端 production visual fixture 只把玩家 metal 调整为能同时显示可用和锁定卡片的展示状态，普通对局初始资源与生产规则不变。该轮仍不能证明真实资源 tick、键盘 shortcut、VoiceOver 执行、Dynamic Type 全档位或真机点击手感。

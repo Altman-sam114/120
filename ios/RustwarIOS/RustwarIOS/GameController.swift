@@ -8,6 +8,65 @@ enum CloudVisualScenario: Equatable {
     case combat
 }
 
+enum ProductionAvailability: Equatable {
+    case available
+    case unavailable
+    case insufficientMetal(required: Int, available: Int)
+    case insufficientSupply(used: Int, cap: Int, required: Int)
+
+    var isAvailable: Bool {
+        self == .available
+    }
+
+    var shortLabel: String {
+        switch self {
+        case .available:
+            return "READY"
+        case .unavailable:
+            return "UNAVAILABLE"
+        case let .insufficientMetal(required, _):
+            return "NEED \(required)M"
+        case let .insufficientSupply(used, cap, _):
+            return "POP \(used)/\(cap)"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .available:
+            return "checkmark.circle.fill"
+        case .unavailable, .insufficientMetal, .insufficientSupply:
+            return "lock.fill"
+        }
+    }
+
+    var accessibilityValue: String {
+        switch self {
+        case .available:
+            return "Available"
+        case .unavailable:
+            return "Unavailable"
+        case let .insufficientMetal(required, available):
+            return "Unavailable. Needs \(required) metal; \(available) metal available."
+        case let .insufficientSupply(used, cap, required):
+            return "Unavailable. Population \(used) of \(cap); needs \(required) more population."
+        }
+    }
+
+    var accessibilityHint: String {
+        switch self {
+        case .available:
+            return "Queues one unit for production."
+        case .unavailable:
+            return "This production option is currently unavailable."
+        case .insufficientMetal:
+            return "Gather more metal before queuing this unit."
+        case .insufficientSupply:
+            return "Increase population capacity or wait for queued units to finish."
+        }
+    }
+}
+
 @MainActor
 @Observable
 final class GameController {
@@ -140,6 +199,8 @@ final class GameController {
                 buildTime: buildTime
             )
         }
+        // Keep both available and locked production cards visible in the cloud fixture.
+        state.metal[.player] = 240
         let radarDefinition = GameDefinitions.building(.radar)
         let radarHitPoints = radarDefinition.upgrades
             .first(where: { $0.level == 2 })?
@@ -405,6 +466,31 @@ final class GameController {
         return GameDefinitions.productionUnits(for: building)
     }
 
+    func productionAvailability(for unitType: UnitType) -> ProductionAvailability {
+        guard selectedPlayerProducer != nil else {
+            return .unavailable
+        }
+
+        let definition = GameDefinitions.unit(unitType)
+        let economy = playerEconomy
+        let availableMetal = Int(max(0, economy.metal).rounded(.down))
+        let requiredMetal = Int(definition.metalCost.rounded())
+        guard economy.metal >= definition.metalCost else {
+            return .insufficientMetal(required: requiredMetal, available: availableMetal)
+        }
+
+        let queuedSupply = queuedPlayerSupply
+        let projectedSupply = economy.supplyUsed + queuedSupply + definition.supply
+        guard projectedSupply <= economy.supplyCap else {
+            return .insufficientSupply(
+                used: economy.supplyUsed + queuedSupply,
+                cap: economy.supplyCap,
+                required: definition.supply
+            )
+        }
+        return .available
+    }
+
     func productionBuildTime(for unitType: UnitType) -> Double {
         guard let producer = selectedPlayerProducer else {
             return GameDefinitions.unit(unitType).buildTime
@@ -414,6 +500,17 @@ final class GameController {
 
     var productionQueueItems: [ProductionQueueItem] {
         selectedPlayerProducer?.productionQueue ?? []
+    }
+
+    private var queuedPlayerSupply: Int {
+        engine.state.buildings.reduce(0) { partial, building in
+            guard building.team == .player else {
+                return partial
+            }
+            return partial + building.productionQueue.reduce(0) { queuePartial, item in
+                queuePartial + GameDefinitions.unit(item.unitType).supply
+            }
+        }
     }
 
     var productionFocusBuildingName: String? {

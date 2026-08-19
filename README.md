@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.63（实现待云端验收）：原生 iOS 生产卡现在会按当前金属、所有己方生产队列预留人口和目标单位 supply 派生可用态；不足时保留卡片但禁用按钮，并显示锁图标、NEED 金属或 POP 人口提示，VoiceOver 会朗读具体原因。生产列表顺序、Shift+1-9、队列/升级/Repeat/Rally、Core、存档和 Web 版不变。
+
 v2.62：原生 iOS 直接点按改为意图感知：选中作战单位时，44pt 容错区内的可见敌方单位/建筑优先于重叠友军进入 Attack，主战场 tap、预览和长按上下文保持一致；Builder 与作战单位混选且 Builder 空闲时点空地会让 Builder 移动、作战单位 Attack-Move 自动索敌。Core、存档、手势 owner、战斗数值和 Web 版不变；生产入口不可用态留待下一轮。对应 Actions run `32299780634` / attempt `1` 的云端 artifact 已通过。
 
 v2.61：Tactical Map 的 VoiceOver 元素补齐默认 action：普通状态可直接聚焦玩家 Command Center，并提供 Reset Camera；等待目标或框选时默认 action 改为取消当前等待命令。地图真实 tap、拖动、长按、pending 命令与 Core/存档语义不变；commit `fcfa9d9604c00e7a03e3dddf7ad2e2044372d807` 对应 run `32293798139` / attempt `1` 的 Actions artifact 已通过。

@@ -1247,3 +1247,23 @@ flowchart TD
 ```
 
 读图说明：v2.62 只在 `GameController` 集中修正直接点按意图。combat selection 的敌方 resolver 只读当前可见敌方并复用既有命令；混合选择只有在所有 Builder idle 时才先 Move 全选、再 Attack-Move combat，忙碌 Builder、pending 命令、手势 owner、Core、存档和 Web 版不变。云端 PNG 可确认既有 HUD/战斗构图无回退，不能证明真实重叠目标点按或真机多指手感。
+
+## v2.63 iOS production availability and accessibility
+
+```mermaid
+flowchart TD
+  BUILDING[Player producer selected] --> OPTIONS[Keep all tech-legal production cards]
+  OPTIONS --> AVAIL{Core-aligned availability projection}
+  AVAIL --> METAL{Current metal >= unit cost?}
+  METAL -->|no| LOCKM[Disabled card + lock + NEED metal]
+  METAL -->|yes| SUPPLY{Used + all queued supply + unit supply <= cap?}
+  SUPPLY -->|no| LOCKS[Disabled card + lock + POP used/cap]
+  SUPPLY -->|yes| READY[Enabled card + queueUnit]
+  LOCKM --> VO[VoiceOver reason]
+  LOCKS --> VO
+  READY --> CORE[Existing Core queue / refund / save semantics]
+  VO --> KEEP[44pt, order, shortcuts and Web unchanged]
+  CORE --> KEEP
+```
+
+读图说明：v2.63 只增加生产 presentation 的只读可用性投影。不可用卡仍留在原数组位置，因此 Shift+1-9 不漂移；disabled、锁图标、文字原因和 VoiceOver value/hint 共同表达状态。金属与队列人口边界复用 Core enqueueUnit 的规则，不修改 Core、生产扣款、队列、升级、存档或 Web 版。云端 production PNG 可确认可用/锁定卡片都在布局内，不能证明真实资源 tick、键盘 shortcut 或 VoiceOver 执行。

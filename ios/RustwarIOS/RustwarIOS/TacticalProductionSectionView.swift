@@ -235,6 +235,7 @@ struct TacticalProductionSectionView: View {
     @ViewBuilder
     private func productionButton(for unitType: UnitType, shortcutIndex: Int) -> some View {
         let definition = GameDefinitions.unit(unitType)
+        let availability = controller.productionAvailability(for: unitType)
         if let shortcutKey = productionShortcutKey(for: shortcutIndex) {
             Button {
                 controller.queueUnit(unitType)
@@ -243,13 +244,16 @@ struct TacticalProductionSectionView: View {
                     unitType: unitType,
                     definition: definition,
                     buildTime: controller.productionBuildTime(for: unitType),
+                    availability: availability,
                     usesCompactLayout: !dynamicTypeSize.isAccessibilitySize
                 )
             }
             .tacticalControl()
+            .disabled(!availability.isAvailable)
             .keyboardShortcut(shortcutKey, modifiers: .shift)
             .accessibilityLabel(productionAccessibilityLabel(for: definition))
-            .accessibilityHint("Queues one \(definition.name) for production.")
+            .accessibilityValue(availability.accessibilityValue)
+            .accessibilityHint(availability.accessibilityHint)
         } else {
             Button {
                 controller.queueUnit(unitType)
@@ -258,12 +262,15 @@ struct TacticalProductionSectionView: View {
                     unitType: unitType,
                     definition: definition,
                     buildTime: controller.productionBuildTime(for: unitType),
+                    availability: availability,
                     usesCompactLayout: !dynamicTypeSize.isAccessibilitySize
                 )
             }
             .tacticalControl()
+            .disabled(!availability.isAvailable)
             .accessibilityLabel(productionAccessibilityLabel(for: definition))
-            .accessibilityHint("Queues one \(definition.name) for production.")
+            .accessibilityValue(availability.accessibilityValue)
+            .accessibilityHint(availability.accessibilityHint)
         }
     }
 
@@ -290,6 +297,7 @@ private struct TacticalProductionButtonLabel: View {
     let unitType: UnitType
     let definition: UnitDefinition
     let buildTime: Double
+    let availability: ProductionAvailability
     let usesCompactLayout: Bool
 
     var body: some View {
@@ -302,6 +310,7 @@ private struct TacticalProductionButtonLabel: View {
                         .lineLimit(2)
                         .minimumScaleFactor(0.72)
                 }
+                availabilityBadge
                 Text(compactMetrics)
                     .font(.caption2)
                     .foregroundStyle(TacticalHUDTheme.secondaryText)
@@ -323,6 +332,7 @@ private struct TacticalProductionButtonLabel: View {
                         productionMetric(definition.supply.formatted(), systemImage: "person.2.fill")
                         productionMetric(formattedBuildTime, systemImage: "timer")
                     }
+                    availabilityBadge
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -334,6 +344,28 @@ private struct TacticalProductionButtonLabel: View {
             .font(.title3.weight(.semibold))
             .foregroundStyle(TacticalHUDTheme.accent)
             .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var availabilityBadge: some View {
+        if !availability.isAvailable {
+            Label(availability.shortLabel, systemImage: availability.systemImage)
+                .font(.caption2.bold())
+                .foregroundStyle(TacticalHUDTheme.unavailableForeground)
+                .padding(.horizontal, TacticalHUDTheme.denseSpacing)
+                .padding(.vertical, 2)
+                .background(
+                    TacticalHUDTheme.unavailableBackground,
+                    in: Capsule()
+                )
+                .overlay {
+                    Capsule()
+                        .stroke(TacticalHUDTheme.unavailableStroke, lineWidth: 1)
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .accessibilityHidden(true)
+        }
     }
 
     private func productionMetric(_ value: String, systemImage: String) -> some View {

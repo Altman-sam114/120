@@ -516,3 +516,16 @@ Agent C 必须只验收最新 `origin/main` SHA 对应的未加密 Actions artif
 - hint/status 的实际数量和插值准确，组合成功只产生一次主要 feedback/confirmation；Core public API、UnitOrder、存档、TouchSequenceOwner、生产、战斗和 Web 版无改动。
 
 静态云端 build/PNG 不能证明真实设备在敌我实体重叠时的手指命中、长按回调排序、双指框选、VoiceOver、Dynamic Type、Reduce Motion、滚动、动画时序或长局帧率；这些仍是后续 XCUITest/真机风险。
+
+## v2.63
+
+本轮继续强制云端唯一验证，不运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 git diff --check。生产 UI 必须保留所有 tech 合法卡片和原有 Shift+1-9 顺序，只把 Core enqueueUnit 会拒绝的金属不足或人口不足卡标为 disabled。
+
+代码复判必须确认：
+
+- GameController 的 ProductionAvailability 使用当前玩家 metal、当前已用 supply、所有己方生产建筑 queue 的 supply 预留和目标 unit supply；不能只读选中 producer queue，也不能把不可用卡从 productionOptions 过滤掉。
+- TacticalProductionSectionView 的有/无快捷键两个 Button 分支都同步使用 availability、disabled、VoiceOver value/hint 和锁定 badge；disabled 后仍通过既有 tacticalControl 保留 44pt 最小触控区。
+- unavailable 卡片仍显示单位名、metal、population、time 和文字/图标原因；不以颜色作为唯一反馈。可用卡继续调用既有 queueUnit，生产队列、Repeat、Rally、Cancel、升级、存档、Core 和 Web 版不变。
+- production visual smoke fixture 同时显示可用和金属不足卡片；Agent C 查看 ios-home.png 时确认 Production、Factory Tech、NOW/QUEUE/UPGRADE、队列、锁定 badge 和首排卡片无裁切或重叠。ios-combat.png 的既有模型、弹道、Attack target、Tactical Map 和 command dock 不回退。
+
+最新 Actions artifact 仍需核对 manifest 的 main/full SHA/run/attempt、v1.2、Xcode 26.5、iOS SDK 26.5、iPhone 17 Pro、JUnit 8/0/1、Swift Core、双架构 iOS build、production/combat 双启动、横屏归一化和两份 PNG probe。静态 artifact 不能证明真实资源 tick、键盘 shortcut、VoiceOver 执行、Dynamic Type 全档位或真机点击手感。

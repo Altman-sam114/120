@@ -6118,3 +6118,33 @@
 已知风险：
 
 - CI 静态 smoke 不能证明真实 iPhone 在敌我实体重叠时的手指命中、长按回调排序、双指框选、VoiceOver、Dynamic Type、Reduce Motion、滚动、动画时序或长局帧率；这些仍需后续 XCUITest/真机验证。
+
+## v2.63 / iOS production availability and accessibility
+
+日期：2026-08-20
+
+核心变更：
+
+- GameController 新增 ProductionAvailability 只读投影，按当前玩家 metal、当前已用人口、所有己方生产建筑队列预留 supply 和目标单位 supply 复用 Core enqueueUnit 的资源边界。
+- TacticalProductionSectionView 保留所有 tech 合法生产卡及原有 Shift+1-9 顺序；金属不足或人口不足的卡片仍显示但 disabled，并使用 lock 图标、NEED metal / POP used-cap 文字和 VoiceOver value/hint 表达原因。
+- 云端 production visual fixture 将玩家 metal 调整为能同时显示可用与锁定卡片的展示状态；普通对局初始资源、生产队列、升级、Repeat、Rally、Cancel、Core、存档和 Web 版不变。
+
+关键文件：
+
+- ios/RustwarIOS/RustwarIOS/GameController.swift
+- ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift
+- ios/RustwarIOS/RustwarIOS/TacticalHUDTheme.swift
+- README.md
+- md/flow/flow.md
+- md/flow/flowchart.md
+- md/test/test.md
+- md/prompt/v1-ios-swift-port/v2.63-production-availability-and-accessibility.md
+
+验证状态：
+
+- 本轮继续遵循云端唯一验证制度，未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 git diff --check；公开 Rusted Warfare 浏览器连接不可用，未伪造新的外部截图/视频结果，沿用仓库已有参考截图和 v1.91 公开参考记录。
+- 当前实现尚未完成提交与云端验收；待网络恢复后只在 main 上提交、push origin/main，并以最新 SHA 对应的 Actions artifact 核对 manifest、JUnit、日志、双场景 PNG 和锁定生产卡布局。
+
+已知风险：
+
+- 静态 artifact 不能证明真实资源 tick 竞态、键盘 shortcut、VoiceOver 执行顺序、Dynamic Type 全档位、按钮滚动或真机点击手感；Tactical Map stale onEnded callback 和 SpriteKit 摧毁碎片视觉留给后续轮次。
