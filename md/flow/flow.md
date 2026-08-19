@@ -778,3 +778,11 @@ Reduce Motion 下终点层只执行短暂透明度反馈，不执行放大、旋
 v2.57 只在 iOS `GameController` 与 `TacticalMapView` 传递 pending Extractor 的 presentation hit radius。Battlefield 的 `battlefieldTouchPreview` 与 `handleBattlefieldTap` 都把既有 44pt touch target 换成 world `minimumHitRadius`，Tactical Map 只在 `isAwaitingBuildExtractorTarget` 时复用约 16pt screen diameter 的换算值；三路最终都传给既有 `resourceTarget(at:maxDistance:)`，再沿原 `issueBuildExtractor`、claimed/occupied、invalid retry 和 pending 保持路径执行。
 
 普通 Battlefield context resource tap 继续沿既有 44pt battlefield radius，Tactical Map context 不进入 pending target path；普通 map tap 仍居中相机，其它 pending building target、Attack/Repair/Reclaim、visibility/fog、TouchSequenceOwner、Core、存档、JSON、战斗和 Web 版不变。静态云端构图不能证明真实资源 marker 点按命中率或真机手感。
+
+## v2.58 iOS Tactical Map arbitration, muzzle anchors, and production context
+
+`TacticalMapView` 在长按回调成功识别上下文命令后记录当前触摸已消费；同一 `DragGesture.onEnded` 只清理触摸状态，不再调用普通 `handleTap`。触摸起点与 `@GestureState` 生命周期共同作为 reset 边界，取消手势也会清掉起点、长按消费 flag 和相机拖动 flag，避免旧回调污染下一次独立触摸。下一次独立触摸会恢复普通点按、相机拖动、等待态目标提交和既有 Tactical Map context path，pending hit radius、visibility/fog、GameController、TouchSequenceOwner 和 Core 不变。
+
+`BattlefieldScene` 仍只读 Core 快照并保留 presentation-only 边界。重坦、Artillery、Gunboat 的单位类型分别使用 `1.44r`、`1.22r`、`0.77r` 的模型化 muzzle distance，Turret 使用现有炮管末端比例；每次 fire effect 会扣除当前同帧 weapon/turret recoil，使炮口 flash、tracer/beam、projectile terminal feedback 继续从与模型一致的同一个 origin 生成。没有新增 Core projectile event、命中/伤害/冷却/订单、存档字段或效果上限，Reduce Motion、雾层和 bounded effect 生命周期沿既有路径。
+
+选中己方生产建筑时，`TacticalProductionSectionView` 在 Production 标题后挂载既有只读 `TacticalProductionFocusSummaryView`，先显示 NOW / QUEUE / UPGRADE，再显示 Factory Tech、生产按钮、队列与 Cancel/Repeat/Rally。摘要消费 `GameController` 的 producer-generic 派生值：Land Factory 显示 T1/T2 与倍率，Command Center 显示 Core、1x production 和 No upgrade；不写状态、不创建第二套 action，生产顺序、升级、快捷键、VoiceOver、44pt 和存档不变。固定云端 smoke 可核对构图，不能证明真实长按回调排序、滚动、动画时序或真机手感。

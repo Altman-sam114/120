@@ -1094,3 +1094,27 @@ flowchart TD
 ```
 
 读图说明：v2.57 只扩大 pending Extractor 的资源 marker 触控容错，并让 preview/commit/map commit 一致；Core 默认半径、普通 context、其它命令、TouchSequenceOwner、fog 和存档保持不变。
+
+## v2.58 iOS Tactical Map arbitration, muzzle anchors, and production context
+
+```mermaid
+flowchart TD
+  L[Map long press recognized] --> Q[Consume current touch lifecycle]
+  Q --> E[DragGesture end cleans up only]
+  C[Gesture cancelled] --> R[GestureState reset clears start / flag / drag state]
+  E --> N[No duplicate ordinary map tap]
+  T[Next independent touch] --> P[Existing tap / camera drag / pending target path]
+  U[Unit type + model radius] --> UM[Scaled muzzle distance - same-frame recoil]
+  B[Turret barrel end] --> TM[Turret muzzle distance]
+  UM --> F[Muzzle flash + tracer/beam + terminal effect]
+  TM --> F
+  F --> S[Existing bounded SpriteKit presentation]
+  G[Selected producer] --> H[Producer-generic production focus summary]
+  H --> C[NOW / QUEUE / UPGRADE]
+  C --> D[Factory Tech + production options + queue/actions]
+  N --> K[Core / commands / save unchanged]
+  S --> K
+  D --> K
+```
+
+读图说明：v2.58 消除 Tactical Map 长按释放阶段的 tap 串发，修正重型单位/炮塔的 presentation muzzle origin，并让选中生产建筑先看到现有生产上下文摘要；三条路径都不新增 Core 状态或第二套命令入口。云端静态 smoke 不能替代真实长按回调顺序、滚动和动画时序。

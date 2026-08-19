@@ -417,6 +417,25 @@ final class GameController {
         selectedPlayerProducer.map { GameDefinitions.building($0.type).name }
     }
 
+    var productionFocusTechLabel: String {
+        guard let producer = selectedPlayerProducer else {
+            return "Tech"
+        }
+        let definition = GameDefinitions.building(producer.type)
+        return definition.upgrades?.isEmpty == false
+            ? "T\(producer.upgradeLevel)"
+            : "Core"
+    }
+
+    var productionFocusProductionSpeedText: String {
+        guard let producer = selectedPlayerProducer else {
+            return "1x production"
+        }
+        let multiplier = GameDefinitions.productionSpeedMultiplier(for: producer)
+        let value = multiplier.formatted(.number.precision(.fractionLength(0...2)))
+        return "\(value)x production"
+    }
+
     var productionFocusBuildSummary: String {
         productionOptions.map { GameDefinitions.unit($0).name }.joined(separator: ", ")
     }
@@ -457,10 +476,18 @@ final class GameController {
     }
 
     var productionFocusUpgradeSummary: String {
-        if let progress = selectedFactoryUpgradeProgress {
+        guard let producer = selectedPlayerProducer else {
+            return "Unavailable"
+        }
+        if let progress = producer.upgradeProgress {
             return "Upgrading \(Int((progress * 100).rounded()))%"
         }
-        return showsSelectedFactoryUpgradeControl ? "T2 ready" : "Max tech"
+        if let nextUpgrade = GameDefinitions.nextUpgrade(for: producer) {
+            return "T\(nextUpgrade.level) ready"
+        }
+        return GameDefinitions.building(producer.type).upgrades?.isEmpty == false
+            ? "Max tech"
+            : "No upgrade"
     }
 
     var canCancelProduction: Bool {

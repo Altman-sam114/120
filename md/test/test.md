@@ -434,3 +434,17 @@ Agent C 必须核对最新 artifact 的 manifest `branch=main`、完整 SHA、ru
 本轮只修改 iOS pending Extractor 的资源点 hit-radius 传递；继续禁止本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图和 `git diff --check`，只认最新 `origin/main` 对应的 Actions artifact。
 
 Agent C 必须核对最新 artifact 的 manifest `branch=main`、完整 SHA、run id、attempt、v1.2、Xcode 26.5/iOS Simulator SDK 26.5/iPhone 17 Pro；JUnit `8/0/1`、Swift Core 数量、`GameController`/`TacticalMapView` 双架构 build、production/combat 双启动、横屏归一化和双 pixel probe。代码复核必须确认 pending Extractor 的 battlefield preview、battlefield commit 和 Tactical Map commit 都把最小命中半径传给既有 `resourceTarget(at:maxDistance:)`，而普通 context、普通 map tap、其它 pending target、Core 默认半径、claimed/occupied、invalid retry、TouchSequenceOwner、fog、存档和 Web 版不变。静态 PNG 不能证明真实资源 marker 点按、拖动手感或真机性能。
+
+## v2.58
+
+本轮只修改 iOS Tactical Map 手势 presentation 生命周期、SpriteKit 炮口/后坐 presentation 参数、生产上下文派生与 Production section 排序；继续禁止本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图和 `git diff --check`，只认最新 `origin/main` 对应的 Actions artifact。
+
+Agent C 必须核对最新 artifact 的 manifest `branch=main`、完整 SHA、run id、attempt、v1.2、Xcode 26.5/iOS Simulator SDK 26.5/iPhone 17 Pro；JUnit `8/0/1`、Swift Core 数量、`BattlefieldScene`、`GameController`、`TacticalMapView` 和 `TacticalProductionSectionView` 双架构 build、production/combat 双启动、横屏归一化和双 pixel probe。
+
+代码复核必须确认：
+
+- Tactical Map 长按成功后同一 `DragGesture.onEnded` 只清理、不触发普通 tap；`@GestureState` 的取消/结束与触摸起点 reset 会清除旧 flag，下一次独立触摸仍可普通 tap、拖动或提交 pending target；pending hit radius、visibility/fog、TouchSequenceOwner、Core 和命令 owner 不变。
+- `BattlefieldScene` 的重坦/Artillery/Gunboat muzzle 比例为 `1.44r` / `1.22r` / `0.77r`，Turret 沿炮管末端比例，并扣除当前 weapon/turret recoil；flash、tracer/beam、terminal feedback 共用该 origin，未改变 Core、命中、伤害、冷却、存档或 bounded effect 上限。
+- Production section 在摘要后仍按 Factory Tech、生产入口、队列、管理动作排列；Command Center 使用 Core/1x production/No upgrade 等 producer-generic 字段，Land Factory 保留 T 级/倍率/升级语义；NOW/QUEUE/UPGRADE 只读，按钮、队列、升级、快捷键、VoiceOver 和 44pt 触控不变。
+
+静态云端 smoke 可核对 Swift 编译、生产/战斗首屏构图、模型炮口/弹道、Production summary 和 Tactical Map 无结构性回退，但不能证明真实长按回调顺序、取消手势注入、按钮滚动、Dynamic Type、VoiceOver、动画时序或真机性能。

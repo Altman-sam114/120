@@ -961,7 +961,8 @@ final class BattlefieldScene: SKScene {
                     radius: definition.radius,
                     type: unit.type,
                     team: unit.team,
-                    target: visibleTarget
+                    target: visibleTarget,
+                    recoilDistance: weaponRecoilDistance(for: unit, definition: definition)
                 )
             }
             if let previousHitPoints = previousUnitHitPoints[unit.id],
@@ -1008,7 +1009,8 @@ final class BattlefieldScene: SKScene {
                     heading: displayedHeading,
                     size: definition.size,
                     team: building.team,
-                    target: visibleTarget
+                    target: visibleTarget,
+                    recoilDistance: turretRecoilDistance(for: building, definition: definition)
                 )
             }
             if let previousHitPoints = previousBuildingHitPoints[building.id],
@@ -1182,6 +1184,19 @@ final class BattlefieldScene: SKScene {
         }
     }
 
+    private func unitMuzzleDistance(for type: UnitType, radius: Double) -> Double {
+        switch type {
+        case .heavyTank:
+            radius * 1.44
+        case .artillery:
+            radius * 1.22
+        case .gunboat:
+            radius * 0.77
+        default:
+            radius * 0.9
+        }
+    }
+
     private func weaponRecoilDistance(for unit: UnitSnapshot, definition: UnitDefinition) -> Double {
         guard !accessibilityReduceMotion,
               definition.reloadTime > 0,
@@ -1247,6 +1262,7 @@ final class BattlefieldScene: SKScene {
         type: UnitType,
         team: Team,
         target: WorldPoint?,
+        recoilDistance: Double = 0,
         isFrozen: Bool = false
     ) {
         let color: SKColor
@@ -1325,7 +1341,10 @@ final class BattlefieldScene: SKScene {
         spawnFireEffect(
             from: source,
             heading: heading,
-            muzzleDistance: radius * 0.9,
+            muzzleDistance: Swift.max(
+                0,
+                unitMuzzleDistance(for: type, radius: radius) - recoilDistance
+            ),
             target: target,
             color: color,
             teamAccent: teamColor(team),
@@ -1345,12 +1364,13 @@ final class BattlefieldScene: SKScene {
         size: Double,
         team: Team,
         target: WorldPoint?,
+        recoilDistance: Double = 0,
         isFrozen: Bool = false
     ) {
         spawnFireEffect(
             from: source,
             heading: heading,
-            muzzleDistance: size * 0.44,
+            muzzleDistance: Swift.max(0, size * 0.5 * 1.045 - recoilDistance),
             target: target,
             color: .systemOrange,
             teamAccent: teamColor(team),
@@ -2198,6 +2218,10 @@ final class BattlefieldScene: SKScene {
                 type: source.type,
                 team: source.team,
                 target: target.position,
+                recoilDistance: weaponRecoilDistance(
+                    for: source,
+                    definition: GameDefinitions.unit(source.type)
+                ),
                 isFrozen: true
             )
         }
@@ -2218,6 +2242,10 @@ final class BattlefieldScene: SKScene {
                 size: GameDefinitions.building(for: source).size,
                 team: source.team,
                 target: target.position,
+                recoilDistance: turretRecoilDistance(
+                    for: source,
+                    definition: GameDefinitions.building(for: source)
+                ),
                 isFrozen: true
             )
         }

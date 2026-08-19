@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.58：原生 iOS Tactical Map 长按上下文命令识别后会屏蔽同一手势释放阶段的普通 tap，避免命令串发；SpriteKit 重坦、火炮、Gunboat 与 Turret 弹道从模型化炮口附近起始；选中生产建筑时 Production section 先显示 NOW / QUEUE / UPGRADE 只读上下文条，再显示 Factory Tech、单位入口、队列和管理动作。只改 iOS 输入/presentation，不改 Core、命中、伤害、命令、存档或 Web 版；云端静态 smoke 仍不能证明真实长按回调顺序、动画时序或真机手感。
+
 v2.57：pending Extractor 资源点在 battlefield preview、实际提交和 Tactical Map 提交统一使用触控容错半径；battlefield 沿 44pt、Tactical Map 沿约 16pt 屏幕直径换算 world hit area。只扩大 pending Extractor 的资源 marker 命中区，不改 Core 默认选择、普通 context tap、其它命令、存档或 Web 版；云端静态 smoke 仍不能证明真实手指命中手感。
 
 v2.56：原生 iOS 弹道在到达目标时增加轻量终点闪光、环形收束和放射 burst，冻结 combat fixture 也保留终点层；Reduce Motion 退化为透明度反馈，仍沿既有效果上限管理。只改 SpriteKit presentation，不改 Core、命中、伤害、存档或 Web 版；云端 PNG 才能验收构图，不能证明真实时序或真机帧率。

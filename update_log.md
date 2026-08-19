@@ -5940,3 +5940,34 @@
 已知风险：
 
 - 静态 PNG 和云端 build 不能证明真实资源 marker 点按命中率、长按/拖动交互、VoiceOver、Dynamic Type、Reduce Motion 或真机性能；当前 CI 仍无 XCUITest、真实触摸注入或多设备矩阵。
+
+## v2.58 / Tactical Map arbitration, combat muzzle anchors, and production context
+
+日期：2026-08-20
+
+核心变更：
+
+- `TacticalMapView` 在长按成功识别上下文命令后消费当前触摸，释放阶段的 `DragGesture.onEnded` 只清理、不再串发普通 map tap；触摸起点与 `@GestureState` 生命周期共同清理取消手势遗留状态，下一次独立触摸恢复普通点按、相机拖动和 pending target 提交。
+- `BattlefieldScene` 将重坦、Artillery、Gunboat 的炮口距离对齐到程序化模型的 `1.44r`、`1.22r`、`0.77r`，Turret 复用炮管末端比例；fire effect 起点扣除同帧 weapon/turret recoil，flash、tracer/beam 与 terminal feedback 仍沿同一 presentation origin，Core 命中/伤害/冷却/存档不变。
+- `TacticalProductionSectionView` 在 Production 标题后恢复只读 NOW / QUEUE / UPGRADE summary；`GameController` 为生产者提供通用 tech/speed/upgrade 派生值，Command Center 显示 Core/1x production/No upgrade，Land Factory 保留 T 级/倍率/升级语义，完整生产入口和管理动作顺序不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.58-ios-touch-arbitration-combat-muzzle-production-context.md`
+
+验证状态：
+
+- 本轮按云端唯一验证制度未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；仅做源码、工作区和变更范围审查。
+- v2.58 实现提交及其 Actions run / artifact 待 push 后由 Agent C 以最新 `origin/main` SHA 定位并下载复判；不得以本地输出或 v2.57 artifact 代替本轮结果。
+
+已知风险：
+
+- CI 仍无 XCUITest、真实触摸注入、VoiceOver、Dynamic Type、Reduce Motion 自动化或性能矩阵；静态 PNG 和云端 build 不能证明长按取消回调排序、滚动、动画时序、辅助功能或真机手感。

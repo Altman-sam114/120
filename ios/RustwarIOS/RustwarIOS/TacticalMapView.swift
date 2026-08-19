@@ -2,7 +2,6 @@ import SwiftUI
 import RustwarCore
 
 struct TacticalMapView: View {
-    private static let contextTapSuppressionDuration: TimeInterval = 0.18
     private static let cameraDragActivationDistance: CGFloat = 22
     private static let pendingTargetTouchDiameter: CGFloat = 16
 
@@ -10,8 +9,10 @@ struct TacticalMapView: View {
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     @State private var contextPressLocation: CGPoint?
-    @State private var suppressTapUntil: TimeInterval?
+    @State private var didRecognizeContextPress = false
+    @State private var mapGestureStartLocation: CGPoint?
     @State private var isDraggingCamera = false
+    @GestureState private var isMapGestureActive = false
     @State private var animatedCommandConfirmationRevision = 0
     @State private var commandConfirmationProgress: CGFloat = 1
 
@@ -80,11 +81,20 @@ struct TacticalMapView: View {
             }
             .contentShape(Rectangle())
             .simultaneousGesture(mapGesture(in: proxy.size))
+            .onChange(of: isMapGestureActive) { _, isActive in
+                guard !isActive else {
+                    return
+                }
+                mapGestureStartLocation = nil
+                contextPressLocation = nil
+                didRecognizeContextPress = false
+                isDraggingCamera = false
+            }
             .onLongPressGesture(minimumDuration: 0.45, maximumDistance: 18) {
+                didRecognizeContextPress = true
                 guard let contextPressLocation else {
                     return
                 }
-                suppressTapUntil = ProcessInfo.processInfo.systemUptime + Self.contextTapSuppressionDuration
                 handleContextPress(at: contextPressLocation, in: proxy.size)
             }
             .overlay(alignment: .topLeading) {
@@ -145,7 +155,15 @@ struct TacticalMapView: View {
 
     private func mapGesture(in size: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .local)
+            .updating($isMapGestureActive) { _, isActive, _ in
+                isActive = true
+            }
             .onChanged { value in
+                if mapGestureStartLocation == nil {
+                    mapGestureStartLocation = value.startLocation
+                    didRecognizeContextPress = false
+                    isDraggingCamera = false
+                }
                 contextPressLocation = value.location
                 guard !controller.isAwaitingTargetCommand else {
                     return
@@ -167,17 +185,13 @@ struct TacticalMapView: View {
             }
             .onEnded { value in
                 defer {
+                    mapGestureStartLocation = nil
                     contextPressLocation = nil
+                    didRecognizeContextPress = false
                     isDraggingCamera = false
                 }
-                guard !isDraggingCamera else {
+                guard !isDraggingCamera, !didRecognizeContextPress else {
                     return
-                }
-                if let suppressTapUntil {
-                    self.suppressTapUntil = nil
-                    guard ProcessInfo.processInfo.systemUptime > suppressTapUntil else {
-                        return
-                    }
                 }
                 handleTap(at: value.location, in: size)
             }

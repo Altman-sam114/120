@@ -70,11 +70,11 @@ struct TacticalProductionFocusSummaryView: View {
 
     private var identityMetrics: some View {
         HStack(spacing: TacticalHUDTheme.compactSpacing) {
-            Text("T\(controller.selectedFactoryTechLevel)")
+            Text(controller.productionFocusTechLabel)
                 .font(.caption.bold())
                 .padding(.horizontal, TacticalHUDTheme.denseSpacing)
                 .background(TacticalHUDTheme.metricBackground, in: Capsule())
-            Text(controller.selectedFactoryProductionSpeedText.replacingOccurrences(of: " production", with: ""))
+            Text(controller.productionFocusProductionSpeedText.replacing(" production", with: ""))
                 .font(.caption)
                 .monospacedDigit()
         }
@@ -94,7 +94,7 @@ struct TacticalProductionFocusSummaryView: View {
     }
 
     private var summaryAccessibilityValue: String {
-        "\(controller.productionFocusBuildingName ?? "Production"), T\(controller.selectedFactoryTechLevel), \(controller.selectedFactoryProductionSpeedText). Now \(nowSummary). Queue \(controller.productionQueueItems.count), followed by \(controller.productionFocusQueueSummary). Build \(controller.productionFocusBuildSummary). Upgrade \(controller.productionFocusUpgradeSummary)."
+        "\(controller.productionFocusBuildingName ?? "Production"), \(controller.productionFocusTechLabel), \(controller.productionFocusProductionSpeedText). Now \(nowSummary). Queue \(controller.productionQueueItems.count), followed by \(controller.productionFocusQueueSummary). Build \(controller.productionFocusBuildSummary). Upgrade \(controller.productionFocusUpgradeSummary)."
     }
 }
 
@@ -120,6 +120,9 @@ struct TacticalProductionSectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
             TacticalSectionHeader(section: .production)
+            if controller.productionFocusBuildingName != nil {
+                TacticalProductionFocusSummaryView(controller: controller)
+            }
             if controller.showsSelectedFactoryTech {
                 TacticalFactoryTechView(controller: controller)
             }
