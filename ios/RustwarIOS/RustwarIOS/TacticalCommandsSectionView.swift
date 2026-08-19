@@ -5,6 +5,19 @@ struct TacticalCommandsSectionView: View {
     @Bindable var controller: GameController
     let columns: Int
     let showsStop: Bool
+    let showsPrimaryCommands: Bool
+
+    init(
+        controller: GameController,
+        columns: Int,
+        showsStop: Bool,
+        showsPrimaryCommands: Bool = true
+    ) {
+        self.controller = controller
+        self.columns = columns
+        self.showsStop = showsStop
+        self.showsPrimaryCommands = showsPrimaryCommands
+    }
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -29,7 +42,7 @@ struct TacticalCommandsSectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             TacticalSectionHeader(section: .commands)
-            if hasPrimaryCommands {
+            if showsPrimaryCommands && hasPrimaryCommands {
                 TacticalCommandGrid(
                     columns: primaryColumnCount,
                     spacing: TacticalHUDTheme.denseSpacing

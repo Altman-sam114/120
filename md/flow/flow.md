@@ -835,3 +835,11 @@ TacticalProductionSectionView 保留全部 tech 合法生产项、原有数组�
 `onEnded` 先做 generation guard，再进入既有 `defer { resetMapGestureState() }`。因此迟到旧 release 只会返回，不会清理下一次独立手势，也不会居中相机、提交 pending Move / Attack / Attack-Move / Patrol / Rally / Builder target 或串发普通 tap。当前合法 release 仍按原顺序忽略相机拖动和已消费长按，否则调用既有 `handleTap`。
 
 本轮只收紧 Tactical Map presentation/input 生命周期；地图点按命中半径、pending badge、fog/radar、VoiceOver action、TouchSequenceOwner、GameController/Core 命令、生产、战斗、存档/JSON、主战场输入和 Web 版不变。generation gate 能阻断可区分的迟到 callback，但 SwiftUI 现有回调没有统一触摸 token，旧/新触点在平台不可区分的窗口仍需真机/XCUITest验证，不能宣称绝对时序证明。
+
+## v2.65 iOS Combat Quick Command Rail
+
+`TacticalCommandDockView` 现在在固定的 `TacticalCommandDockHeaderView` 与滚动内容之间，按当前是否有存活己方单位选择派生一个 presentation-only `TacticalQuickCommandRail`。它显示 Move、作战单位可用时的 Attack Move / Attack，以及 Stop；所有按钮仍调用 `GameController` 的既有 toggle/action，不新增 Core mutation、订单类型或存档字段。
+
+Quick rail 出现时，`TacticalCommandsSectionView` 隐藏滚动区内重复的 primary Move / Attack Move / Attack / Stop，只保留 Patrol、Guard、攻击姿态、Repair、Reclaim、Select Area 和 Same Type 等 secondary controls。等待 Move / Attack / Attack-Move / Attack target 时，固定按钮继续显示 Cancel；Attack Move 使用既有 `A` 快捷键，Stop 使用既有 `S` 快捷键，避免滚动后丢失桌面/外接键盘入口。
+
+默认 Dynamic Type 使用两列，accessibility Dynamic Type 自动切为单列；按钮继续消费 `tacticalControl()` 的最小 44pt 高度，并提供 Quick Orders header、Ready/Waiting value、取消 hint 和动作说明。`GameController.battlefieldInteractionHintDetail` 对 Builder-only 明确提示普通 Move，对 combat/mixed selection 提示空地 Attack-Move、可见敌方 Attack 和固定 Quick Orders 入口。BattlefieldView、TacticalMapView、TouchSequenceOwner、Core、命中、框选、生产、战斗、AI、存档/JSON 和 Web 版不变。

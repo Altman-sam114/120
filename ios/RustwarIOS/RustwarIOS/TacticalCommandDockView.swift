@@ -15,6 +15,9 @@ struct TacticalCommandDockView: View {
     var body: some View {
         VStack(spacing: 0) {
             TacticalCommandDockHeaderView(controller: controller)
+            if showsQuickCommandRail {
+                TacticalQuickCommandRail(controller: controller)
+            }
             Divider()
             ScrollViewReader { scrollProxy in
                 ScrollView {
@@ -29,7 +32,8 @@ struct TacticalCommandDockView: View {
                             TacticalCommandsSectionView(
                                 controller: controller,
                                 columns: commandColumnCount,
-                                showsStop: shouldShowStop
+                                showsStop: shouldShowStop,
+                                showsPrimaryCommands: !showsQuickCommandRail
                             )
                         }
                         if hasBuildControls && !hasSelectedBuildingUpgradeControls {
@@ -66,17 +70,31 @@ struct TacticalCommandDockView: View {
     }
 
     private var hasCommandControls: Bool {
+        if showsQuickCommandRail {
+            return hasSecondaryCommandControls
+        }
+        hasPrimaryCommandControls || hasSecondaryCommandControls
+    }
+
+    private var hasPrimaryCommandControls: Bool {
+        controller.canIssueMove || controller.isAwaitingMoveTarget ||
+            controller.canIssueAttackMove || controller.isAwaitingAttackMoveTarget ||
+            controller.canIssueAttack || controller.isAwaitingAttackTarget ||
+            shouldShowStop
+    }
+
+    private var hasSecondaryCommandControls: Bool {
         controller.canIssueAreaSelection || controller.isAwaitingAreaSelection ||
             controller.canSelectSameTypeUnits ||
-            controller.canIssueMove || controller.isAwaitingMoveTarget ||
-            controller.canIssueAttackMove || controller.isAwaitingAttackMoveTarget ||
             controller.canIssuePatrol || controller.isAwaitingPatrolTarget ||
             controller.canIssueGuard || controller.isAwaitingGuardTarget ||
             controller.canSetAttackStance ||
-            controller.canIssueAttack || controller.isAwaitingAttackTarget ||
             controller.canIssueRepair || controller.isAwaitingRepairTarget ||
-            controller.canIssueReclaim || controller.isAwaitingReclaimTarget ||
-            shouldShowStop
+            controller.canIssueReclaim || controller.isAwaitingReclaimTarget
+    }
+
+    private var showsQuickCommandRail: Bool {
+        !controller.selectedPlayerUnits.isEmpty
     }
 
     private var hasBuildControls: Bool {

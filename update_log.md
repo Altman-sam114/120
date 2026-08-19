@@ -6181,3 +6181,35 @@
 已知风险：
 
 - generation gate 能阻断可区分的迟到 callback，但 SwiftUI 现有回调没有统一触摸 token；旧/新触点在系统不可区分窗口仍不能由静态 CI 绝对证明，需要后续真机/XCUITest 验证。后续候选仍包括摧毁爆炸的装甲碎片视觉和固定 Quick Attack-Move 操作条。
+
+## v2.65 / iOS Combat Quick Command Rail
+
+日期：2026-08-20
+
+核心变更：
+
+- `TacticalCommandDockView` 在固定 header 与滚动区之间增加 Quick Orders rail；选中己方单位后，Move、Attack Move、Attack、Stop 不再需要先滚动寻找，等待态仍显示 Cancel。
+- Rail 复用既有 `GameController` toggle/action；出现 rail 时滚动 `TacticalCommandsSectionView` 隐藏重复 primary grid，Patrol、Guard、攻击姿态、Repair、Reclaim、Select Area 和 Same Type 等 secondary controls 保留。
+- 默认字号使用两列，accessibility Dynamic Type 使用单列；Rail 保留 44pt、VoiceOver label/value/hint、Attack Move `A` 和 Stop `S` 快捷键。Builder-only 提示改为普通 Move，combat/mixed 提示继续说明空地 Attack-Move 与可见敌方 Attack。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalQuickCommandRail.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandsSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS.xcodeproj/project.pbxproj`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.65-combat-quick-command-rail.md`
+
+验证状态：
+
+- 本轮遵循云端唯一验证制度，未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；`.wp` 保持未跟踪。
+- 云端验证需以本轮提交推送后的最新 `origin/main` SHA 对应 Actions artifact 为准；Agent C 必须核对 manifest、JUnit、双架构 build、production/combat 双启动和双 PNG，并人工查看固定 Quick Orders rail。
+
+已知风险：
+
+- 固定 rail 会增加选中单位时 dock header 高度；静态 PNG 不能证明真实点击、键盘焦点、VoiceOver、Dynamic Type 全档位、滚动、双指/长按顺序或真机手感。下一轮候选仍是摧毁爆炸的装甲碎片和残骸余烬视觉。

@@ -544,3 +544,20 @@ Agent C 必须只验收最新 `origin/main` SHA 对应的未加密 Actions artif
 - Tactical Map 的 pending hit radius、fog/radar、marker/highlight、TouchSequenceOwner、BattlefieldView 输入、GameController/Core、生产、战斗、存档/JSON 和 Web 版不得变化。
 
 Agent C 人工查看 `ios-home.png` 与 `ios-combat.png`：Home 保持 v2.63 Production、Factory Tech、可用/锁定生产卡和 Tactical Map；Combat 保持单位模型、弹道、Attack target、爆点、Tactical Map 和 command dock。静态 PNG、Core tests 和源码 generation gate 不能证明真实 SwiftUI 回调乱序、触摸 ID 复用、VoiceOver、Dynamic Type、滚动或真机手感；最终结论必须保留该 residual risk。
+
+## v2.65
+
+本轮新增原生 iOS fixed Combat Quick Command Rail，并同步修正 combat/Builder 操作提示；继续执行云端唯一验证，不运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`。`.wp` 必须保持未跟踪，不得进入提交。
+
+Agent C 必须只验收最新 `origin/main` SHA 对应的未加密 Actions artifact，核对 manifest 的 `branch=main`、完整 `commitSha`、run id、attempt、v1.2、Xcode 26.5、iOS Simulator SDK 26.5、iPhone 17 Pro；JUnit `8/0/1`、Swift Core、Xcode list/build、双架构 iOS build、production/combat 双启动、横屏归一化和两份 PNG probe 全部成功。
+
+代码复判必须确认：
+
+- `TacticalCommandDockView` 只在存在存活己方单位选择时，于固定 header 与 `ScrollView` 之间显示 Quick Orders；生产建筑选择不错误显示，单位/建筑切换时 dock 既有 selection identity 与滚动回顶保持。
+- `TacticalQuickCommandRail.swift` 必须进入 Xcode target 的 arm64/x86_64 编译；project file 只登记该新增 presentation 文件，不新增 Core/JSON/存档字段。
+- Rail 的 Move / Attack Move / Attack / Stop 直接复用既有 Controller action；等待态显示 Cancel/Waiting 语义，Attack Move 的 `A`、Stop 的 `S` 快捷键不丢失、不与滚动区重复注册，按钮继续至少 44pt。
+- Rail 出现时 `TacticalCommandsSectionView` 不重复显示 primary grid，但 Patrol、Guard、Aggressive/Defensive/Hold Fire、Repair、Reclaim、Select Area、Same Type 等 secondary controls 仍存在；没有 secondary controls 时不留下空 Commands header。
+- 默认 Dynamic Type 两列、accessibility Dynamic Type 单列；VoiceOver 能读取 Quick Orders header、命令、Ready/Waiting value、取消 hint 和目的；不以颜色作为唯一反馈。
+- Builder-only hint 明确为普通 Move；combat/mixed hint 保留可见敌方直接 Attack、空地 Attack-Move 与 Quick Orders 说明。BattlefieldView、TacticalMapView、Core direct-touch、框选、生产、战斗、存档和 Web 版不变。
+
+Agent C 人工查看 `ios-home.png` 与 `ios-combat.png`：Home 的 Production、Factory Tech、可用/锁定卡片和既有 dock 无回退；Combat 的 Quick Orders rail 在选中 combat fixture 中可见，Move / Attack Move / Attack / Stop 无裁切、重叠或低于 44pt，战场模型、炮口、弹道、爆点、Tactical Map 和状态栏无回退。静态 artifact 不能证明真实触摸顺序、键盘焦点、VoiceOver、Dynamic Type 全档位、滚动或设备手感。

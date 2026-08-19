@@ -1289,3 +1289,26 @@ flowchart TD
 ```
 
 读图说明：v2.64 让 Tactical Map `onChanged` 与 `onEnded` 共用创建时捕获的 generation；旧 callback 在任何状态清理或命令派发前直接丢弃。首次起点初始化不递增当前 generation，以免误杀同一合法手势。有效手势仍沿既有点按居中、等待目标、相机拖动和长按上下文路径；不新增 Core 状态或第二套命令入口。静态 Actions artifact 能证明编译与首屏构图无回退，不能证明 SwiftUI 真实回调乱序窗口已经在真机上绝对消除。
+
+## v2.65 iOS Combat Quick Command Rail
+
+```mermaid
+flowchart TD
+  SEL[存活己方单位被选中] --> RAIL[固定 Quick Orders rail]
+  RAIL --> MOVE[既有 toggleMoveCommand]
+  RAIL --> AM[既有 toggleAttackMoveCommand]
+  RAIL --> ATK[既有 toggleAttackCommand]
+  RAIL --> STOP[既有 issueStopCommand]
+  MOVE --> PENDING[既有 pending target / cancel 状态]
+  AM --> PENDING
+  ATK --> PENDING
+  STOP --> CLEAR[既有停止与 pending cleanup]
+  PENDING --> TAP[Battlefield / Tactical Map 既有点位或实体命中]
+  TAP --> CORE[既有 GameController / Core 命令]
+  RAIL --> HIDE[滚动区隐藏重复 primary commands]
+  HIDE --> SECONDARY[保留 Patrol / Guard / stance / Repair / Reclaim / Area / Same Type]
+  DT{Accessibility Dynamic Type?} -->|yes| ONE[单列 44pt controls + VoiceOver]
+  DT -->|no| TWO[默认两列 44pt controls + keyboard shortcut]
+```
+
+读图说明：v2.65 只改变 command dock 的可达性和重复渲染，不改变命令 owner 或 Core 语义。固定 rail 让选中单位后无需滚动即可进入 Move、Attack Move、Attack、Stop；实际落点、敌方可见性、混合 Builder 分流、双指框选和长按仍由原有 Battlefield/Controller 路径处理。静态 PNG 能检查 rail 的构图与无裁切，不能证明真实点击、键盘焦点、VoiceOver、Dynamic Type 全档位或真机手感。

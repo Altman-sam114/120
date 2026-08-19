@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.65：原生 iOS 选中己方单位后，command dock 固定显示 Quick Orders 操作栏；Move、Attack Move、Attack、Stop 可直接触达，Attack Move / Stop 保留快捷键，当前等待态显示 Cancel。滚动区不再重复 primary commands，Patrol、Guard、姿态、Repair、Reclaim、框选和同类选择仍保留；Builder-only 提示改为普通 Move，combat 继续支持空地点 Attack-Move 和可见敌方直接 Attack。Core、命中、框选、生产、战斗、存档和 Web 版不变。
+
 v2.64：原生 iOS Tactical Map 的 DragGesture `onChanged` / `onEnded` 现在都受当前 callback generation 保护；迟到旧回调会被丢弃，不会清理新触摸、移动相机、误提交等待目标或串发普通点按。当前合法手势仍保持点按居中、拖动相机、长按上下文和 pending 命令语义；Core、生产、战斗、存档、JSON、Web 版和主战场输入不变。实现 commit `41bfbaee80407aa16c11a8425472bc30785482dc`；对应 Actions run `32311763452` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-41bfbae-run32311763452-attempt1` 已由 Agent C 下载并核对通过。
 
 v2.63：原生 iOS 生产卡现在会按当前金属、所有己方生产队列预留人口和目标单位 supply 派生可用态；不足时保留卡片但禁用按钮，并显示锁图标、NEED 金属或 POP 人口提示，VoiceOver 会朗读具体原因。生产列表顺序、Shift+1-9、队列/升级/Repeat/Rally、Core、存档和 Web 版不变。实现 commit `9b4a3894aa5b38a2b94ad9aea7426e2a5690335c`，首屏 visual fixture 收尾 commit `56f9c7c9109058e9da5eeb60c200ecfcc3d43992`；对应 Actions run `32306599749` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-56f9c7c-run32306599749-attempt1` 已由 Agent C 下载并核对通过。

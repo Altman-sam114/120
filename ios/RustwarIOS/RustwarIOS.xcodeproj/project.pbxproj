@@ -34,6 +34,7 @@
 		A00100000000000000000025 /* TacticalHUDTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000025 /* TacticalHUDTheme.swift */; };
 		A00100000000000000000026 /* TacticalSelectionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000026 /* TacticalSelectionSummaryView.swift */; };
 		A00100000000000000000027 /* TacticalBattlefieldHintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000027 /* TacticalBattlefieldHintView.swift */; };
+		A00100000000000000000028 /* TacticalQuickCommandRail.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000028 /* TacticalQuickCommandRail.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -64,6 +65,7 @@
 		A00200000000000000000025 /* TacticalHUDTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalHUDTheme.swift; sourceTree = "<group>"; };
 		A00200000000000000000026 /* TacticalSelectionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalSelectionSummaryView.swift; sourceTree = "<group>"; };
 		A00200000000000000000027 /* TacticalBattlefieldHintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalBattlefieldHintView.swift; sourceTree = "<group>"; };
+		A00200000000000000000028 /* TacticalQuickCommandRail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalQuickCommandRail.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,6 +103,7 @@
 				A00200000000000000000016 /* TacticalStatusBarView.swift */,
 				A00200000000000000000017 /* TacticalCommandDockView.swift */,
 				A00200000000000000000018 /* TacticalCommandDockHeaderView.swift */,
+				A00200000000000000000028 /* TacticalQuickCommandRail.swift */,
 				A00200000000000000000019 /* TacticalCommandsSectionView.swift */,
 				A00200000000000000000020 /* TacticalBuildSectionView.swift */,
 				A00200000000000000000021 /* TacticalProductionSectionView.swift */,
@@ -214,6 +217,7 @@
 				A00100000000000000000016 /* TacticalStatusBarView.swift in Sources */,
 				A00100000000000000000017 /* TacticalCommandDockView.swift in Sources */,
 				A00100000000000000000018 /* TacticalCommandDockHeaderView.swift in Sources */,
+				A00100000000000000000028 /* TacticalQuickCommandRail.swift in Sources */,
 				A00100000000000000000019 /* TacticalCommandsSectionView.swift in Sources */,
 				A00100000000000000000020 /* TacticalBuildSectionView.swift in Sources */,
 				A00100000000000000000021 /* TacticalProductionSectionView.swift in Sources */,

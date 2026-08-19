@@ -390,8 +390,8 @@ final class GameController {
         }
         if !selectedPlayerUnits.isEmpty {
             return selectedPlayerUnits.count == 1
-                ? "Quick command"
-                : "Quick command • \(selectedPlayerUnits.count) units"
+                ? "Quick orders"
+                : "Quick orders • \(selectedPlayerUnits.count) units"
         }
         if hasPlayerSelectableSelection {
             return "Selection ready"
@@ -438,10 +438,13 @@ final class GameController {
             return "Tap a unit card to queue it; Build & Upgrade stays below."
         }
         if !selectedPlayerUnits.isEmpty {
-            if shouldMoveIdleBuildersAlongsideQuickAttackMove {
-                return "Tap empty ground to move idle Builders and attack-move combat units • tap a visible enemy to attack."
+            if selectedPlayerCombatUnits.isEmpty {
+                return "Tap empty ground to move • Quick Orders keeps Move and Stop visible."
             }
-            return "Tap empty ground to attack-move • tap a visible enemy to attack."
+            if shouldMoveIdleBuildersAlongsideQuickAttackMove {
+                return "Tap empty ground to move idle Builders and attack-move combat units • tap a visible enemy to attack. Quick Orders keeps Move visible."
+            }
+            return "Tap empty ground to attack-move • tap a visible enemy to attack. Quick Orders keeps Move and Attack Move visible."
         }
         if hasPlayerSelectableSelection {
             return "Tap a unit or building; two-finger drag box-selects, drag pans, pinch zooms."
