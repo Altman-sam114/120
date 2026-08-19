@@ -5911,3 +5911,31 @@
 已知风险：
 
 - 静态 PNG 不能证明终点闪光与 HP-diff 爆点的真实时序、连续战斗性能或真机 Reduce Motion 行为；当前 CI 仍无 XCUITest、真实触摸注入或性能矩阵。
+
+## v2.57 / pending Extractor resource hit areas
+
+日期：2026-08-20
+
+核心变更：
+
+- pending Build Extractor 的 battlefield preview 与实际提交统一把既有 44pt touch target 换算成 world `minimumHitRadius`，传给既有 `resourceTarget(at:maxDistance:)`；preview 与 commit 不再因半径语义不同而显示 invalid/提交成功不一致。
+- Tactical Map 只在 pending Extractor 时复用既有约 16pt screen diameter 的 world 半径传递；普通 map tap、既有 Battlefield context resource tap、Tactical Map context、其它 pending building target、Core 默认资源点选择和命令/存档路径不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.57-extractor-resource-hit-areas.md`
+
+验证状态：
+
+- 本轮按云端唯一验证制度未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；实现提交与最新 Actions artifact 尚未产生。
+- Agent C 后续必须只验收最新 `origin/main` SHA 的未加密 artifact，核对 manifest、JUnit、主日志、失败摘要、双架构 build、production/combat 双启动、横屏归一化和双 PNG；代码复核必须确认三条 pending Extractor 路径共用半径，且其它命令/默认 Core 语义不变。
+
+已知风险：
+
+- 静态 PNG 和云端 build 不能证明真实资源 marker 点按命中率、长按/拖动交互、VoiceOver、Dynamic Type、Reduce Motion 或真机性能；当前 CI 仍无 XCUITest、真实触摸注入或多设备矩阵。

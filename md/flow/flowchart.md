@@ -1077,3 +1077,20 @@ flowchart TD
 ```
 
 读图说明：v2.56 只把终点可读性加入既有 SpriteKit 弹道容器；不新增 Core projectile event，不改变命中位置、伤害、命令或水面/陆地分流。云端 combat PNG 可核对落点层级，不能替代真实动画时序和性能验证。
+
+## v2.57 pending Extractor resource hit areas
+
+```mermaid
+flowchart TD
+  B[Battlefield pending Extractor] --> BR[Existing 44pt touch target -> world radius]
+  M[Tactical Map pending Extractor] --> MR[Existing 16pt screen diameter -> world radius]
+  BR --> P[Preview and commit share minimumHitRadius]
+  MR --> C[Map commit passes minimumHitRadius]
+  P --> R[Existing resourceTarget maxDistance]
+  C --> R
+  R --> E[Existing issueBuildExtractor / claimed / occupied rules]
+  E --> S[Pending retry or issued confirmation]
+  D[Other tap / other pending command] --> O[Existing path unchanged]
+```
+
+读图说明：v2.57 只扩大 pending Extractor 的资源 marker 触控容错，并让 preview/commit/map commit 一致；Core 默认半径、普通 context、其它命令、TouchSequenceOwner、fog 和存档保持不变。

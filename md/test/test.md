@@ -419,7 +419,7 @@ Agent C 必须在最新 `origin/main` SHA 对应 artifact 中核对：
 
 Agent C 必须核对最新 artifact 的 manifest `branch=main`、完整 SHA、run id、attempt、v1.2、Xcode 26.5/iOS Simulator SDK 26.5/iPhone 17 Pro；JUnit `8/0/1`、Swift Core 数量、`BattlefieldView`/`BattlefieldScene`/HUD 双架构 build、production/combat 双启动、横屏归一化和双 pixel probe。人工查看 `ios-combat.png` 时确认 `Attack target` 标题、详情最后一行、`TARGET MODE`/错误状态都在各自边框内，黄色 pending 外框不覆盖文字；`Attack Move`、Move、pending Cancel 和 stance 不回退。查看 `ios-home.png` 确认 Production、Factory Tech、首行生产卡片、队列和 Tactical Map 无回退。
 
-代码复核必须确认 `fixedSize(horizontal:false, vertical:true)` 与 `layoutPriority(1)` 只让 header 增高、保留 44pt 下限和完整 VoiceOver；Tactical Map 只在 `isAwaitingAttackTarget` 时把约 16pt 屏幕直径换算为 world `minimumHitRadius`，默认 map tap 仍居中相机，其他命令仍传 0；既有 visibility/fog gate、最近目标排序、Attack order、invalid retry、TouchSequenceOwner、Core、存档、JSON、Differentiate Without Color、Reduce Motion 和 Web 版不变。静态 smoke 不能证明真实 marker 点按、手指滑动、VoiceOver、Dynamic Type 或真机手感。
+代码复核必须确认 `fixedSize(horizontal:false, vertical:true)` 与 `layoutPriority(1)` 只让 header 增高、保留 44pt 下限和完整 VoiceOver；Tactical Map 的 pending Attack 与 pending Extractor 都把约 16pt 屏幕直径换算为 world `minimumHitRadius`，前者进入 selection target path、后者进入 `resourceTarget(at:maxDistance:)`，默认 map tap 仍居中相机，其他命令仍传 0；既有 visibility/fog gate、最近目标排序、Attack order、invalid retry、TouchSequenceOwner、Core、存档、JSON、Differentiate Without Color、Reduce Motion 和 Web 版不变。静态 smoke 不能证明真实 marker 点按、手指滑动、VoiceOver、Dynamic Type 或真机手感。
 
 ## v2.56
 
@@ -428,3 +428,9 @@ Agent C 必须核对最新 artifact 的 manifest `branch=main`、完整 SHA、ru
 Agent C 必须核对最新 artifact 的 manifest `branch=main`、完整 SHA、run id、attempt、v1.2、Xcode 26.5/iOS Simulator SDK 26.5/iPhone 17 Pro；JUnit `8/0/1`、Swift Core 数量、`BattlefieldScene` 双架构 build、production/combat 双启动、横屏归一化和双 pixel probe。人工查看 `ios-combat.png` 时确认弹丸仍从炮口/武器方向出发，目标点有清晰但不过度遮挡的白色核心、队伍色环与放射 burst，既有爆点、单位模型、HUD 和 Tactical Map 无回退；静态图不能证明动画时序、长局帧率或真机手感。
 
 代码复核必须确认终点层使用既有 bounded effect 容器，不写入 Core/命中/伤害/存档；冻结 fixture 有静态终点反馈；Reduce Motion 只保留 opacity，不执行终点层放大/旋转；Beam、水面命中、雾层可见性、效果数量/生命周期上限和 Web 版保持。若 artifact 失败，只能在 `main` 追加最小修复 commit 后重新验收。
+
+## v2.57
+
+本轮只修改 iOS pending Extractor 的资源点 hit-radius 传递；继续禁止本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图和 `git diff --check`，只认最新 `origin/main` 对应的 Actions artifact。
+
+Agent C 必须核对最新 artifact 的 manifest `branch=main`、完整 SHA、run id、attempt、v1.2、Xcode 26.5/iOS Simulator SDK 26.5/iPhone 17 Pro；JUnit `8/0/1`、Swift Core 数量、`GameController`/`TacticalMapView` 双架构 build、production/combat 双启动、横屏归一化和双 pixel probe。代码复核必须确认 pending Extractor 的 battlefield preview、battlefield commit 和 Tactical Map commit 都把最小命中半径传给既有 `resourceTarget(at:maxDistance:)`，而普通 context、普通 map tap、其它 pending target、Core 默认半径、claimed/occupied、invalid retry、TouchSequenceOwner、fog、存档和 Web 版不变。静态 PNG 不能证明真实资源 marker 点按、拖动手感或真机性能。

@@ -1166,7 +1166,10 @@ final class GameController {
             clearLastBattlefieldTap()
             return
         }
-        if handleBuilderTargetCommand(at: point) {
+        if handleBuilderTargetCommand(
+            at: point,
+            minimumHitRadius: isAwaitingBuildExtractorTarget ? minimumHitRadius : 0
+        ) {
             clearLastBattlefieldTap()
             return
         } else {
@@ -1262,7 +1265,10 @@ final class GameController {
             return BattlefieldTouchPreview(point: point, intent: intent)
         }
         if isAwaitingBuildExtractorTarget {
-            let intent: BattlefieldTouchPreview.Intent = canPreviewExtractorTarget(at: point)
+            let intent: BattlefieldTouchPreview.Intent = canPreviewExtractorTarget(
+                at: point,
+                minimumHitRadius: battlefieldTouchTargetWorldRadius
+            )
                 ? .build
                 : .invalid
             return BattlefieldTouchPreview(point: point, intent: intent)
@@ -1368,8 +1374,14 @@ final class GameController {
         return true
     }
 
-    private func canPreviewExtractorTarget(at point: WorldPoint) -> Bool {
-        guard let resource = engine.state.resourceTarget(at: point),
+    private func canPreviewExtractorTarget(
+        at point: WorldPoint,
+        minimumHitRadius: Double = 0
+    ) -> Bool {
+        guard let resource = engine.state.resourceTarget(
+            at: point,
+            maxDistance: Swift.max(56, minimumHitRadius)
+        ),
               resource.claimedBy == nil,
               !engine.state.buildings.contains(where: {
                   $0.type == .extractor &&
@@ -1406,7 +1418,10 @@ final class GameController {
         if handlePointCommand(at: point) {
             return
         }
-        if handleBuilderTargetCommand(at: point) {
+        if handleBuilderTargetCommand(
+            at: point,
+            minimumHitRadius: isAwaitingBuildExtractorTarget ? minimumHitRadius : 0
+        ) {
             return
         }
         if handleSelectionTargetCommand(
@@ -2369,7 +2384,10 @@ final class GameController {
         return true
     }
 
-    private func handleBuilderTargetCommand(at point: WorldPoint) -> Bool {
+    private func handleBuilderTargetCommand(
+        at point: WorldPoint,
+        minimumHitRadius: Double = 0
+    ) -> Bool {
         if isAwaitingReclaimTarget {
             let wreck = engine.state.wreckTarget(at: point)
             let result: UnitCommandResult
@@ -2389,7 +2407,10 @@ final class GameController {
             )
             reportCommandFeedback(for: result, confirmation: .reclaim, at: wreck?.position ?? point)
         } else if isAwaitingBuildExtractorTarget {
-            let resource = engine.state.resourceTarget(at: point)
+            let resource = engine.state.resourceTarget(
+                at: point,
+                maxDistance: Swift.max(56, minimumHitRadius)
+            )
             let result: UnitCommandResult
             let nodeID: String?
             if let resource {

@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.57：pending Extractor 资源点在 battlefield preview、实际提交和 Tactical Map 提交统一使用触控容错半径；battlefield 沿 44pt、Tactical Map 沿约 16pt 屏幕直径换算 world hit area。只扩大 pending Extractor 的资源 marker 命中区，不改 Core 默认选择、普通 context tap、其它命令、存档或 Web 版；云端静态 smoke 仍不能证明真实手指命中手感。
+
 v2.56：原生 iOS 弹道在到达目标时增加轻量终点闪光、环形收束和放射 burst，冻结 combat fixture 也保留终点层；Reduce Motion 退化为透明度反馈，仍沿既有效果上限管理。只改 SpriteKit presentation，不改 Core、命中、伤害、存档或 Web 版；云端 PNG 才能验收构图，不能证明真实时序或真机帧率。
 
 v2.55：原生 iOS target hint/status 在 compact trailing dock 按内容自然增高，避免标题或最后一行脱离信息卡边框；Tactical Map 的 pending Attack 对敌方 marker 提供约 16pt 屏幕直径的最小命中区，保留可见性、最近目标排序和原有命令/触控 owner。只改 HUD presentation 与 map tap hit-area 传递，不改 Core、战斗、存档或 Web 版；云端静态 smoke 仍不能证明真实手指命中手感。
