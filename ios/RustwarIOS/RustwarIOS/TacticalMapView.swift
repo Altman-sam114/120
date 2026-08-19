@@ -184,17 +184,22 @@ struct TacticalMapView: View {
     }
 
     private func mapGesture(in size: CGSize) -> some Gesture {
-        DragGesture(minimumDistance: 0, coordinateSpace: .local)
+        let callbackGeneration = mapGestureCallbackGeneration
+
+        return DragGesture(minimumDistance: 0, coordinateSpace: .local)
             .updating($isMapGestureActive) { _, isActive, _ in
                 isActive = true
             }
             .onChanged { value in
+                guard callbackGeneration == mapGestureCallbackGeneration else {
+                    return
+                }
+
                 if let start = mapGestureStartLocation,
                    hypot(
                        value.startLocation.x - start.x,
                        value.startLocation.y - start.y
                    ) > 0.5 {
-                    mapGestureCallbackGeneration &+= 1
                     mapGestureStartLocation = value.startLocation
                     didRecognizeContextPress = false
                     isDraggingCamera = false
@@ -226,6 +231,10 @@ struct TacticalMapView: View {
                 controller.dragTacticalMapCamera(to: worldPoint)
             }
             .onEnded { value in
+                guard callbackGeneration == mapGestureCallbackGeneration else {
+                    return
+                }
+
                 defer {
                     resetMapGestureState()
                 }
