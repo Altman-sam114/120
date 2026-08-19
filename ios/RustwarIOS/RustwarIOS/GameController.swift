@@ -200,7 +200,8 @@ final class GameController {
             )
         }
         // Keep both available and locked production cards visible in the cloud fixture.
-        state.metal[.player] = 240
+        // Keep Scout ready while making the first-row Light Tank card visibly locked.
+        state.metal[.player] = 100
         let radarDefinition = GameDefinitions.building(.radar)
         let radarHitPoints = radarDefinition.upgrades
             .first(where: { $0.level == 2 })?
