@@ -5874,7 +5874,10 @@
 
 验证状态：
 
-- 按云端唯一验证制度未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；只读源码与云端结果包用于范围审查，最新 Actions artifact 待 push 后核对。
+- 按云端唯一验证制度未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；只读源码与云端结果包用于范围审查。
+- 实现提交 `0b78d8529e8809d4828c4a55d340a406b3d7519e` 已 push 至 `origin/main`；GitHub Actions run `32260424962`、attempt `1`、job `96092104045` 成功，未加密 artifact `rustwar-ci-v1.2-main-0b78d85-run32260424962-attempt1`（artifact id `9368383533`）已下载到 `/private/tmp/rustwar-c-review-32260424962/`，目录约 `1.7M`。
+- manifest 的 `branch=main`、`commitSha=0b78d8529e8809d4828c4a55d340a406b3d7519e`、run id 和 run attempt 与 `origin/main` 完全一致；JUnit 为 `8 tests / 0 failures / 1 expected browser skip`，Swift Core `340 tests passed`，Xcode `26.5`、iOS SDK `26.5`、Swift `6.3.2`、iPhone 17 Pro，双架构 build、production/combat 启动、横屏归一化和双 pixel probe 全部成功。
+- Home PNG 为 `2622x1206`、SHA-256 `c90459c86aa225ee2fb0dc0b9cc4c33908e0c339bd7db1202258c8c33b12b12d`；Combat PNG 为 `2622x1206`、SHA-256 `2a86e468fa29d13efc9802d0c24e6f286b903e561e20e942ed0abe241cab80ab`。人工复看确认 Attack target 多行提示完整包含于边框内，Home 生产区、Tactical Map 与战斗模型无明显回退；唯一 annotation 为 `actions/upload-artifact@v5` 的 Node 20 弃用提示，不影响 gate，v2.55 通过云端 artifact 验收。
 
 已知风险：
 
