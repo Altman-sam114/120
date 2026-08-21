@@ -6324,7 +6324,8 @@
 验证状态：
 
 - 本轮遵循云端唯一验证制度，未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；`.wp` 保持未跟踪。
-- 实现提交后只认最新 `origin/main` SHA 对应的 Actions run 与未加密 artifact；Agent C 必须下载到 `/private/tmp/rustwar-c-review-<run_id>/`，核对 manifest、JUnit、主日志、失败摘要、双架构 build、production/combat PNG 和 commit/run/attempt 一致性。
+- 实现 commit `7ba5d67ae6820890ebebbf0c62e61bf9f61f8784` 已推送到 `origin/main`；Actions run `32450318754` / attempt `1` / job `96677491149` 成功。Agent C 使用 active `Altman-sam114` 上下文下载 artifact `rustwar-ci-v1.2-main-7ba5d67-run32450318754-attempt1` 到 `/private/tmp/rustwar-c-review-32450318754/`，目录约 1.8M；manifest 的 branch、完整 SHA、run id、attempt、v1.2、Xcode 26.5、iOS SDK 26.5、iPhone 17 Pro 与远端完全一致。
+- JUnit 为 `8 tests / 0 failures / 1 skipped`，固定工具链、git diff --check、Node、Swift Core、Xcode list/build、production/combat 双启动、横屏归一化和两份 PNG probe 全部 success；唯一 skipped 是仓库没有 headless browser CI。`ios-home.png` 与 `ios-combat.png` 均为 `2622x1206`、透明比例 `0.0`，人工复看确认生产首屏、锁定卡、Quick Orders、战场模型、弹道、摧毁 presentation、Tactical Map 和状态栏无结构性回退。
 
 已知风险：
 
