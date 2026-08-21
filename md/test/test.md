@@ -617,3 +617,17 @@ Agent C 必须只验收最新 `origin/main` commit 对应的未加密 Actions ar
 - `CameraState.swift` 不应被无证据修改；`worldPoint` 与 `BattlefieldScene.syncCamera/spritePoint` 的屏幕↔世界映射继续保持可逆。
 
 Agent C 人工查看最新 `ios-home.png` 与 `ios-combat.png`：生产首屏、Quick Orders、单位模型、炮口、弹道、终点反馈、摧毁碎片、Tactical Map 和状态栏无静态回退；静态 artifact 不能证明真实双指/长按排序、触点 ID 复用、VoiceOver、Dynamic Type、滚动或真机手感。
+
+## v2.69
+
+本轮只修改 iOS SwiftUI command dock、生产卡 presentation、Selection mode 可达位置和 Build pending accessibility；继续执行云端唯一验证。本机不运行 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；`.wp` 必须保持未跟踪。
+
+代码复判必须确认：
+
+- 只有 compact、普通 Dynamic Type、单一已完成己方生产建筑选择启用 producer context header；regular/accessibility 仍保留 Selection summary、完整可读生产/Factory Tech 路径。
+- compact 生产入口为三列图标优先卡片，所有卡仍至少 44pt；`productionOptions` 顺序、`queueUnit`、availability disabled、锁定原因、完整 VoiceOver label/value/hint、Shift+1-9、队列、Cancel/Repeat/Rally 未改变。
+- `Replace/Add` 没有删除：compact producer header 隐藏固定 picker 后，滚动 Selection section 显示同一个 `selectionMutation` binding；普通单位和非 compact 场景仍保留固定 picker。
+- Factory Tech MAX 只在 compact 且无 upgrade progress/control 时隐藏重复 presentation；T2 READY 的升级 CTA、UPGRADING 的进度/取消、regular/accessibility 布局均保留。
+- Extractor、Turret、Land Factory、Radar pending 时分别朗读 `Cancel ... placement`、`Waiting for ... placement` 和取消 hint，非 pending 朗读 Build/Ready/位置提示；toggle action、target mode、快捷键不变。
+
+Agent C 只验收最新 `origin/main` commit 对应的未加密 Actions artifact，核对 manifest 的 branch、完整 SHA、run id、attempt、JUnit、主日志、失败摘要、Xcode/iOS SDK、Swift Core、双架构 build、production/combat 双启动、横屏归一化和两份 PNG probe。人工查看 `ios-home.png` 时确认 Production header、三列首屏生产卡、锁定状态和 Factory Tech READY/UPGRADING/MAX 无裁切或重叠；`ios-combat.png` 的 Quick Orders、模型、弹道、爆点、Tactical Map 和状态栏无回退。静态 artifact 不能证明真实 VoiceOver、Dynamic Type 全档位、滚动、触摸命中、动画时序或真机性能。

@@ -1385,3 +1385,23 @@ flowchart TD
 ```
 
 读图说明：v2.68 只把 Spatial 观察到的第二指作为当前 sequence 的输入仲裁信号，并让单指 commit 读取同一序列门控；实际多指分类、TouchSequenceOwner、Controller/Core 命令和取消路径不变。Tactical Map 把原先不一致的 18pt 长按移动上限与 22pt 相机拖动阈值收敛到 18pt，消除中间灰区。云端 artifact 可证明编译和静态首屏无回退，不能证明真实设备上 Spatial callback 排序、触点 ID 复用、长按手感、VoiceOver 或 XCUITest 多指注入。
+
+## v2.69 iOS compact producer first screen and Build pending VoiceOver
+
+```mermaid
+flowchart TD
+  SELECT[单一已完成己方生产建筑] --> ROLE{compact + non-accessibility?}
+  ROLE -->|no| FULL[保留完整 Selection / Factory Tech 可读布局]
+  ROLE -->|yes| PRODUCER[紧凑 Production header：建筑 / T 级 / 倍率]
+  PRODUCER --> GRID[三列图标优先生产卡]
+  GRID --> AVAIL[既有 availability / disabled / VoiceOver 费用人口时间]
+  PRODUCER --> SECTIONS[滚动区：队列 / Cancel / Repeat / Rally / Selection]
+  SECTIONS --> PICKER[同一 selectionMutation 的 Replace / Add picker]
+  MAX{Factory Tech MAX 且无升级动作?} -->|yes| SUMMARY[保留摘要，隐藏重复 Tech 卡]
+  MAX -->|no| TECH[保留 READY CTA 或 UPGRADING 进度/取消]
+  BUILD[Builder build command] --> PENDING{等待放置?}
+  PENDING -->|no| READY[Build + Ready + 位置提示]
+  PENDING -->|yes| CANCEL[Cancel placement + Waiting placement + 取消提示]
+```
+
+读图说明：v2.69 只把 compact 生产建筑的固定 header 和生产卡做高密度 presentation，并把 Selection mode 移入滚动区；生产 action、队列、升级、Core 与存档仍走既有 Controller。Build pending 只改变 VoiceOver 文案，不改变 target mode 或 toggle。云端 artifact 能检查首屏构图和编译，不能证明真实滚动、VoiceOver、Dynamic Type 或设备触控。

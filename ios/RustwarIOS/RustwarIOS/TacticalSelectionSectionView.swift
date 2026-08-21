@@ -3,10 +3,24 @@ import SwiftUI
 struct TacticalSelectionSectionView: View {
     @Bindable var controller: GameController
     let columns: Int
+    let showsSelectionModePicker: Bool
+
+    init(
+        controller: GameController,
+        columns: Int,
+        showsSelectionModePicker: Bool = false
+    ) {
+        self.controller = controller
+        self.columns = columns
+        self.showsSelectionModePicker = showsSelectionModePicker
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             TacticalSectionHeader(section: .selection)
+            if showsSelectionModePicker {
+                TacticalSelectionModePicker(controller: controller)
+            }
             TacticalCommandGrid(columns: columns) {
                 Button(
                     controller.idleBuildersButtonTitle,

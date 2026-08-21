@@ -159,6 +159,7 @@ struct TacticalProductionFocusSummaryView: View {
 struct TacticalProductionSectionView: View {
     @Bindable var controller: GameController
     let columns: Int
+    let isCompact: Bool
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -166,7 +167,7 @@ struct TacticalProductionSectionView: View {
         if dynamicTypeSize.isAccessibilitySize {
             return 1
         }
-        return columns == 1 ? 2 : 3
+        return 3
     }
 
     private var sectionSpacing: CGFloat {
@@ -181,11 +182,11 @@ struct TacticalProductionSectionView: View {
             if controller.productionFocusBuildingName != nil {
                 TacticalProductionFocusSummaryView(
                     controller: controller,
-                    isCompact: columns == 1
+                    isCompact: isCompact
                 )
             }
             if shouldShowFactoryTech {
-                TacticalFactoryTechView(controller: controller, isCompact: columns == 1)
+                TacticalFactoryTechView(controller: controller, isCompact: isCompact)
             }
             if !controller.productionOptions.isEmpty {
                 TacticalCommandGrid(
@@ -245,7 +246,8 @@ struct TacticalProductionSectionView: View {
                     definition: definition,
                     buildTime: controller.productionBuildTime(for: unitType),
                     availability: availability,
-                    usesCompactLayout: !dynamicTypeSize.isAccessibilitySize
+                    usesCompactLayout: !dynamicTypeSize.isAccessibilitySize,
+                    usesDenseCompactLayout: isCompact && !dynamicTypeSize.isAccessibilitySize
                 )
             }
             .tacticalControl()
@@ -263,7 +265,8 @@ struct TacticalProductionSectionView: View {
                     definition: definition,
                     buildTime: controller.productionBuildTime(for: unitType),
                     availability: availability,
-                    usesCompactLayout: !dynamicTypeSize.isAccessibilitySize
+                    usesCompactLayout: !dynamicTypeSize.isAccessibilitySize,
+                    usesDenseCompactLayout: isCompact && !dynamicTypeSize.isAccessibilitySize
                 )
             }
             .tacticalControl()
@@ -291,7 +294,7 @@ struct TacticalProductionSectionView: View {
         guard controller.showsSelectedFactoryTech else {
             return false
         }
-        guard columns == 1, !dynamicTypeSize.isAccessibilitySize else {
+        guard isCompact, !dynamicTypeSize.isAccessibilitySize else {
             return true
         }
         return controller.showsSelectedFactoryUpgradeControl ||
@@ -310,9 +313,12 @@ private struct TacticalProductionButtonLabel: View {
     let buildTime: Double
     let availability: ProductionAvailability
     let usesCompactLayout: Bool
+    let usesDenseCompactLayout: Bool
 
     var body: some View {
-        if usesCompactLayout {
+        if usesDenseCompactLayout {
+            denseCompactBody
+        } else if usesCompactLayout {
             VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
                 HStack(spacing: TacticalHUDTheme.denseSpacing) {
                     productionIcon
@@ -348,6 +354,36 @@ private struct TacticalProductionButtonLabel: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    private var denseCompactBody: some View {
+        VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
+            HStack(spacing: TacticalHUDTheme.denseSpacing) {
+                productionIcon
+                    .font(.title2.weight(.semibold))
+                Text(denseDisplayName)
+                    .font(.caption.bold())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.58)
+                    .allowsTightening(true)
+            }
+            Text(denseMetrics)
+                .font(.caption2)
+                .foregroundStyle(TacticalHUDTheme.secondaryText)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.52)
+            if !availability.isAvailable {
+                Label(availability.shortLabel, systemImage: availability.systemImage)
+                    .font(.caption2.bold())
+                    .foregroundStyle(TacticalHUDTheme.unavailableForeground)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.46)
+                    .allowsTightening(true)
+                    .accessibilityHidden(true)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
     }
 
     private var productionIcon: some View {
@@ -396,12 +432,29 @@ private struct TacticalProductionButtonLabel: View {
         "\(Int(definition.metalCost))M \(definition.supply)P \(formattedBuildTime)"
     }
 
+    private var denseMetrics: String {
+        "\(Int(definition.metalCost))M · \(definition.supply)P · \(Int(buildTime.rounded(.up)))s"
+    }
+
     private var compactDisplayName: String {
         switch unitType {
         case .artillery:
             "Arty"
         default:
             unitType.productionQueueDisplayName(fallback: definition.name)
+        }
+    }
+
+    private var denseDisplayName: String {
+        switch unitType {
+        case .builder: "Build"
+        case .scout: "Scout"
+        case .tank: "Light"
+        case .heavyTank: "Heavy"
+        case .hover: "Hover"
+        case .aaTank: "AA"
+        case .artillery: "Arty"
+        case .gunboat: "Boat"
         }
     }
 }

@@ -12,9 +12,18 @@ struct TacticalCommandDockView: View {
         dynamicTypeSize.isAccessibilitySize || layoutRole == .compactTrailing ? 1 : 2
     }
 
+    private var isCompactProducerContext: Bool {
+        layoutRole != .regularTrailing &&
+            !dynamicTypeSize.isAccessibilitySize &&
+            controller.productionFocusBuildingName != nil
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            TacticalCommandDockHeaderView(controller: controller)
+            TacticalCommandDockHeaderView(
+                controller: controller,
+                showsCompactProducerContext: isCompactProducerContext
+            )
             if showsQuickCommandRail {
                 TacticalQuickCommandRail(controller: controller)
             }
@@ -23,7 +32,11 @@ struct TacticalCommandDockView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: TacticalHUDTheme.sectionSpacing) {
                         if hasProductionControls {
-                            TacticalProductionSectionView(controller: controller, columns: commandColumnCount)
+                            TacticalProductionSectionView(
+                                controller: controller,
+                                columns: commandColumnCount,
+                                isCompact: layoutRole != .regularTrailing
+                            )
                         }
                         if hasSelectedBuildingUpgradeControls {
                             TacticalBuildSectionView(controller: controller, columns: commandColumnCount)
@@ -39,7 +52,11 @@ struct TacticalCommandDockView: View {
                         if hasBuildControls && !hasSelectedBuildingUpgradeControls {
                             TacticalBuildSectionView(controller: controller, columns: commandColumnCount)
                         }
-                        TacticalSelectionSectionView(controller: controller, columns: commandColumnCount)
+                        TacticalSelectionSectionView(
+                            controller: controller,
+                            columns: commandColumnCount,
+                            showsSelectionModePicker: isCompactProducerContext
+                        )
                         TacticalGroupsSectionView(controller: controller, columns: commandColumnCount)
                         TacticalSessionSectionView(controller: controller, columns: commandColumnCount)
                     }

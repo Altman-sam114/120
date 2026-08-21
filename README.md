@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.69：原生 iOS compact 生产建筑选中态改为生产专属紧凑 header，固定区只保留建筑、T 级和生产倍率；生产入口采用三列图标优先卡片，`Replace/Add` 选择模式移到可滚动 Selection 区，仍绑定同一选择状态。Extractor、Turret、Land Factory、Radar 进入等待放置时，VoiceOver 现在会朗读对应的取消、等待和位置提示。生产顺序、锁定/资源/人口反馈、Shift+1-9、队列、升级、Repeat、Rally、regular/accessibility 布局、Core、存档和 Web 版不变；本轮继续只以最新 Actions artifact 验收。
+
 v2.68：原生 iOS 主战场在 SpatialEventGesture 观察到第二指时，按当前 touch sequence 先标记多指候选并抑制尚未提交的单指 tap/长按，减少双指框选被长按抢先消费；Tactical Map 将相机拖动阈值与长按最大移动统一为 18pt，消除轻拖落在 18–22pt 灰区时被当成普通点按的问题。只改输入 presentation 生命周期和小地图手势阈值，不改 CameraState 坐标映射、TouchSequenceOwner/Core 命令、生产、战斗、存档或 Web 版。代码 commit `7ba5d67ae6820890ebebbf0c62e61bf9f61f8784` 对应 Actions run `32450318754` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-7ba5d67-run32450318754-attempt1` 已通过。
 
 v2.67：compact 横屏生产建筑在 T2 MAX 且无可执行升级时收起重复 Factory Tech 卡，保留 Production focus 的 T2/倍率/MAX 摘要，让首排生产入口更早可见；T1、T2 READY、升级中、regular/accessibility layout、生产 action、快捷键、VoiceOver、Core、存档和 Web 版不变。代码 commit `8bb384c0356d21ce327ada166458878c1e800594`、EOF 修复 commit `101074fda5f85920cf94af05a5d60d6b169613f7` 对应 Actions run `32440839493` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-101074f-run32440839493-attempt1` 已通过。

@@ -16,7 +16,21 @@ struct TacticalBuildSectionView: View {
                     )
                     .tacticalControl()
                     .keyboardShortcut(commandKey("e"), modifiers: .shift)
-                    .accessibilityLabel("Build extractor")
+                    .accessibilityLabel(
+                        controller.isAwaitingBuildExtractorTarget
+                            ? "Cancel extractor placement"
+                            : "Build extractor"
+                    )
+                    .accessibilityValue(
+                        controller.isAwaitingBuildExtractorTarget
+                            ? "Waiting for extractor placement"
+                            : "Ready"
+                    )
+                    .accessibilityHint(
+                        controller.isAwaitingBuildExtractorTarget
+                            ? "Cancels extractor placement."
+                            : "Choose an available resource point on the battlefield."
+                    )
                 }
                 if controller.canIssueBuildTurret || controller.isAwaitingBuildTurretTarget {
                     Button(
@@ -26,7 +40,21 @@ struct TacticalBuildSectionView: View {
                     )
                     .tacticalControl()
                     .keyboardShortcut(commandKey("t"), modifiers: .shift)
-                    .accessibilityLabel("Build turret")
+                    .accessibilityLabel(
+                        controller.isAwaitingBuildTurretTarget
+                            ? "Cancel turret placement"
+                            : "Build turret"
+                    )
+                    .accessibilityValue(
+                        controller.isAwaitingBuildTurretTarget
+                            ? "Waiting for turret placement"
+                            : "Ready"
+                    )
+                    .accessibilityHint(
+                        controller.isAwaitingBuildTurretTarget
+                            ? "Cancels turret placement."
+                            : "Choose a clear land position on the battlefield."
+                    )
                 }
                 if controller.canIssueBuildFactory || controller.isAwaitingBuildFactoryTarget {
                     Button(
@@ -36,7 +64,21 @@ struct TacticalBuildSectionView: View {
                     )
                     .tacticalControl()
                     .keyboardShortcut(commandKey("f"), modifiers: .shift)
-                    .accessibilityLabel("Build factory")
+                    .accessibilityLabel(
+                        controller.isAwaitingBuildFactoryTarget
+                            ? "Cancel land factory placement"
+                            : "Build land factory"
+                    )
+                    .accessibilityValue(
+                        controller.isAwaitingBuildFactoryTarget
+                            ? "Waiting for land factory placement"
+                            : "Ready"
+                    )
+                    .accessibilityHint(
+                        controller.isAwaitingBuildFactoryTarget
+                            ? "Cancels land factory placement."
+                            : "Choose a clear land position on the battlefield."
+                    )
                 }
                 if controller.canIssueBuildRadar || controller.isAwaitingBuildRadarTarget {
                     Button(
@@ -46,7 +88,21 @@ struct TacticalBuildSectionView: View {
                     )
                     .tacticalControl()
                     .keyboardShortcut(commandKey("d"), modifiers: .shift)
-                    .accessibilityLabel("Build radar")
+                    .accessibilityLabel(
+                        controller.isAwaitingBuildRadarTarget
+                            ? "Cancel radar placement"
+                            : "Build radar"
+                    )
+                    .accessibilityValue(
+                        controller.isAwaitingBuildRadarTarget
+                            ? "Waiting for radar placement"
+                            : "Ready"
+                    )
+                    .accessibilityHint(
+                        controller.isAwaitingBuildRadarTarget
+                            ? "Cancels radar placement."
+                            : "Choose a clear land position on the battlefield."
+                    )
                 }
                 if controller.showsSelectedRadarUpgradeControl {
                     Button(

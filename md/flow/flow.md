@@ -867,3 +867,11 @@ Quick rail 出现时，`TacticalCommandsSectionView` 隐藏滚动区内重复的
 `BattlefieldView.updateMultitouchSelection` 在调用 `synchronizeTouchOwner` 前先查看当前 `SpatialEventCollection` 的 active touch 数量。当前 owner 仍处于 `.possible` 且观察到至少两个未取消 touch 时，记录与 owner `sequence` 绑定的 `multitouchCandidateSequence`，清除单指 preview 与重复 tap cache；同步后若同一帧建立 fresh seed，也会在 claim multitouch 前补记该候选。主战场 `onLongPressGesture` 与单指 tap commit 都要求当前 sequence 没有多指候选，因此已观察到第二指时，未提交的单指长按/tap 不再抢先下达命令。候选值按 sequence 作用域化，取消、完成、地图 reset 或新 fresh seed 后不会污染下一次独立触摸；系统尚未回调 SpatialEventGesture、或平台无法区分旧/新触点的窗口仍不被宣称绝对可判定。
 
 `TacticalMapView` 将相机 `cameraDragActivationDistance` 与长按 `maximumDistance` 统一为 18pt。原有 callback generation、`@GestureState` reset、等待命令期间禁止相机拖动、普通点按居中、pending target 命中半径、长按上下文和 `GameController` 入口保持不变；因此 18pt 以上的轻拖会进入既有相机拖动，18pt 内仍可保持长按语义，不新增 Core 或存档状态。`CameraState.worldPoint`、`BattlefieldScene.syncCamera/spritePoint` 未改动，屏幕↔世界映射仍保持可逆。
+
+## v2.69 iOS compact producer first screen and Build pending VoiceOver
+
+当 layout role 为 compact、Dynamic Type 不是 accessibility size 且当前只选中一个已完成己方生产建筑时，`TacticalCommandDockView` 派生 producer context。`TacticalCommandDockHeaderView` 以紧凑 presentation header 替换固定区的 Selection summary、hint 和 `Replace/Add` picker，只保留 Production、建筑名称、T 级和生产倍率；命令状态仍沿原路径显示。`Replace/Add` 不会丢失，而是由 `TacticalSelectionSectionView` 在滚动 Selection section 展示同一个 `selectionMutation` binding。
+
+生产 section 使用显式 `isCompact` layout 信息：非 accessibility compact 生产卡切为三列图标优先视觉短名，并保持既有 `productionOptions` 顺序、`productionAvailability` disabled、完整 accessibility 名称/费用/人口/时间、锁定原因、Shift+1-9 和 `queueUnit` action。所有卡继续经 `tacticalControl()` 保持至少 44pt 高度；regular/accessibility 路径仍使用完整可读布局。compact MAX 且无升级 progress/control 时继续隐藏重复 Factory Tech；T2 READY 保留升级 CTA，UPGRADING 保留进度和取消。
+
+`TacticalBuildSectionView` 的 Extractor、Turret、Land Factory、Radar 按钮仍调用原有 toggle action，但 accessibility label/value/hint 按 pending 状态派生为 Build/Ready 或 Cancel placement/Waiting placement。该轮只改变 SwiftUI presentation/accessibility，不写 Core、订单、资源、生产队列、存档/JSON、TouchSequenceOwner、Battlefield/Tactical Map、战斗或 Web 状态。云端静态 PNG 能检查 compact 首屏和 combat 无回退，不能证明真实滚动、VoiceOver、Dynamic Type 全档位、触摸命中或真机手感。

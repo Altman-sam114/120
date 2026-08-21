@@ -6330,3 +6330,36 @@
 已知风险：
 
 - candidate 只能在 SpatialEventGesture 已经回调并暴露第二个 active touch 后抑制单指 commit；SwiftUI 没有统一触摸 token，系统层 callback 排序、触点 ID 复用、VoiceOver、Dynamic Type、真机点击手感和 XCUITest 多指注入仍需云端/真机补充验证，不能由静态 PNG 或绿色 build 宣称完全解决。
+
+## v2.69 / Compact producer first screen and Build pending VoiceOver
+
+日期：2026-08-21
+
+核心变更：
+
+- compact、普通 Dynamic Type、单一已完成己方生产建筑选择时，command dock 固定 header 改为 Production 专属紧凑信息，只显示建筑、科技等级和生产倍率；`Replace/Add` 移入滚动 Selection section，继续绑定既有 `selectionMutation`。
+- compact 生产入口改为三列图标优先卡片，短视觉名称和费用/人口/时间摘要更接近 Rusted Warfare 的高密度生产网格；原有 production 顺序、availability disabled、锁定原因、Shift+1-9、queue、Cancel/Repeat/Rally 和 Factory Tech 状态保持。
+- Extractor、Turret、Land Factory、Radar pending target 按钮补齐动态 VoiceOver label/value/hint，明确 Build/Ready 或 Cancel placement/Waiting placement；不改变 toggle action 或 target mode。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockHeaderView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalSelectionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalBuildSectionView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.69-compact-producer-first-screen-and-build-voiceover.md`
+
+验证状态：
+
+- 本轮遵循云端唯一验证制度，不运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；只做只读源码复核、Git 范围确认、commit 和 push。
+- 云端 Actions run、artifact、manifest、JUnit 和 PNG 结果待本轮 push 后由 Agent C 定位并下载复判；未获得最新 artifact 前不宣布通过。
+
+已知风险：
+
+- 云端静态 build/PNG 不能证明真实生产区滚动、三列卡片在所有设备宽度的文字可读性、VoiceOver、Dynamic Type 全档位或真机触控手感。
+- 主战场单指 terminal/Spatial seed 竞态、Tactical Map pending Guard/Repair/Reclaim 命中区、长按/第二指回调顺序和战斗弹道 profile/接地阴影仍是后续轮次目标。
