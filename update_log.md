@@ -6264,7 +6264,8 @@
 验证状态：
 
 - 本轮按云端唯一验证制度不运行本地测试、Swift/Xcode build、Simulator、Preview、浏览器、截图或 `git diff --check`；只做只读源码与 Git 范围复核。
-- 由于当前环境仍无法创建 `.git/index.lock`，本轮尚未提交或 push；恢复 Git 写权限后只认最新 `origin/main` SHA 对应 Actions artifact，并由 Agent C 核对 manifest、JUnit、双架构 build、双场景启动和 PNG。
+- v2.66 实现已包含在 commit `8bb384c0356d21ce327ada166458878c1e800594`，随后由文档 EOF 修复 commit `101074fda5f85920cf94af05a5d60d6b169613f7` 推送到 `origin/main`；最新 run `32440839493` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-101074f-run32440839493-attempt1` 已由 Agent C 下载到 `/private/tmp/rustwar-c-review-32440839493/` 并核对通过。
+- manifest 的 `branch=main`、完整 SHA、run id、attempt、v1.2、Xcode 26.5、iOS Simulator SDK 26.5、iPhone 17 Pro 完全匹配；JUnit `8/0/1`，git diff --check、Node、Swift Core、Xcode list/build、production/combat 双启动、横屏归一化和双 PNG probe 全部 success。浏览器 smoke 仍按项目现状 skipped。
 
 已知风险：
 
@@ -6292,7 +6293,8 @@
 验证状态：
 
 - 本轮按云端唯一验证制度不运行本地测试、Swift/Xcode build、Simulator、Preview、浏览器、截图或 `git diff --check`；只做只读源码与 Git 范围复核。
-- 当前环境仍无法创建 `.git/index.lock`，因此 v2.65.1/v2.66/v2.67 尚未提交或 push；恢复 Git 写权限后必须以最新 `origin/main` 对应 Actions artifact 验收三轮合并前的完整 diff。
+- 代码 commit `8bb384c0356d21ce327ada166458878c1e800594` 与 EOF 修复 commit `101074fda5f85920cf94af05a5d60d6b169613f7` 已推送到 `origin/main`。Actions run `32440839493` / attempt `1` / job `96651068650` 成功；Agent C 下载并核对 artifact `rustwar-ci-v1.2-main-101074f-run32440839493-attempt1` 到 `/private/tmp/rustwar-c-review-32440839493/`，目录约 1.7M。
+- manifest 的 `branch=main`、完整 SHA、run id、attempt、v1.2、Xcode 26.5、iOS SDK 26.5、iPhone 17 Pro 与远端一致；JUnit `8 tests / 0 failures / 1 skipped`，git diff --check、node --check、Swift Core、Xcode list/build、production/combat 启动、横屏归一化和两份 PNG probe 全部通过。`ios-home.png` 为 `2622x1206`，确认 Production focus、T2/1.25x/MAX、Scout 与锁定 Light Tank 首排无重复 Factory Tech 卡挤压；`ios-combat.png` 为 `2622x1206`，确认 Quick Orders 标题完整、`A-Move` 单行、Cancel/Stop、单位模型、炮口、弹道、终点反馈、爆点和 Tactical Map 无结构性回退。
 
 已知风险：
 
