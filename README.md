@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.68：原生 iOS 主战场在 SpatialEventGesture 观察到第二指时，按当前 touch sequence 先标记多指候选并抑制尚未提交的单指 tap/长按，减少双指框选被长按抢先消费；Tactical Map 将相机拖动阈值与长按最大移动统一为 18pt，消除轻拖落在 18–22pt 灰区时被当成普通点按的问题。只改输入 presentation 生命周期和小地图手势阈值，不改 CameraState 坐标映射、TouchSequenceOwner/Core 命令、生产、战斗、存档或 Web 版；本轮待最新 Actions artifact 验收。
+
 v2.67：compact 横屏生产建筑在 T2 MAX 且无可执行升级时收起重复 Factory Tech 卡，保留 Production focus 的 T2/倍率/MAX 摘要，让首排生产入口更早可见；T1、T2 READY、升级中、regular/accessibility layout、生产 action、快捷键、VoiceOver、Core、存档和 Web 版不变。代码 commit `8bb384c0356d21ce327ada166458878c1e800594`、EOF 修复 commit `101074fda5f85920cf94af05a5d60d6b169613f7` 对应 Actions run `32440839493` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-101074f-run32440839493-attempt1` 已通过。
 
 v2.66：原生 iOS 摧毁爆炸复用确定性装甲碎片，冻结 combat visual smoke 增加静态摧毁样本；陆地火焰、烟尘、焦痕与水面分流、Reduce Motion、64 effect/32 decal 上限保持。只改 SpriteKit presentation，不改 Core、伤害/死亡、命令、生产、存档和 Web 版；随 v2.67 最新 Actions artifact 通过。
@@ -193,12 +195,12 @@ v2.50：原生 iOS 生产建筑 dock 首屏增加只读 Production focus summary
 - Combat Units：选择全部己方非 Builder 战斗单位，并在主战场和战术小地图高亮多选集合；Move、Attack、Attack Move、Patrol、Guard 和 Stop 会作用于所有选中己方单位，其它生产或 Rally 命令仍沿用 primary selection 单实体语义。
 - Screen Combat：选择当前主战场视口内的己方非 Builder 作战单位；Replace 模式会替换当前选择，Add 模式会追加到当前选择，空屏幕不会清空旧选择。
 - Select Area：进入框选等待态；下一次在主战场拖拽会显示选择框，松手后优先选中框内己方单位；若框内没有己方单位，会改选与框选区域相交的己方建筑；Replace 模式下空框会清空选择，Add 模式下空框会保留旧选择；等待态可再次点按或用 Stop 取消。
-- 双指框选：无等待命令时，两指近似同向拖动会直接显示选择框并在松手后按 Replace / Add 选择；允许一指略早移动，另一指跟随至少约 5pt 即可进入判定。也可以两指按住屏幕约 0.22 秒基本不动，选择框会直接框在两指之间，抬指即选。两指明显张合 12pt 或反向移动继续缩放，不会同时框选。第三指、系统取消或地图重置会放弃本次框选，双指结束也不会误触普通 tap 或长按命令。
+- 双指框选：无等待命令时，两指近似同向拖动会直接显示选择框并在松手后按 Replace / Add 选择；允许一指略早移动，另一指跟随至少约 5pt 即可进入判定。也可以两指按住屏幕约 0.22 秒基本不动，选择框会直接框在两指之间，抬指即选。两指明显张合 12pt 或反向移动继续缩放，不会同时框选。SpatialEventGesture 观察到第二个 active touch 后，会按当前 sequence 先标记多指候选，阻止尚未提交的单指 tap/长按抢先下令；第三指、系统取消或地图重置会放弃本次框选，双指结束也不会误触普通 tap 或长按命令。
 - Same Type：选中己方单位时显示；点按后选择全图所有同类型己方单位，并在主战场和战术小地图高亮多选集合。
 - 双击己方单位：选择该单位附近半径内的存活己方同类型单位；等待 Move、Attack、Build、Rally 或 Select Area 等命令目标时不会触发双击选择。
 - Save 1-9 / Group 1-9：保存或召回 1-9 号控制编队；外接键盘可用 Control + 1-9 保存、1-9 召回；召回会过滤已死亡、缺失或非己方目标，并恢复为当前多选集合。
 - 外接键盘：WASD / 方向键移动视野，Space 回到己方 Command Center，P 暂停/恢复，R 重开当前地图，E 选择空闲 Builder，F 选择当前屏幕内作战单位，Control + A 选择全部战斗单位，Option + A 选择同类型单位，A 进入 Attack Move，G 进入 Patrol，H 进入 Guard，C 进入 Reclaim，S 停止或取消当前等待命令，Z / X / V 切换选中有武器己方单位为 Aggressive / Defensive / Hold Fire；Shift + 1-9 按当前 HUD 顺序生产单位，Shift + E / T / F / D 进入 Build Extractor / Turret / Factory / Radar，Shift + C / P / R 执行 Cancel Last / Repeat / Rally。
-- 拖拽：移动超过 12pt 后平移战场视角；同一触摸序列会持续抑制 tap/长按，轻微抖动仍可保留长按语义。
+- 拖拽：主战场移动超过 12pt 后平移战场视角；同一触摸序列会持续抑制 tap/长按，轻微抖动仍可保留长按语义。Tactical Map 的相机拖动与长按最大移动统一为 18pt，轻拖不会落入原先 18–22pt 的点按灰区。
 - 地图重置中的触摸：若 reset 发生在 Spatial touch ID 登记前，context seed 之前的 context/Spatial 首帧会被取消围栏拦截；seed 和 active touch 证据到齐后才恢复普通 tap、pan 或双指手势，但 SwiftUI 没有统一 touch token，seed 后的迟到旧回调仍需真机/XCUITest 进一步区分。
 - 捏合：缩放战场视角；正常结束或被第三指、系统取消、触点替换、切图/重置中断后都会清除该次累计倍率，下一次捏合从 1.0 基线继续。
 - Move：选中己方单位时显示；点按后进入移动落点模式，再 tap 战场下达移动命令；多选时所有选中己方单位会按稳定方阵获得围绕目标点的目的地。

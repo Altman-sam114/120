@@ -6299,3 +6299,33 @@
 已知风险：
 
 - 静态 Home PNG 能检查首屏构图，但不能证明真实滚动、VoiceOver、Dynamic Type 全档位、快捷键或真机点击手感；若未来 MAX 状态新增可执行工厂动作，应重新审查隐藏条件。
+
+## v2.68 / Touch candidate arbitration and Tactical Map drag threshold
+
+日期：2026-08-21
+
+核心变更：
+
+- `BattlefieldView.updateMultitouchSelection` 在 `synchronizeTouchOwner` 前检查当前 Spatial 事件的 active touch 数量；owner 仍为 `.possible` 且观察到第二指时，记录与当前 sequence 绑定的 `multitouchCandidateSequence`，先清除单指 preview 和重复 tap cache。同步后 fresh seed 同帧也会在多指 claim 前补记候选。
+- 主战场 long press 与单指 tap commit 读取该 sequence-bound candidate；已观察到第二指时不会再由尚未提交的单指回调抢先执行上下文命令或普通 tap。取消、完成、reset 和新 sequence 会清理或隔离候选。
+- `TacticalMapView` 将 camera drag activation 与 long-press maximum distance 统一到 18pt，消除轻拖在 18–22pt 区间被普通点按处理的灰区；等待目标时禁止拖动、callback generation、地图点按/长按和既有命令入口不变。
+- `CameraState.swift` 未修改；屏幕↔世界坐标转换仍由既有 `worldPoint`、`syncCamera` 和 `spritePoint` 组成可逆映射。Core、GameState、JSON、存档、生产、战斗数值和 Web 版不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.68-ios-touch-candidate-and-map-drag.md`
+
+验证状态：
+
+- 本轮遵循云端唯一验证制度，未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；`.wp` 保持未跟踪。
+- 实现提交后只认最新 `origin/main` SHA 对应的 Actions run 与未加密 artifact；Agent C 必须下载到 `/private/tmp/rustwar-c-review-<run_id>/`，核对 manifest、JUnit、主日志、失败摘要、双架构 build、production/combat PNG 和 commit/run/attempt 一致性。
+
+已知风险：
+
+- candidate 只能在 SpatialEventGesture 已经回调并暴露第二个 active touch 后抑制单指 commit；SwiftUI 没有统一触摸 token，系统层 callback 排序、触点 ID 复用、VoiceOver、Dynamic Type、真机点击手感和 XCUITest 多指注入仍需云端/真机补充验证，不能由静态 PNG 或绿色 build 宣称完全解决。

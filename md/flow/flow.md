@@ -861,3 +861,9 @@ Quick rail 出现时，`TacticalCommandsSectionView` 隐藏滚动区内重复的
 `TacticalProductionSectionView` 新增 `shouldShowFactoryTech` presentation 条件。compact 且非 accessibility Dynamic Type 时，如果选中工厂已达 MAX、没有升级 progress、也没有可执行升级 control，Factory Tech 卡不再与 Production focus summary 重复渲染；summary 仍保留 T2、生产倍率和 MAX 信息。T1、T2 READY、升级中、regular layout 和 accessibility layout 继续显示完整 Factory Tech。
 
 生产 options、队列、`queueUnit`、Cancel/Repeat/Rally、Shift+1-9、VoiceOver、44pt、GameController/Core、存档和 Web 版不变；这只是释放 compact 首屏纵向空间，让首排生产入口更早可见。
+
+## v2.68 iOS touch candidate arbitration and Tactical Map drag threshold
+
+`BattlefieldView.updateMultitouchSelection` 在调用 `synchronizeTouchOwner` 前先查看当前 `SpatialEventCollection` 的 active touch 数量。当前 owner 仍处于 `.possible` 且观察到至少两个未取消 touch 时，记录与 owner `sequence` 绑定的 `multitouchCandidateSequence`，清除单指 preview 与重复 tap cache；同步后若同一帧建立 fresh seed，也会在 claim multitouch 前补记该候选。主战场 `onLongPressGesture` 与单指 tap commit 都要求当前 sequence 没有多指候选，因此已观察到第二指时，未提交的单指长按/tap 不再抢先下达命令。候选值按 sequence 作用域化，取消、完成、地图 reset 或新 fresh seed 后不会污染下一次独立触摸；系统尚未回调 SpatialEventGesture、或平台无法区分旧/新触点的窗口仍不被宣称绝对可判定。
+
+`TacticalMapView` 将相机 `cameraDragActivationDistance` 与长按 `maximumDistance` 统一为 18pt。原有 callback generation、`@GestureState` reset、等待命令期间禁止相机拖动、普通点按居中、pending target 命中半径、长按上下文和 `GameController` 入口保持不变；因此 18pt 以上的轻拖会进入既有相机拖动，18pt 内仍可保持长按语义，不新增 Core 或存档状态。`CameraState.worldPoint`、`BattlefieldScene.syncCamera/spritePoint` 未改动，屏幕↔世界映射仍保持可逆。

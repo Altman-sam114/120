@@ -2,7 +2,7 @@ import SwiftUI
 import RustwarCore
 
 struct TacticalMapView: View {
-    private static let cameraDragActivationDistance: CGFloat = 22
+    private static let cameraDragActivationDistance: CGFloat = 18
     private static let pendingTargetTouchDiameter: CGFloat = 16
 
     let controller: GameController
@@ -91,7 +91,10 @@ struct TacticalMapView: View {
                 }
                 resetMapGestureState()
             }
-            .onLongPressGesture(minimumDuration: 0.45, maximumDistance: 18) {
+            .onLongPressGesture(
+                minimumDuration: 0.45,
+                maximumDistance: Self.cameraDragActivationDistance
+            ) {
                 guard callbackGeneration == mapGestureCallbackGeneration,
                       !isDraggingCamera else {
                     return

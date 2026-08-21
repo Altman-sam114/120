@@ -1362,3 +1362,26 @@ flowchart TD
 ```
 
 读图说明：v2.67 只根据 presentation 状态收起重复 MAX 卡，不改变任何生产 action 或 Core 状态；可执行升级或辅助功能布局始终保留 Factory Tech。
+
+## v2.68 iOS touch candidate arbitration and Tactical Map drag threshold
+
+```mermaid
+flowchart TD
+  EVENTS[SpatialEventGesture active touch frame] --> COUNT{Current owner is possible and active touch count >= 2?}
+  COUNT -->|no| SINGLE[Keep existing single-finger candidate]
+  COUNT -->|yes| CANDIDATE[Record multitouchCandidateSequence]
+  CANDIDATE --> CLEAR[Clear preview and single-tap cache]
+  CANDIDATE --> OWNER[Existing TouchSequenceOwner observe / multitouch claim]
+  CANDIDATE --> LONG{Pending long press or tap commit?}
+  LONG -->|same sequence candidate| DROP[Suppress single-finger commit]
+  LONG -->|no candidate| COMMAND[Existing context / tap command path]
+  OWNER --> SELECT[Existing selection / pinch classifier]
+  DROP --> SELECT
+  MAP[Tactical Map drag] --> THRESHOLD{Movement >= 18pt?}
+  THRESHOLD -->|yes| PAN[Existing camera drag]
+  THRESHOLD -->|no| PRESS[Existing long press / tap semantics]
+  PAN --> GENERATION[Existing callback generation and reset gate]
+  PRESS --> GENERATION
+```
+
+读图说明：v2.68 只把 Spatial 观察到的第二指作为当前 sequence 的输入仲裁信号，并让单指 commit 读取同一序列门控；实际多指分类、TouchSequenceOwner、Controller/Core 命令和取消路径不变。Tactical Map 把原先不一致的 18pt 长按移动上限与 22pt 相机拖动阈值收敛到 18pt，消除中间灰区。云端 artifact 可证明编译和静态首屏无回退，不能证明真实设备上 Spatial callback 排序、触点 ID 复用、长按手感、VoiceOver 或 XCUITest 多指注入。

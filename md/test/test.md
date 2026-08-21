@@ -602,3 +602,18 @@ Agent C 必须只验收最新 `origin/main` commit 对应的未加密 Actions ar
 - Production focus summary 继续表达建筑、T2、倍率和 MAX；生产 options、队列、Cancel/Repeat/Rally、`queueUnit`、Shift+1-9、VoiceOver value/hint、44pt、Core、存档和 Web 版不变。
 
 Agent C 人工查看最新 `ios-home.png`：Production focus 保留且首排 Scout/Light Tank 等入口不再被重复 Factory Tech 卡挤压或底部裁切；`ios-combat.png` 的摧毁碎片、单位模型、炮口、弹道、终点反馈、Quick Orders、Tactical Map 和状态栏无回退。静态 artifact 不能证明真实滚动、VoiceOver、Dynamic Type 全档位、键盘快捷键或真机手感。
+
+## v2.68 iOS touch candidate arbitration and Tactical Map drag threshold
+
+本轮修改 `BattlefieldView.swift` 与 `TacticalMapView.swift` 的输入 presentation 生命周期，并同步 README、flow、flowchart、update log 与版本提示词。继续执行云端唯一验证；本机不运行 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`。`.wp` 必须保持未跟踪，不得进入提交。
+
+Agent C 必须只验收最新 `origin/main` commit 对应的未加密 Actions artifact，核对 manifest 的 `branch=main`、完整 `commitSha`、run id、attempt、schema、Xcode 26.5、iOS Simulator SDK 26.5、iPhone 17 Pro；并核对 JUnit、Swift Core、Xcode list/build、双架构 iOS build、production/combat 双启动、横屏归一化和两份 PNG probe。
+
+代码复判必须确认：
+
+- `BattlefieldView.updateMultitouchSelection` 在 owner `.possible` 时先按当前 Spatial 事件的未取消 active touch 数量记录 sequence-bound candidate；同帧 fresh seed 后仍在 claim multitouch 前补记。candidate 只清理主战场 preview 与 Controller tap cache，不新增 Core/GameState/JSON/save 字段。
+- `onLongPressGesture` 与 `commitSingleTouchTap` 都拒绝当前 sequence 的 multitouch candidate；多指 classifier、`TouchSequenceOwner` 的 accepted/cancelled ID、third finger/replacement/cancel、finish 幂等和既有 Move/Attack/Attack-Move/selection 语义保持。必须明确 SwiftUI 尚无统一触摸 token，不能把该门控写成绝对解决旧/新触点不可区分窗口。
+- `TacticalMapView` 只把 camera drag activation 与 long-press maximum distance 统一到 18pt；callback generation、等待态不拖相机、普通点按居中、pending target 命中半径、长按上下文、`GameController`、Core、存档和 Web 版不变。
+- `CameraState.swift` 不应被无证据修改；`worldPoint` 与 `BattlefieldScene.syncCamera/spritePoint` 的屏幕↔世界映射继续保持可逆。
+
+Agent C 人工查看最新 `ios-home.png` 与 `ios-combat.png`：生产首屏、Quick Orders、单位模型、炮口、弹道、终点反馈、摧毁碎片、Tactical Map 和状态栏无静态回退；静态 artifact 不能证明真实双指/长按排序、触点 ID 复用、VoiceOver、Dynamic Type、滚动或真机手感。

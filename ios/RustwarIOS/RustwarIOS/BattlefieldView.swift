@@ -51,6 +51,7 @@ struct BattlefieldView: View {
     @State private var isMultitouchSelection = false
     @State private var isMultitouchPinch = false
     @State private var isMultitouchRejected = false
+    @State private var multitouchCandidateSequence: Int?
     @State private var multitouchSelectionStart: CGPoint?
     @State private var multitouchSelectionCurrent: CGPoint?
 
@@ -94,6 +95,7 @@ struct BattlefieldView: View {
                               touchOwner.accepts(contextLease),
                               touchOwner.phase == .possible,
                               !isMultitouchSequenceActive,
+                              !hasMultitouchCandidate(for: contextLease.sequence),
                               !isBattlefieldPanActive,
                               !battlefieldPanOccurredForCurrentTouch,
                               let contextPressLocation else {
@@ -297,6 +299,7 @@ struct BattlefieldView: View {
               !isMultitouchSequenceActive,
               !isBattlefieldPanActive,
               !battlefieldPanOccurredForCurrentTouch,
+              !hasMultitouchCandidate(for: lease.sequence),
               contextGestureSequenceMatches(lease),
               touchOwner.accepts(lease) else {
             return false
@@ -475,6 +478,7 @@ struct BattlefieldView: View {
     }
 
     private func updateMultitouchSelection(with events: SpatialEventCollection) {
+        markMultitouchCandidate(in: events)
         guard synchronizeTouchOwner(with: events, allowFreshSeed: true) else {
             return
         }
@@ -483,6 +487,10 @@ struct BattlefieldView: View {
         }
         let activeTouches = touchEvents.filter { $0.phase == .active }
         let sequence = touchOwner.sequence
+        if activeTouches.count >= 2,
+           touchOwner.phase == .possible {
+            multitouchCandidateSequence = sequence
+        }
         if activeTouches.count >= 2 || isMultitouchSequenceActive {
             clearBattlefieldTouchPreview(for: sequence)
             controller.clearLastBattlefieldTap()
@@ -617,6 +625,7 @@ struct BattlefieldView: View {
             isMultitouchRejected = true
             isMultitouchPinch = false
             isMultitouchSequenceActive = false
+            multitouchCandidateSequence = nil
             clearMultitouchSelectionPreview()
             clearBattlefieldTouchPreview(for: sequenceBeforeObservation)
             resetContextGestureState()
@@ -847,8 +856,30 @@ struct BattlefieldView: View {
         isMultitouchSelection = false
         isMultitouchPinch = false
         isMultitouchRejected = false
+        multitouchCandidateSequence = nil
         multitouchSelectionStart = nil
         multitouchSelectionCurrent = nil
+    }
+
+    private func markMultitouchCandidate(in events: SpatialEventCollection) {
+        guard touchOwner.phase == .possible else {
+            return
+        }
+        let activeTouchCount = events.filter {
+            $0.kind == .touch &&
+                $0.phase == .active &&
+                !touchOwner.cancelledIDs.contains($0.id)
+        }.count
+        guard activeTouchCount >= 2 else {
+            return
+        }
+        multitouchCandidateSequence = touchOwner.sequence
+        clearBattlefieldTouchPreview(for: touchOwner.sequence)
+        controller.clearLastBattlefieldTap()
+    }
+
+    private func hasMultitouchCandidate(for sequence: Int) -> Bool {
+        multitouchCandidateSequence == sequence
     }
 
     private func cancelSelectionGestures() {
