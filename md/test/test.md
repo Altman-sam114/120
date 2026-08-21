@@ -561,3 +561,44 @@ Agent C 必须只验收最新 `origin/main` SHA 对应的未加密 Actions artif
 - Builder-only hint 明确为普通 Move；combat/mixed hint 保留可见敌方直接 Attack、空地 Attack-Move 与 Quick Orders 说明。BattlefieldView、TacticalMapView、Core direct-touch、框选、生产、战斗、存档和 Web 版不变。
 
 Agent C 人工查看 `ios-home.png` 与 `ios-combat.png`：Home 的 Production、Factory Tech、可用/锁定卡片和既有 dock 无回退；Combat 的 Quick Orders rail 在选中 combat fixture 中可见，Move / Attack Move / Attack / Stop 无裁切、重叠或低于 44pt，战场模型、炮口、弹道、爆点、Tactical Map 和状态栏无回退。静态 artifact 不能证明真实触摸顺序、键盘焦点、VoiceOver、Dynamic Type 全档位、滚动或设备手感。
+
+## v2.65.1
+
+本轮只精修 `TacticalQuickCommandRail.swift` 的紧凑文字布局；继续执行云端唯一验证，不运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`。`.wp` 必须保持未跟踪，不得进入提交。
+
+Agent C 必须只验收最新 `origin/main` commit 对应的未加密 Actions artifact，并核对 manifest 的 `branch=main`、完整 `commitSha`、run id、attempt、schema、Xcode 26.5、iOS Simulator SDK 26.5、iPhone 17 Pro；JUnit `8/0/1`、Swift Core、Xcode list/build、双架构 iOS build、production/combat 双启动、横屏归一化和两份 PNG probe 全部成功。
+
+代码复判必须确认：
+
+- Quick Orders header 的文本在 compact trailing dock 保持完整单行，不依赖颜色表达语义，也不挤压分隔线导致省略。
+- Attack Move 的视觉短标签是单行 `A-Move`，不再断成三行；VoiceOver label/value/hint 仍完整表达 Attack Move、Ready/Waiting for target 和取消动作。
+- Move、Attack、Stop、pending Cancel 的既有 Controller action、A/S shortcut、44pt 触控、默认两列与 accessibility Dynamic Type 单列、滚动区 secondary controls 不变；不新增 Core/存档/输入状态。
+
+Agent C 人工查看最新 `ios-combat.png` 与 `ios-home.png`：Combat 的 Quick Orders 标题完整，`A-Move`、Move、Attack/Cancel、Stop 无裁切、重叠或低于 44pt；战场模型、炮口、弹道、爆点、Tactical Map、状态栏和 Home 生产首屏无回退。静态 artifact 不能证明真实点击、键盘焦点、VoiceOver、Dynamic Type 全档位、滚动或设备手感。
+
+## v2.66
+
+本轮只修改 `BattlefieldScene.swift` 的摧毁 presentation 与 combat visual smoke fixture；继续执行云端唯一验证，不运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`。`.wp` 必须保持未跟踪，不得进入提交。
+
+Agent C 必须只验收最新 `origin/main` commit 对应的未加密 Actions artifact，并核对 manifest 的 `branch=main`、完整 `commitSha`、run id、attempt、schema、Xcode 26.5、iOS Simulator SDK 26.5、iPhone 17 Pro；JUnit `8/0/1`、Swift Core、Xcode list/build、双架构 iOS build、production/combat 双启动、横屏归一化和两份 PNG probe 全部成功。
+
+代码复判必须确认：
+
+- 普通 `spawnDestructionEffect` 复用既有 `addImpactDebris`，保持 5 个确定性碎片和现有动态/Reduce Motion 行为；水面仍走 `spawnWaterImpactEffect`，不产生陆地碎片。
+- `isFrozen` 只用于静态 fixture presentation：火花、烟尘、碎片不运行移动/旋转/淡出，并通过 `addPersistentBoundedEffect` 受 64 root 上限管理；焦痕继续受 32 decal 上限管理。
+- combat visual smoke 不修改 `GameState` 或伪造死亡，只把现有空地点 impact 替换为一次冻结 destruction sample；真实消失实体、fog/visibility、Core、命令、生产、存档和 Web 版不变。
+
+Agent C 人工查看最新 `ios-combat.png` 与 `ios-home.png`：Combat 中静态摧毁爆炸的装甲碎片、焦痕、火焰/烟尘可辨，既有单位模型、炮口、弹道、终点反馈、Quick Orders、Tactical Map 和状态栏无回退；Home 生产首屏无回退。静态 artifact 不能证明真实死亡触发、动画时序、Reduce Motion、VoiceOver、触控或真机帧率。
+
+## v2.67
+
+本轮只修改 `TacticalProductionSectionView.swift` 的 compact presentation 条件；继续执行云端唯一验证，不运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`。`.wp` 必须保持未跟踪，不得进入提交。
+
+Agent C 必须只验收最新 `origin/main` commit 对应的未加密 Actions artifact，并核对 manifest 的 `branch=main`、完整 `commitSha`、run id、attempt、schema、Xcode 26.5、iOS Simulator SDK 26.5、iPhone 17 Pro；JUnit `8/0/1`、Swift Core、Xcode list/build、双架构 iOS build、production/combat 双启动、横屏归一化和两份 PNG probe 全部成功。
+
+代码复判必须确认：
+
+- 只有 `columns == 1`、非 accessibility Dynamic Type、Factory Tech 已达 MAX 且无 upgrade control/progress 时隐藏重复卡；T1、T2 READY、升级中、regular 和 accessibility 路径仍显示完整 Factory Tech。
+- Production focus summary 继续表达建筑、T2、倍率和 MAX；生产 options、队列、Cancel/Repeat/Rally、`queueUnit`、Shift+1-9、VoiceOver value/hint、44pt、Core、存档和 Web 版不变。
+
+Agent C 人工查看最新 `ios-home.png`：Production focus 保留且首排 Scout/Light Tank 等入口不再被重复 Factory Tech 卡挤压或底部裁切；`ios-combat.png` 的摧毁碎片、单位模型、炮口、弹道、终点反馈、Quick Orders、Tactical Map 和状态栏无回退。静态 artifact 不能证明真实滚动、VoiceOver、Dynamic Type 全档位、键盘快捷键或真机手感。

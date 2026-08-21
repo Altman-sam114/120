@@ -6213,3 +6213,87 @@
 已知风险：
 
 - 固定 rail 会增加选中单位时 dock header 高度；静态 PNG 不能证明真实点击、键盘焦点、VoiceOver、Dynamic Type 全档位、滚动、双指/长按顺序或真机手感。下一轮候选仍是摧毁爆炸的装甲碎片和残骸余烬视觉。
+
+## v2.65.1 / Quick Command Rail readability
+
+日期：2026-08-20
+
+核心变更：
+
+- 最新 v2.65 combat PNG 暴露出 `Quick Orders` header 截断和 `Attack Move` 被拆成三行的问题；本轮让 header 使用单行 intrinsic label，并将 Attack Move 的紧凑视觉标签改为 `A-Move`。
+- `TacticalQuickCommandRail` 对视觉文字与 accessibility 文字分离：VoiceOver 继续朗读完整 `Attack Move`、Ready/Waiting for target 和取消 hint；Move、Attack、Stop、A/S shortcut、44pt、Dynamic Type 和既有 Controller action 保持。
+- 只改 iOS HUD presentation；Battlefield/Tactical Map 输入、Core、命令语义、生产、战斗、存档/JSON 和 Web 版不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalQuickCommandRail.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.65.1-quick-command-rail-readability.md`
+
+验证状态：
+
+- 本轮按云端唯一验证制度不运行本地测试、Swift/Xcode build、Simulator、Preview、浏览器、截图或 `git diff --check`；只做只读源码与 Git 范围复核。
+- 提交并 push 后只认最新 `origin/main` SHA 对应的 Actions artifact；Agent C 必须下载并核对 manifest、JUnit、双架构 build、production/combat 启动和两份 PNG，人工确认 Quick Orders 标题与 `A-Move` 无裁切。
+
+已知风险：
+
+- 静态 artifact 不能证明真实按钮点击、键盘焦点、VoiceOver 执行、Dynamic Type 全档位、滚动或真机手感；如果后续战场视觉继续迭代，摧毁爆炸装甲碎片仍是高收益候选。
+
+## v2.66 / Destruction armor debris presentation
+
+日期：2026-08-20
+
+核心变更：
+
+- `BattlefieldScene.spawnDestructionEffect` 复用既有 `addImpactDebris`，普通摧毁增加 5 个确定性装甲碎片；碎片继续受 Reduce Motion、effect root 和生命周期管理。
+- 冻结 combat visual smoke 不修改 Core 状态，只把原有空地点 impact 替换为一次 `isFrozen` destruction presentation；固定火焰、火花、烟尘、碎片和焦痕便于云端 PNG 复查。
+- 水面/陆地分流、64 effect / 32 decal 上限、真实实体消失触发、fog/visibility、Battlefield 输入、命令、生产、战斗数值、存档/JSON 和 Web 版不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.66-destruction-armor-debris.md`
+
+验证状态：
+
+- 本轮按云端唯一验证制度不运行本地测试、Swift/Xcode build、Simulator、Preview、浏览器、截图或 `git diff --check`；只做只读源码与 Git 范围复核。
+- 由于当前环境仍无法创建 `.git/index.lock`，本轮尚未提交或 push；恢复 Git 写权限后只认最新 `origin/main` SHA 对应 Actions artifact，并由 Agent C 核对 manifest、JUnit、双架构 build、双场景启动和 PNG。
+
+已知风险：
+
+- 静态 fixture 能证明碎片构图和层级，但不能证明真实实体消失、动画时序、Reduce Motion 或真机性能；下一轮仍可继续精修残骸余烬和装甲分层。
+
+## v2.67 / Compact production first-screen UX
+
+日期：2026-08-20
+
+核心变更：
+
+- `TacticalProductionSectionView` 在 compact、非 accessibility Dynamic Type、工厂 T2 MAX 且无升级动作/进度时隐藏重复 Factory Tech 卡；Production focus summary 继续保留 T2、倍率和 MAX。
+- T1、T2 READY、升级中、regular layout 和 accessibility layout 继续显示 Factory Tech；生产 options、队列、升级、Cancel/Repeat/Rally、Shift+1-9、VoiceOver、44pt、Core、存档和 Web 版不变。
+- 该 presentation 收缩释放首屏纵向空间，让首排生产入口更接近 Rusted Warfare 风格的即时生产入口。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.67-compact-production-first-screen.md`
+
+验证状态：
+
+- 本轮按云端唯一验证制度不运行本地测试、Swift/Xcode build、Simulator、Preview、浏览器、截图或 `git diff --check`；只做只读源码与 Git 范围复核。
+- 当前环境仍无法创建 `.git/index.lock`，因此 v2.65.1/v2.66/v2.67 尚未提交或 push；恢复 Git 写权限后必须以最新 `origin/main` 对应 Actions artifact 验收三轮合并前的完整 diff。
+
+已知风险：
+
+- 静态 Home PNG 能检查首屏构图，但不能证明真实滚动、VoiceOver、Dynamic Type 全档位、快捷键或真机点击手感；若未来 MAX 状态新增可执行工厂动作，应重新审查隐藏条件。

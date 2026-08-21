@@ -1312,3 +1312,53 @@ flowchart TD
 ```
 
 读图说明：v2.65 只改变 command dock 的可达性和重复渲染，不改变命令 owner 或 Core 语义。固定 rail 让选中单位后无需滚动即可进入 Move、Attack Move、Attack、Stop；实际落点、敌方可见性、混合 Builder 分流、双指框选和长按仍由原有 Battlefield/Controller 路径处理。静态 PNG 能检查 rail 的构图与无裁切，不能证明真实点击、键盘焦点、VoiceOver、Dynamic Type 全档位或真机手感。
+
+## v2.65.1 iOS Quick Command Rail readability
+
+```mermaid
+flowchart LR
+  HEADER[Quick Orders header] -->|intrinsic single line| TITLE[完整可读标题]
+  AM[Attack Move command] -->|compact visual| SHORT[A-Move 单行]
+  AM -->|accessibility label/value| SPOKEN[完整 Attack Move + Ready/Waiting]
+  SHORT --> ACTION[既有 toggleAttackMoveCommand]
+  SPOKEN --> ACTION
+  TITLE --> RAIL[固定 rail]
+  RAIL --> SIZE[继续 44pt / Dynamic Type 单列 fallback]
+```
+
+读图说明：v2.65.1 只修正 rail 的 label layout，不改变命令 owner。`A-Move` 是紧凑视觉文字，VoiceOver 仍使用完整命令名称；等待态仍由既有 Controller title 与 pending 状态提供 Cancel 语义。静态 artifact 能检查标题和按钮是否裁切，不能证明真实 VoiceOver、键盘焦点或设备触控手感。
+
+## v2.66 iOS destruction armor debris presentation
+
+```mermaid
+flowchart TD
+  LOST[可见实体从快照消失] --> DEST[spawnDestructionEffect]
+  DEST --> LAND[陆地火焰 / 核心 / 冲击波]
+  DEST --> DEBRIS[既有 addImpactDebris：5 个装甲碎片]
+  DEST --> SMOKE[火花 / 烟尘 / 焦痕]
+  DEST --> LIMIT[既有 64 effect / 32 decal 上限]
+  FIXTURE[冻结 combat smoke 空地点] --> FROZEN[isFrozen destruction presentation]
+  FROZEN --> STATIC[固定碎片 / 烟尘 / 焦痕]
+  FROZEN --> PERSIST[addPersistentBoundedEffect]
+  FROZEN -.不改 Core 死亡状态.-> STATE[GameState 保持不变]
+  WATER[水面地形] --> SPLASH[既有 water impact 分流]
+```
+
+读图说明：v2.66 只丰富 SpriteKit 的摧毁视觉层；真实摧毁仍由既有快照消失路径触发，冻结 fixture 仅提供可复查的静态样本。静态 artifact 能检查碎片构图、层级和上限路径，不能证明真实动画时序、Reduce Motion 或真机性能。
+
+## v2.67 iOS compact production first-screen UX
+
+```mermaid
+flowchart TD
+  PRODUCER[选中生产建筑] --> SUMMARY[Production focus: T2 / speed / MAX]
+  PRODUCER --> TECH{compact + non-accessibility?}
+  TECH -->|no| SHOW[显示完整 Factory Tech]
+  TECH -->|yes| STATE{MAX 且无 upgrade control/progress?}
+  STATE -->|yes| HIDE[隐藏重复 Factory Tech presentation]
+  STATE -->|no| SHOW
+  SUMMARY --> CARDS[首排生产入口更早可见]
+  HIDE --> CARDS
+  SHOW --> ACTIONS[既有升级 / 队列 / VoiceOver / 44pt]
+```
+
+读图说明：v2.67 只根据 presentation 状态收起重复 MAX 卡，不改变任何生产 action 或 Core 状态；可执行升级或辅助功能布局始终保留 Factory Tech。

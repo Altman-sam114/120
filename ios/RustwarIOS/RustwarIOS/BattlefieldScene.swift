@@ -1957,13 +1957,18 @@ final class BattlefieldScene: SKScene {
         return burst
     }
 
-    private func spawnDestructionEffect(at position: WorldPoint, intensity: Double, accent: SKColor) {
+    private func spawnDestructionEffect(
+        at position: WorldPoint,
+        intensity: Double,
+        accent: SKColor,
+        isFrozen: Bool = false
+    ) {
         if isWaterImpact(at: position) {
-            spawnWaterImpactEffect(at: position, intensity: intensity * 1.18, isFrozen: false)
+            spawnWaterImpactEffect(at: position, intensity: intensity * 1.18, isFrozen: isFrozen)
             return
         }
 
-        addScorchMark(at: position, radius: 12 * intensity)
+        addScorchMark(at: position, radius: 12 * intensity, isFrozen: isFrozen)
 
         let container = SKNode()
         container.position = spritePoint(for: position)
@@ -1986,8 +1991,24 @@ final class BattlefieldScene: SKScene {
         shockwave.lineWidth = 2.6
         container.addChild(shockwave)
 
-        addImpactSparks(intensity: intensity * 1.45, color: accent, to: container)
-        addSmokePuffs(intensity: intensity * 1.35, count: 4, to: container)
+        addImpactSparks(
+            intensity: intensity * 1.45,
+            color: accent,
+            to: container,
+            isFrozen: isFrozen
+        )
+        addSmokePuffs(
+            intensity: intensity * 1.35,
+            count: 4,
+            to: container,
+            isFrozen: isFrozen
+        )
+        addImpactDebris(intensity: intensity * 1.12, to: container, isFrozen: isFrozen)
+
+        if isFrozen {
+            addPersistentBoundedEffect(container)
+            return
+        }
 
         if accessibilityReduceMotion {
             outerFire.run(.fadeOut(withDuration: 0.22))
@@ -2260,7 +2281,12 @@ final class BattlefieldScene: SKScene {
                 isFrozen: true
             )
         }
-        spawnImpactEffect(at: WorldPoint(1_960, 1_570), intensity: 1.18, isFrozen: true)
+        spawnDestructionEffect(
+            at: WorldPoint(1_960, 1_570),
+            intensity: 1.18,
+            accent: .systemOrange,
+            isFrozen: true
+        )
         addScorchMark(at: WorldPoint(1_990, 1_525), radius: 15.5, isFrozen: true)
     }
 

@@ -12,9 +12,17 @@ struct TacticalQuickCommandRail: View {
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             HStack(spacing: TacticalHUDTheme.compactSpacing) {
-                Label("Quick Orders", systemImage: "bolt.horizontal.circle")
+                Label {
+                    Text("Quick Orders")
+                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "bolt.horizontal.circle")
+                        .accessibilityHidden(true)
+                }
                     .font(.caption.bold())
                     .foregroundStyle(TacticalHUDTheme.metricLabel)
+                    .layoutPriority(1)
                 Rectangle()
                     .fill(TacticalHUDTheme.accent.opacity(0.55))
                     .frame(height: 1)
@@ -27,7 +35,8 @@ struct TacticalQuickCommandRail: View {
                 if controller.canIssueMove || controller.isAwaitingMoveTarget {
                     quickButton(
                         command: "Move",
-                        title: controller.moveCommandButtonTitle,
+                        displayTitle: controller.moveCommandButtonTitle,
+                        isAwaitingTarget: controller.isAwaitingMoveTarget,
                         systemImage: controller.isAwaitingMoveTarget ? "xmark.circle" : "arrow.up.right",
                         action: controller.toggleMoveCommand,
                         hint: "Choose a destination on the battlefield."
@@ -36,7 +45,10 @@ struct TacticalQuickCommandRail: View {
                 if controller.canIssueAttackMove || controller.isAwaitingAttackMoveTarget {
                     quickButton(
                         command: "Attack Move",
-                        title: controller.attackMoveCommandButtonTitle,
+                        displayTitle: controller.isAwaitingAttackMoveTarget
+                            ? controller.attackMoveCommandButtonTitle
+                            : "A-Move",
+                        isAwaitingTarget: controller.isAwaitingAttackMoveTarget,
                         systemImage: controller.isAwaitingAttackMoveTarget ? "xmark.circle" : "arrow.up.right.circle",
                         action: controller.toggleAttackMoveCommand,
                         shortcut: "a",
@@ -46,7 +58,8 @@ struct TacticalQuickCommandRail: View {
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                     quickButton(
                         command: "Attack",
-                        title: controller.attackCommandButtonTitle,
+                        displayTitle: controller.attackCommandButtonTitle,
+                        isAwaitingTarget: controller.isAwaitingAttackTarget,
                         systemImage: controller.isAwaitingAttackTarget ? "xmark.circle" : "scope",
                         action: controller.toggleAttackCommand,
                         hint: "Choose a visible enemy unit or building."
@@ -55,7 +68,8 @@ struct TacticalQuickCommandRail: View {
                 if controller.canIssueStop || controller.isAwaitingTargetCommand {
                     quickButton(
                         command: "Stop",
-                        title: "Stop",
+                        displayTitle: "Stop",
+                        isAwaitingTarget: false,
                         systemImage: "stop.fill",
                         action: controller.issueStopCommand,
                         shortcut: "s",
@@ -77,17 +91,29 @@ struct TacticalQuickCommandRail: View {
     @ViewBuilder
     private func quickButton(
         command: String,
-        title: String,
+        displayTitle: String,
+        isAwaitingTarget: Bool,
         systemImage: String,
         action: @escaping () -> Void,
         shortcut: String? = nil,
         hint: String
     ) -> some View {
-        let button = Button(title, systemImage: systemImage, action: action)
+        let button = Button(action: action) {
+            Label {
+                Text(displayTitle)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .minimumScaleFactor(0.78)
+                    .allowsTightening(true)
+            } icon: {
+                Image(systemName: systemImage)
+                    .accessibilityHidden(true)
+            }
+        }
             .tacticalControl()
-            .accessibilityLabel(title == command ? command : "Cancel \(command) target")
-            .accessibilityValue(title == command ? "Ready" : "Waiting for \(command) target")
-            .accessibilityHint(title == command ? hint : "Cancels \(command) target selection.")
+            .accessibilityLabel(isAwaitingTarget ? "Cancel \(command) target" : command)
+            .accessibilityValue(isAwaitingTarget ? "Waiting for \(command) target" : "Ready")
+            .accessibilityHint(isAwaitingTarget ? "Cancels \(command) target selection." : hint)
 
         if let shortcut {
             button.keyboardShortcut(KeyEquivalent(Character(shortcut)), modifiers: [])

@@ -843,3 +843,21 @@ TacticalProductionSectionView 保留全部 tech 合法生产项、原有数组�
 Quick rail 出现时，`TacticalCommandsSectionView` 隐藏滚动区内重复的 primary Move / Attack Move / Attack / Stop，只保留 Patrol、Guard、攻击姿态、Repair、Reclaim、Select Area 和 Same Type 等 secondary controls。等待 Move / Attack / Attack-Move / Attack target 时，固定按钮继续显示 Cancel；Attack Move 使用既有 `A` 快捷键，Stop 使用既有 `S` 快捷键，避免滚动后丢失桌面/外接键盘入口。
 
 默认 Dynamic Type 使用两列，accessibility Dynamic Type 自动切为单列；按钮继续消费 `tacticalControl()` 的最小 44pt 高度，并提供 Quick Orders header、Ready/Waiting value、取消 hint 和动作说明。`GameController.battlefieldInteractionHintDetail` 对 Builder-only 明确提示普通 Move，对 combat/mixed selection 提示空地 Attack-Move、可见敌方 Attack 和固定 Quick Orders 入口。BattlefieldView、TacticalMapView、TouchSequenceOwner、Core、命中、框选、生产、战斗、AI、存档/JSON 和 Web 版不变。
+
+## v2.65.1 iOS Quick Command Rail readability
+
+最新 combat 静态构图显示 compact rail 的两个 presentation 问题：`Quick Orders` header 可能因标题与分隔线的竞争布局被截断，完整 `Attack Move` 在两列按钮中可能错误断成三行。v2.65.1 让 header 文本保持单行 intrinsic width，并把 Attack Move 的视觉短标签收敛为 `A-Move`；按钮的 accessibility label 仍使用完整 `Attack Move`，value 继续表达 Ready 或 Waiting for Attack Move target，pending 时仍显示 Cancel。
+
+这一轮只改变 Quick Orders rail 的 SwiftUI label composition，不改变 `GameController` action、pending target、A/S shortcut、`tacticalControl()` 的 44pt 最小高度、accessibility Dynamic Type 单列、secondary command、Battlefield/Tactical Map 输入、Core、生产、战斗、存档或 Web 版。
+
+## v2.66 iOS destruction armor debris presentation
+
+`BattlefieldScene.spawnDestructionEffect` 现在沿用命中效果已有的 `addImpactDebris`，在陆地摧毁中加入 5 个确定性装甲碎片；普通路径保持碎片移动、旋转和淡出，`accessibilityReduceMotion` 仍让碎片数量为 0。火焰、核心、冲击波、火花、烟尘和焦痕继续位于既有 SpriteKit effect/decal 容器中。
+
+冻结 combat visual smoke 不伪造 Core 死亡，只在现有静态视觉探针的空地点把一枚普通 impact 替换为 `spawnDestructionEffect(..., isFrozen: true)`。冻结路径把火花、烟尘和碎片放在固定位置并交给 `addPersistentBoundedEffect`，水面分流、fog/visibility、64 effect / 32 decal 上限、真实消失实体触发、Battlefield 输入、Core、命令、生产、存档和 Web 版不变。
+
+## v2.67 iOS compact production first-screen UX
+
+`TacticalProductionSectionView` 新增 `shouldShowFactoryTech` presentation 条件。compact 且非 accessibility Dynamic Type 时，如果选中工厂已达 MAX、没有升级 progress、也没有可执行升级 control，Factory Tech 卡不再与 Production focus summary 重复渲染；summary 仍保留 T2、生产倍率和 MAX 信息。T1、T2 READY、升级中、regular layout 和 accessibility layout 继续显示完整 Factory Tech。
+
+生产 options、队列、`queueUnit`、Cancel/Repeat/Rally、Shift+1-9、VoiceOver、44pt、GameController/Core、存档和 Web 版不变；这只是释放 compact 首屏纵向空间，让首排生产入口更早可见。

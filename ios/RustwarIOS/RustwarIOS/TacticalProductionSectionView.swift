@@ -184,7 +184,7 @@ struct TacticalProductionSectionView: View {
                     isCompact: columns == 1
                 )
             }
-            if controller.showsSelectedFactoryTech {
+            if shouldShowFactoryTech {
                 TacticalFactoryTechView(controller: controller, isCompact: columns == 1)
             }
             if !controller.productionOptions.isEmpty {
@@ -285,6 +285,17 @@ struct TacticalProductionSectionView: View {
             return nil
         }
         return KeyEquivalent(Character(String(index + 1)))
+    }
+
+    private var shouldShowFactoryTech: Bool {
+        guard controller.showsSelectedFactoryTech else {
+            return false
+        }
+        guard columns == 1, !dynamicTypeSize.isAccessibilitySize else {
+            return true
+        }
+        return controller.showsSelectedFactoryUpgradeControl ||
+            controller.selectedFactoryUpgradeProgress != nil
     }
 
     private func commandKey(_ value: String) -> KeyEquivalent {

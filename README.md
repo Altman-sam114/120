@@ -1,5 +1,11 @@
 # Rustwar RTS Prototype
 
+v2.67：compact 横屏生产建筑在 T2 MAX 且无可执行升级时收起重复 Factory Tech 卡，保留 Production focus 的 T2/倍率/MAX 摘要，让首排生产入口更早可见；T1、T2 READY、升级中、regular/accessibility layout、生产 action、快捷键、VoiceOver、Core、存档和 Web 版不变，等待最新 Actions artifact 验收。
+
+v2.66：原生 iOS 摧毁爆炸复用确定性装甲碎片，冻结 combat visual smoke 增加静态摧毁样本；陆地火焰、烟尘、焦痕与水面分流、Reduce Motion、64 effect/32 decal 上限保持。只改 SpriteKit presentation，不改 Core、伤害/死亡、命令、生产、存档和 Web 版；等待最新 origin/main 对应 Actions artifact 验收。
+
+v2.65.1：精修原生 iOS Quick Orders rail 的紧凑可读性；`Quick Orders` header 保持完整单行，Attack Move 在窄两列显示为不拆词的 `A-Move`，VoiceOver 仍朗读完整 Attack Move、Ready/Waiting 和取消语义。Move、Attack、Stop、A/S 快捷键、44pt、Dynamic Type、secondary commands、Core、输入、生产、战斗、存档和 Web 版不变；等待最新 origin/main 对应 Actions artifact 验收。
+
 v2.65：原生 iOS 选中己方单位后，command dock 固定显示 Quick Orders 操作栏；Move、Attack Move、Attack、Stop 可直接触达，Attack Move / Stop 保留快捷键，当前等待态显示 Cancel。滚动区不再重复 primary commands，Patrol、Guard、姿态、Repair、Reclaim、框选和同类选择仍保留；Builder-only 提示改为普通 Move，combat 继续支持空地点 Attack-Move 和可见敌方直接 Attack。Core、命中、框选、生产、战斗、存档和 Web 版不变。
 
 v2.64：原生 iOS Tactical Map 的 DragGesture `onChanged` / `onEnded` 现在都受当前 callback generation 保护；迟到旧回调会被丢弃，不会清理新触摸、移动相机、误提交等待目标或串发普通点按。当前合法手势仍保持点按居中、拖动相机、长按上下文和 pending 命令语义；Core、生产、战斗、存档、JSON、Web 版和主战场输入不变。实现 commit `41bfbaee80407aa16c11a8425472bc30785482dc`；对应 Actions run `32311763452` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-41bfbae-run32311763452-attempt1` 已由 Agent C 下载并核对通过。
