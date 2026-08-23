@@ -1461,3 +1461,29 @@ flowchart TD
 ```
 
 读图说明：v2.71 只让有 accepted-ended 证据的未 claim 单指 owner 在下一枚新 ID 到达时安全让位；active owner、claimed owner、旧 ID、第二指 candidate、第三指/cancel/reset、命令和渲染路径保持。修复 commit `9764803` 对应 run `32632121613` 的 Core 341 tests、artifact、源码合同和双 PNG 已由 Agent C 复判通过；固定云端 smoke 不注入并行 gesture callback 顺序，不能扩大为真实设备回调已完全验证。
+
+## v2.72 iOS weapon-specific combat profiles and tracked grounding
+
+```mermaid
+flowchart TD
+  FIRE[Core cooldown jump + visible target] --> PROFILE[Unit weapon presentation parameters]
+  PROFILE --> TANK[Tank: short amber tracer]
+  PROFILE --> HEAVY[Heavy: wide hot shell + heavy terminal]
+  PROFILE --> AA[AA: dual origin + dual offset target]
+  PROFILE --> ARTY[Artillery ballistic helper]
+  AA --> VOLLEY[parallel tracers + one centered volley terminal]
+  ARTY --> GROUND[linear ground shadow]
+  ARTY --> ARC[sin progress shell lift]
+  ARTY --> SMOKE[deterministic smoke pearls]
+  TANK --> ROOT[existing bounded effect root]
+  HEAVY --> ROOT
+  VOLLEY --> ROOT
+  GROUND --> ROOT
+  ARC --> ROOT
+  SMOKE --> ROOT
+  HULL[trackedHullLength] --> TRACKS[model tracks]
+  HULL --> SHADOW[one compound grounding shape]
+  SHADOW --> ROTATE[rotate with hull heading, not turret]
+```
+
+读图说明：v2.72 只扩展 `BattlefieldScene` 的 presentation。AA 仍对应一次 Core damage，Artillery 地面投影与抬升炮弹共享同一目标和 bounded root；tracked grounding 与模型共用长度并跟随 hull。Reduce Motion 的实时路径不执行 projectile/arc motion，Core、命令、生产、触控、存档和 Web 版不变。静态 artifact 不能证明动态时序或真机性能。

@@ -1186,13 +1186,17 @@ final class BattlefieldScene: SKScene {
 
     private func unitMuzzleDistance(for type: UnitType, radius: Double) -> Double {
         switch type {
+        case .tank:
+            radius * 1.02
         case .heavyTank:
             radius * 1.44
+        case .aaTank:
+            radius * 1.08
         case .artillery:
-            radius * 1.22
+            radius * 1.27
         case .gunboat:
-            radius * 1.04
-        default:
+            radius * 1.07
+        case .builder, .scout, .hover:
             radius * 0.9
         }
     }
@@ -1272,6 +1276,9 @@ final class BattlefieldScene: SKScene {
         let trailLength: Double
         let beamWidth: Double
         let travelSpeed: Double
+        let arcHeight: Double
+        let smokePearlCount: Int
+        let terminalScale: Double
         switch type {
         case .builder:
             color = .systemMint
@@ -1281,6 +1288,9 @@ final class BattlefieldScene: SKScene {
             trailLength = 6
             beamWidth = 0
             travelSpeed = 940
+            arcHeight = 0
+            smokePearlCount = 0
+            terminalScale = 0.82
         case .scout:
             color = .systemYellow
             projectileRadius = 1.8
@@ -1289,22 +1299,31 @@ final class BattlefieldScene: SKScene {
             trailLength = 9
             beamWidth = 0
             travelSpeed = 1_180
+            arcHeight = 0
+            smokePearlCount = 0
+            terminalScale = 0.78
         case .tank:
             color = .systemOrange
-            projectileRadius = 2.7
+            projectileRadius = 2.5
             flashRadius = 4.8
             shotCount = 1
-            trailLength = 10
+            trailLength = 8
             beamWidth = 0
-            travelSpeed = 860
+            travelSpeed = 960
+            arcHeight = 0
+            smokePearlCount = 0
+            terminalScale = 0.92
         case .heavyTank:
             color = SKColor(red: 1, green: 0.68, blue: 0.24, alpha: 1)
-            projectileRadius = 4.4
-            flashRadius = 7.2
+            projectileRadius = 4.6
+            flashRadius = 7.6
             shotCount = 1
-            trailLength = 16
+            trailLength = 17
             beamWidth = 0
-            travelSpeed = 690
+            travelSpeed = 650
+            arcHeight = 0
+            smokePearlCount = 0
+            terminalScale = 1.3
         case .hover:
             color = .systemCyan
             projectileRadius = 2.2
@@ -1313,6 +1332,9 @@ final class BattlefieldScene: SKScene {
             trailLength = 0
             beamWidth = 2.5
             travelSpeed = 0
+            arcHeight = 0
+            smokePearlCount = 0
+            terminalScale = 1
         case .aaTank:
             color = SKColor(red: 1, green: 0.84, blue: 0.38, alpha: 1)
             projectileRadius = 1.6
@@ -1321,14 +1343,20 @@ final class BattlefieldScene: SKScene {
             trailLength = 11
             beamWidth = 0
             travelSpeed = 1_280
+            arcHeight = 0
+            smokePearlCount = 0
+            terminalScale = 0.72
         case .artillery:
             color = SKColor(red: 1, green: 0.55, blue: 0.22, alpha: 1)
             projectileRadius = 3.8
             flashRadius = 6.2
             shotCount = 1
-            trailLength = 14
+            trailLength = 10
             beamWidth = 0
-            travelSpeed = 620
+            travelSpeed = 590
+            arcHeight = Swift.max(28, radius * 2.35)
+            smokePearlCount = 4
+            terminalScale = 1.18
         case .gunboat:
             color = SKColor(red: 0.45, green: 0.9, blue: 1, alpha: 1)
             projectileRadius = 2.9
@@ -1337,6 +1365,9 @@ final class BattlefieldScene: SKScene {
             trailLength = 11
             beamWidth = 0
             travelSpeed = 780
+            arcHeight = 0
+            smokePearlCount = 0
+            terminalScale = 1.05
         }
         spawnFireEffect(
             from: source,
@@ -1354,6 +1385,9 @@ final class BattlefieldScene: SKScene {
             trailLength: trailLength,
             beamWidth: beamWidth,
             travelSpeed: travelSpeed,
+            arcHeight: arcHeight,
+            smokePearlCount: smokePearlCount,
+            terminalScale: terminalScale,
             isFrozen: isFrozen
         )
     }
@@ -1380,6 +1414,9 @@ final class BattlefieldScene: SKScene {
             trailLength: 14,
             beamWidth: 0,
             travelSpeed: 820,
+            arcHeight: 0,
+            smokePearlCount: 0,
+            terminalScale: 1.08,
             isFrozen: isFrozen
         )
     }
@@ -1397,6 +1434,9 @@ final class BattlefieldScene: SKScene {
         trailLength: Double,
         beamWidth: Double,
         travelSpeed: Double,
+        arcHeight: Double,
+        smokePearlCount: Int,
+        terminalScale: Double,
         isFrozen: Bool = false
     ) {
         let container = SKNode()
@@ -1408,6 +1448,7 @@ final class BattlefieldScene: SKScene {
             x: sourcePoint.x + direction.dx * muzzleDistance,
             y: sourcePoint.y + direction.dy * muzzleDistance
         )
+        let volleyTargetPoint = target.map { spritePoint(for: $0) }
 
         for shot in 0..<shotCount {
             let lateralOffset = shotCount == 1 ? 0 : (shot == 0 ? -3.2 : 3.2)
@@ -1462,10 +1503,13 @@ final class BattlefieldScene: SKScene {
                 }
             }
 
-            guard let target else {
+            guard let rawTargetPoint = volleyTargetPoint else {
                 continue
             }
-            let targetPoint = spritePoint(for: target)
+            let targetPoint = CGPoint(
+                x: rawTargetPoint.x + normal.dx * lateralOffset,
+                y: rawTargetPoint.y + normal.dy * lateralOffset
+            )
             if beamWidth > 0 {
                 guard isFrozen || !accessibilityReduceMotion else {
                     continue
@@ -1480,13 +1524,31 @@ final class BattlefieldScene: SKScene {
                 )
             } else if accessibilityReduceMotion && !isFrozen {
                 schedulesProjectileTerminal = true
-                addProjectileTerminalFlash(
-                    at: targetPoint,
+                if shotCount == 1 {
+                    addProjectileTerminalFlash(
+                        at: targetPoint,
+                        color: color,
+                        teamAccent: teamAccent,
+                        radius: projectileRadius * terminalScale,
+                        travelDuration: 0,
+                        isFrozen: false,
+                        to: container
+                    )
+                }
+            } else if arcHeight > 0 {
+                schedulesProjectileTerminal = true
+                addBallisticProjectileEffect(
+                    from: origin,
+                    to: targetPoint,
                     color: color,
                     teamAccent: teamAccent,
                     radius: projectileRadius,
-                    travelDuration: 0,
-                    isFrozen: false,
+                    trailLength: trailLength,
+                    travelSpeed: travelSpeed,
+                    arcHeight: arcHeight,
+                    smokePearlCount: smokePearlCount,
+                    terminalScale: terminalScale,
+                    isFrozen: isFrozen,
                     to: container
                 )
             } else {
@@ -1499,10 +1561,30 @@ final class BattlefieldScene: SKScene {
                     radius: projectileRadius,
                     trailLength: trailLength,
                     travelSpeed: travelSpeed,
+                    terminalScale: terminalScale,
+                    showsTerminal: shotCount == 1,
                     isFrozen: isFrozen,
                     to: container
                 )
             }
+        }
+        if shotCount > 1,
+           beamWidth == 0,
+           let volleyTargetPoint {
+            schedulesProjectileTerminal = true
+            let distance = hypot(volleyTargetPoint.x - muzzle.x, volleyTargetPoint.y - muzzle.y)
+            let travelDuration = accessibilityReduceMotion
+                ? 0
+                : Swift.min(0.42, Swift.max(0.08, distance / travelSpeed))
+            addProjectileTerminalFlash(
+                at: volleyTargetPoint,
+                color: color,
+                teamAccent: teamAccent,
+                radius: projectileRadius * terminalScale,
+                travelDuration: travelDuration,
+                isFrozen: isFrozen,
+                to: container
+            )
         }
         if isFrozen {
             addPersistentBoundedEffect(container)
@@ -1523,6 +1605,8 @@ final class BattlefieldScene: SKScene {
         radius: Double,
         trailLength: Double,
         travelSpeed: Double,
+        terminalScale: Double,
+        showsTerminal: Bool,
         isFrozen: Bool = false,
         to container: SKNode
     ) {
@@ -1530,12 +1614,153 @@ final class BattlefieldScene: SKScene {
         let dy = target.y - origin.y
         let distance = sqrt(dx * dx + dy * dy)
         let duration = Swift.min(0.42, Swift.max(0.08, distance / travelSpeed))
-        let projectile = SKNode()
+        let projectile = projectileNode(color: color, radius: radius, trailLength: trailLength)
         projectile.position = isFrozen
             ? CGPoint(x: origin.x + dx * 0.58, y: origin.y + dy * 0.58)
             : origin
         projectile.zRotation = atan2(dy, dx)
+        container.addChild(projectile)
+        if showsTerminal {
+            addProjectileTerminalFlash(
+                at: target,
+                color: color,
+                teamAccent: teamAccent,
+                radius: radius * terminalScale,
+                travelDuration: duration,
+                isFrozen: isFrozen,
+                to: container
+            )
+        }
+        if !isFrozen {
+            projectile.run(.group([
+                .move(to: target, duration: duration),
+                .sequence([.wait(forDuration: duration * 0.76), .fadeOut(withDuration: duration * 0.24)])
+            ]))
+        }
+    }
 
+    private func addBallisticProjectileEffect(
+        from origin: CGPoint,
+        to target: CGPoint,
+        color: SKColor,
+        teamAccent: SKColor,
+        radius: Double,
+        trailLength: Double,
+        travelSpeed: Double,
+        arcHeight: Double,
+        smokePearlCount: Int,
+        terminalScale: Double,
+        isFrozen: Bool,
+        to container: SKNode
+    ) {
+        let dx = target.x - origin.x
+        let dy = target.y - origin.y
+        let distance = hypot(dx, dy)
+        let duration = Swift.min(0.42, Swift.max(0.16, distance / travelSpeed))
+        let frozenProgress = 0.58
+        let projectile = projectileNode(color: color, radius: radius, trailLength: trailLength)
+        projectile.zRotation = atan2(dy, dx)
+        projectile.zPosition = 1
+
+        let shadow = ellipseNode(
+            CGRect(
+                x: -radius * 1.45,
+                y: -radius * 0.58,
+                width: radius * 2.9,
+                height: radius * 1.16
+            ),
+            fill: .black.withAlphaComponent(0.3),
+            stroke: .clear,
+            lineWidth: 0
+        )
+        shadow.zPosition = -1
+        container.addChild(shadow)
+        container.addChild(projectile)
+
+        func groundPoint(at progress: Double) -> CGPoint {
+            CGPoint(x: origin.x + dx * progress, y: origin.y + dy * progress)
+        }
+
+        func shellPoint(at progress: Double) -> CGPoint {
+            let ground = groundPoint(at: progress)
+            return CGPoint(
+                x: ground.x,
+                y: ground.y + arcHeight * sin(.pi * progress)
+            )
+        }
+
+        let initialProgress = isFrozen ? frozenProgress : 0
+        let initialLift = sin(.pi * initialProgress)
+        projectile.position = shellPoint(at: initialProgress)
+        projectile.setScale(1 + initialLift * 0.22)
+        shadow.position = groundPoint(at: initialProgress)
+        shadow.setScale(1 - initialLift * 0.3)
+
+        if smokePearlCount > 0 {
+            for index in 0..<smokePearlCount {
+                let progress = 0.18 + Double(index) * 0.1
+                let pearl = circleNode(
+                    radius: radius * (0.7 + Double(index) * 0.08),
+                    fill: SKColor(white: 0.58, alpha: isFrozen ? 0.42 : 0.36),
+                    stroke: SKColor(white: 0.84, alpha: 0.18),
+                    lineWidth: 0.6
+                )
+                pearl.position = shellPoint(at: progress)
+                pearl.zPosition = 0.25
+                pearl.alpha = isFrozen ? 1 : 0
+                container.addChild(pearl)
+                if !isFrozen {
+                    pearl.run(.sequence([
+                        .wait(forDuration: duration * progress),
+                        .fadeIn(withDuration: 0.02),
+                        .group([
+                            .fadeOut(withDuration: 0.18),
+                            .scale(to: 1.45, duration: 0.18)
+                        ])
+                    ]))
+                }
+            }
+        }
+
+        addProjectileTerminalFlash(
+            at: target,
+            color: color,
+            teamAccent: teamAccent,
+            radius: radius * terminalScale,
+            travelDuration: duration,
+            isFrozen: isFrozen,
+            to: container
+        )
+
+        if !isFrozen {
+            projectile.run(.group([
+                .customAction(withDuration: duration) { node, elapsedTime in
+                    let progress = Swift.min(1, Swift.max(0, Double(elapsedTime) / duration))
+                    let lift = sin(.pi * progress)
+                    node.position = shellPoint(at: progress)
+                    node.setScale(1 + lift * 0.22)
+                },
+                .sequence([
+                    .wait(forDuration: duration * 0.82),
+                    .fadeOut(withDuration: duration * 0.18)
+                ])
+            ]))
+            shadow.run(.group([
+                .move(to: target, duration: duration),
+                .customAction(withDuration: duration) { node, elapsedTime in
+                    let progress = Swift.min(1, Swift.max(0, Double(elapsedTime) / duration))
+                    node.setScale(1 - sin(.pi * progress) * 0.3)
+                },
+                .sequence([
+                    .wait(forDuration: duration * 0.78),
+                    .fadeOut(withDuration: duration * 0.22)
+                ])
+            ]))
+        }
+    }
+
+    private func projectileNode(color: SKColor, radius: Double, trailLength: Double) -> SKNode {
+        let projectile = SKNode()
         let glow = SKShapeNode(circleOfRadius: radius * 2.1)
         glow.fillColor = color.withAlphaComponent(0.22)
         glow.strokeColor = .clear
@@ -1576,22 +1801,7 @@ final class BattlefieldScene: SKScene {
         nose.strokeColor = .clear
         nose.lineWidth = 0
         projectile.addChild(nose)
-        container.addChild(projectile)
-        addProjectileTerminalFlash(
-            at: target,
-            color: color,
-            teamAccent: teamAccent,
-            radius: radius,
-            travelDuration: duration,
-            isFrozen: isFrozen,
-            to: container
-        )
-        if !isFrozen {
-            projectile.run(.group([
-                .move(to: target, duration: duration),
-                .sequence([.wait(forDuration: duration * 0.76), .fadeOut(withDuration: duration * 0.24)])
-            ]))
-        }
+        return projectile
     }
 
     private func addProjectileTerminalFlash(
@@ -2687,8 +2897,13 @@ final class BattlefieldScene: SKScene {
 
         let node = SKNode()
         node.position = spritePoint(for: unit.position)
-        addUnitShadow(radius: definition.radius, to: node)
         let hullHeading = unitHeadings[unit.id] ?? defaultHeading(for: unit.team)
+        addUnitShadow(
+            for: unit.type,
+            radius: definition.radius,
+            hullHeading: hullHeading,
+            to: node
+        )
         let weaponHeading = unitWeaponHeadings[unit.id] ?? hullHeading
         let body = unitBody(
             for: unit,
@@ -2861,7 +3076,7 @@ final class BattlefieldScene: SKScene {
             scoutSensor.position = CGPoint(x: radius * 0.18, y: 0)
             weaponMount.addChild(scoutSensor)
         case .tank:
-            addTracks(radius: radius, length: 1.55, to: body)
+            addTracks(radius: radius, length: trackedHullLength(for: unit.type) ?? 1.55, to: body)
             body.addChild(rectNode(
                 CGRect(x: -radius * 0.62, y: -radius * 0.52, width: radius * 1.2, height: radius * 1.04),
                 cornerRadius: 3,
@@ -2897,7 +3112,7 @@ final class BattlefieldScene: SKScene {
                 stroke: outlineColor
             ))
         case .heavyTank:
-            addTracks(radius: radius, length: 1.78, to: body)
+            addTracks(radius: radius, length: trackedHullLength(for: unit.type) ?? 1.78, to: body)
             body.addChild(polygonNode([
                 CGPoint(x: radius * 0.82, y: 0),
                 CGPoint(x: radius * 0.48, y: radius * 0.64),
@@ -3070,7 +3285,7 @@ final class BattlefieldScene: SKScene {
                 ))
             }
         case .aaTank:
-            addTracks(radius: radius, length: 1.45, to: body)
+            addTracks(radius: radius, length: trackedHullLength(for: unit.type) ?? 1.45, to: body)
             body.addChild(rectNode(
                 CGRect(x: -radius * 0.62, y: -radius * 0.5, width: radius * 1.15, height: radius),
                 cornerRadius: 3,
@@ -3116,7 +3331,7 @@ final class BattlefieldScene: SKScene {
                 ))
             }
         case .artillery:
-            addTracks(radius: radius, length: 1.6, to: body)
+            addTracks(radius: radius, length: trackedHullLength(for: unit.type) ?? 1.6, to: body)
             body.addChild(rectNode(
                 CGRect(x: -radius * 0.74, y: -radius * 0.54, width: radius * 1.18, height: radius * 1.08),
                 cornerRadius: 2,
@@ -3703,6 +3918,21 @@ final class BattlefieldScene: SKScene {
         return body
     }
 
+    private func trackedHullLength(for type: UnitType) -> Double? {
+        switch type {
+        case .tank:
+            1.55
+        case .heavyTank:
+            1.78
+        case .aaTank:
+            1.45
+        case .artillery:
+            1.6
+        case .builder, .scout, .hover, .gunboat:
+            nil
+        }
+    }
+
     private func addTracks(radius: Double, length: Double, to node: SKNode) {
         for y in [-radius * 0.62, radius * 0.62] {
             node.addChild(rectNode(
@@ -3833,13 +4063,48 @@ final class BattlefieldScene: SKScene {
         }
     }
 
-    private func addUnitShadow(radius: Double, to node: SKNode) {
-        let shadow = ellipseNode(
-            CGRect(x: -radius * 0.9, y: -radius * 0.62, width: radius * 1.8, height: radius * 1.24),
-            fill: .black.withAlphaComponent(0.3),
-            stroke: .clear,
-            lineWidth: 0
-        )
+    private func addUnitShadow(
+        for type: UnitType,
+        radius: Double,
+        hullHeading: CGFloat,
+        to node: SKNode
+    ) {
+        let shadow: SKShapeNode
+        switch type {
+        case .tank, .heavyTank, .aaTank, .artillery:
+            let trackLength = trackedHullLength(for: type) ?? 1.55
+            let path = CGMutablePath()
+            path.addEllipse(in: CGRect(
+                x: -radius * trackLength * 0.5,
+                y: -radius * 0.5,
+                width: radius * trackLength,
+                height: radius
+            ))
+            for y in [-radius * 0.62, radius * 0.62] {
+                path.addRoundedRect(
+                    in: CGRect(
+                        x: -radius * trackLength * 0.52,
+                        y: y - radius * 0.19,
+                        width: radius * trackLength * 1.04,
+                        height: radius * 0.38
+                    ),
+                    cornerWidth: radius * 0.13,
+                    cornerHeight: radius * 0.13
+                )
+            }
+            shadow = SKShapeNode(path: path)
+            shadow.fillColor = .black.withAlphaComponent(0.27)
+            shadow.strokeColor = .black.withAlphaComponent(0.12)
+            shadow.lineWidth = 0.8
+            shadow.zRotation = hullHeading
+        case .builder, .scout, .hover, .gunboat:
+            shadow = ellipseNode(
+                CGRect(x: -radius * 0.9, y: -radius * 0.62, width: radius * 1.8, height: radius * 1.24),
+                fill: .black.withAlphaComponent(0.3),
+                stroke: .clear,
+                lineWidth: 0
+            )
+        }
         shadow.position = CGPoint(x: -2, y: -2)
         shadow.zPosition = -2
         node.addChild(shadow)

@@ -6464,3 +6464,34 @@
 
 - 固定云端 smoke 不注入目标 SwiftUI callback 顺序；不能证明真机完全消除吞触。
 - 旧 ID 继续 quarantine，系统立即复用同一 touch ID 时仍无法安全播种；第二指 Spatial evidence 尚未到达前，long press仍可能抢先提交。本轮不清空 quarantine，也不全局延迟单指命令。
+
+## v2.72 / Weapon-specific combat profiles and tracked grounding
+
+日期：2026-08-23
+
+核心变更：
+
+- `BattlefieldScene` 为 Tank、Heavy Tank、Artillery 与 AA 增加更明确的 presentation profile：短琥珀 tracer、宽热重炮弹、带地面影子/烟珠的确定性弧线炮弹和真实平行双 tracer。
+- AA 双 projectile 只共享一次 volley 中心 terminal feedback，避免把一次 Core damage 表达成两次重爆；单位炮口锚点与各模型炮管端点进一步对齐。
+- Tank / Heavy / AA / Artillery 的 compound grounding 按 hull heading 旋转，并与模型履带共用 `trackedHullLength(for:)`；每个履带单位仍只新增一个 shadow shape。
+- frozen combat visual smoke 继续复用真实 presentation helper；Reduce Motion、fog/visibility、64 effect / 32 decal 上限、Core 命中/伤害、命令、生产、触控、存档/JSON 和 Web 版不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.72-weapon-specific-combat-profiles.md`
+- `update_log.md`
+
+验证状态：
+
+- 本轮遵循云端唯一验证制度；本机未运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
+- 实现 commit、Actions run、artifact、JUnit/Core/build/probe 与双 PNG 复判结果待 push 后补录；不得复用 v2.71 或更早 artifact 验收本轮。
+
+已知风险：
+
+- Scene 通过 cooldown/HP 快照推导视觉，没有 Core projectile/event；本轮 terminal 仍是开火 presentation，不能把 generic HP impact 可靠关联到攻击者。若未来需要真实 attacker-specific lethal/impact，必须另行设计 Core combat visual event。
+- 固定 frozen PNG 不能证明动态弧线连续性、真实开火密度下长期帧率、任意角度 hull 转向、Reduce Motion 实机体验、触控、VoiceOver、Dynamic Type 或所有地图/缩放级别。

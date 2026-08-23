@@ -684,3 +684,18 @@ Agent C 只验收实现提交对应的最新 `origin/main` artifact，核对 man
 失败基线：实现 commit `a8fe19bc00827724089d24d51ed1cba4986a3c73` 对应 run `32631554791` / attempt `1` / job `97175026464` 不通过，不得作为 v2.71 验收证据。artifact 显示 iOS 双架构 build、双场景启动和 PNG probe 成功，但 Swift package tests 在编译测试 target 时失败：`#require(owner.beginFreshSequence(...))` 宏不能直接包装 mutating 调用。修复必须先把 mutating 返回值保存为 optional，再对该值执行 `#require`，并以新 SHA 重新完成全部云端验收。
 
 通过记录：最小测试编译修复 commit `976480327e361c6fc7f9f06ca41160a19b237183` 对应 run `32632121613` / attempt `1` / job `97176374940`，artifact 为 `rustwar-ci-v1.2-main-9764803-run32632121613-attempt1`。Agent C 已下载到 `/private/tmp/rustwar-c-review-32632121613/`（约 1.7M）；manifest 的 branch、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5 和固定 iPhone 17 Pro 完全匹配。JUnit 为 `8 tests / 0 failures / 1 skipped`，唯一 skip 是既有 headless browser 缺失；build log 显示 Swift Core `341 tests` 全通过，`touchSequenceOwnerTerminalPossibleSequenceYieldsToFreshID` 明确通过，双架构 iOS build、双场景启动、横屏归一化和双 PNG probe 全部成功。双 PNG 为 `2622x1206`、透明比例 0，人工复看无静态回退；真实 SwiftUI callback 顺序仍未由 smoke 自动化。
+
+## v2.72
+
+本轮只修改 `BattlefieldScene.swift` 的武器/履带 presentation，并同步 README、flow、flowchart、test、prompt 与 update log；继续执行云端唯一验证。本机不运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`；`.wp` 必须保持未跟踪。
+
+代码复判必须确认：
+
+- Tank / Heavy / Artillery / AA 的颜色、半径、尾迹、速度、arc、smoke 和 terminal scale 只属于 Scene presentation，不进入 Core/GameState/save。
+- AA 对 origin 与 target 应用同一 lateral offset，双 tracer 保持平行；两个 projectile 不各自产生 terminal，volley 中心只生成一次终点反馈。
+- Artillery ground shadow 沿 origin→target 线性运动，炮弹使用 `sin(pi * progress)` 抬升并在 progress 1 精确回到 target；烟珠 progress 固定且都在同一 bounded root。frozen 使用同一 helper 的中段状态，Reduce Motion 实时路径不运行轨迹动作。
+- `trackedHullLength(for:)` 同时服务模型履带和 grounding；tracked shadow 是单一 compound shape、按 hull heading 旋转且位于 selection 下方。炮塔 heading/后坐、fog/visibility、64 effect / 32 decal、impact/destruction、Core、输入、生产、存档和 Web 版不变。
+
+Agent C 只验收最新 `origin/main` commit 对应 artifact，核对 manifest 的 branch、完整 SHA、run/attempt、schema、Xcode 26.5、iOS 26.5、固定 iPhone 17 Pro，以及 JUnit、日志、失败摘要、repo state、Swift Core、Xcode list/build、双架构 build、Home/Combat 双启动、横屏归一化和双 PNG probe。人工复看 `ios-combat.png` 的四类弹道、Artillery 影子/烟珠、AA 平行线、tracked grounding、终点/摧毁/HUD；`ios-home.png` 的 Production 与 command dock 不得回退。
+
+证据边界：固定 frozen PNG 不能证明动态弧线连续性、真实 projectile/terminal 时序、任意 hull 角度、Reduce Motion 实机体验、长期战斗 effect 淘汰、真机帧率、触控、VoiceOver 或 Dynamic Type。

@@ -903,3 +903,11 @@ commit `5db992a3325aca239ff5061fffc1f4ccc28c9602` 对应 run `32463246451` 的�
 该轮修复的是“上一单指已有 ended 证据但 terminal callback 未收口，下一枚全新 ID 被 replacement-reject”的确定状态缺口。系统立即复用同一 quarantined ID、或第二指尚未出现在 SpatialEventGesture 前 long press 已提交的窗口仍无法安全判定；不通过清空 quarantine 或全局延迟牺牲单指响应。GameController、命令、CameraState、Tactical Map、SpriteKit、Core 模拟、存档/JSON 和 Web 状态不变。
 
 首次实现 commit `a8fe19bc00827724089d24d51ed1cba4986a3c73` 的 run `32631554791` 因 Swift Testing `#require` 直接包装 mutating 调用而在测试 target 编译失败，尽管 iOS build/smoke 成功，仍明确不通过。最小修复 commit `976480327e361c6fc7f9f06ca41160a19b237183` 将 mutating 返回值先保存为 optional；对应 run `32632121613` / attempt `1` / job `97176374940` 的 artifact `rustwar-ci-v1.2-main-9764803-run32632121613-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32632121613/`（约 1.7M）。manifest/JUnit/日志/双 PNG 完全匹配，Swift Core `341 tests` 全通过，新增 handoff test 明确通过，Agent C 源码合同与静态视觉复判通过。
+
+## v2.72 iOS weapon-specific combat profiles and tracked grounding
+
+`BattlefieldScene.spawnUnitFireEffect` 继续只读 Core cooldown/target 快照，但现在为 Tank、Heavy Tank、AA 与 Artillery 派生更明确的 projectile presentation 参数。Tank 使用短而快的琥珀 tracer，Heavy 使用更宽更热的炮弹和放大的 terminal feedback；单位炮口距离与模型炮管端点对齐。AA 的两发 shot 对 origin 与 target 同时应用相同 lateral offset，因此保持平行，并在 volley 中心只生成一次 terminal flash，不把一次 Core 命中画成两次重爆。
+
+Artillery 复用同一 projectile 构型，但由 `addBallisticProjectileEffect` 把地面投影与炮弹抬升分开：ground shadow 线性移动，炮弹按 `sin(pi * progress)` 抬升后精确归零到目标，烟珠沿确定 progress 生成。frozen combat fixture 使用同一 helper 的 58% 进度静态状态；实时 Reduce Motion 路径仍跳过移动，只保留终点透明度反馈。全部 projectile、shadow、smoke pearl 和 terminal 都属于原有单个 bounded effect root，64 effect / 32 decal 上限、fog/visibility、Core 命中/伤害与存档不变。
+
+履带单位的 Tank / Heavy / AA / Artillery 由 `trackedHullLength(for:)` 同时驱动模型履带和 compound grounding path。接地影仍只有一个 `SKShapeNode`，但会按当前 hull heading 旋转；炮塔独立 heading、后坐、selection、HP bar 和 damage state 层级不变。固定 combat PNG 能复判静态构图，不能证明动态弧线连续性、任意角度 hull 转向、长局节点成本、Reduce Motion 实机体验或真机帧率。
