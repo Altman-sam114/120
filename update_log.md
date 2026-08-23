@@ -6706,10 +6706,10 @@
 
 - v2.77 最终文档 commit `e8228b14c50a1f6d0b4a19287099c37a1af13c5a` 对应 run `32650207898` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-e8228b1-run32650207898-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32650207898/` 并通过；JUnit `8/0/1`、Core `342 tests`、双架构 build、双启动与双 PNG probe 成功，Home `3884b731...` / Combat `f48495bf...` 作为本轮基线。
 - v2.78 遵循云端唯一验证制度；本机不运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
-- v2.78 实现 commit、Actions run、artifact、Home/Combat 哈希与人工视觉复判待 push 后由 Agent C 只按最新 `origin/main` 完整 SHA 补录；不得用 v2.77 artifact 冒充本轮结果。
+- v2.78 实现 commit `1e15d8a22f6c00bb50f357c57157219b3fa172d9` 对应 Actions run `32651744498` / attempt `1` / job `97224325738`；artifact `rustwar-ci-v1.2-main-1e15d8a-run32651744498-attempt1`（ID `9496465926`，digest `sha256:6719db1f8f61885305d9e0281268164d83e08d9fbb19db73163411544072109ac`）已由 Agent C 下载到 `/private/tmp/rustwar-c-review-32651744498/` 并按最新完整 SHA 核对通过。JUnit `8/0/1`、Core `342 tests`、双架构 build、双场景启动、横屏归一化和双 PNG probe 全成功；Home SHA-256 `166db0cd24b3966a059707a608d7ca21d0a6de793bb05192d9cc2f5585200ec1`，Combat SHA-256 `c4557ffe8c20bf7685875aa66a1532d44e5eaeb21fa6b6354e2fb5273c2102cf`。人工复判确认 Home 的 Tank/Scout/Builder 尾缘标记、Combat 双方单/双形状、炮塔/弹道/terminal/impact 重叠下的可读性，以及模型、武器层、HUD、Tactical Map 和 command dock 无静态回退。
 - Home fixture 也包含 Tank、Scout 与 Builder，因此 Home 与 Combat 哈希都应相对 v2.77 改变；现有 Combat fixture 已覆盖全部八类 UnitType、双方形状对照及炮塔/terminal/impact 重叠，不需要修改 fixture 或 workflow。
 
 已知风险：
 
 - 固定 frozen Combat PNG 能覆盖双方多类单位和部分炮塔/terminal/impact 重叠，不能证明任意 heading、zoom、动态密集开火、色觉用户体验或真机帧率。
-- 高 z 阵营标记有意优先于 weapon mount，但仍需 artifact 人工确认尾缘几何没有覆盖小型单位关键轮廓；若视觉不通过，必须追加修复 commit 并重新云端验收。
+- 高 z 阵营标记有意优先于 weapon mount，本轮 artifact 人工复判未发现尾缘几何覆盖小型单位关键轮廓；固定结果仍不能证明任意 heading/zoom、动态密集战斗、色觉体验或真机性能。

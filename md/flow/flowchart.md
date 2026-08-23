@@ -1606,4 +1606,4 @@ flowchart LR
   R -. no mutation .-> K[Core / commands / combat values / save]
 ```
 
-读图说明：v2.78 把单位阵营标记从中心条改成 hull 尾缘的单 chevron / 双 tabs，并把敌方两个节点收敛为一个 compound-path shape。标记仍属于 hull，不随独立炮塔或后坐旋转；固定 z 层使它不再被 weapon mount 压住。模型主体、building 标记、selection/HP/damage、武器 presentation、fog、Core、HUD 和输入语义不变；最终实现与双 PNG 结论待最新 v2.78 Actions artifact 复判。
+读图说明：v2.78 把单位阵营标记从中心条改成 hull 尾缘的单 chevron / 双 tabs，并把敌方两个节点收敛为一个 compound-path shape。标记仍属于 hull，不随独立炮塔或后坐旋转；固定 z 层使它不再被 weapon mount 压住。模型主体、building 标记、selection/HP/damage、武器 presentation、fog、Core、HUD 和输入语义不变。实现 commit `1e15d8a22f6c00bb50f357c57157219b3fa172d9` 对应 run `32651744498` / attempt `1` 的 artifact 已由 Agent C 下载并复判通过；JUnit `8/0/1`、Core `342 tests`、双架构 build、双场景启动、横屏归一化与双 PNG probe 成功，Home `166db0cd...`、Combat `c4557ffe...`。固定 PNG 仍不覆盖动态时序、任意缩放、色觉体验或真机触控。
