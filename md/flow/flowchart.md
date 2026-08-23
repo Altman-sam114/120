@@ -1460,4 +1460,4 @@ flowchart TD
   P -->|same quarantined ID / no ended evidence| X[拒绝播种，保留安全边界]
 ```
 
-读图说明：v2.71 只让有 accepted-ended 证据的未 claim 单指 owner 在下一枚新 ID 到达时安全让位；active owner、claimed owner、旧 ID、第二指 candidate、第三指/cancel/reset、命令和渲染路径保持。固定云端 smoke 不注入并行 gesture callback 顺序，Core 测试与源码合同不能扩大为真实设备回调已完全验证。
+读图说明：v2.71 只让有 accepted-ended 证据的未 claim 单指 owner 在下一枚新 ID 到达时安全让位；active owner、claimed owner、旧 ID、第二指 candidate、第三指/cancel/reset、命令和渲染路径保持。修复 commit `9764803` 对应 run `32632121613` 的 Core 341 tests、artifact、源码合同和双 PNG 已由 Agent C 复判通过；固定云端 smoke 不注入并行 gesture callback 顺序，不能扩大为真实设备回调已完全验证。

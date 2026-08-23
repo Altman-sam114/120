@@ -6453,9 +6453,12 @@
 验证状态：
 
 - 本轮遵循云端唯一验证制度；本机未运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、浏览器、截图、Node、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
-- 当前只完成源码、Core 测试定义与文档实现；必须 push `origin/main` 后，以完整实现 SHA 对应的最新 `Rustwar CI Results` artifact 完成 manifest、JUnit、日志、双架构 build、双场景启动、双 PNG 和源码合同复判，才可确认通过。
+- 实现 commit `a8fe19bc00827724089d24d51ed1cba4986a3c73` 与测试编译修复 `976480327e361c6fc7f9f06ca41160a19b237183` 已推送到 `origin/main`。
 - 首次实现 commit `a8fe19bc00827724089d24d51ed1cba4986a3c73` 对应 run `32631554791` / attempt `1` / job `97175026464` 的 artifact 已下载到 `/private/tmp/rustwar-c-review-32631554791/`，约 1.6M。该 run 的 iOS 双架构 build、双场景启动、横屏归一化和双 PNG probe 成功，但 Swift package tests 失败，因此整体不得验收。
 - 失败原因是 Swift Testing `#require(owner.beginFreshSequence(...))` 宏不能直接包装 mutating 调用；后续最小修复先保存 mutating 返回的 optional，再交给 `#require`，并以新 SHA 重新验证。
+- 修复 commit 对应 run `32632121613` / attempt `1` / job `97176374940` 的 artifact `rustwar-ci-v1.2-main-9764803-run32632121613-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32632121613/`，约 1.7M；manifest 的 `branch=main`、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5 和固定 iPhone 17 Pro 完全匹配。
+- JUnit 为 `8 tests / 0 failures / 1 skipped`；Swift Core `341 tests` 全通过，新增 terminal handoff test 明确通过。固定工具链、git diff check、Node、Xcode list、双架构 iOS build、production/combat 双启动、横屏归一化和双 PNG probe 全部 success。
+- Agent C 源码复判确认 predicate、原子让位、quarantine、sequence/stale lease、View callback cleanup 与保持项符合提示词；双 PNG 均为 `2622x1206`、透明比例 0，Production、Quick Orders、Tactical Map、状态栏、模型、弹道和爆点无静态回退。v2.71 实现 artifact 验收通过。
 
 已知风险：
 

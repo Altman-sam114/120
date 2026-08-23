@@ -682,3 +682,5 @@ Agent C 只验收实现提交对应的最新 `origin/main` artifact，核对 man
 证据边界：Core 云端测试可证明状态机合同，固定 Simulator smoke 不注入目标 callback 顺序；不能证明真实设备完全不吞触、同 ID 复用、第二指尚未上报前的 long press、VoiceOver、Dynamic Type 或真机手感。
 
 失败基线：实现 commit `a8fe19bc00827724089d24d51ed1cba4986a3c73` 对应 run `32631554791` / attempt `1` / job `97175026464` 不通过，不得作为 v2.71 验收证据。artifact 显示 iOS 双架构 build、双场景启动和 PNG probe 成功，但 Swift package tests 在编译测试 target 时失败：`#require(owner.beginFreshSequence(...))` 宏不能直接包装 mutating 调用。修复必须先把 mutating 返回值保存为 optional，再对该值执行 `#require`，并以新 SHA 重新完成全部云端验收。
+
+通过记录：最小测试编译修复 commit `976480327e361c6fc7f9f06ca41160a19b237183` 对应 run `32632121613` / attempt `1` / job `97176374940`，artifact 为 `rustwar-ci-v1.2-main-9764803-run32632121613-attempt1`。Agent C 已下载到 `/private/tmp/rustwar-c-review-32632121613/`（约 1.7M）；manifest 的 branch、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5 和固定 iPhone 17 Pro 完全匹配。JUnit 为 `8 tests / 0 failures / 1 skipped`，唯一 skip 是既有 headless browser 缺失；build log 显示 Swift Core `341 tests` 全通过，`touchSequenceOwnerTerminalPossibleSequenceYieldsToFreshID` 明确通过，双架构 iOS build、双场景启动、横屏归一化和双 PNG probe 全部成功。双 PNG 为 `2622x1206`、透明比例 0，人工复看无静态回退；真实 SwiftUI callback 顺序仍未由 smoke 自动化。
