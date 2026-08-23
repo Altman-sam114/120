@@ -19,7 +19,8 @@ import Testing
 
 @Test func touchSequenceOwnerTerminalPossibleSequenceYieldsToFreshID() throws {
     var owner = TouchSequenceOwner<Int>()
-    let firstLease = try #require(owner.beginFreshSequence(with: 41))
+    let possibleFirstLease = owner.beginFreshSequence(with: 41)
+    let firstLease = try #require(possibleFirstLease)
     #expect(owner.beginFreshSequence(with: 42) == nil)
     #expect(!owner.canYieldTerminalPossibleSequence)
 
@@ -30,7 +31,8 @@ import Testing
     #expect(owner.canYieldTerminalPossibleSequence)
     #expect(owner.beginFreshSequence(with: 41) == nil)
 
-    let freshLease = try #require(owner.beginFreshSequence(with: 42))
+    let possibleFreshLease = owner.beginFreshSequence(with: 42)
+    let freshLease = try #require(possibleFreshLease)
     #expect(freshLease.sequence == firstLease.sequence + 1)
     #expect(owner.phase == .possible)
     #expect(owner.acceptedIDs == Set([42]))

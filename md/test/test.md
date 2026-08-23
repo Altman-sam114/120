@@ -680,3 +680,5 @@ Agent C 只验收实现提交对应的最新 `origin/main` 未加密 Actions art
 Agent C 只验收实现提交对应的最新 `origin/main` artifact，核对 manifest 的 branch、完整 SHA、run id/attempt、Xcode 26.5、iOS 26.5、固定 iPhone 17 Pro，以及 JUnit、主日志、失败摘要、repo state、Swift Core、Xcode list/build、双架构 iOS build、production/combat 双启动、横屏归一化和双 PNG probe。双 PNG 人工确认 Production、Quick Orders、Tactical Map、状态栏、模型、弹道和爆点无静态回退。
 
 证据边界：Core 云端测试可证明状态机合同，固定 Simulator smoke 不注入目标 callback 顺序；不能证明真实设备完全不吞触、同 ID 复用、第二指尚未上报前的 long press、VoiceOver、Dynamic Type 或真机手感。
+
+失败基线：实现 commit `a8fe19bc00827724089d24d51ed1cba4986a3c73` 对应 run `32631554791` / attempt `1` / job `97175026464` 不通过，不得作为 v2.71 验收证据。artifact 显示 iOS 双架构 build、双场景启动和 PNG probe 成功，但 Swift package tests 在编译测试 target 时失败：`#require(owner.beginFreshSequence(...))` 宏不能直接包装 mutating 调用。修复必须先把 mutating 返回值保存为 optional，再对该值执行 `#require`，并以新 SHA 重新完成全部云端验收。
