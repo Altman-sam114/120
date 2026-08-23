@@ -6504,7 +6504,7 @@
 
 核心变更：
 
-- producer management 顺序从完整 queue 之后提升到生产 options 与 queue 之间；长队列不再遮住 Cancel / Repeat / Rally。
+- producer management 顺序从完整 queue 之后提升到紧随 Production 标题、位于 summary 与生产 options 之前；无需滚过单位卡或长队列即可使用 Cancel / Repeat / Rally。
 - 新增独立 `TacticalProductionManagementRail`：compact 普通字号三列，regular 沿 command 列数，accessibility Dynamic Type 单列；三项均至少 44pt。
 - Cancel 空队列时保留稳定位置但 disabled；Rally 继续表达等待/取消和 active 非颜色线索。
 - Repeat 改为直接 Menu，Off 与全部 tech 合法 `productionOptions` 一击选择，当前项使用 checkmark/filled icon；不按当前 metal/pop 过滤，保持 Core 资源恢复后重试语义。
@@ -6527,7 +6527,8 @@
 验证状态：
 
 - 本轮遵循云端唯一验证制度；本机未运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
-- 实现 commit、Actions run、artifact 与 Agent C 结论待 push 后按最新 `origin/main` SHA 补录；不得复用 v2.72 旧 artifact。
+- 首个实现 commit `38ca4b195dccd3cb7997c33ab6bf37e88bf776b8` 对应 run `32638133258` / attempt `1` 的 artifact 已下载到 `/private/tmp/rustwar-c-review-32638133258/`；Core 341 tests 与静态检查成功，但新 rail computed property 缺少显式 `return`，iOS build 失败，JUnit `8/2/1`，明确不通过。
+- compile 修复 commit `ee7b943290691447e20986e80318902b12b61615` 对应 run `32638469356` / attempt `1` 自动结果全部成功，JUnit `8/0/1`，新 rail 双架构编译、双启动与双 PNG probe 通过；但 Home PNG 与 v2.72 哈希完全相同，management rail 仍在固定画面外，Agent C 视觉验收不通过。下一提交必须把 rail 提升到 Production section 首部并以新 SHA 复验。
 
 已知风险：
 

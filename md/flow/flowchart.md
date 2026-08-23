@@ -1492,9 +1492,9 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  P[选中单一己方 producer] --> S[Production summary / Factory Tech]
+  P[选中单一己方 producer] --> M[Management rail after Production header]
+  M --> S[Production summary / Factory Tech]
   S --> O[三列 tech-legal production options]
-  O --> M[Management rail before full queue]
   M --> C[Cancel Last: queue empty disabled]
   M --> R[Repeat Menu: Off + productionOptions]
   M --> G[Rally / Cancel target]
@@ -1507,7 +1507,7 @@ flowchart TD
   G --> T[existing pending target arbitration]
   M --> A[compact 3 columns / regular inherited / accessibility 1 column]
   A --> H[44pt + VoiceOver + Shift C/P/R]
-  M --> U[full Core queue view]
+  O --> U[full Core queue view]
 ```
 
 读图说明：v2.73 只重构 producer management 的 SwiftUI 层级和直接 action wrapper。Repeat 选项来自现有 tech-gated `productionOptions`，不能按当前 metal/pop availability 过滤；Core repeat retry、queue order、refund、rally、save/schema、AI、输入、战斗和 Web 不变。固定云端 PNG 只能检查默认 rail 构图，不能证明 Menu 展开、快捷键、VoiceOver、Dynamic Type 或真实触控。

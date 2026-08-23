@@ -916,7 +916,7 @@ Artillery 复用同一 projectile 构型，但由 `addBallisticProjectileEffect`
 
 ## v2.73 iOS direct production management rail
 
-`TacticalProductionSectionView` 的 presentation 顺序改为 `summary -> Factory Tech -> production options -> management rail -> queue`。三列生产卡、tech gate、Shift+1-9 和 queue view 不变；Cancel / Repeat / Rally 从长队列之后提升到队列之前。`TacticalProductionManagementRail` 是独立 SwiftUI view：compact 普通 Dynamic Type 固定三列，regular 沿 command column count，accessibility Dynamic Type 固定单列；三种路径都复用 44pt theme control。
+`TacticalProductionSectionView` 的 presentation 顺序改为 `Production header -> management rail -> summary -> Factory Tech -> production options -> queue`。三列生产卡、tech gate、Shift+1-9 和 queue view 不变；Cancel / Repeat / Rally 从长队列之后提升到 section 首部，无需滚过单位卡。`TacticalProductionManagementRail` 是独立 SwiftUI view：compact 普通 Dynamic Type 固定三列，regular 沿 command column count，accessibility Dynamic Type 固定单列；三种路径都复用 44pt theme control。
 
 Cancel 继续调用 `GameController.cancelProduction` 和 Core 尾项退款，只是队列为空时不再消失而是 disabled。Rally 继续调用 `toggleRallyCommand`，等待目标时保留 Cancel 文案、filled icon、active border 和等待状态 VoiceOver。Shift+C/R 与 pending command 仲裁不变。
 

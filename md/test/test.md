@@ -710,7 +710,7 @@ Agent C 只验收最新 `origin/main` commit 对应 artifact，核对 manifest �
 
 代码复判必须确认：
 
-- production presentation 顺序为 summary / Factory Tech / 三列 options / management rail / full queue；生产卡、tech gate、Shift+1-9、queue item 顺序与 progress 不变。
+- production presentation 顺序为 section header / management rail / summary / Factory Tech / 三列 options / full queue；生产卡、tech gate、Shift+1-9、queue item 顺序与 progress 不变。
 - compact 普通 Dynamic Type 的 rail 为三列，regular 沿调用方列数，accessibility Dynamic Type 为单列；Cancel、Repeat、Rally 均至少 44pt。
 - Cancel 固定显示、空队列 disabled、非空调用既有尾项取消/退款；Rally 等待态继续复用 toggle action、Cancel 文案、active 非颜色线索和 Shift+R。
 - Repeat 使用 Menu，包含 Off 和全部 `productionOptions`，当前项有 checkmark/filled icon 及 VoiceOver selected trait/value；每项直达 Controller setter，不循环、不按 metal/pop availability 过滤。Shift+P 绑定 Menu trigger，VoiceOver 提供完整 label/value/hint。
@@ -718,6 +718,8 @@ Agent C 只验收最新 `origin/main` commit 对应 artifact，核对 manifest �
 
 Agent C 只验收最新 `origin/main` 完整 SHA 对应 artifact，核对 manifest 的 branch、完整 SHA、run id/attempt、schema、Xcode 26.5、iOS 26.5、固定 iPhone 17 Pro，以及 JUnit、主日志、失败摘要、repo state、Swift Core、Xcode list/build、arm64/x86_64 iOS build、production/combat 双启动、横屏归一化和双 PNG probe。新 rail 文件必须明确进入双架构编译。
 
-人工复看 `ios-home.png`：三列 Scout / Light / Hover / Arty / AA / Heavy 卡无回退，management rail 在 options 后、full queue 前，Cancel/Repeat/Rally 同排可辨且不挤压，queue、Factory Tech、Selection、Tactical Map 和状态栏无裁切或重叠。`ios-combat.png` 的 v2.72 武器层级、tracked grounding、Quick Orders、终点/摧毁、Tactical Map 和状态栏无静态回退。
+人工复看 `ios-home.png`：management rail 紧随 Production 标题、在 summary 与生产卡之前，Cancel/Repeat/Rally 同排可辨且不挤压；三列 Scout / Light / Hover / Arty / AA / Heavy 卡保持原网格并可继续滚动，queue、Factory Tech、Selection、Tactical Map 和状态栏无异常裁切或重叠。`ios-combat.png` 的 v2.72 武器层级、tracked grounding、Quick Orders、终点/摧毁、Tactical Map 和状态栏无静态回退。
 
 证据边界：固定 PNG 不展开 Menu，不能证明真实点击、Shift+P 焦点、VoiceOver、Dynamic Type 全档位、滚动、stale menu 时序或真机触控；不得用绿色 build 扩大结论。
+
+失败基线：commit `38ca4b195dccd3cb7997c33ab6bf37e88bf776b8` / run `32638133258` 因 `repeatMenu` 缺少显式 `return` 导致 iOS build 失败，JUnit `8/2/1`；commit `ee7b943290691447e20986e80318902b12b61615` / run `32638469356` 的 JUnit、Core 341 tests、双架构 build、双启动与双 probe 全成功，但 Home PNG SHA-256 仍为旧基线 `7c334ef5...`，rail 不在固定首屏，因此 Agent C 视觉验收不通过。两者都不得作为 v2.73 最终通过证据。

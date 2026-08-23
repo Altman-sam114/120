@@ -179,6 +179,11 @@ struct TacticalProductionSectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
             TacticalSectionHeader(section: .production)
+            TacticalProductionManagementRail(
+                controller: controller,
+                columns: columns,
+                isCompact: isCompact
+            )
             if controller.productionFocusBuildingName != nil {
                 TacticalProductionFocusSummaryView(
                     controller: controller,
@@ -198,11 +203,6 @@ struct TacticalProductionSectionView: View {
                     }
                 }
             }
-            TacticalProductionManagementRail(
-                controller: controller,
-                columns: columns,
-                isCompact: isCompact
-            )
             if !controller.productionQueueItems.isEmpty {
                 TacticalProductionQueueView(items: controller.productionQueueItems)
             }
