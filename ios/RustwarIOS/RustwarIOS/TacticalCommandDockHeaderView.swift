@@ -4,6 +4,7 @@ import RustwarCore
 struct TacticalCommandDockHeaderView: View {
     @Bindable var controller: GameController
     var showsCompactProducerContext = false
+    var showsSelectionModePicker = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.compactSpacing) {
@@ -32,7 +33,7 @@ struct TacticalCommandDockHeaderView: View {
                 )
             }
 
-            if !showsCompactProducerContext {
+            if showsSelectionModePicker {
                 TacticalSelectionModePicker(controller: controller)
             }
         }

@@ -6644,3 +6644,37 @@
 - 固定 Home 仅覆盖 compact trailing 普通 Dynamic Type；regular、compact bottom、accessibility、VoiceOver、滚动、点击和所有设备尺寸仍是源码/编译证据边界。
 - 只删除重复信息，不改变 dock 总宽度；极小设备或本地化长文案仍需后续独立验收。
 - 下一轮继续选择触控、模型或战斗视觉中的最高收益项，不把本轮 UI 压缩解释为总目标完成。
+
+## v2.77 / Compact Quick Orders priority
+
+日期：2026-08-23
+
+核心变更：
+
+- Compact trailing / bottom、普通 Dynamic Type 使用单一 relocation predicate，把 `Replace / Add` 从固定 Selection header 迁入滚动 Selection section；同一个 `selectionMutation` picker 在每条路径恰好出现一次。
+- Regular trailing 与 accessibility Dynamic Type 保持固定 picker；compact producer 延续 v2.69 既有位置，不改变 v2.76 Production 首屏。
+- Selection summary、target guidance/status、pending 外框和 Header → Quick Orders → Scroll 顺序不变，进入/取消 target mode 不发生固定区上下换位。
+- Move / A-Move / Attack-or-Cancel / Stop、secondary Commands、44pt、快捷键、VoiceOver、Replace/Add mutation、直接点按、多指框选、Production、Core、战斗、存档/JSON 和 Web 不变。
+- Steam 官方 Rusted Warfare 页面强调跨全战场快速下令，本轮优先高频命令而不缩小控件或删除低频选择模式。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockHeaderView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.77-compact-quick-orders-priority.md`
+- `update_log.md`
+
+验证状态：
+
+- v2.76 最终文档 commit `efabb9933f42005de4b2c5bbd81a43d2acaae553` 对应 run `32646896604` / attempt `1` / job `97212427950` 的 artifact `rustwar-ci-v1.2-main-efabb99-run32646896604-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32646896604/`；ZIP SHA-256 `d72b2aab99abcc8a07940c45ee0e2afc926044a58a6a438e41d3ee43e6288c99` 与 GitHub digest 一致。JUnit `8/0/1`、Core `342 tests`、双架构 build、双启动/横屏归一化/双 probe 成功，Home `3884b731...` / Combat `01fcba16...` 与 v2.76 实现基线一致。
+- v2.77 遵循云端唯一验证制度；本机不运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
+- 实现提交、push、Actions run、artifact 与人工双 PNG 复判待本轮 Agent B / Agent C 完成后补记；旧 run 不得冒充 v2.77 证据。
+
+已知风险：
+
+- 固定 Combat PNG 只能覆盖 compact trailing 普通字号；compact bottom、VoiceOver 焦点顺序、滚动发现性、全部本地化与真机触控仍是证据边界。
+- 下一候选为 `BattlefieldScene.addUnitFactionMarking` 的 hull-edge 阵营 rail/tab，提高炮塔与命中特效重叠下的友敌识别；总目标仍未完成。

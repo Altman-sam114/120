@@ -1568,3 +1568,22 @@ flowchart TD
 ```
 
 读图说明：v2.76 只在 compact 普通字号省略第二层可见 producer identity；固定 header 仍是唯一视觉身份来源，focus summary 与 VoiceOver 信息没有删除。Regular 和 accessibility 继续显示完整 identity，三列顺序、卡片尺寸、44pt、management rail、Factory Tech、queue、Core 和 Web 不变。实现 `7dea5c3c527ff7ce103950c2c6deb32e17cc78e7` 对应 run `32646212287` / attempt `1` 的 artifact、342 Core tests、双架构 build 和双 PNG 已由 Agent C 复判通过；Home `3884b731...` 中 Arty/AA/Heavy 图标、名称与关键成本行进入首屏，Combat 与 v2.75 逐字节一致。
+
+## v2.77 iOS compact Quick Orders priority
+
+```mermaid
+flowchart TD
+  L[Command dock layout] --> P{compact normal?}
+  P -->|yes| H[Fixed context header<br/>Selection or Production]
+  H --> Q[Fixed Quick Orders]
+  Q --> C[Scrollable Commands]
+  C --> S[Scrollable Selection]
+  S --> M[Same Replace / Add picker binding]
+  P -->|regular or accessibility| HF[Fixed header + picker]
+  HF --> QF[Quick Orders]
+  QF --> SF[Scrollable Selection without duplicate picker]
+  M --> ONE[Picker appears exactly once]
+  SF --> ONE
+```
+
+读图说明：v2.77 只把 compact 普通字号的 Selection mode picker 从固定 header 迁入滚动 Selection section。Header、Quick Orders 与 scroll 的相对顺序不随 target mode 改变；regular/accessibility 继续固定显示 picker。`selectionMutation` binding、segmented picker、44pt、VoiceOver、Move/A-Move/Attack/Stop、secondary commands、Core 和输入语义不变。

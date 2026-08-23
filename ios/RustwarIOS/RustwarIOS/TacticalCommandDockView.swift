@@ -12,9 +12,13 @@ struct TacticalCommandDockView: View {
         dynamicTypeSize.isAccessibilitySize || layoutRole == .compactTrailing ? 1 : 2
     }
 
-    private var isCompactProducerContext: Bool {
+    private var isCompactNormalContext: Bool {
         layoutRole != .regularTrailing &&
-            !dynamicTypeSize.isAccessibilitySize &&
+            !dynamicTypeSize.isAccessibilitySize
+    }
+
+    private var isCompactProducerContext: Bool {
+        isCompactNormalContext &&
             controller.productionFocusBuildingName != nil
     }
 
@@ -22,7 +26,8 @@ struct TacticalCommandDockView: View {
         VStack(spacing: 0) {
             TacticalCommandDockHeaderView(
                 controller: controller,
-                showsCompactProducerContext: isCompactProducerContext
+                showsCompactProducerContext: isCompactProducerContext,
+                showsSelectionModePicker: !isCompactNormalContext
             )
             if showsQuickCommandRail {
                 TacticalQuickCommandRail(controller: controller)
@@ -55,7 +60,7 @@ struct TacticalCommandDockView: View {
                         TacticalSelectionSectionView(
                             controller: controller,
                             columns: commandColumnCount,
-                            showsSelectionModePicker: isCompactProducerContext
+                            showsSelectionModePicker: isCompactNormalContext
                         )
                         TacticalGroupsSectionView(controller: controller, columns: commandColumnCount)
                         TacticalSessionSectionView(controller: controller, columns: commandColumnCount)

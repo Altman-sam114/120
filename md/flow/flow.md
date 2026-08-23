@@ -959,3 +959,11 @@ Repeat trigger 改为 SwiftUI `Menu`，Off 与 `productionOptions` 的每个 tec
 固定 Home fixture 仍是约 210pt compact trailing dock，单位顺序保持 Scout / Light / Hover / Arty / AA / Heavy；本轮只通过删除重复行让第二排上移，不缩小字体、卡片或控件。固定 PNG 可检查普通 compact 首屏位置，不能证明 regular、compact bottom、accessibility、VoiceOver、滚动、真实点击或所有屏幕尺寸。
 
 实现 commit `7dea5c3c527ff7ce103950c2c6deb32e17cc78e7` 对应 run `32646212287` / attempt `1` / job `97210761886`；Agent C 已把 artifact `rustwar-ci-v1.2-main-7dea5c3-run32646212287-attempt1` 下载到 `/private/tmp/rustwar-c-review-32646212287/`（约 1.7M）。manifest、JUnit、日志、失败摘要、repo state、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2、Core `342 tests`、双架构 build、双启动、横屏归一化与双 probe 全匹配。Home SHA-256 改为 `3884b7315d34cb3917d19aaa33ee9cdc84b9d6d1510cc6414752b7aff24c7f51`；人工确认 header、management rail、NOW/QUEUE/UPGRADE 和第一排不变，第二排 Arty/AA/Heavy 的图标、名称与关键成本行进入首屏且无重叠。Combat SHA-256 保持 `01fcba16813a13a14b93dcbd78f13573ae2ab29a98327768af91af5bda0bab9e`；v2.76 实现 artifact 验收通过。
+
+## v2.77 iOS compact Quick Orders priority
+
+`TacticalCommandDockView` 用一个 compact normal predicate（非 regular trailing 且 Dynamic Type 不是 accessibility size）决定 Selection mode picker 的唯一位置。该条件为真时，固定 `TacticalCommandDockHeaderView` 不显示 picker，而滚动 `TacticalSelectionSectionView` 显示既有 `TacticalSelectionModePicker`；条件为假时反向显示，因此 `Replace / Add` 在每条布局路径都恰好出现一次，并继续绑定同一个 `GameController.selectionMutation`。
+
+Compact producer 复用同一 predicate，保持 v2.69 已有 presentation；新增收益位于 combat、Builder、mixed 与其它非 producer compact context。固定 header 的 Selection summary、姿态/升级摘要、battlefield hint、command status 与等待态外框不变，Quick Orders 仍位于 header 之后且不因 target mode 动态换位。删除的是 picker 的固定区重复占位，不是功能；用户仍可在滚动 Selection section 切换 Replace / Add。
+
+Regular trailing 与所有 accessibility Dynamic Type 继续在固定 header 显示 picker，避免大字号路径改变信息层级。Move、Attack Move、Attack、Stop、secondary commands、44pt、快捷键、VoiceOver、选择 mutation、直接点按、多指框选、Production、Core、战斗、存档/JSON 与 Web 不变。固定 Combat PNG 只能检查 compact trailing 普通字号下 Quick Orders/Commands 上移，不能证明 compact bottom、VoiceOver、真实滚动、焦点顺序或真机触控。

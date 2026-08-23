@@ -785,3 +785,21 @@ Agent C 必须核对最新 run 的 manifest、JUnit、主日志、失败摘要�
 人工复看 `ios-home.png`：header 保留 Production / Land Factory / T2 / 1.25x；summary 不再重复 identity，NOW / QUEUE / UPGRADE 完整；Cancel / Repeat Off / Rally、Scout / Light / Hover 无回退；Arty / AA / Heavy 第二排至少图标和单位名进入首屏且无重叠、压缩或截字。固定 Home 不覆盖 regular、compact bottom、accessibility Dynamic Type、VoiceOver、滚动、点击或所有设备尺寸，这些不得仅凭 build green 宣称已真机验证。
 
 通过基线：实现 commit `7dea5c3c527ff7ce103950c2c6deb32e17cc78e7` 对应 run `32646212287` / attempt `1` / job `97210761886`；artifact `rustwar-ci-v1.2-main-7dea5c3-run32646212287-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32646212287/`，约 `1.7M`。manifest 的 branch、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5、Swift 6.3.2 与固定 iPhone 17 Pro 全匹配；JUnit `8/0/1`，Core `342 tests`，`TacticalProductionSectionView.swift` 双架构编译，Xcode list/build、双启动、横屏归一化和双 PNG probe 全成功。Home SHA-256 为 `3884b7315d34cb3917d19aaa33ee9cdc84b9d6d1510cc6414752b7aff24c7f51`；人工确认重复 identity 消失，focus strip 和 management rail 完整，Arty/AA/Heavy 图标、名称与关键成本行进入首屏且无重叠。Combat SHA-256 为 `01fcba16813a13a14b93dcbd78f13573ae2ab29a98327768af91af5bda0bab9e`，与 v2.75 逐字节一致；Agent C 判定 v2.76 实现 artifact 验收通过。
+
+## v2.77
+
+本轮只修改 `TacticalCommandDockView.swift`、`TacticalCommandDockHeaderView.swift` 和必要文档；继续执行云端唯一验证。本机禁止 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本和 `git diff --check`，`.wp` 保持未跟踪。
+
+代码复判必须确认：
+
+- 单一 compact normal predicate 为 `layoutRole != .regularTrailing && !dynamicTypeSize.isAccessibilitySize`，同时驱动 header picker 与滚动 Selection picker，不能在两个 View 中复制不同 gate。
+- Compact normal 的固定 header 不显示 picker，`TacticalSelectionSectionView` 显示同一个 `TacticalSelectionModePicker`；regular 与 accessibility Dynamic Type 反向显示，所有路径恰好一个 picker。
+- Picker 继续绑定 `$controller.selectionMutation`，Replace/Add label、value、hint、segmented style 和 control size 不变；compact producer 的既有迁移位置不回退。
+- Header 的 Selection summary、attack stance、升级摘要、hint/status、等待外框与 Quick Orders 上下顺序不变；target mode 不动态换位。
+- Move、A-Move、Attack/Cancel、Stop、secondary Commands、44pt、快捷键、VoiceOver、选择 mutation、双击/重复点按、多指框选、Core、生产、战斗、存档和 Web 无行为变化。
+
+Agent C 只验收 v2.77 最新 `origin/main` 完整 SHA 对应 artifact，核对 manifest、JUnit、主日志、失败摘要、repo state、Xcode 26.5、iOS 26.5、Swift 6.3.2、固定 iPhone 17 Pro、Swift Core 至少 `342 tests`、Xcode list、双架构 build、双启动、横屏归一化和双 PNG probe。`TacticalCommandDockView.swift` 与 `TacticalCommandDockHeaderView.swift` 必须进入 arm64/x86_64 编译。
+
+人工复看 `ios-combat.png`：Selection / Attack target guidance / pending 外框完整；固定 `Replace / Add` 已离开 Quick Orders 上方，Quick Orders 与 Commands 上移，Move / A-Move / Cancel / Stop 无裁切、重叠或低于 44pt；模型、武器、terminal/impact、Tactical Map 和状态栏无回退。Home 应保持 v2.76 SHA-256 `3884b7315d34cb3917d19aaa33ee9cdc84b9d6d1510cc6414752b7aff24c7f51`；Combat 必须相对 `01fcba16813a13a14b93dcbd78f13573ae2ab29a98327768af91af5bda0bab9e` 改变并人工解释。
+
+证据边界：固定 Combat 只覆盖 compact trailing、普通 Dynamic Type 与 pending Attack fixture；不能证明 compact bottom、regular/accessibility、真实 VoiceOver 焦点、滚动发现性、全部语言/设备或真机触控手感。
