@@ -1443,3 +1443,21 @@ flowchart TD
 ```
 
 读图说明：v2.70 只统一 Tactical Map 五类实体 marker 目标的输入容错和参数转发；点位命令不吸附，普通点按居中、fog/radar、18pt 拖动、generation gate、主战场触控、Core、存档和 Web 版不变。实现 commit `0d9f6df` 对应 run `32629616076` 的 artifact、源码合同与双 PNG 已由 Agent C 复判通过；固定云端 smoke 不会真实点击 marker，验收结论仍区分源码参数合同与真实触控行为证据。
+
+## v2.71 iOS single-touch terminal owner handoff
+
+```mermaid
+flowchart TD
+  T[Spatial accepted primary ended] --> O[owner possible · activeIDs empty · old ID quarantined]
+  O --> C{tap/context terminal arrives first?}
+  C -->|yes| N[既有 command commit/cancel + finish]
+  C -->|no| F[下一枚未隔离 fresh active ID]
+  F --> P{Core canYieldTerminalPossibleSequence}
+  P -->|true| G[清理旧 preview/context · invalidate pan/pinch]
+  G --> Y[close old sequence · preserve quarantine]
+  Y --> S[beginFreshSequence with new ID]
+  S --> R[既有 tap / long press / pan / multitouch router]
+  P -->|same quarantined ID / no ended evidence| X[拒绝播种，保留安全边界]
+```
+
+读图说明：v2.71 只让有 accepted-ended 证据的未 claim 单指 owner 在下一枚新 ID 到达时安全让位；active owner、claimed owner、旧 ID、第二指 candidate、第三指/cancel/reset、命令和渲染路径保持。固定云端 smoke 不注入并行 gesture callback 顺序，Core 测试与源码合同不能扩大为真实设备回调已完全验证。

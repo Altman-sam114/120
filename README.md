@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.71：原生 iOS 主战场修复单指 Spatial terminal 后 owner 可能残留 `.possible` 并吞掉下一枚新触点的问题。`TouchSequenceOwner` 只在旧 sequence 已有 accepted-ended 证据、`activeIDs` 为空且新 ID 未被隔离时原子让位；`BattlefieldView` 在播种新触点前清理旧 preview/context lease，并失效旧 context、pan、pinch callback。正常 tap/context terminal 仍可先提交，active 单指和 pan/long-press/multitouch/pinch owner 不可被抢占，旧 ID quarantine、第二指 candidate、12pt pan、双指框选、主战场命令、Tactical Map v2.70、Core 模拟、存档和 Web 版保持。当前实现等待最新 `origin/main` Actions artifact 的 Agent C 验收。
+
 v2.70：原生 iOS Tactical Map 的 Attack、Guard、Repair、Reclaim 与 Build Extractor 五类等待实体 marker 目标统一复用既有约 16pt 屏幕直径触控容错。命令集合由 `GameController` 单一 predicate 管理，同一 world-space 最小命中半径会传给 Builder 与 Selection resolver，Reclaim 也会在保留默认 95 world 半径的前提下消费该容错。Move、Attack Move、Patrol、Rally、Turret、Factory、Radar 等点位命令、普通小地图相机操作、fog/radar 与目标资格、18pt 拖动、callback generation、主战场 44pt 命中、Core、存档和 Web 版不变。实现 commit `0d9f6dfe5d8a032f50ad7e81c2d4dc9a9e24303d` 对应 Actions run `32629616076` / attempt `1` / job `97170247909` 的 artifact `rustwar-ci-v1.2-main-0d9f6df-run32629616076-attempt1` 已通过：manifest 完全匹配，JUnit 为 `8 tests / 0 failures / 1 skipped`，自动检查与双 PNG probe 成功，Home/Combat 固定画面相对 v2.69.1 最终基线无静态回退；固定 fixture 不执行 marker 偏移点按，真实命中率仍属真机/触摸自动化证据边界。
 
 v2.69.1：修正 v2.69 云端 `ios-home.png` 暴露的三列生产卡可读性问题。compact 卡片改为图标、完整短名、费用/人口/时间和状态的纵向层级，Scout / Light / Hover / Arty / AA / Heavy 不再与图标争抢同一行；资源、人口和通用锁定状态使用 `NEED` / `POP` / `LOCK` 短标签，VoiceOver 继续朗读完整不足原因。三列顺序、availability disabled、Shift+1-9、队列、升级、Repeat、Rally、44pt 触控、regular/accessibility 布局、Core、存档和 Web 版不变。commit `654d1badd3a4865ae7af533bdde10610b29d81f0` 对应 Actions run `32626293862` / attempt `1` / job `97162056739` 的 artifact `rustwar-ci-v1.2-main-654d1ba-run32626293862-attempt1` 已通过：manifest 完全匹配，JUnit 为 `8 tests / 0 failures / 1 skipped`，自动检查成功；Home PNG 中六个短名和当前 fixture 可见的 `NEED` 均完整且三列无重叠，`POP` / `LOCK` 未在 fixture 渲染、仅由源码映射确认，Combat PNG 未见回退。
@@ -208,6 +210,7 @@ v2.50：原生 iOS 生产建筑 dock 首屏增加只读 Production focus summary
 - 外接键盘：WASD / 方向键移动视野，Space 回到己方 Command Center，P 暂停/恢复，R 重开当前地图，E 选择空闲 Builder，F 选择当前屏幕内作战单位，Control + A 选择全部战斗单位，Option + A 选择同类型单位，A 进入 Attack Move，G 进入 Patrol，H 进入 Guard，C 进入 Reclaim，S 停止或取消当前等待命令，Z / X / V 切换选中有武器己方单位为 Aggressive / Defensive / Hold Fire；Shift + 1-9 按当前 HUD 顺序生产单位，Shift + E / T / F / D 进入 Build Extractor / Turret / Factory / Radar，Shift + C / P / R 执行 Cancel Last / Repeat / Rally。
 - 拖拽：主战场移动超过 12pt 后平移战场视角；同一触摸序列会持续抑制 tap/长按，轻微抖动仍可保留长按语义。Tactical Map 的相机拖动与长按最大移动统一为 18pt，轻拖不会落入原先 18–22pt 的点按灰区。
 - 地图重置中的触摸：若 reset 发生在 Spatial touch ID 登记前，context seed 之前的 context/Spatial 首帧会被取消围栏拦截；seed 和 active touch 证据到齐后才恢复普通 tap、pan 或双指手势，但 SwiftUI 没有统一 touch token，seed 后的迟到旧回调仍需真机/XCUITest 进一步区分。
+- 连续单指触摸：若 Spatial 已确认上一枚 accepted touch ended、owner 尚在等待 tap/context terminal，而这些并行回调迟到或缺失，下一枚使用未隔离新 ID 的 active touch 会先让旧 terminal owner 安全收口再建立新 sequence，不再被误判为 replacement；系统立即复用同一旧 ID、或第二指尚未被 Spatial 上报时仍无法绝对区分。
 - 捏合：缩放战场视角；正常结束或被第三指、系统取消、触点替换、切图/重置中断后都会清除该次累计倍率，下一次捏合从 1.0 基线继续。
 - Move：选中己方单位时显示；点按后进入移动落点模式，再 tap 战场下达移动命令；多选时所有选中己方单位会按稳定方阵获得围绕目标点的目的地。
 - Attack Move：选中己方单位时显示；点按后进入攻击移动目的地模式，再 tap 战场下达攻击移动命令；多选时所有选中己方单位会按稳定方阵获得围绕目标点的攻击移动目的地，单位会向各自目的地移动，并只在自身视野范围内获取敌方单位或建筑作为临时攻击目标。

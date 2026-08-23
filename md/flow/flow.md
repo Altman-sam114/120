@@ -893,3 +893,11 @@ commit `5db992a3325aca239ff5061fffc1f4ccc28c9602` 对应 run `32463246451` 的�
 该轮不改变目标成功/失败后的 pending 生命周期、fog/radar、点位命令、普通小地图相机操作、18pt 拖动与 callback generation、主战场 44pt 命中和触摸 owner，也不修改 RustwarCore、GameState、订单、存档/JSON 或 Web。固定云端 artifact 不执行真实 marker 偏移点按，因此只能证明最新 SHA 的编译、启动、既有回归、静态 UI 与源码参数合同；真实命中率和真机手感仍需针对性触摸自动化或设备验证。
 
 实现 commit `0d9f6dfe5d8a032f50ad7e81c2d4dc9a9e24303d` 对应 run `32629616076` / attempt `1` / job `97170247909`。Agent C 已把 artifact `rustwar-ci-v1.2-main-0d9f6df-run32629616076-attempt1` 下载到 `/private/tmp/rustwar-c-review-32629616076/`（约 1.7M），核对 manifest、JUnit、主日志、失败摘要、repo state、双架构 build、双场景启动、横屏归一化和双 PNG；JUnit 为 `8/0/1`，唯一 skip 是既有 headless browser 缺失。源码合同复判通过，双 PNG 与 v2.69.1 最终基线无静态差异。
+
+## v2.71 iOS single-touch terminal owner handoff
+
+`TouchSequenceOwner.canYieldTerminalPossibleSequence` 集中定义可让位状态：owner 仍为 `.possible`、`activeIDs` 已空，且至少一个旧 `acceptedID` 已因 accepted ended terminal 进入 `cancelledIDs`。`beginFreshSequence` 只在 idle、cancelled 或该明确 terminal 状态接受未隔离新 ID；terminal possible 会先关闭旧 sequence、保留旧 ID quarantine，再只递增一次 sequence 并播种新 primary。active possible、任何已 claim owner、无 terminal 的空 active frame和被隔离 ID都不能抢占，旧 lease 对新 owner失效。
+
+`BattlefieldView.synchronizeTouchOwner` 在 `allowFreshSeed`、Core predicate 为真且当前 Spatial frame 存在未隔离 active touch 时，先按旧 sequence 清理 touch preview、reset context generation/lease、失效 pan/pinch callback，并清空旧 pan/pinch/multitouch presentation 引用；随后复用同一 Core `beginFreshSequence` 建立 context seed。当前 Spatial callback 不被无条件失效，因此新 frame仍能继续 observation。`finishMultitouchSelection` 不提前关闭单指 terminal，正常 SpatialTap/context terminal仍有机会提交原触摸。
+
+该轮修复的是“上一单指已有 ended 证据但 terminal callback 未收口，下一枚全新 ID 被 replacement-reject”的确定状态缺口。系统立即复用同一 quarantined ID、或第二指尚未出现在 SpatialEventGesture 前 long press 已提交的窗口仍无法安全判定；不通过清空 quarantine 或全局延迟牺牲单指响应。GameController、命令、CameraState、Tactical Map、SpriteKit、Core 模拟、存档/JSON 和 Web 状态不变。

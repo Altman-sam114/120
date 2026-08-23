@@ -17,6 +17,36 @@ import Testing
     #expect(owner.primaryID == 10)
 }
 
+@Test func touchSequenceOwnerTerminalPossibleSequenceYieldsToFreshID() throws {
+    var owner = TouchSequenceOwner<Int>()
+    let firstLease = try #require(owner.beginFreshSequence(with: 41))
+    #expect(owner.beginFreshSequence(with: 42) == nil)
+    #expect(!owner.canYieldTerminalPossibleSequence)
+
+    #expect(owner.observe(activeIDs: [], endedIDs: [41]) == .accepted)
+    #expect(owner.phase == .possible)
+    #expect(owner.activeIDs.isEmpty)
+    #expect(owner.cancelledIDs == Set([41]))
+    #expect(owner.canYieldTerminalPossibleSequence)
+    #expect(owner.beginFreshSequence(with: 41) == nil)
+
+    let freshLease = try #require(owner.beginFreshSequence(with: 42))
+    #expect(freshLease.sequence == firstLease.sequence + 1)
+    #expect(owner.phase == .possible)
+    #expect(owner.acceptedIDs == Set([42]))
+    #expect(owner.activeIDs == Set([42]))
+    #expect(owner.primaryID == 42)
+    #expect(!owner.accepts(firstLease))
+    #expect(owner.finish(firstLease) == .ignored)
+
+    var ownerWithoutTerminal = TouchSequenceOwner<Int>()
+    _ = ownerWithoutTerminal.beginFreshSequence(with: 51)
+    #expect(ownerWithoutTerminal.observe(activeIDs: []) == .accepted)
+    #expect(ownerWithoutTerminal.activeIDs.isEmpty)
+    #expect(!ownerWithoutTerminal.canYieldTerminalPossibleSequence)
+    #expect(ownerWithoutTerminal.beginFreshSequence(with: 52) == nil)
+}
+
 @Test func touchSequenceOwnerRejectsReplacementAndRequiresFreshSeed() {
     var owner = TouchSequenceOwner<Int>()
     _ = owner.beginFreshSequence(with: 1)

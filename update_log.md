@@ -6427,3 +6427,35 @@
 
 - 固定 fixture 不执行 Tactical Map marker 偏移点按；源码参数链路、绿色 build 和静态 PNG 不能证明真实命中率、超出半径后的拒绝、VoiceOver 执行或真机手感。
 - Actions 对 `actions/upload-artifact@v5` 给出 Node.js 20 弃用并强制 Node.js 24 的注释；本次 artifact 上传成功，不影响验收结论，后续可作为 CI 维护项跟踪。
+
+## v2.71 / Single-touch terminal owner handoff
+
+日期：2026-08-23
+
+核心变更：
+
+- `TouchSequenceOwner` 新增 accepted-ended terminal possible predicate；只有 `.possible`、无 active ID 且旧 accepted ID 已被 terminal 隔离时，未隔离新 ID 才能原子接管。
+- 让位先关闭旧 sequence 并保留 quarantine，再建立唯一新 primary；active/claimed owner、同一旧 ID和无 terminal 空 frame仍拒绝，旧 lease 不能操作新 owner。
+- `BattlefieldView` 在下一枚 fresh active touch 到达时清理旧 preview/context lease，并失效旧 context、pan、pinch callbacks，再复用 Core fresh-seed 路径；正常 tap/context terminal不会被提前 finish。
+- 新增 Swift Testing 覆盖 terminal handoff、sequence、primary、quarantine、stale lease、active owner 与无 terminal 空 frame。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/TouchSequenceOwner.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.71-single-touch-terminal-owner-handoff.md`
+
+验证状态：
+
+- 本轮遵循云端唯一验证制度；本机未运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、浏览器、截图、Node、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
+- 当前只完成源码、Core 测试定义与文档实现；必须 push `origin/main` 后，以完整实现 SHA 对应的最新 `Rustwar CI Results` artifact 完成 manifest、JUnit、日志、双架构 build、双场景启动、双 PNG 和源码合同复判，才可确认通过。
+
+已知风险：
+
+- 固定云端 smoke 不注入目标 SwiftUI callback 顺序；不能证明真机完全消除吞触。
+- 旧 ID 继续 quarantine，系统立即复用同一 touch ID 时仍无法安全播种；第二指 Spatial evidence 尚未到达前，long press仍可能抢先提交。本轮不清空 quarantine，也不全局延迟单指命令。

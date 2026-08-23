@@ -57,10 +57,20 @@ public struct TouchSequenceOwner<ID: Hashable>: Equatable {
         phase != .idle && phase != .cancelled
     }
 
+    public var canYieldTerminalPossibleSequence: Bool {
+        phase == .possible &&
+            activeIDs.isEmpty &&
+            !acceptedIDs.isDisjoint(with: cancelledIDs)
+    }
+
     public mutating func beginFreshSequence(with id: ID) -> Lease? {
-        guard (phase == .idle || phase == .cancelled),
+        guard (phase == .idle || phase == .cancelled || canYieldTerminalPossibleSequence),
               !cancelledIDs.contains(id) else {
             return nil
+        }
+
+        if canYieldTerminalPossibleSequence {
+            closeCurrentSequence()
         }
 
         sequence &+= 1

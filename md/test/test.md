@@ -664,3 +664,19 @@ Agent C 只验收实现提交对应的最新 `origin/main` 未加密 Actions art
 证据边界：固定 fixture 不执行 Tactical Map marker 偏移点按，因此绿色 build、JUnit、源码复判和静态 PNG 不能证明真实命中率、半径边界、VoiceOver 执行或真机手感；除非最新 run 新增并通过对应触摸自动化，否则必须保留该风险。
 
 验收记录：实现 commit `0d9f6dfe5d8a032f50ad7e81c2d4dc9a9e24303d` 对应 run `32629616076` / attempt `1` / job `97170247909`，artifact 为 `rustwar-ci-v1.2-main-0d9f6df-run32629616076-attempt1`。Agent C 已下载到 `/private/tmp/rustwar-c-review-32629616076/`（约 1.7M），manifest 的 branch、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5 与固定 iPhone 17 Pro 完全匹配；JUnit `8 tests / 0 failures / 1 skipped`，唯一 skip 为既有 headless browser 缺失，主日志和失败摘要记录所有固定自动检查成功。Home/Combat PNG 均为 `2622x1206`、透明比例 0，人工与 v2.69.1 最终基线对照无静态回退；源码参数合同复判通过，但未扩大为真实 marker 点击自动化已验证。
+
+## v2.71
+
+本轮修改 RustwarCore `TouchSequenceOwner`、对应 Swift Testing、主战场 `BattlefieldView` 和必要文档；继续执行云端唯一验证。本机不运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、浏览器、截图、Node、测试脚本或 `git diff --check`；`.wp` 必须保持未跟踪。
+
+代码复判必须确认：
+
+- `canYieldTerminalPossibleSequence` 只在 `.possible`、`activeIDs.isEmpty` 且 `acceptedIDs` 与 `cancelledIDs` 有交集时为真；无 accepted terminal 的空 frame 不得让位。
+- `beginFreshSequence` 从 terminal possible 让位时先关闭旧 sequence、保留旧 ID quarantine，再只递增一次并播种唯一的新 accepted/active/primary；旧 lease 失效。同一旧 ID、active possible 和 pan/area/longPress/multitouch/pinch owner不可抢占。
+- Core tests 覆盖正常 active 拒绝、accepted ended terminal、旧 ID 拒绝、fresh ID 成功、sequence、primary、stale lease 和无 terminal 空 frame。
+- `BattlefieldView` 只在 `allowFreshSeed`、Core predicate 和未隔离 active touch 同时满足时让位；旧 context、pan、pinch callbacks/leases 和 preview 被清理，当前 Spatial frame仍可建立新 seed。
+- 单指 terminal 不被提前 finish；正常 tap/context terminal、第二指 candidate、12pt pan、长按、pinch、双指框选、third finger、replacement/cancel/reset、pending 命令、Tactical Map、Core/save/Web 无回退。
+
+Agent C 只验收实现提交对应的最新 `origin/main` artifact，核对 manifest 的 branch、完整 SHA、run id/attempt、Xcode 26.5、iOS 26.5、固定 iPhone 17 Pro，以及 JUnit、主日志、失败摘要、repo state、Swift Core、Xcode list/build、双架构 iOS build、production/combat 双启动、横屏归一化和双 PNG probe。双 PNG 人工确认 Production、Quick Orders、Tactical Map、状态栏、模型、弹道和爆点无静态回退。
+
+证据边界：Core 云端测试可证明状态机合同，固定 Simulator smoke 不注入目标 callback 顺序；不能证明真实设备完全不吞触、同 ID 复用、第二指尚未上报前的 long press、VoiceOver、Dynamic Type 或真机手感。
