@@ -6572,3 +6572,37 @@
 - 固定 Simulator smoke 不注入真实 simultaneous gesture callback 顺序，不能证明真机完全消除 12–18pt 误触或量化手感改善。
 - seed 后迟到旧触点、系统立即复用同一 touch ID 和第二指尚未上报前的 callback 仍无法绝对区分；本轮不清空 quarantine 或延迟全部单指命令。
 - 后续候选为 compact Production summary 去重，以及 combat impact/terminal 中心留孔，提升信息密度与模型可读性。
+
+## v2.75 / Occlusion-safe impact hierarchy
+
+日期：2026-08-23
+
+核心变更：
+
+- `BattlefieldScene.addProjectileTerminalFlash` 把大实心白核和 starburst 改为小接触点、四段断续空心环与六根稀疏外向辐条，中心为目标模型保留透明读图区。
+- `spawnImpactEffect` 降低陆地 ground bloom 遮挡，把 outer/inner corona 改为八根辐条和五段空心环，大白核改为小 contact，居中实心火球改为三枚确定性偏心火瓣。
+- 分段环每段 arc 显式 move 到起点，避免 Core Graphics 用弦线连接；花瓣几何显式收敛到 `CGFloat`，保持 Swift/Core Graphics 类型边界清晰。
+- terminal 继续属于既有 shot container，land impact 仍只有一个 bounded root；普通动画、Reduce Motion opacity-only、frozen fixture、64 effects / 32 decals、water/destruction 分流和 v2.72 武器层级保持。
+- Scene 没有可靠 attacker impact event，本轮不根据 generic HP impact 伪造来袭方向；Core、AI、命令、生产、触控、HUD、Tactical Map、存档/JSON 和 Web 版不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.75-occlusion-safe-impact-hierarchy.md`
+- `update_log.md`
+
+验证状态：
+
+- v2.74 最终文档 commit `e01b0ee8757959eef9dc6b3a551db559e30237da` 对应 run `32642465248` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-e01b0ee-run32642465248-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32642465248/`（约 1.7M）并复判。JUnit `8/0/1`、Core `342 tests`、双架构 build、双启动与双 PNG probe 全成功，Home/Combat 哈希与 v2.73 一致，上一轮闭环。
+- v2.75 遵循云端唯一验证制度；本机未运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
+- 实现需 push 到 `origin/main` 后，只验收该完整 SHA 对应 run/artifact；Home 应保持 `f2238e3bfb7918b0db80f2cda7d97533c670db51e7c91c358a3a24acb72a1bcf`，Combat 必须改变并人工确认三个重叠目标仍可读。当前不得宣称 v2.75 云端通过。
+
+已知风险：
+
+- 固定 frozen PNG 能检查同点叠加构图，不能证明动态 fade/scale/rotate、真实密集战斗帧率、任意 zoom/地图、动态 Reduce Motion 或真机观感。
+- 若未来需要按来袭方向或武器类型生成命中特效，必须先设计可靠 Core combat visual event，不能从当前 HP 差分倒推出攻击者。
+- 下一候选为 compact Production summary 去重，让 Arty/AA/Heavy 第二排更早进入 Home 首屏。

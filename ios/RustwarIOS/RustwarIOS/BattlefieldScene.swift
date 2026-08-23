@@ -1818,31 +1818,34 @@ final class BattlefieldScene: SKScene {
         terminal.alpha = isFrozen ? 0.82 : 0
         terminal.setScale(isFrozen ? 0.92 : accessibilityReduceMotion ? 1 : 0.46)
 
-        let coreRadius = Swift.max(2.2, radius * 1.55)
-        let core = SKShapeNode(circleOfRadius: coreRadius)
-        core.fillColor = .white.withAlphaComponent(0.86)
-        core.strokeColor = color.withAlphaComponent(0.9)
-        core.lineWidth = Swift.max(0.8, radius * 0.55)
-        terminal.addChild(core)
+        let contactRadius = Swift.max(1.25, radius * 0.72)
+        let contact = SKShapeNode(circleOfRadius: contactRadius)
+        contact.fillColor = .white.withAlphaComponent(0.9)
+        contact.strokeColor = color.withAlphaComponent(0.88)
+        contact.lineWidth = Swift.max(0.65, radius * 0.34)
+        terminal.addChild(contact)
 
-        let ring = SKShapeNode(circleOfRadius: coreRadius * 2.1)
-        ring.fillColor = .clear
-        ring.strokeColor = teamAccent.withAlphaComponent(0.82)
-        ring.lineWidth = Swift.max(0.9, radius * 0.62)
-        ring.glowWidth = Swift.max(0.4, radius * 0.35)
+        let ringRadius = Swift.max(contactRadius * 3.1, radius * 3.2)
+        let ring = segmentedRingNode(
+            radius: ringRadius,
+            segmentCount: 4,
+            coverage: 0.58,
+            rotation: 0.18,
+            color: teamAccent.withAlphaComponent(0.82),
+            lineWidth: Swift.max(0.9, radius * 0.58)
+        )
+        ring.glowWidth = Swift.max(0.35, radius * 0.3)
         terminal.addChild(ring)
 
-        let burst = radialBurstNode(
-            pointCount: 8,
-            innerRadius: coreRadius * 1.45,
-            outerRadius: coreRadius * 2.7,
-            rotation: 0.2,
-            fill: color.withAlphaComponent(0.24),
-            stroke: color.withAlphaComponent(0.78),
-            lineWidth: Swift.max(0.6, radius * 0.42)
+        let sparks = radialSpokeNode(
+            spokeCount: 6,
+            innerRadius: ringRadius * 1.08,
+            outerRadius: ringRadius * 1.58,
+            rotation: 0.28,
+            color: color.withAlphaComponent(0.8),
+            lineWidth: Swift.max(0.65, radius * 0.4)
         )
-        burst.zRotation = 0.12
-        terminal.addChild(burst)
+        terminal.addChild(sparks)
         container.addChild(terminal)
 
         guard !isFrozen else {
@@ -1916,48 +1919,43 @@ final class BattlefieldScene: SKScene {
             height: 12 * intensity
         ))
         groundBloom.position.y = -CGFloat(2.5 * intensity)
-        groundBloom.fillColor = SKColor.systemOrange.withAlphaComponent(0.24)
-        groundBloom.strokeColor = SKColor.systemYellow.withAlphaComponent(0.52)
-        groundBloom.lineWidth = 1.2
+        groundBloom.fillColor = SKColor.systemOrange.withAlphaComponent(0.15)
+        groundBloom.strokeColor = SKColor.systemYellow.withAlphaComponent(0.38)
+        groundBloom.lineWidth = 1
         groundBloom.zPosition = -3
         container.addChild(groundBloom)
 
-        let outerCorona = radialBurstNode(
-            pointCount: 12,
-            innerRadius: 5.2 * intensity,
-            outerRadius: 10.8 * intensity,
+        let outerCorona = radialSpokeNode(
+            spokeCount: 8,
+            innerRadius: 7.2 * intensity,
+            outerRadius: 11.4 * intensity,
             rotation: 0.18,
-            fill: SKColor.systemOrange.withAlphaComponent(0.72),
-            stroke: SKColor.systemYellow.withAlphaComponent(0.78),
-            lineWidth: 1
+            color: SKColor.systemOrange.withAlphaComponent(0.82),
+            lineWidth: 1.15
         )
         outerCorona.zPosition = -1.4
         container.addChild(outerCorona)
 
-        let innerCorona = radialBurstNode(
-            pointCount: 9,
-            innerRadius: 3.2 * intensity,
-            outerRadius: 7.4 * intensity,
-            rotation: 0.54,
-            fill: SKColor.systemYellow.withAlphaComponent(0.9),
-            stroke: .white.withAlphaComponent(0.82),
-            lineWidth: 0.8
+        let innerCorona = segmentedRingNode(
+            radius: 5.9 * intensity,
+            segmentCount: 5,
+            coverage: 0.54,
+            rotation: 0.42,
+            color: SKColor.systemYellow.withAlphaComponent(0.84),
+            lineWidth: 1.05
         )
         innerCorona.zPosition = -0.6
         container.addChild(innerCorona)
 
-        let core = SKShapeNode(circleOfRadius: 4 * intensity)
-        core.fillColor = .white.withAlphaComponent(0.94)
-        core.strokeColor = SKColor.systemOrange
-        core.lineWidth = 1.2
-        container.addChild(core)
+        let contact = SKShapeNode(circleOfRadius: Swift.max(1.2, 1.45 * intensity))
+        contact.fillColor = .white.withAlphaComponent(0.88)
+        contact.strokeColor = SKColor.systemOrange.withAlphaComponent(0.9)
+        contact.lineWidth = 0.9
+        container.addChild(contact)
 
-        let fire = SKShapeNode(circleOfRadius: 6.2 * intensity)
-        fire.fillColor = SKColor.systemOrange.withAlphaComponent(0.76)
-        fire.strokeColor = SKColor.systemYellow.withAlphaComponent(0.9)
-        fire.lineWidth = 1.2
-        fire.zPosition = -1
-        container.addChild(fire)
+        let firePetals = offsetFirePetalNode(intensity: intensity)
+        firePetals.zPosition = -1
+        container.addChild(firePetals)
 
         let ring = SKShapeNode(circleOfRadius: 8 * intensity)
         ring.fillColor = .clear
@@ -1972,15 +1970,15 @@ final class BattlefieldScene: SKScene {
             addPersistentBoundedEffect(container)
             return
         } else if accessibilityReduceMotion {
-            core.run(.fadeOut(withDuration: 0.16))
-            fire.run(.fadeOut(withDuration: 0.18))
+            contact.run(.fadeOut(withDuration: 0.16))
+            firePetals.run(.fadeOut(withDuration: 0.18))
             ring.run(.fadeOut(withDuration: 0.18))
             groundBloom.run(.fadeOut(withDuration: 0.2))
             outerCorona.run(.fadeOut(withDuration: 0.2))
             innerCorona.run(.fadeOut(withDuration: 0.18))
         } else {
-            core.run(.group([.fadeOut(withDuration: 0.18), .scale(to: 1.4, duration: 0.18)]))
-            fire.run(.group([.fadeOut(withDuration: 0.28), .scale(to: 1.55, duration: 0.28)]))
+            contact.run(.group([.fadeOut(withDuration: 0.18), .scale(to: 1.28, duration: 0.18)]))
+            firePetals.run(.group([.fadeOut(withDuration: 0.28), .scale(to: 1.48, duration: 0.28)]))
             ring.run(.group([.fadeOut(withDuration: 0.38), .scale(to: 2.1, duration: 0.38)]))
             groundBloom.run(.group([.fadeOut(withDuration: 0.34), .scale(to: 1.65, duration: 0.34)]))
             outerCorona.run(.group([.fadeOut(withDuration: 0.3), .scale(to: 1.72, duration: 0.3)]))
@@ -2165,6 +2163,92 @@ final class BattlefieldScene: SKScene {
         burst.lineWidth = lineWidth
         burst.lineJoin = .round
         return burst
+    }
+
+    private func segmentedRingNode(
+        radius: Double,
+        segmentCount: Int,
+        coverage: Double,
+        rotation: Double,
+        color: SKColor,
+        lineWidth: Double
+    ) -> SKShapeNode {
+        let path = CGMutablePath()
+        let step = Double.pi * 2 / Double(segmentCount)
+        let arcLength = step * coverage
+        for index in 0..<segmentCount {
+            let startAngle = rotation + Double(index) * step
+            path.move(to: CGPoint(
+                x: CGFloat(cos(startAngle) * radius),
+                y: CGFloat(sin(startAngle) * radius)
+            ))
+            path.addArc(
+                center: .zero,
+                radius: radius,
+                startAngle: startAngle,
+                endAngle: startAngle + arcLength,
+                clockwise: false
+            )
+        }
+        let ring = SKShapeNode(path: path)
+        ring.fillColor = .clear
+        ring.strokeColor = color
+        ring.lineWidth = lineWidth
+        ring.lineCap = .round
+        return ring
+    }
+
+    private func radialSpokeNode(
+        spokeCount: Int,
+        innerRadius: Double,
+        outerRadius: Double,
+        rotation: Double,
+        color: SKColor,
+        lineWidth: Double
+    ) -> SKShapeNode {
+        let path = CGMutablePath()
+        for index in 0..<spokeCount {
+            let angle = rotation + Double(index) * (Double.pi * 2 / Double(spokeCount))
+            path.move(to: CGPoint(
+                x: CGFloat(cos(angle) * innerRadius),
+                y: CGFloat(sin(angle) * innerRadius)
+            ))
+            path.addLine(to: CGPoint(
+                x: CGFloat(cos(angle) * outerRadius),
+                y: CGFloat(sin(angle) * outerRadius)
+            ))
+        }
+        let spokes = SKShapeNode(path: path)
+        spokes.fillColor = .clear
+        spokes.strokeColor = color
+        spokes.lineWidth = lineWidth
+        spokes.lineCap = .round
+        return spokes
+    }
+
+    private func offsetFirePetalNode(intensity: Double) -> SKShapeNode {
+        let path = CGMutablePath()
+        let orbitRadius = 5.2 * intensity
+        for index in 0..<3 {
+            let angle = 0.48 + Double(index) * (Double.pi * 2 / 3)
+            let center = CGPoint(
+                x: CGFloat(cos(angle) * orbitRadius),
+                y: CGFloat(sin(angle) * orbitRadius)
+            )
+            let width = CGFloat((3.8 + Double(index) * 0.45) * intensity)
+            let height = CGFloat((5.8 - Double(index) * 0.35) * intensity)
+            path.addEllipse(in: CGRect(
+                x: center.x - width / 2,
+                y: center.y - height / 2,
+                width: width,
+                height: height
+            ))
+        }
+        let petals = SKShapeNode(path: path)
+        petals.fillColor = SKColor.systemOrange.withAlphaComponent(0.72)
+        petals.strokeColor = SKColor.systemYellow.withAlphaComponent(0.88)
+        petals.lineWidth = 1
+        return petals
     }
 
     private func spawnDestructionEffect(

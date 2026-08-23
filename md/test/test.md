@@ -747,3 +747,21 @@ Agent C 只验收 v2.74 最新 `origin/main` 完整 SHA 对应 artifact，核对
 通过记录：实现 commit `098949ab458b43ed3c8bb0437bcf6c9d3db5a3ed` 对应 Actions run `32641409853` / attempt `1` / job `97198955357`；artifact `rustwar-ci-v1.2-main-098949a-run32641409853-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32641409853/`，约 `1.7M`。manifest 的 branch、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5、Swift 6.3.2 与固定 iPhone 17 Pro 完全匹配；JUnit `8 tests / 0 failures / 1 skipped`，唯一 skip 为既有 headless browser regression。
 
 主日志确认 Swift Core `342 tests` 全通过，`singleTouchTravelPolicyConvergesAtPanBoundary`、`attackMoveAcquiresNearbyEnemyAndDamagesBeforeDestination` 与 `attackMoveContinuesAfterDestroyingAcquiredTarget` 明确通过；`SingleTouchTravelPolicy.swift` 和 `BattlefieldView.swift` 均进入 arm64/x86_64 编译，Xcode list/build、双场景启动、横屏归一化与双 PNG probe 全成功。Home SHA-256 `f2238e3bfb7918b0db80f2cda7d97533c670db51e7c91c358a3a24acb72a1bcf`、Combat SHA-256 `85dadf8d8aaf273b9f6928a76f4c70b838a72258d0ee4d1a2be0ee72282ddea3` 与 v2.73 逐字节一致；Agent C 判定 v2.74 artifact 验收通过。
+
+最终文档 commit `e01b0ee8757959eef9dc6b3a551db559e30237da` 对应 run `32642465248` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-e01b0ee-run32642465248-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32642465248/` 并复判。JUnit `8/0/1`、Core `342 tests`、Xcode list/build、双架构、双启动、横屏归一化和双 PNG probe 全成功；Home/Combat 哈希继续与 v2.73 一致，v2.74 文档提交闭环。
+
+## v2.75
+
+本轮只修改 `BattlefieldScene.swift` 的 projectile terminal 与 generic land impact presentation，以及必要文档；禁止本机运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`。验证只使用最新 `origin/main` 完整 SHA 对应的 GitHub Actions artifact，`.wp` 保持未跟踪。
+
+代码复判必须确认：
+
+- `addProjectileTerminalFlash` 的大实心 core/starburst 已替换为小接触点、四段真正断开的空心环与稀疏辐条；每段 arc 显式 move，不能由弦线连回中心。
+- `spawnImpactEffect` 保留 water 分流、scorch、spark、debris、smoke 与 lifetime；陆地 bloom 降低遮挡，outer/inner corona 分别为辐条/五段环，中心为小 contact 与三枚偏心火瓣留孔。
+- 普通模式仍按原生命周期 fade/scale；Reduce Motion 只做 opacity、不移动/旋转/扩张；frozen 保持静态 persistent bounded presentation。
+- terminal 继续属于 shot container，land impact 仍只增加一个 effect root；64 effects / 32 decals、fog/visibility、map reset 和确定性节点合同不变。
+- v2.72 Tank/Heavy/Artillery/AA profile、destruction/water impact、Core 命中/伤害/冷却、AI、命令、生产、触控、HUD、Tactical Map、存档/JSON 和 Web 版没有改动；不得把 generic HP impact 描述成已知 attacker direction。
+
+Agent C 必须核对最新 run 的 manifest、JUnit、主日志、失败摘要、repo state、Xcode 26.5、iOS 26.5、Swift 6.3.2 与固定 iPhone 17 Pro；Swift Core 至少 `342 tests`、Xcode list/build、arm64/x86_64 build、production/combat 双启动、横屏归一化和双 PNG probe 全成功。Home SHA-256 应保持 `f2238e3b...`；Combat SHA-256 必须改变并人工复看，不能只凭 build green 或哈希变化验收。
+
+人工复看 `ios-combat.png`：`visual-enemy-tank`、`visual-enemy-artillery`、`visual-player-hover` 在 terminal + impact 重叠下仍可辨 hull、炮塔/发射器、朝向和队伍标记；接触点、分段环、辐条与偏心火瓣仍足够清楚。v2.72 火炮弧线/影子/烟珠、AA 平行双线、Tank/Heavy 层级、双方 Turret、Quick Orders、Tactical Map 和状态栏不得回退。固定 frozen PNG 不证明动态时序、密集帧率、任意 zoom/地图、动态 Reduce Motion 或真机观感。

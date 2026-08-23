@@ -1531,3 +1531,23 @@ flowchart TD
 ```
 
 读图说明：v2.74 只收敛单指 travel policy。12pt 以下维持 Rusted Warfare 式点选/直接下令，达到阈值后当前 sequence 永久转入 pan-safe 路径，即使回移也不提交命令。实现 `098949ab458b43ed3c8bb0437bcf6c9d3db5a3ed` 对应 run `32641409853` 的 artifact、342 Core tests、双架构 build 和静态哈希已由 Agent C 复判通过。双指框选、pinch、44pt 命中、直接点按路由、Attack-Move 自动索敌、Core/save、HUD、战斗和 Web 不变；固定 smoke 不证明真实 callback 时序或真机手感。
+
+## v2.75 iOS occlusion-safe terminal and impact hierarchy
+
+```mermaid
+flowchart LR
+  FIRE[Existing weapon-specific shot] --> TERM[Same projectile container]
+  TERM --> CONTACT[Small contact point]
+  TERM --> SEG4[4 disconnected ring segments]
+  TERM --> SPOKE6[6 sparse outward spokes]
+  HP[Visible HP delta] --> IMPACT[One existing bounded impact root]
+  IMPACT --> BLOOM[Lower-opacity ground bloom]
+  IMPACT --> SEG5[5 disconnected inner segments]
+  IMPACT --> SPOKE8[8 outer spokes]
+  IMPACT --> PETAL[3 offset fire petals with center gap]
+  IMPACT --> KEEP[Existing scorch · sparks · debris · smoke]
+  REDUCE[Reduce Motion] --> OPACITY[Opacity-only short feedback]
+  FROZEN[Frozen combat fixture] --> TABLEAU[Persistent bounded static tableau]
+```
+
+读图说明：v2.75 只把 projectile terminal 与 generic land impact 的视觉质量从实心中心转成边缘化、断续化、偏心化几何；每段 arc 显式 move，避免弦线穿过模型。terminal 不新增 root，land impact 仍只有一个 bounded root，64 effects / 32 decals、v2.72 武器 profile、水面/摧毁分流、fog、Core、命令、生产、触控、HUD 和 Web 不变。Scene 没有 attacker-specific impact event，不根据命中位置伪造来袭方向；固定 PNG 只能检查三个 fixture 目标上的重叠可读性。

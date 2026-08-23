@@ -937,3 +937,13 @@ Repeat trigger 改为 SwiftUI `Menu`，Off 与 `productionOptions` 的每个 tec
 本轮云端 policy test 覆盖 `<12`、`==12`、`>12`、负数与非有限输入。固定 Simulator smoke 只能证明 package/iOS 编译、启动和静态画面，不能注入真实 SwiftUI simultaneous callback 顺序或证明真机误触完全消失；seed 后旧触点不可绝对区分的边界保持。
 
 实现 commit `098949ab458b43ed3c8bb0437bcf6c9d3db5a3ed` 对应 Actions run `32641409853` / attempt `1` / job `97198955357`；Agent C 已把 artifact `rustwar-ci-v1.2-main-098949a-run32641409853-attempt1` 下载到 `/private/tmp/rustwar-c-review-32641409853/`（约 1.7M）。manifest/JUnit/日志/失败摘要/repo state 与固定 Xcode 26.5、iOS 26.5、Swift 6.3.2 完全匹配；Core `342 tests`、新增 policy boundary test、既有 terminal owner 和 Attack-Move acquisition/resume tests、双架构 build、双启动、横屏归一化与双 PNG probe 均成功。Home SHA-256 `f2238e3bfb7918b0db80f2cda7d97533c670db51e7c91c358a3a24acb72a1bcf`、Combat SHA-256 `85dadf8d8aaf273b9f6928a76f4c70b838a72258d0ee4d1a2be0ee72282ddea3` 与 v2.73 逐字节一致；v2.74 artifact 验收通过。
+
+最终文档 commit `e01b0ee8757959eef9dc6b3a551db559e30237da` 对应 run `32642465248` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-e01b0ee-run32642465248-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32642465248/`（约 1.7M）并复判；JUnit `8/0/1`、Core `342 tests`、双架构 build、双场景与双 probe 全成功，Home/Combat 哈希继续逐字节一致。该结果闭合 v2.74 文档提交，但不得作为后续实现证据。
+
+## v2.75 iOS occlusion-safe projectile terminal and land impact
+
+`BattlefieldScene.addProjectileTerminalFlash` 继续从既有 shot presentation 读取终点、武器色、队色、radius 与 travel duration，但把大实心 core/starburst 换成小接触点、四段真正断开的空心环和六根稀疏外向辐条。普通路径仍在 travel 后 fade/scale/rotate，Reduce Motion 只做短 opacity，frozen 路径静态可见；terminal 继续属于原 projectile container，不新增 effect root。
+
+`spawnImpactEffect` 的水面分流、焦痕、火花、碎片、烟尘与 bounded lifetime 不变。陆地路径降低 ground bloom 填充/描边，把 outer corona 改为八根辐条、inner corona 改为五段空心环、大白核改为小接触点，并用三枚确定性偏心火瓣替代居中实心火球。每段 arc 在 `CGPath` 中显式 move 到起点，避免弦线横穿中心；三枚火瓣围绕中心留孔。普通动画继续短 fade/scale，Reduce Motion 不移动/旋转/扩张，frozen 仍只增加一个 persistent bounded container。
+
+该变化只重排 presentation 几何，不改 v2.72 Tank/Heavy/Artillery/AA profile、64 effect / 32 decal 上限、fog/visibility、Core、AI、命令、生产、触控、HUD、Tactical Map、存档/JSON 或 Web。Scene 的 terminal 来自开火 presentation，generic impact 来自 HP 差分；Core 没有可靠 attacker impact event，因此二者不能被解释成已关联的来袭方向。固定 Combat fixture 继续在 `visual-enemy-tank`、`visual-enemy-artillery`、`visual-player-hover` 上叠加 terminal 与 impact，用于云端静态检查中心可读性；静态 PNG 不证明真实动画时序、密集帧率、动态 Reduce Motion 或真机观感。
