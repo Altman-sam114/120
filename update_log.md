@@ -6356,10 +6356,39 @@
 
 验证状态：
 
-- 本轮遵循云端唯一验证制度，不运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；只做只读源码复核、Git 范围确认、commit 和 push。
-- 云端 Actions run、artifact、manifest、JUnit 和 PNG 结果待本轮 push 后由 Agent C 定位并下载复判；未获得最新 artifact 前不宣布通过。
+- 本轮遵循云端唯一验证制度，未运行本地 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；只做只读源码复核、Git 范围确认、commit 和 push。
+- 实现 commit `5db992a3325aca239ff5061fffc1f4ccc28c9602` 已推送到 `origin/main`。Actions run `32463246451` / attempt `1` / job `96714367250` 的 artifact `rustwar-ci-v1.2-main-5db992a-run32463246451-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32463246451/`，约 `1.7M`；manifest 的 branch、完整 SHA、run id 和 attempt 完全匹配。
+- JUnit 为 `8 tests / 0 failures / 1 skipped`；Xcode 26.5、Swift Core、双架构 iOS build、production/combat 启动、横屏归一化和 PNG probe 全部成功。但 `ios-home.png` 人工复看发现 Scout 显示为 `Sco...`，Hover / Arty 等名称和 `NEED` 锁定原因发生截断，因此 v2.69 自动检查通过但最终视觉验收不通过，必须由 v2.69.1 修复后重新生成 artifact。
 
 已知风险：
 
 - 云端静态 build/PNG 不能证明真实生产区滚动、三列卡片在所有设备宽度的文字可读性、VoiceOver、Dynamic Type 全档位或真机触控手感。
 - 主战场单指 terminal/Spatial seed 竞态、Tactical Map pending Guard/Repair/Reclaim 命中区、长按/第二指回调顺序和战斗弹道 profile/接地阴影仍是后续轮次目标。
+
+## v2.69.1 / Compact production card readability
+
+日期：2026-08-23
+
+核心变更：
+
+- dense compact 生产卡从图标与短名横排改为图标、完整短名、费用/人口/时间、状态纵向排列，减少三列窄宽度中的横向争抢。
+- T2 Land Factory 的视觉短名保持 Scout / Light / Hover / Arty / AA / Heavy；金属不足、人口不足和通用不可用的窄卡状态分别显示 `NEED` / `POP` / `LOCK`。
+- 完整不可用原因继续由既有 VoiceOver value/hint 提供；三列网格、production 顺序、availability disabled、Shift+1-9、队列、Factory Tech、Cancel/Repeat/Rally、44pt、regular/accessibility、Core、存档和 Web 版不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.69.1-compact-production-card-readability.md`
+
+验证状态：
+
+- 本轮继续云端唯一验证；本机不运行 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`，只做只读源码与 Git 范围复核、commit 和 push；`.wp` 保持未跟踪。
+- 修复提交、Actions run、artifact、manifest、JUnit、日志和双 PNG 待 push 后填写。只有新 SHA 对应的 artifact 自动检查成功，且 `ios-home.png` 人工确认六个短名与 `NEED` / `POP` / `LOCK` 不省略、不重叠，才能判定 v2.69.1 通过；run `32463246451` 只能作为失败基线。
+
+已知风险：
+
+- 静态 PNG 不能证明真实 VoiceOver、Dynamic Type 全档位、滚动、键盘快捷键、触控命中或真机手感；纵向卡片增加高度，必须由新 Home PNG 同时确认首屏 Production header 与队列层级仍清晰。

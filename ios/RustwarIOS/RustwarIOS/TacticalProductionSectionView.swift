@@ -357,16 +357,16 @@ private struct TacticalProductionButtonLabel: View {
     }
 
     private var denseCompactBody: some View {
-        VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-            HStack(spacing: TacticalHUDTheme.denseSpacing) {
-                productionIcon
-                    .font(.title2.weight(.semibold))
-                Text(denseDisplayName)
-                    .font(.caption.bold())
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.58)
-                    .allowsTightening(true)
-            }
+        VStack(alignment: .center, spacing: TacticalHUDTheme.denseSpacing) {
+            productionIcon
+                .font(.title2.weight(.semibold))
+                .frame(height: 22)
+            Text(denseDisplayName)
+                .font(.caption.bold())
+                .lineLimit(1)
+                .minimumScaleFactor(0.58)
+                .allowsTightening(true)
+                .frame(maxWidth: .infinity)
             Text(denseMetrics)
                 .font(.caption2)
                 .foregroundStyle(TacticalHUDTheme.secondaryText)
@@ -374,7 +374,7 @@ private struct TacticalProductionButtonLabel: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.52)
             if !availability.isAvailable {
-                Label(availability.shortLabel, systemImage: availability.systemImage)
+                Label(denseAvailabilityLabel, systemImage: availability.systemImage)
                     .font(.caption2.bold())
                     .foregroundStyle(TacticalHUDTheme.unavailableForeground)
                     .lineLimit(1)
@@ -383,7 +383,7 @@ private struct TacticalProductionButtonLabel: View {
                     .accessibilityHidden(true)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .center)
     }
 
     private var productionIcon: some View {
@@ -434,6 +434,15 @@ private struct TacticalProductionButtonLabel: View {
 
     private var denseMetrics: String {
         "\(Int(definition.metalCost))M · \(definition.supply)P · \(Int(buildTime.rounded(.up)))s"
+    }
+
+    private var denseAvailabilityLabel: String {
+        switch availability {
+        case .available: "READY"
+        case .unavailable: "LOCK"
+        case .insufficientMetal: "NEED"
+        case .insufficientSupply: "POP"
+        }
     }
 
     private var compactDisplayName: String {

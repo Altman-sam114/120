@@ -875,3 +875,11 @@ Quick rail 出现时，`TacticalCommandsSectionView` 隐藏滚动区内重复的
 生产 section 使用显式 `isCompact` layout 信息：非 accessibility compact 生产卡切为三列图标优先视觉短名，并保持既有 `productionOptions` 顺序、`productionAvailability` disabled、完整 accessibility 名称/费用/人口/时间、锁定原因、Shift+1-9 和 `queueUnit` action。所有卡继续经 `tacticalControl()` 保持至少 44pt 高度；regular/accessibility 路径仍使用完整可读布局。compact MAX 且无升级 progress/control 时继续隐藏重复 Factory Tech；T2 READY 保留升级 CTA，UPGRADING 保留进度和取消。
 
 `TacticalBuildSectionView` 的 Extractor、Turret、Land Factory、Radar 按钮仍调用原有 toggle action，但 accessibility label/value/hint 按 pending 状态派生为 Build/Ready 或 Cancel placement/Waiting placement。该轮只改变 SwiftUI presentation/accessibility，不写 Core、订单、资源、生产队列、存档/JSON、TouchSequenceOwner、Battlefield/Tactical Map、战斗或 Web 状态。云端静态 PNG 能检查 compact 首屏和 combat 无回退，不能证明真实滚动、VoiceOver、Dynamic Type 全档位、触摸命中或真机手感。
+
+## v2.69.1 iOS compact production card readability
+
+v2.69 的三列网格和生产 action 保持不变，只调整 `TacticalProductionButtonLabel.denseCompactBody` 的内部视觉层级。卡片从图标与短名横排改为图标、完整短名、费用/人口/时间、不可用状态纵向排列，避免窄列先被图标占宽后把 Scout / Hover / Arty 等名称压成省略号；卡片仍由既有 `tacticalControl()` 保持至少 44pt 触控目标。
+
+compact 不可用视觉标签按 `ProductionAvailability` 映射为金属不足 `NEED`、人口不足 `POP`、通用不可用 `LOCK`。这只压缩可见 badge，按钮既有 accessibility label/value/hint 仍提供完整单位名、费用、人口、时间和具体不足原因；regular/accessibility 卡片、`productionOptions` 顺序、disabled gate、Shift+1-9、`queueUnit`、队列、Factory Tech、Cancel/Repeat/Rally、Core、存档和 Web 状态不变。
+
+commit `5db992a3325aca239ff5061fffc1f4ccc28c9602` 对应 run `32463246451` 的自动检查全部成功，但 `ios-home.png` 人工复看确认三列名称与 `NEED` 原因发生截断，因此 v2.69 未通过最终视觉验收。v2.69.1 必须以修复提交对应的新 artifact 重新核对 manifest、JUnit、日志和双 PNG；旧 run 不能作为修复通过依据。

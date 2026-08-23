@@ -1405,3 +1405,21 @@ flowchart TD
 ```
 
 读图说明：v2.69 只把 compact 生产建筑的固定 header 和生产卡做高密度 presentation，并把 Selection mode 移入滚动区；生产 action、队列、升级、Core 与存档仍走既有 Controller。Build pending 只改变 VoiceOver 文案，不改变 target mode 或 toggle。云端 artifact 能检查首屏构图和编译，不能证明真实滚动、VoiceOver、Dynamic Type 或设备触控。
+
+## v2.69.1 iOS compact production card readability
+
+```mermaid
+flowchart TD
+  OLD[v2.69 三列卡：图标 + 短名横排] --> PNG[ios-home.png 人工复看]
+  PNG --> FAIL[Scout / Hover / Arty / NEED 截断]
+  FAIL --> STACK[纵向层级：图标 → 完整短名 → 指标 → 状态]
+  STACK --> NAME[Scout / Light / Hover / Arty / AA / Heavy]
+  STACK --> BADGE[NEED / POP / LOCK]
+  STACK --> ACTION[既有 availability disabled / queueUnit / Shift+1-9]
+  ACTION --> TOUCH[既有 tacticalControl 至少 44pt]
+  ACTION --> VO[VoiceOver 保留完整费用、时间与不足原因]
+  STACK --> CLOUD[新 SHA 对应 Actions artifact + 双 PNG 复验]
+  OLD -.旧 run 32463246451 不能证明修复.-> CLOUD
+```
+
+读图说明：v2.69.1 只重排 dense compact 生产卡内部 presentation，并缩短可见锁定 badge；生产顺序、按钮 action、disabled 条件、regular/accessibility 路径和完整 VoiceOver 语义不变。最终验收必须使用修复 commit 对应的新 artifact，人工确认六个短名与 `NEED` / `POP` / `LOCK` 均不省略、三列无重叠。

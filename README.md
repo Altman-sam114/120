@@ -1,6 +1,8 @@
 # Rustwar RTS Prototype
 
-v2.69：原生 iOS compact 生产建筑选中态改为生产专属紧凑 header，固定区只保留建筑、T 级和生产倍率；生产入口采用三列图标优先卡片，`Replace/Add` 选择模式移到可滚动 Selection 区，仍绑定同一选择状态。Extractor、Turret、Land Factory、Radar 进入等待放置时，VoiceOver 现在会朗读对应的取消、等待和位置提示。生产顺序、锁定/资源/人口反馈、Shift+1-9、队列、升级、Repeat、Rally、regular/accessibility 布局、Core、存档和 Web 版不变；本轮继续只以最新 Actions artifact 验收。
+v2.69.1：修正 v2.69 云端 `ios-home.png` 暴露的三列生产卡可读性问题。compact 卡片改为图标、完整短名、费用/人口/时间和状态的纵向层级，Scout / Light / Hover / Arty / AA / Heavy 不再与图标争抢同一行；资源、人口和通用锁定状态使用 `NEED` / `POP` / `LOCK` 短标签，VoiceOver 继续朗读完整不足原因。三列顺序、availability disabled、Shift+1-9、队列、升级、Repeat、Rally、44pt 触控、regular/accessibility 布局、Core、存档和 Web 版不变；仍只以最新 Actions artifact 的构建结果与 PNG 人工复看验收。
+
+v2.69：原生 iOS compact 生产建筑选中态改为生产专属紧凑 header，固定区只保留建筑、T 级和生产倍率；生产入口采用三列图标优先卡片，`Replace/Add` 选择模式移到可滚动 Selection 区，仍绑定同一选择状态。Extractor、Turret、Land Factory、Radar 进入等待放置时，VoiceOver 现在会朗读对应的取消、等待和位置提示。生产顺序、锁定/资源/人口反馈、Shift+1-9、队列、升级、Repeat、Rally、regular/accessibility 布局、Core、存档和 Web 版不变。commit `5db992a3325aca239ff5061fffc1f4ccc28c9602` 的 Actions run `32463246451` 自动检查通过，但 `ios-home.png` 人工复看发现短名和锁定原因被截断，因此该视觉版本未通过最终验收并由 v2.69.1 修复。
 
 v2.68：原生 iOS 主战场在 SpatialEventGesture 观察到第二指时，按当前 touch sequence 先标记多指候选并抑制尚未提交的单指 tap/长按，减少双指框选被长按抢先消费；Tactical Map 将相机拖动阈值与长按最大移动统一为 18pt，消除轻拖落在 18–22pt 灰区时被当成普通点按的问题。只改输入 presentation 生命周期和小地图手势阈值，不改 CameraState 坐标映射、TouchSequenceOwner/Core 命令、生产、战斗、存档或 Web 版。代码 commit `7ba5d67ae6820890ebebbf0c62e61bf9f61f8784` 对应 Actions run `32450318754` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-7ba5d67-run32450318754-attempt1` 已通过。
 

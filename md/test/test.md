@@ -631,3 +631,18 @@ Agent C 人工查看最新 `ios-home.png` 与 `ios-combat.png`：生产首屏、
 - Extractor、Turret、Land Factory、Radar pending 时分别朗读 `Cancel ... placement`、`Waiting for ... placement` 和取消 hint，非 pending 朗读 Build/Ready/位置提示；toggle action、target mode、快捷键不变。
 
 Agent C 只验收最新 `origin/main` commit 对应的未加密 Actions artifact，核对 manifest 的 branch、完整 SHA、run id、attempt、JUnit、主日志、失败摘要、Xcode/iOS SDK、Swift Core、双架构 build、production/combat 双启动、横屏归一化和两份 PNG probe。人工查看 `ios-home.png` 时确认 Production header、三列首屏生产卡、锁定状态和 Factory Tech READY/UPGRADING/MAX 无裁切或重叠；`ios-combat.png` 的 Quick Orders、模型、弹道、爆点、Tactical Map 和状态栏无回退。静态 artifact 不能证明真实 VoiceOver、Dynamic Type 全档位、滚动、触摸命中、动画时序或真机性能。
+
+## v2.69.1
+
+本轮只修改 compact 三列生产卡内部 presentation，并同步 README、flow、flowchart、update log 与版本提示词；继续执行云端唯一验证。本机不运行 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`；`.wp` 必须保持未跟踪。
+
+已知基线：commit `5db992a3325aca239ff5061fffc1f4ccc28c9602` 对应 Actions run `32463246451` / attempt `1` 的自动检查为 `8 tests / 0 failures / 1 skipped`，但 `ios-home.png` 人工复看发现 Scout 显示为 `Sco...`、Hover/Arty 等被压缩、锁定原因被截断，因此 v2.69 不得判为最终通过，也不得复用该旧 artifact 验收修复。
+
+代码复判必须确认：
+
+- dense compact 卡为图标、完整短名、费用/人口/时间、状态的纵向层级；三列网格和 production option 顺序不变。
+- 六种 T2 Land Factory 短名固定为 Scout / Light / Hover / Arty / AA / Heavy；不可用视觉状态固定为金属 `NEED`、人口 `POP`、通用 `LOCK`，不再把完整原因塞进窄卡。
+- 完整不足原因继续由按钮既有 accessibility value/hint 提供；availability disabled、`queueUnit`、Shift+1-9、Factory Tech、队列、Cancel/Repeat/Rally、regular/accessibility 路径不变。
+- 每张卡继续经 `tacticalControl()` 保持至少 44pt；不修改 Core、GameState、存档/JSON、Battlefield/Tactical Map 输入、战斗或 Web 版。
+
+Agent C 只验收修复提交对应的最新 `origin/main` 未加密 Actions artifact，核对 manifest 的 branch、完整 `commitSha`、run id、attempt、JUnit、主日志、失败摘要、Swift Core、Xcode list/build、双架构 iOS build、production/combat 双启动、横屏归一化和两份 PNG probe。人工查看新 `ios-home.png` 时必须确认 Scout / Light / Hover / Arty / AA / Heavy 与 `NEED` / `POP` / `LOCK` 不省略、不重叠，Production header、队列和首屏层级清晰；`ios-combat.png` 的 Quick Orders、模型、弹道、爆点、Tactical Map 和状态栏无回退。静态 artifact 仍不能证明真实 VoiceOver、Dynamic Type 全档位、滚动、触控或真机性能。
