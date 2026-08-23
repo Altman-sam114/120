@@ -1442,4 +1442,4 @@ flowchart TD
   Z --> Q[既有 point command 或 camera center]
 ```
 
-读图说明：v2.70 只统一 Tactical Map 五类实体 marker 目标的输入容错和参数转发；点位命令不吸附，普通点按居中、fog/radar、18pt 拖动、generation gate、主战场触控、Core、存档和 Web 版不变。固定云端 smoke 不会真实点击 marker，最终验收必须区分源码合同复判与真实触控行为证据。
+读图说明：v2.70 只统一 Tactical Map 五类实体 marker 目标的输入容错和参数转发；点位命令不吸附，普通点按居中、fog/radar、18pt 拖动、generation gate、主战场触控、Core、存档和 Web 版不变。实现 commit `0d9f6df` 对应 run `32629616076` 的 artifact、源码合同与双 PNG 已由 Agent C 复判通过；固定云端 smoke 不会真实点击 marker，验收结论仍区分源码参数合同与真实触控行为证据。

@@ -891,3 +891,5 @@ commit `5db992a3325aca239ff5061fffc1f4ccc28c9602` 对应 run `32463246451` 的�
 `GameController.handleTacticalMapTap` 保持 Area Selection、point command、Builder target、Selection target 和相机居中的既有优先级，但把同一 `minimumHitRadius` 原样交给两个目标 resolver。Guard、Repair 与 Attack 继续复用玩家当前真实可见性、阵营过滤、稳定距离排序和执行资格；Build Extractor 继续使用 `max(56, minimumHitRadius)`，Reclaim 改为使用 `max(95, minimumHitRadius)`，因此默认调用仍保留旧 world 半径，小地图调用则与可见 marker 的屏幕容错一致。
 
 该轮不改变目标成功/失败后的 pending 生命周期、fog/radar、点位命令、普通小地图相机操作、18pt 拖动与 callback generation、主战场 44pt 命中和触摸 owner，也不修改 RustwarCore、GameState、订单、存档/JSON 或 Web。固定云端 artifact 不执行真实 marker 偏移点按，因此只能证明最新 SHA 的编译、启动、既有回归、静态 UI 与源码参数合同；真实命中率和真机手感仍需针对性触摸自动化或设备验证。
+
+实现 commit `0d9f6dfe5d8a032f50ad7e81c2d4dc9a9e24303d` 对应 run `32629616076` / attempt `1` / job `97170247909`。Agent C 已把 artifact `rustwar-ci-v1.2-main-0d9f6df-run32629616076-attempt1` 下载到 `/private/tmp/rustwar-c-review-32629616076/`（约 1.7M），核对 manifest、JUnit、主日志、失败摘要、repo state、双架构 build、双场景启动、横屏归一化和双 PNG；JUnit 为 `8/0/1`，唯一 skip 是既有 headless browser 缺失。源码合同复判通过，双 PNG 与 v2.69.1 最终基线无静态差异。

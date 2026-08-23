@@ -6419,8 +6419,11 @@
 验证状态：
 
 - 本轮遵循云端唯一验证制度；本机未运行 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图、Node、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
-- 当前只完成源码与文档实现；必须在提交并 push `origin/main` 后，以该完整 SHA 对应的最新 `Rustwar CI Results` artifact 完成 manifest、JUnit、日志、失败摘要、双架构 build、双场景启动、横屏归一化、双 PNG 和源码合同复判，才可确认通过。
+- 实现 commit `0d9f6dfe5d8a032f50ad7e81c2d4dc9a9e24303d` 已推送到 `origin/main`。Actions run `32629616076` / attempt `1` / job `97170247909` 的 artifact `rustwar-ci-v1.2-main-0d9f6df-run32629616076-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32629616076/`，大小约 1.7M；manifest 的 `branch=main`、完整 SHA、run id、attempt、Xcode 26.5、iOS Simulator SDK 26.5 和固定 iPhone 17 Pro 完全匹配。
+- JUnit 为 `8 tests / 0 failures / 1 skipped`，唯一 skip 是既有 headless browser regression；固定工具链、`git diff --check`、Node、Swift Core、Xcode project list/build、双架构 iOS build、production/combat Simulator 启动、横屏归一化和两份 PNG probe 全部 success。
+- Agent C 复判确认 Controller predicate 只包含五类 marker 目标、View 只读取该 predicate、同一半径传给两个 resolver、Reclaim/Extractor 默认半径和目标资格保持。`ios-home.png` 与 `ios-combat.png` 均为 `2622x1206`、透明比例 0，与 v2.69.1 最终基线无静态构图差异；v2.70 实现 artifact 验收通过。
 
 已知风险：
 
 - 固定 fixture 不执行 Tactical Map marker 偏移点按；源码参数链路、绿色 build 和静态 PNG 不能证明真实命中率、超出半径后的拒绝、VoiceOver 执行或真机手感。
+- Actions 对 `actions/upload-artifact@v5` 给出 Node.js 20 弃用并强制 Node.js 24 的注释；本次 artifact 上传成功，不影响验收结论，后续可作为 CI 维护项跟踪。
