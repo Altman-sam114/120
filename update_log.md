@@ -6529,6 +6529,9 @@
 - 本轮遵循云端唯一验证制度；本机未运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
 - 首个实现 commit `38ca4b195dccd3cb7997c33ab6bf37e88bf776b8` 对应 run `32638133258` / attempt `1` 的 artifact 已下载到 `/private/tmp/rustwar-c-review-32638133258/`；Core 341 tests 与静态检查成功，但新 rail computed property 缺少显式 `return`，iOS build 失败，JUnit `8/2/1`，明确不通过。
 - compile 修复 commit `ee7b943290691447e20986e80318902b12b61615` 对应 run `32638469356` / attempt `1` 自动结果全部成功，JUnit `8/0/1`，新 rail 双架构编译、双启动与双 PNG probe 通过；但 Home PNG 与 v2.72 哈希完全相同，management rail 仍在固定画面外，Agent C 视觉验收不通过。下一提交必须把 rail 提升到 Production section 首部并以新 SHA 复验。
+- 最终实现 commit `b74fa16b04ef954660a26a04778da63bd8ef4b06` 已推送到 `origin/main`。Actions run `32639408582` / attempt `1` / job `97194069964` 的 artifact `rustwar-ci-v1.2-main-b74fa16-run32639408582-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32639408582/`，大小约 `1.7M`；manifest 的 `branch=main`、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5、Swift 6.3.2 和固定 iPhone 17 Pro 完全匹配。
+- JUnit 为 `8 tests / 0 failures / 1 skipped`，Swift Core `341 tests`；静态检查、Xcode list、arm64/x86_64 iOS build、production/combat 双启动、横屏归一化和双 PNG probe 全部 success，`TacticalProductionManagementRail.swift` 明确进入双架构编译。
+- `ios-home.png` SHA-256 为 `f2238e3bfb7918b0db80f2cda7d97533c670db51e7c91c358a3a24acb72a1bcf`：Production 标题后立即显示 Cancel / Repeat Off / Rally 三列 rail，文字完整、无重叠，summary 与三列生产网格保持。`ios-combat.png` SHA-256 为 `85dadf8d8aaf273b9f6928a76f4c70b838a72258d0ee4d1a2be0ee72282ddea3`，与 v2.72 一致且战斗 HUD 无静态回退。Agent C 判定 v2.73 实现 artifact 验收通过。
 
 已知风险：
 

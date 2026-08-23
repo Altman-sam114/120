@@ -723,3 +723,7 @@ Agent C 只验收最新 `origin/main` 完整 SHA 对应 artifact，核对 manife
 证据边界：固定 PNG 不展开 Menu，不能证明真实点击、Shift+P 焦点、VoiceOver、Dynamic Type 全档位、滚动、stale menu 时序或真机触控；不得用绿色 build 扩大结论。
 
 失败基线：commit `38ca4b195dccd3cb7997c33ab6bf37e88bf776b8` / run `32638133258` 因 `repeatMenu` 缺少显式 `return` 导致 iOS build 失败，JUnit `8/2/1`；commit `ee7b943290691447e20986e80318902b12b61615` / run `32638469356` 的 JUnit、Core 341 tests、双架构 build、双启动与双 probe 全成功，但 Home PNG SHA-256 仍为旧基线 `7c334ef5...`，rail 不在固定首屏，因此 Agent C 视觉验收不通过。两者都不得作为 v2.73 最终通过证据。
+
+通过记录：最终实现 commit `b74fa16b04ef954660a26a04778da63bd8ef4b06` 对应 Actions run `32639408582` / attempt `1` / job `97194069964`，artifact `rustwar-ci-v1.2-main-b74fa16-run32639408582-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32639408582/`，大小约 `1.7M`。manifest 的 `branch=main`、完整 SHA、run id/attempt、Xcode 26.5、iOS 26.5、Swift 6.3.2 和固定 iPhone 17 Pro 完全匹配；JUnit `8 tests / 0 failures / 1 skipped`，Swift Core `341 tests`，静态检查、Xcode list、arm64/x86_64 build、双场景启动、横屏归一化与双 PNG probe 全部 success，新 rail 文件明确进入双架构编译。
+
+`ios-home.png` 为 `2622x1206`、透明比例 0、SHA-256 `f2238e3bfb7918b0db80f2cda7d97533c670db51e7c91c358a3a24acb72a1bcf`；Agent C 确认 Production 标题下立即出现 Cancel / Repeat Off / Rally 三列 rail，文字完整且无重叠，summary 和三列生产网格保持可见并可继续滚动。`ios-combat.png` 为 `2622x1206`、透明比例 0、SHA-256 `85dadf8d8aaf273b9f6928a76f4c70b838a72258d0ee4d1a2be0ee72282ddea3`，与 v2.72 一致，武器层级、Quick Orders、Tactical Map 和状态栏无静态回退。v2.73 实现 artifact 验收通过；Menu 展开、快捷键、VoiceOver、Dynamic Type 和真机触控仍保留上述证据边界。

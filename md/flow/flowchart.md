@@ -1510,4 +1510,4 @@ flowchart TD
   O --> U[full Core queue view]
 ```
 
-读图说明：v2.73 只重构 producer management 的 SwiftUI 层级和直接 action wrapper。Repeat 选项来自现有 tech-gated `productionOptions`，不能按当前 metal/pop availability 过滤；Core repeat retry、queue order、refund、rally、save/schema、AI、输入、战斗和 Web 不变。固定云端 PNG 只能检查默认 rail 构图，不能证明 Menu 展开、快捷键、VoiceOver、Dynamic Type 或真实触控。
+读图说明：v2.73 只重构 producer management 的 SwiftUI 层级和直接 action wrapper。Repeat 选项来自现有 tech-gated `productionOptions`，不能按当前 metal/pop availability 过滤；Core repeat retry、queue order、refund、rally、save/schema、AI、输入、战斗和 Web 不变。最终实现 `b74fa16b04ef954660a26a04778da63bd8ef4b06` 对应 run `32639408582` / attempt `1` / job `97194069964` 的 artifact 已由 Agent C 下载并核对通过；Home SHA-256 `f2238e3b...` 证明 rail 已进入固定 Production 首屏，Combat SHA-256 `85dadf8d...` 与 v2.72 一致。固定云端 PNG 只能检查默认 rail 构图，不能证明 Menu 展开、快捷键、VoiceOver、Dynamic Type 或真实触控。
