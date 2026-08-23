@@ -969,3 +969,11 @@ Compact producer 复用同一 predicate，保持 v2.69 已有 presentation；新
 Regular trailing 与所有 accessibility Dynamic Type 继续在固定 header 显示 picker，避免大字号路径改变信息层级。Move、Attack Move、Attack、Stop、secondary commands、44pt、快捷键、VoiceOver、选择 mutation、直接点按、多指框选、Production、Core、战斗、存档/JSON 与 Web 不变。固定 Combat PNG 只能检查 compact trailing 普通字号下 Quick Orders/Commands 上移，不能证明 compact bottom、VoiceOver、真实滚动、焦点顺序或真机触控。
 
 实现 commit `1b16099c08f1f39e3841818097f9f6f71d34519c` 对应 run `32649086475` / attempt `1` / job `97217774802`；Agent C 已把 artifact `rustwar-ci-v1.2-main-1b16099-run32649086475-attempt1` 下载到 `/private/tmp/rustwar-c-review-32649086475/`（约 1.7M）。manifest、JUnit、日志、失败摘要、repo state、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2、Core `342 tests`、双架构 build、双启动、横屏归一化与双 probe 全匹配。Home SHA-256 `3884b7315d34cb3917d19aaa33ee9cdc84b9d6d1510cc6414752b7aff24c7f51` 与 v2.76 一致；Combat 改为 `f48495bf060bf1cc665807e2161b3cedbfa281811334bffa7fb88181b3d79e0c`，人工确认 Quick Orders 与 Commands 上移、Select Area 进入首屏，固定 header 与战场 presentation 无回退。v2.77 实现 artifact 验收通过。
+
+## v2.78 iOS hull-edge faction marking
+
+`BattlefieldScene.unitBody` 继续先构造 hull 与独立 `weaponMount`，最后通过 `addUnitFactionMarking` 把阵营标记挂在 hull `body`。标记因此跟随 `body.zRotation = hullHeading`，不会跟随 weapon heading 或 recoil mount；每次重绘只按既有 `radius`、`team` 生成确定性几何，不读取或写回 Core 状态。
+
+`addUnitFactionMarking` 现在只创建一个 compound-path `SKShapeNode`：玩家使用尾缘单 chevron rail，敌方使用同一路径中的上下双 rounded tab。两者复用 team fill 与白色描边，通过单/双形状提供非颜色识别；固定 `zPosition = 1.1` 高于 `weaponMount.zPosition = 1`，同时几何留在 hull 尾缘，避免重新覆盖模型中心。七类既有单位与 Heavy Tank 共享同一 helper，building faction marking 不变。
+
+本轮只改变 SpriteKit presentation：unit/body/weapon heading、炮塔旋转与后坐、模型轮廓、selection、HP、damage state、grounding、fog/visibility、terminal/impact、Core 命中/伤害/命令、AI、生产、存档/JSON、Tactical Map、HUD 和 Web 版都不变。实现与视觉结论待 v2.78 最新 `origin/main` SHA 对应的 GitHub Actions artifact 验收；Home 固定场景可见 Tank、Scout 与 Builder，因此 Home 和 Combat 都应相对 v2.77 基线改变并分别人工复判标记、模型和 HUD 可读性。

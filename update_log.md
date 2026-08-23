@@ -6680,3 +6680,36 @@
 
 - 固定 Combat PNG 只能覆盖 compact trailing 普通字号；compact bottom、VoiceOver 焦点顺序、滚动发现性、全部本地化与真机触控仍是证据边界。
 - 下一候选为 `BattlefieldScene.addUnitFactionMarking` 的 hull-edge 阵营 rail/tab，提高炮塔与命中特效重叠下的友敌识别；总目标仍未完成。
+
+## v2.78 / Hull-edge faction marking
+
+日期：2026-08-24
+
+核心变更：
+
+- `BattlefieldScene.addUnitFactionMarking` 把 hull 中心附近的阵营横条改为尾缘几何：玩家为单 chevron rail，敌方为上下分离的双 rounded tab；颜色与单/双形状共同编码友敌。
+- 每个单位只创建一个确定性 compound-path `SKShapeNode`；敌方不再创建两个独立 marker node。
+- 标记继续挂在 hull body，随 hull heading 旋转且不随独立 weapon heading/recoil；`zPosition = 1.1` 高于 weapon mount，使斜向炮塔或特效重叠时阵营识别仍暴露在 hull 边缘。
+- Core、单位半径/命中、伤害、命令、AI、生产、存档/JSON、building faction marking、模型主体、武器 profile、selection/HP/damage、fog、HUD、Tactical Map 和 Web 版不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.78-hull-edge-faction-marking.md`
+- `update_log.md`
+
+验证状态：
+
+- v2.77 最终文档 commit `e8228b14c50a1f6d0b4a19287099c37a1af13c5a` 对应 run `32650207898` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-e8228b1-run32650207898-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32650207898/` 并通过；JUnit `8/0/1`、Core `342 tests`、双架构 build、双启动与双 PNG probe 成功，Home `3884b731...` / Combat `f48495bf...` 作为本轮基线。
+- v2.78 遵循云端唯一验证制度；本机不运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
+- v2.78 实现 commit、Actions run、artifact、Home/Combat 哈希与人工视觉复判待 push 后由 Agent C 只按最新 `origin/main` 完整 SHA 补录；不得用 v2.77 artifact 冒充本轮结果。
+- Home fixture 也包含 Tank、Scout 与 Builder，因此 Home 与 Combat 哈希都应相对 v2.77 改变；现有 Combat fixture 已覆盖全部八类 UnitType、双方形状对照及炮塔/terminal/impact 重叠，不需要修改 fixture 或 workflow。
+
+已知风险：
+
+- 固定 frozen Combat PNG 能覆盖双方多类单位和部分炮塔/terminal/impact 重叠，不能证明任意 heading、zoom、动态密集开火、色觉用户体验或真机帧率。
+- 高 z 阵营标记有意优先于 weapon mount，但仍需 artifact 人工确认尾缘几何没有覆盖小型单位关键轮廓；若视觉不通过，必须追加修复 commit 并重新云端验收。

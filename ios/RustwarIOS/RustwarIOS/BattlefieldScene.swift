@@ -4102,25 +4102,38 @@ final class BattlefieldScene: SKScene {
     }
 
     private func addUnitFactionMarking(team: Team, radius: Double, to node: SKNode) {
+        let path = CGMutablePath()
         if team == .player {
-            node.addChild(rectNode(
-                CGRect(x: -radius * 0.48, y: -radius * 0.1, width: radius * 0.72, height: radius * 0.2),
-                cornerRadius: 1,
-                fill: teamColor(team),
-                stroke: .white.withAlphaComponent(0.65),
-                lineWidth: 0.8
-            ))
+            path.move(to: CGPoint(x: -radius * 0.78, y: -radius * 0.15))
+            path.addLine(to: CGPoint(x: -radius * 0.49, y: -radius * 0.15))
+            path.addLine(to: CGPoint(x: -radius * 0.36, y: 0))
+            path.addLine(to: CGPoint(x: -radius * 0.49, y: radius * 0.15))
+            path.addLine(to: CGPoint(x: -radius * 0.78, y: radius * 0.15))
+            path.addLine(to: CGPoint(x: -radius * 0.65, y: 0))
+            path.closeSubpath()
         } else {
-            for y in [-radius * 0.23, radius * 0.23] {
-                node.addChild(rectNode(
-                    CGRect(x: -radius * 0.42, y: y - radius * 0.07, width: radius * 0.62, height: radius * 0.14),
-                    cornerRadius: 1,
-                    fill: teamColor(team),
-                    stroke: .white.withAlphaComponent(0.65),
-                    lineWidth: 0.8
-                ))
+            for y in [-radius * 0.17, radius * 0.17] {
+                path.addRoundedRect(
+                    in: CGRect(
+                        x: -radius * 0.78,
+                        y: y - radius * 0.07,
+                        width: radius * 0.3,
+                        height: radius * 0.14
+                    ),
+                    cornerWidth: radius * 0.04,
+                    cornerHeight: radius * 0.04
+                )
             }
         }
+
+        let marker = SKShapeNode(path: path)
+        marker.fillColor = teamColor(team).withAlphaComponent(0.94)
+        marker.strokeColor = .white.withAlphaComponent(0.78)
+        marker.lineWidth = CGFloat(Swift.max(0.9, radius * 0.06))
+        marker.lineJoin = .round
+        marker.lineCap = .round
+        marker.zPosition = 1.1
+        node.addChild(marker)
     }
 
     private func addBuildingFactionMarking(team: Team, size: Double, to node: SKNode) {

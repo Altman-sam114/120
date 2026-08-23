@@ -805,3 +805,20 @@ Agent C 只验收 v2.77 最新 `origin/main` 完整 SHA 对应 artifact，核对
 证据边界：固定 Combat 只覆盖 compact trailing、普通 Dynamic Type 与 pending Attack fixture；不能证明 compact bottom、regular/accessibility、真实 VoiceOver 焦点、滚动发现性、全部语言/设备或真机触控手感。
 
 通过基线：实现 commit `1b16099c08f1f39e3841818097f9f6f71d34519c` 对应 run `32649086475` / attempt `1` / job `97217774802`；artifact `rustwar-ci-v1.2-main-1b16099-run32649086475-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32649086475/`，约 `1.7M`。manifest 的 branch、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5、Swift 6.3.2 与固定 iPhone 17 Pro 全匹配；JUnit `8/0/1`，Core `342 tests`，两个 command dock 文件进入 arm64/x86_64 编译，Xcode list/build、双启动、横屏归一化和双 PNG probe 全成功。Home SHA-256 `3884b7315d34cb3917d19aaa33ee9cdc84b9d6d1510cc6414752b7aff24c7f51` 与 v2.76 一致；Combat SHA-256 `f48495bf060bf1cc665807e2161b3cedbfa281811334bffa7fb88181b3d79e0c`。人工确认固定 Replace/Add 消失、Quick Orders/Commands 上移、Select Area 进入首屏，Selection/Attack target/pending 外框和战场视觉无回退；Agent C 判定 v2.77 artifact 验收通过。
+
+## v2.78
+
+本轮只修改 `BattlefieldScene.swift` 的单位阵营标记 presentation 和必要文档；继续执行云端唯一验证。本机禁止 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本和 `git diff --check`，`.wp` 保持未跟踪。
+
+代码复判必须确认：
+
+- `addUnitFactionMarking` 每单位只创建一个 deterministic compound-path `SKShapeNode`，player 为 hull 尾缘单 chevron rail，enemy 为同一路径上下分离双 rounded tab。
+- 标记继续属于 hull `body`，随 `body.zRotation = hullHeading` 旋转，不进入 `weaponMount` 或 `recoilMount`；固定 `zPosition = 1.1` 高于 weapon mount 的 `1.0`。
+- 路径只依赖 `team` 与 `radius`，不使用时间、随机数、action、timer、texture 或 Core 写入；七类既有单位和 Heavy Tank 共享 helper。
+- Unit model、building faction marking、hull/weapon heading、后坐、selection/HP/damage、grounding、fog/visibility、projectile/terminal/impact、Core、命令、AI、生产、存档、HUD、Tactical Map 与 Web 不变。
+
+Agent C 只验收 v2.78 最新 `origin/main` 完整 SHA 对应 artifact，核对 manifest、JUnit、主日志、失败摘要、repo state、固定工具链、Swift Core 至少 `342 tests`、Xcode list、双架构 build、双启动、横屏归一化和双 PNG probe。`BattlefieldScene.swift` 必须进入 arm64/x86_64 编译。
+
+Home 与 Combat 都必须相对 v2.77 基线改变：Home `3884b7315d34cb3917d19aaa33ee9cdc84b9d6d1510cc6414752b7aff24c7f51`，Combat `f48495bf060bf1cc665807e2161b3cedbfa281811334bffa7fb88181b3d79e0c`。Home 人工确认可见 Tank、Scout、Builder 使用新尾缘标记且 Production/Factory Tech/单位卡/HUD 无回退；Combat 人工确认双方标记颜色与单/双形状可分，斜向炮塔、后坐和 terminal/impact 重叠下不被 weapon mount 遮挡，不覆盖 hull 中心、炮塔/发射器、炮口或关键模型剪影，并确认 v2.72 武器层级、v2.75 中心留孔特效、v2.77 command dock、Tactical Map 与状态栏无回退。
+
+证据边界：固定 frozen Combat PNG 覆盖双方多类单位和部分重叠状态，不能证明任意 heading/zoom、动态密集战斗、色觉体验、真机性能或全部地图与单位密度。

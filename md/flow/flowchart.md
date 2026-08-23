@@ -1587,3 +1587,23 @@ flowchart TD
 ```
 
 读图说明：v2.77 只把 compact 普通字号的 Selection mode picker 从固定 header 迁入滚动 Selection section。Header、Quick Orders 与 scroll 的相对顺序不随 target mode 改变；regular/accessibility 继续固定显示 picker。`selectionMutation` binding、segmented picker、44pt、VoiceOver、Move/A-Move/Attack/Stop、secondary commands、Core 和输入语义不变。实现 `1b16099c08f1f39e3841818097f9f6f71d34519c` 对应 run `32649086475` / attempt `1` 的 artifact、342 Core tests、双架构 build 和双 PNG 已由 Agent C 复判通过；Home 保持 `3884b731...`，Combat `f48495bf...` 中 Commands/Select Area 已更早进入首屏。
+
+## v2.78 iOS hull-edge faction marking
+
+```mermaid
+flowchart LR
+  U[UnitSnapshot team + radius] --> B[unitBody hull-local node]
+  B --> P[One deterministic compound CGPath]
+  P -->|player| C[Single stern chevron rail]
+  P -->|enemy| T[Separated stern twin tabs]
+  C --> M[One SKShapeNode<br/>team fill + white stroke]
+  T --> M
+  M --> Z[zPosition 1.1<br/>above weaponMount 1.0]
+  Z --> H[body.zRotation = hullHeading]
+  W[weapon heading + recoil] --> WM[Independent weaponMount]
+  WM -. does not rotate marking .-> H
+  H --> R[Battlefield presentation only]
+  R -. no mutation .-> K[Core / commands / combat values / save]
+```
+
+读图说明：v2.78 把单位阵营标记从中心条改成 hull 尾缘的单 chevron / 双 tabs，并把敌方两个节点收敛为一个 compound-path shape。标记仍属于 hull，不随独立炮塔或后坐旋转；固定 z 层使它不再被 weapon mount 压住。模型主体、building 标记、selection/HP/damage、武器 presentation、fog、Core、HUD 和输入语义不变；最终实现与双 PNG 结论待最新 v2.78 Actions artifact 复判。
