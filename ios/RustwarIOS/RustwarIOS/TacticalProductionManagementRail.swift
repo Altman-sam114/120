@@ -66,7 +66,7 @@ struct TacticalProductionManagementRail: View {
     private var repeatMenu: some View {
         let producerID = controller.productionFocusProducerID
 
-        Menu {
+        return Menu {
             Button(action: { disableRepeatProduction(for: producerID) }) {
                 Label(
                     "Off",
