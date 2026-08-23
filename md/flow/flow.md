@@ -925,3 +925,13 @@ Repeat trigger 改为 SwiftUI `Menu`，Off 与 `productionOptions` 的每个 tec
 `BuildingSnapshot.repeatUnitType`、queue、rally、save/load schema、Core tick、AI、Web、Battlefield、Tactical Map 和战斗 presentation 均不变。固定 Home PNG 可以检查 rail 的默认构图与三列生产卡是否回退，但不能打开 Menu，也不能证明 Shift+P、真实点击、VoiceOver、Dynamic Type 全档位、滚动或真机手感；最终结论仍以最新 `origin/main` SHA 对应 Actions artifact 为准。
 
 前两次实现证据均未达到最终通过门槛：`38ca4b195dccd3cb7997c33ab6bf37e88bf776b8` / run `32638133258` 因 `repeatMenu` 缺少显式 `return` 导致 iOS build 失败；`ee7b943290691447e20986e80318902b12b61615` / run `32638469356` 虽自动检查成功，但 rail 仍在固定 Home 画面外，视觉验收不通过。最终实现 commit `b74fa16b04ef954660a26a04778da63bd8ef4b06` 对应 run `32639408582` / attempt `1` / job `97194069964`；Agent C 已把 artifact `rustwar-ci-v1.2-main-b74fa16-run32639408582-attempt1` 下载到 `/private/tmp/rustwar-c-review-32639408582/`（约 1.7M）。manifest、JUnit、主日志、失败摘要、repo state、Xcode 26.5 / iOS 26.5 / Swift 6.3.2、Swift Core `341 tests`、双架构 build、双场景启动、横屏归一化和双 PNG probe 完全匹配。Home SHA-256 为 `f2238e3bfb7918b0db80f2cda7d97533c670db51e7c91c358a3a24acb72a1bcf`，rail 已进入 Production 首屏且生产网格无重叠；Combat SHA-256 为 `85dadf8d8aaf273b9f6928a76f4c70b838a72258d0ee4d1a2be0ee72282ddea3`，与 v2.72 一致且战斗 HUD 无回退。v2.73 实现 artifact 验收通过。
+
+## v2.74 iOS single-touch slop convergence
+
+`SingleTouchTravelPolicy` 把主战场单指 pan activation、意图 preview 与 tap/command commit 的唯一阈值定义为 12pt。纯函数只接受 travel distance；有限、非负且严格 `<12` 才允许 tap/preview，`==12`、`>12`、负数和非有限输入全部 fail closed。该 policy 不持有 gesture、CGPoint、owner 或命令状态，`TouchSequenceOwner` 结构不变。
+
+`BattlefieldView.contextLocationGesture` 继续记录当前位置，但一旦 travel 达到 policy 阈值，就清理对应 sequence 的 preview 并 latch `singleTouchCrossedPanActivationDistance`。这个 latch 在同一 sequence 中不可逆，因此回移到起点附近也不会恢复 preview 或提交选择/命令；`commitSingleTouchTap` 同时要求有效起点、未 latch 和 policy 允许。`DragGesture.minimumDistance` 从同一 Core 阈值派生，仍是唯一可以 claim `.pan` / `.areaSelection` 的路径。
+
+长按的 SwiftUI 识别配置保持 0.45s / 18pt，但 callback 增加同一 latch gate；达到 12pt 后不会提交上下文命令。context、pan、multitouch、pinch、cancel/reset 与 fresh-seed lifecycle 都通过既有 `resetContextGestureState` 清理 latch。12pt 以下直接选择、Attack、Attack-Move、pending target preview，44pt 命中、双指框选、pinch、terminal handoff、Attack-Move 自动索敌、Core/save/JSON、HUD、战斗 presentation 和 Web 不变。
+
+本轮云端 policy test 覆盖 `<12`、`==12`、`>12`、负数与非有限输入。固定 Simulator smoke 只能证明 package/iOS 编译、启动和静态画面，不能注入真实 SwiftUI simultaneous callback 顺序或证明真机误触完全消失；seed 后旧触点不可绝对区分的边界保持。

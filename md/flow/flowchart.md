@@ -1511,3 +1511,23 @@ flowchart TD
 ```
 
 读图说明：v2.73 只重构 producer management 的 SwiftUI 层级和直接 action wrapper。Repeat 选项来自现有 tech-gated `productionOptions`，不能按当前 metal/pop availability 过滤；Core repeat retry、queue order、refund、rally、save/schema、AI、输入、战斗和 Web 不变。最终实现 `b74fa16b04ef954660a26a04778da63bd8ef4b06` 对应 run `32639408582` / attempt `1` / job `97194069964` 的 artifact 已由 Agent C 下载并核对通过；Home SHA-256 `f2238e3b...` 证明 rail 已进入固定 Production 首屏，Combat SHA-256 `85dadf8d...` 与 v2.72 一致。固定云端 PNG 只能检查默认 rail 构图，不能证明 Menu 展开、快捷键、VoiceOver、Dynamic Type 或真实触控。
+
+## v2.74 iOS single-touch slop convergence
+
+```mermaid
+flowchart TD
+  S[Fresh single-touch sequence] --> D[travel from stable seed]
+  D --> P{SingleTouchTravelPolicy}
+  P -->|finite · nonnegative · less than 12pt| V[preview eligible]
+  V --> E[tap/context terminal]
+  E --> C[select / Attack / Attack-Move / pending command]
+  P -->|12pt or more / invalid| L[latch crossed pan boundary]
+  L --> X[clear preview · reject tap and long press]
+  L --> G[existing DragGesture claims pan or Select Area]
+  G --> O[shared TouchSequenceOwner remains exclusive]
+  C --> R[reset context lifecycle]
+  G --> R
+  R --> N[next fresh sequence starts eligible]
+```
+
+读图说明：v2.74 只收敛单指 travel policy。12pt 以下维持 Rusted Warfare 式点选/直接下令，达到阈值后当前 sequence 永久转入 pan-safe 路径，即使回移也不提交命令。双指框选、pinch、44pt 命中、直接点按路由、Attack-Move 自动索敌、Core/save、HUD、战斗和 Web 不变；固定 smoke 不证明真实 callback 时序或真机手感。

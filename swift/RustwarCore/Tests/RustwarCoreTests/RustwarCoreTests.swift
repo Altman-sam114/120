@@ -2,6 +2,17 @@ import Foundation
 import Testing
 @testable import RustwarCore
 
+@Test func singleTouchTravelPolicyConvergesAtPanBoundary() {
+    #expect(SingleTouchTravelPolicy.allowsTapOrPreview(travelDistance: 0))
+    #expect(SingleTouchTravelPolicy.allowsTapOrPreview(travelDistance: 11.999))
+    #expect(!SingleTouchTravelPolicy.allowsTapOrPreview(travelDistance: 12))
+    #expect(!SingleTouchTravelPolicy.allowsTapOrPreview(travelDistance: 12.001))
+    #expect(!SingleTouchTravelPolicy.allowsTapOrPreview(travelDistance: -1))
+    #expect(!SingleTouchTravelPolicy.allowsTapOrPreview(travelDistance: .nan))
+    #expect(!SingleTouchTravelPolicy.allowsTapOrPreview(travelDistance: .infinity))
+    #expect(!SingleTouchTravelPolicy.allowsTapOrPreview(travelDistance: -.infinity))
+}
+
 @Test func touchSequenceOwnerSeedsFreshIDsAndLocksPrimary() {
     var owner = TouchSequenceOwner<Int>()
     #expect(owner.phase == .idle)

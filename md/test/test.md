@@ -727,3 +727,19 @@ Agent C 只验收最新 `origin/main` 完整 SHA 对应 artifact，核对 manife
 通过记录：最终实现 commit `b74fa16b04ef954660a26a04778da63bd8ef4b06` 对应 Actions run `32639408582` / attempt `1` / job `97194069964`，artifact `rustwar-ci-v1.2-main-b74fa16-run32639408582-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32639408582/`，大小约 `1.7M`。manifest 的 `branch=main`、完整 SHA、run id/attempt、Xcode 26.5、iOS 26.5、Swift 6.3.2 和固定 iPhone 17 Pro 完全匹配；JUnit `8 tests / 0 failures / 1 skipped`，Swift Core `341 tests`，静态检查、Xcode list、arm64/x86_64 build、双场景启动、横屏归一化与双 PNG probe 全部 success，新 rail 文件明确进入双架构编译。
 
 `ios-home.png` 为 `2622x1206`、透明比例 0、SHA-256 `f2238e3bfb7918b0db80f2cda7d97533c670db51e7c91c358a3a24acb72a1bcf`；Agent C 确认 Production 标题下立即出现 Cancel / Repeat Off / Rally 三列 rail，文字完整且无重叠，summary 和三列生产网格保持可见并可继续滚动。`ios-combat.png` 为 `2622x1206`、透明比例 0、SHA-256 `85dadf8d8aaf273b9f6928a76f4c70b838a72258d0ee4d1a2be0ee72282ddea3`，与 v2.72 一致，武器层级、Quick Orders、Tactical Map 和状态栏无静态回退。v2.73 实现 artifact 验收通过；Menu 展开、快捷键、VoiceOver、Dynamic Type 和真机触控仍保留上述证据边界。
+
+## v2.74
+
+本轮新增 `SingleTouchTravelPolicy.swift`，修改 `BattlefieldView.swift`、Swift Core 测试与必要文档；继续执行云端唯一验证。本机禁止运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
+
+代码复判必须确认：
+
+- `SingleTouchTravelPolicy.panActivationDistance == 12`；只允许有限、非负、严格小于 12 的 travel 执行 tap/preview，`==12`、`>12`、负数、NaN 和正负 infinity 全部拒绝。
+- `BattlefieldView` 的 DragGesture minimum distance 从该 policy 派生；context travel 达阈值时清除当前 preview 并 latch，同 sequence 回移不恢复 preview。
+- `commitSingleTouchTap` 必须有有效 seed/start、未 latch 且 policy 允许；旧 18pt commit gate 已删除。long press 保持 0.45s/18pt recognizer 配置，但跨 12pt latch 后不能提交。
+- latch 随 context/pan/multitouch/pinch/cancel/reset/fresh lifecycle 正确清理；`TouchSequenceOwner`、quarantine、callback generation 和 terminal handoff 未修改。
+- 44pt 命中、直接点敌 Attack、点空地 Attack-Move、混选 Builder Move、Attack-Move 自动索敌/击毁后继续、双指框选、pinch、pending command、Core/save/Web 无回退。
+
+Agent C 只验收 v2.74 最新 `origin/main` 完整 SHA 对应 artifact，核对 manifest、JUnit、主日志、失败摘要、repo state、Xcode 26.5、iOS 26.5、Swift 6.3.2、固定 iPhone 17 Pro、Swift Core、新 boundary test、既有 owner/Attack-Move tests、Xcode list、双架构 build、双启动、横屏归一化和双 PNG probe。预期 Home SHA-256 保持 `f2238e3b...`，Combat 保持 `85dadf8d...`；变化必须人工解释。
+
+证据边界：Core test 证明数值 policy，源码复判证明接线；固定 smoke 不生成目标手势轨迹，不能证明 simultaneous callback 顺序、真实误触率、真机手感、系统同 ID 复用或 seed 后迟到旧触点已绝对区分。

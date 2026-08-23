@@ -6536,3 +6536,37 @@
 已知风险：
 
 - 固定 Home PNG 不能展开 Repeat Menu，也不能证明真实点击、Shift+P、VoiceOver、Dynamic Type 全档位、滚动、stale menu 回调时序或真机触控手感。
+
+## v2.74 / Single-touch slop convergence
+
+日期：2026-08-23
+
+核心变更：
+
+- 新增纯 Swift `SingleTouchTravelPolicy`，将主战场 pan activation、意图预览和 tap/command commit 的唯一边界统一为 12pt；`<12` 允许，`>=12` 与非法输入 fail closed。
+- `BattlefieldView` 在 context travel 达阈值时清理 preview 并 latch 当前 sequence；即使手指回移也不会恢复 preview 或误下选择、Attack、Attack-Move 或 pending command。
+- `commitSingleTouchTap` 删除旧 18pt gate，改为要求有效起点、未 latch 与 Core policy；long press 保留 0.45s/18pt recognizer，但跨 12pt 后拒绝提交。
+- pan/Select Area 仍由既有 shared owner 独占；44pt 命中、直接点按、双指框选、pinch、terminal handoff、Attack-Move 自动索敌、Core/save/Web 保持。
+
+关键文件：
+
+- `swift/RustwarCore/Sources/RustwarCore/SingleTouchTravelPolicy.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.74-single-touch-slop-convergence.md`
+- `update_log.md`
+
+验证状态：
+
+- 遵循云端唯一验证制度；本机未运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
+- 实现提交与对应 Actions run/artifact 尚待 push 后填写；不得复用 v2.73 artifact。
+
+已知风险：
+
+- 固定 Simulator smoke 不注入真实 simultaneous gesture callback 顺序，不能证明真机完全消除 12–18pt 误触或量化手感改善。
+- seed 后迟到旧触点、系统立即复用同一 touch ID 和第二指尚未上报前的 callback 仍无法绝对区分；本轮不清空 quarantine 或延迟全部单指命令。
+- 后续候选为 compact Production summary 去重，以及 combat impact/terminal 中心留孔，提升信息密度与模型可读性。

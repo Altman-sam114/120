@@ -8,7 +8,9 @@ struct BattlefieldView: View {
 
     private static let contextTapSuppressionDuration: TimeInterval = 0.18
     private static let multitouchTapSuppressionDuration: TimeInterval = 0.32
-    private static let battlefieldPanActivationDistance: CGFloat = 12
+    private static let battlefieldPanActivationDistance = CGFloat(
+        SingleTouchTravelPolicy.panActivationDistance
+    )
     private static let contextGestureStartLocationTolerance: CGFloat = 1
 
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
@@ -43,6 +45,7 @@ struct BattlefieldView: View {
     @State private var contextGestureStartLocation: CGPoint?
     @State private var contextGestureLastEventTime: Date?
     @State private var battlefieldPanOccurredForCurrentTouch = false
+    @State private var singleTouchCrossedPanActivationDistance = false
     @State private var multitouchIDs: [SpatialEventCollection.Event.ID] = []
     @State private var multitouchStartLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
     @State private var multitouchCurrentLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
@@ -98,6 +101,7 @@ struct BattlefieldView: View {
                               !hasMultitouchCandidate(for: contextLease.sequence),
                               !isBattlefieldPanActive,
                               !battlefieldPanOccurredForCurrentTouch,
+                              !singleTouchCrossedPanActivationDistance,
                               let contextPressLocation else {
                             return
                         }
@@ -166,6 +170,18 @@ struct BattlefieldView: View {
                     contextGestureStartLocation = value.startLocation
                 }
                 contextPressLocation = value.location
+                if let startLocation = contextGestureStartLocation,
+                   !SingleTouchTravelPolicy.allowsTapOrPreview(
+                       travelDistance: distance(from: startLocation, to: value.location)
+                   ) {
+                    singleTouchCrossedPanActivationDistance = true
+                    clearBattlefieldTouchPreview(for: lease.sequence)
+                    return
+                }
+                guard !singleTouchCrossedPanActivationDistance else {
+                    clearBattlefieldTouchPreview(for: lease.sequence)
+                    return
+                }
                 updateBattlefieldTouchPreview(
                     at: value.location,
                     viewportSize: viewportSize,
@@ -261,6 +277,7 @@ struct BattlefieldView: View {
         contextGestureStartTime = nil
         contextGestureStartLocation = nil
         contextGestureLastEventTime = nil
+        singleTouchCrossedPanActivationDistance = false
     }
 
     private func contextGestureSequenceMatches(_ lease: BattlefieldTouchOwner.Lease) -> Bool {
@@ -299,13 +316,16 @@ struct BattlefieldView: View {
               !isMultitouchSequenceActive,
               !isBattlefieldPanActive,
               !battlefieldPanOccurredForCurrentTouch,
+              !singleTouchCrossedPanActivationDistance,
               !hasMultitouchCandidate(for: lease.sequence),
               contextGestureSequenceMatches(lease),
               touchOwner.accepts(lease) else {
             return false
         }
-        if let startLocation = contextGestureStartLocation ?? contextGestureSeedLocation,
-           distance(from: startLocation, to: screenPoint) > 18 {
+        guard let startLocation = contextGestureStartLocation ?? contextGestureSeedLocation,
+              SingleTouchTravelPolicy.allowsTapOrPreview(
+                  travelDistance: distance(from: startLocation, to: screenPoint)
+              ) else {
             return false
         }
         guard !tapIsSuppressed(for: lease.sequence) else {
