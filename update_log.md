@@ -6386,9 +6386,11 @@
 
 验证状态：
 
-- 本轮继续云端唯一验证；本机不运行 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`，只做只读源码与 Git 范围复核、commit 和 push；`.wp` 保持未跟踪。
-- 修复提交、Actions run、artifact、manifest、JUnit、日志和双 PNG 待 push 后填写。只有新 SHA 对应的 artifact 自动检查成功，且 `ios-home.png` 人工确认六个短名与 `NEED` / `POP` / `LOCK` 不省略、不重叠，才能判定 v2.69.1 通过；run `32463246451` 只能作为失败基线。
+- 本轮遵循云端唯一验证制度；本机未运行 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图或 `git diff --check`，`.wp` 保持未跟踪。
+- 修复 commit `654d1badd3a4865ae7af533bdde10610b29d81f0` 对应 Actions run `32626293862` / attempt `1` / job `97162056739`。artifact `rustwar-ci-v1.2-main-654d1ba-run32626293862-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32626293862/`，大小约 `1.7M`；manifest 的 `branch=main`、完整 SHA、run id 和 attempt 完全匹配。
+- JUnit 为 `8 tests / 0 failures / 1 skipped`，唯一 skip 是既有 headless browser regression；固定 Xcode 26.5 工具链、`git diff --check`、`node --check app.js`、Swift Core、Xcode project list/build、production/combat Simulator 启动、横屏归一化和两份 PNG probe 等自动检查全部成功。
+- Agent C 以 original detail 复看双 PNG：`ios-home.png` 中 Scout / Light / Hover / Arty / AA / Heavy 均完整显示，当前 fixture 可见的 `NEED` 完整且三列无重叠，Production header 与 NOW / QUEUE / UPGRADE 层级清晰；该 fixture 未渲染 `POP` / `LOCK`，两者只由源码 `.insufficientSupply -> POP`、`.unavailable -> LOCK` 映射确认。`ios-combat.png` 的 Quick Orders、模型、弹道、命中反馈、Tactical Map、状态栏和 command dock 未见结构性回退。v2.69.1 云端自动与固定视觉验收通过。
 
 已知风险：
 
-- 静态 PNG 不能证明真实 VoiceOver、Dynamic Type 全档位、滚动、键盘快捷键、触控命中或真机手感；纵向卡片增加高度，必须由新 Home PNG 同时确认首屏 Production header 与队列层级仍清晰。
+- 固定静态 fixture 未覆盖 `POP` / `LOCK` 实际渲染，也不能证明真实 VoiceOver、Dynamic Type 全档位、滚动、键盘快捷键、触控命中、动画时序或真机性能；这些仍需后续针对性验证。
