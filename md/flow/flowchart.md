@@ -1486,4 +1486,4 @@ flowchart TD
   SHADOW --> ROTATE[rotate with hull heading, not turret]
 ```
 
-读图说明：v2.72 只扩展 `BattlefieldScene` 的 presentation。AA 仍对应一次 Core damage，Artillery 地面投影与抬升炮弹共享同一目标和 bounded root；tracked grounding 与模型共用长度并跟随 hull。Reduce Motion 的实时路径不执行 projectile/arc motion，Core、命令、生产、触控、存档和 Web 版不变。静态 artifact 不能证明动态时序或真机性能。
+读图说明：v2.72 只扩展 `BattlefieldScene` 的 presentation。AA 仍对应一次 Core damage，Artillery 地面投影与抬升炮弹共享同一目标和 bounded root；tracked grounding 与模型共用长度并跟随 hull。Reduce Motion 的实时路径不执行 projectile/arc motion，Core、命令、生产、触控、存档和 Web 版不变。实现 commit `a44ccf4` 对应 run `32634177053` 的 artifact、源码合同与双 PNG 已由 Agent C 复判通过；静态 artifact 仍不能证明动态时序或真机性能。

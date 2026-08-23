@@ -699,3 +699,7 @@ Agent C 只验收实现提交对应的最新 `origin/main` artifact，核对 man
 Agent C 只验收最新 `origin/main` commit 对应 artifact，核对 manifest 的 branch、完整 SHA、run/attempt、schema、Xcode 26.5、iOS 26.5、固定 iPhone 17 Pro，以及 JUnit、日志、失败摘要、repo state、Swift Core、Xcode list/build、双架构 build、Home/Combat 双启动、横屏归一化和双 PNG probe。人工复看 `ios-combat.png` 的四类弹道、Artillery 影子/烟珠、AA 平行线、tracked grounding、终点/摧毁/HUD；`ios-home.png` 的 Production 与 command dock 不得回退。
 
 证据边界：固定 frozen PNG 不能证明动态弧线连续性、真实 projectile/terminal 时序、任意 hull 角度、Reduce Motion 实机体验、长期战斗 effect 淘汰、真机帧率、触控、VoiceOver 或 Dynamic Type。
+
+通过记录：实现 commit `a44ccf4d2d1e6422687aaf2ec6db6fc417cded31` 对应 run `32634177053` / attempt `1` / job `97181340392`，artifact 为 `rustwar-ci-v1.2-main-a44ccf4-run32634177053-attempt1`。Agent C 已下载到 `/private/tmp/rustwar-c-review-32634177053/`（约 1.7M）；manifest 的 branch、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5 和固定 iPhone 17 Pro 完全匹配。JUnit `8 tests / 0 failures / 1 skipped`，唯一 skip 是既有 headless browser 缺失；build log 显示 Swift Core `341 tests`、Xcode list、双架构 build、双场景启动、横屏归一化和双 PNG probe 全部成功。
+
+`ios-home.png` 为 `2622x1206`、透明比例 0，SHA-256 `7c334ef5ecafa4e5afe5cdc313491b5bbabbba5210a07579964696ff0231089f`，与 v2.69.1 最终基线逐字节一致。`ios-combat.png` 为 `2622x1206`、透明比例 0、亮度标准差 `43.29359362233251`，SHA-256 `85dadf8d8aaf273b9f6928a76f4c70b838a72258d0ee4d1a2be0ee72282ddea3`；人工确认短 Tank tracer、重 Heavy shell、Artillery 抬升/ground shadow/四枚 smoke pearls、AA 平行双 tracer 和履带接地层可辨，Quick Orders、Tactical Map、终点/摧毁和状态栏无回退。
