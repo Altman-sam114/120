@@ -1586,4 +1586,4 @@ flowchart TD
   SF --> ONE
 ```
 
-读图说明：v2.77 只把 compact 普通字号的 Selection mode picker 从固定 header 迁入滚动 Selection section。Header、Quick Orders 与 scroll 的相对顺序不随 target mode 改变；regular/accessibility 继续固定显示 picker。`selectionMutation` binding、segmented picker、44pt、VoiceOver、Move/A-Move/Attack/Stop、secondary commands、Core 和输入语义不变。
+读图说明：v2.77 只把 compact 普通字号的 Selection mode picker 从固定 header 迁入滚动 Selection section。Header、Quick Orders 与 scroll 的相对顺序不随 target mode 改变；regular/accessibility 继续固定显示 picker。`selectionMutation` binding、segmented picker、44pt、VoiceOver、Move/A-Move/Attack/Stop、secondary commands、Core 和输入语义不变。实现 `1b16099c08f1f39e3841818097f9f6f71d34519c` 对应 run `32649086475` / attempt `1` 的 artifact、342 Core tests、双架构 build 和双 PNG 已由 Agent C 复判通过；Home 保持 `3884b731...`，Combat `f48495bf...` 中 Commands/Select Area 已更早进入首屏。
