@@ -6497,3 +6497,38 @@
 
 - Scene 通过 cooldown/HP 快照推导视觉，没有 Core projectile/event；本轮 terminal 仍是开火 presentation，不能把 generic HP impact 可靠关联到攻击者。若未来需要真实 attacker-specific lethal/impact，必须另行设计 Core combat visual event。
 - 固定 frozen PNG 不能证明动态弧线连续性、真实开火密度下长期帧率、任意角度 hull 转向、Reduce Motion 实机体验、触控、VoiceOver、Dynamic Type 或所有地图/缩放级别。
+
+## v2.73 / Direct production management rail
+
+日期：2026-08-23
+
+核心变更：
+
+- producer management 顺序从完整 queue 之后提升到生产 options 与 queue 之间；长队列不再遮住 Cancel / Repeat / Rally。
+- 新增独立 `TacticalProductionManagementRail`：compact 普通字号三列，regular 沿 command 列数，accessibility Dynamic Type 单列；三项均至少 44pt。
+- Cancel 空队列时保留稳定位置但 disabled；Rally 继续表达等待/取消和 active 非颜色线索。
+- Repeat 改为直接 Menu，Off 与全部 tech 合法 `productionOptions` 一击选择，当前项使用 checkmark/filled icon；不按当前 metal/pop 过滤，保持 Core 资源恢复后重试语义。
+- `GameController.setRepeatProduction(_:expectedProducerID:)` 只包装既有 Core setter、结果反馈与 revision；菜单打开后 producer 选择变化时拒绝旧 action，避免误改新建筑。
+- Shift+C/P/R、Shift+1-9、三列生产卡、queue/退款、Rally、Core、AI、存档/JSON、输入、战斗和 Web 版不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionManagementRail.swift`
+- `ios/RustwarIOS/RustwarIOS.xcodeproj/project.pbxproj`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.73-direct-production-management-rail.md`
+- `update_log.md`
+
+验证状态：
+
+- 本轮遵循云端唯一验证制度；本机未运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
+- 实现 commit、Actions run、artifact 与 Agent C 结论待 push 后按最新 `origin/main` SHA 补录；不得复用 v2.72 旧 artifact。
+
+已知风险：
+
+- 固定 Home PNG 不能展开 Repeat Menu，也不能证明真实点击、Shift+P、VoiceOver、Dynamic Type 全档位、滚动、stale menu 回调时序或真机触控手感。

@@ -528,6 +528,10 @@ final class GameController {
         selectedPlayerProducer.map { GameDefinitions.building($0.type).name }
     }
 
+    var productionFocusProducerID: String? {
+        selectedPlayerProducer?.id
+    }
+
     var productionFocusTechLabel: String {
         guard let producer = selectedPlayerProducer else {
             return "Tech"
@@ -611,6 +615,13 @@ final class GameController {
 
     var repeatProductionUnit: UnitType? {
         selectedPlayerProducer?.repeatUnitType
+    }
+
+    var repeatProductionShortTitle: String {
+        guard let unitType = repeatProductionUnit else {
+            return "Off"
+        }
+        return productionFocusShortName(for: unitType)
     }
 
     var repeatProductionButtonTitle: String {
@@ -1899,7 +1910,22 @@ final class GameController {
             nextUnitType = options.first
         }
 
-        let result = engine.setRepeatProduction(nextUnitType)
+        setRepeatProduction(nextUnitType)
+    }
+
+    func setRepeatProduction(
+        _ unitType: UnitType?,
+        expectedProducerID: String? = nil
+    ) {
+        if let expectedProducerID,
+           selectedPlayerProducer?.id != expectedProducerID {
+            commandStatus = "Producer changed"
+            reportWarningFeedback()
+            renderRevision += 1
+            return
+        }
+
+        let result = engine.setRepeatProduction(unitType)
         commandStatus = statusText(for: result)
         reportCommandFeedback(for: result)
         renderRevision += 1

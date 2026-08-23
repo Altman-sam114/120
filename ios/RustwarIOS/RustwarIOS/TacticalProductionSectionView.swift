@@ -198,37 +198,13 @@ struct TacticalProductionSectionView: View {
                     }
                 }
             }
+            TacticalProductionManagementRail(
+                controller: controller,
+                columns: columns,
+                isCompact: isCompact
+            )
             if !controller.productionQueueItems.isEmpty {
                 TacticalProductionQueueView(items: controller.productionQueueItems)
-            }
-            TacticalCommandGrid(columns: columns) {
-                if controller.canCancelProduction {
-                    Button("Cancel Last", systemImage: "minus.circle", action: controller.cancelProduction)
-                        .tacticalControl()
-                        .keyboardShortcut(commandKey("c"), modifiers: .shift)
-                        .accessibilityLabel("Cancel last queued production item")
-                }
-                if controller.canCycleRepeatProduction {
-                    Button(
-                        controller.repeatProductionButtonTitle,
-                        systemImage: controller.repeatProductionSystemImage,
-                        action: controller.cycleRepeatProduction
-                    )
-                    .tacticalControl()
-                    .keyboardShortcut(commandKey("p"), modifiers: .shift)
-                    .accessibilityLabel("Repeat production")
-                    .accessibilityValue(controller.repeatProductionAccessibilityValue)
-                    .accessibilityHint("Cycles the selected producer repeat production target.")
-                }
-                if controller.canIssueRally || controller.isAwaitingRallyTarget {
-                    Button(
-                        controller.rallyCommandButtonTitle,
-                        systemImage: controller.isAwaitingRallyTarget ? "xmark.circle" : "flag.checkered",
-                        action: controller.toggleRallyCommand
-                    )
-                    .tacticalControl()
-                    .keyboardShortcut(commandKey("r"), modifiers: .shift)
-                }
             }
         }
     }
@@ -299,10 +275,6 @@ struct TacticalProductionSectionView: View {
         }
         return controller.showsSelectedFactoryUpgradeControl ||
             controller.selectedFactoryUpgradeProgress != nil
-    }
-
-    private func commandKey(_ value: String) -> KeyEquivalent {
-        KeyEquivalent(Character(value))
     }
 
 }

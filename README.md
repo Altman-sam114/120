@@ -1,5 +1,7 @@
 # Rustwar RTS Prototype
 
+v2.73：原生 iOS 生产建筑把 Cancel / Repeat / Rally 提升为位于生产卡之后、完整队列之前的 producer management rail，长队列不再把管理动作推到最底部。compact 普通字号使用三枚至少 44pt 的图标+短文本控件，accessibility Dynamic Type 改为单列完整标签；Cancel 无队列时保留稳定位置并 disabled，Rally 等待态继续显示 Cancel/active。Repeat 从逐次循环改为直接 Menu，可一击选择 Off 或当前科技合法的任意单位，并以文字、filled icon/checkmark 和完整 VoiceOver value/hint 表达状态；菜单打开后若生产建筑选择已经改变，旧 action 会拒绝写入。Shift+C/P/R、Shift+1-9、三列生产卡、队列/退款、Core 自动补队、Rally、存档和 Web 版保持；只在 GitHub Actions 验证，固定 PNG 不能证明菜单真实点击、Shift+P、VoiceOver、Dynamic Type 全档位或真机手感。
+
 v2.72：原生 iOS 主战场把既有单位开火参数收敛为更明确的武器专属 presentation：Tank 使用更短更快的琥珀动能 tracer，Heavy Tank 使用更宽、更热且终点反馈更重的炮弹；Artillery 增加确定性抬升弧线、独立地面影子和烟珠；AA 双炮从双炮口到双终点保持平行，并只生成一次 volley 终点反馈。Tank、Heavy、AA、Artillery 的复合接地影与 hull heading 同步旋转，模型与影子共用履带长度映射。只改 `BattlefieldScene`，不改变 Core 命中、伤害、射程、冷却、目标、命令、生产、存档或 Web 版；Reduce Motion、fog/visibility、64 effect / 32 decal 上限和 frozen combat fixture 保持。实现 commit `a44ccf4d2d1e6422687aaf2ec6db6fc417cded31` 对应 Actions run `32634177053` / attempt `1` / job `97181340392` 的 artifact `rustwar-ci-v1.2-main-a44ccf4-run32634177053-attempt1` 已通过：JUnit `8/0/1`、Swift Core `341 tests`、双架构 build、双启动与双 PNG probe 成功；Home 与旧基线逐字节一致，Combat 人工确认武器层级、火炮弧线/影子/烟珠、AA 平行双线和履带接地影，无 HUD 回退。固定 PNG 不能证明真实动画连续性、真机帧率或 Reduce Motion 实机体验。
 
 v2.71：原生 iOS 主战场修复单指 Spatial terminal 后 owner 可能残留 `.possible` 并吞掉下一枚新触点的问题。`TouchSequenceOwner` 只在旧 sequence 已有 accepted-ended 证据、`activeIDs` 为空且新 ID 未被隔离时原子让位；`BattlefieldView` 在播种新触点前清理旧 preview/context lease，并失效旧 context、pan、pinch callback。正常 tap/context terminal 仍可先提交，active 单指和 pan/long-press/multitouch/pinch owner 不可被抢占，旧 ID quarantine、第二指 candidate、12pt pan、双指框选、主战场命令、Tactical Map v2.70、Core 模拟、存档和 Web 版保持。实现 commit `a8fe19bc00827724089d24d51ed1cba4986a3c73` 加测试编译修复 `976480327e361c6fc7f9f06ca41160a19b237183` 对应 Actions run `32632121613` / attempt `1` / job `97176374940` 的 artifact `rustwar-ci-v1.2-main-9764803-run32632121613-attempt1` 已通过：JUnit `8/0/1`，Swift Core `341 tests` 全通过且新增 handoff test 明确通过，双架构 build、双场景 smoke 与双 PNG probe 成功，静态 UI 无回退。固定 smoke 不注入目标 callback 顺序，同 ID 复用与第二指尚未上报前的 long press仍属真机证据边界。
@@ -209,7 +211,7 @@ v2.50：原生 iOS 生产建筑 dock 首屏增加只读 Production focus summary
 - Same Type：选中己方单位时显示；点按后选择全图所有同类型己方单位，并在主战场和战术小地图高亮多选集合。
 - 双击己方单位：选择该单位附近半径内的存活己方同类型单位；等待 Move、Attack、Build、Rally 或 Select Area 等命令目标时不会触发双击选择。
 - Save 1-9 / Group 1-9：保存或召回 1-9 号控制编队；外接键盘可用 Control + 1-9 保存、1-9 召回；召回会过滤已死亡、缺失或非己方目标，并恢复为当前多选集合。
-- 外接键盘：WASD / 方向键移动视野，Space 回到己方 Command Center，P 暂停/恢复，R 重开当前地图，E 选择空闲 Builder，F 选择当前屏幕内作战单位，Control + A 选择全部战斗单位，Option + A 选择同类型单位，A 进入 Attack Move，G 进入 Patrol，H 进入 Guard，C 进入 Reclaim，S 停止或取消当前等待命令，Z / X / V 切换选中有武器己方单位为 Aggressive / Defensive / Hold Fire；Shift + 1-9 按当前 HUD 顺序生产单位，Shift + E / T / F / D 进入 Build Extractor / Turret / Factory / Radar，Shift + C / P / R 执行 Cancel Last / Repeat / Rally。
+- 外接键盘：WASD / 方向键移动视野，Space 回到己方 Command Center，P 暂停/恢复，R 重开当前地图，E 选择空闲 Builder，F 选择当前屏幕内作战单位，Control + A 选择全部战斗单位，Option + A 选择同类型单位，A 进入 Attack Move，G 进入 Patrol，H 进入 Guard，C 进入 Reclaim，S 停止或取消当前等待命令，Z / X / V 切换选中有武器己方单位为 Aggressive / Defensive / Hold Fire；Shift + 1-9 按当前 HUD 顺序生产单位，Shift + E / T / F / D 进入 Build Extractor / Turret / Factory / Radar，Shift + C / P / R 执行 Cancel Last / 打开 Repeat 目标菜单 / Rally。
 - 拖拽：主战场移动超过 12pt 后平移战场视角；同一触摸序列会持续抑制 tap/长按，轻微抖动仍可保留长按语义。Tactical Map 的相机拖动与长按最大移动统一为 18pt，轻拖不会落入原先 18–22pt 的点按灰区。
 - 地图重置中的触摸：若 reset 发生在 Spatial touch ID 登记前，context seed 之前的 context/Spatial 首帧会被取消围栏拦截；seed 和 active touch 证据到齐后才恢复普通 tap、pan 或双指手势，但 SwiftUI 没有统一 touch token，seed 后的迟到旧回调仍需真机/XCUITest 进一步区分。
 - 连续单指触摸：若 Spatial 已确认上一枚 accepted touch ended、owner 尚在等待 tap/context terminal，而这些并行回调迟到或缺失，下一枚使用未隔离新 ID 的 active touch 会先让旧 terminal owner 安全收口再建立新 sequence，不再被误判为 replacement；系统立即复用同一旧 ID、或第二指尚未被 Spatial 上报时仍无法绝对区分。
@@ -233,8 +235,8 @@ v2.50：原生 iOS 生产建筑 dock 首屏增加只读 Production focus summary
 - Stop：选中己方单位时显示；点按后清除所有选中己方单位当前移动、攻击移动、巡逻、护航、维修、回收、建造或攻击命令，并取消正在等待落点/目标/框选的 Move、Attack Move、Patrol、Guard、Repair、Reclaim、Build Extractor、Turret、Factory、Attack 或 Select Area 模式。
 - Builder：选中完成状态己方 Command Center 时显示；点按后扣除金属并加入生产队列，完成后在该 Command Center 的集结点生成新的 Builder。
 - Scout / Light Tank / Hover Tank / Artillery / AA Tank：选中完成状态己方 Land Factory 时显示；点按后扣除金属并加入生产队列，完成后在该 Land Factory 的集结点生成单位。
-- Cancel Last：选中完成状态己方生产建筑且队列不为空时显示；点按后取消队尾生产项，并按未完成进度返还金属。
-- Repeat：选中完成状态己方生产建筑时显示；点按会在该建筑支持的生产列表内循环 Repeat 目标，队列清空后自动尝试续造当前重复单位；金属或人口不足时保留重复目标但不会追加队列。
+- Cancel Last：选中完成状态己方生产建筑时固定显示在队列之前；队列为空时 disabled，队列非空时可取消队尾生产项，并按未完成进度返还金属。
+- Repeat：选中完成状态己方生产建筑时显示直接目标菜单；可一击选择 Off 或当前科技支持的任意单位，队列清空后自动尝试续造当前重复单位；金属或人口不足时保留重复目标但不会追加队列。
 - Rally：选中完成状态己方生产建筑时显示；点按后进入集结点模式，再 tap 主战场设置新集结点，后续完成生产的单位会在该点生成；选中生产建筑时战场会显示集结线和标记。
 - 炮塔：完成状态的 Turret 会自动攻击射程内敌方单位或建筑；iOS 主战场只在 cooldown 上跳时显示短促炮口焰和当前可见目标的高亮尾迹炮弹，不再把整个冷却周期画成常亮火力线。单位与建筑受击/摧毁会显示有界爆炸、烟尘和短寿命灼痕，地图切换、Restart 或 Load 会清理旧战场特效。
 - 红方 AI：会用空闲 Builder 维修受损友军单位或建筑、在空闲资源点建造 Extractor、在缺少陆军工厂或已有基础经济后建造未完成 Land Factory、在基地周边建造未完成 Turret、在基础经济/工厂/炮塔成型后建造 1 座未完成 Radar Station，并在该 Radar Station 完成、经济和防御门槛仍满足且金属足够时排队 T2 升级；至少一个 Extractor T2 和 Radar T2 完成后，红方会保留一个 Extractor 建造费用缓冲并优先升级 Land Factory T2，随后以统一编成计数生产包含 Heavy Tank 的 T2 陆军；没有可升级工厂时继续排队 Extractor T2/T3 经济升级，同 tick 的 Command Center / Land Factory 生产只会使用缓冲以上的金属；红方也会回收附近战斗残骸，并让空闲战斗单位按 Web-lite 目标评分主动攻击玩家目标；评分会偏向 Command Center、Extractor、Land Factory、Turret 和低血单位/建筑，Artillery 对建筑有更强偏好。

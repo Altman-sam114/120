@@ -120,7 +120,7 @@ flowchart TD
   UPG --> E
   C --> CQ["ProductionCancelResult<br/>中文注释：选中己方生产建筑后取消队尾生产并按未完成进度退款"]
   CQ --> E
-  C --> RPT["ProductionRepeatResult / BuildingSnapshot.repeatUnitType<br/>中文注释：选中己方生产建筑后在当前生产列表内循环 Repeat 目标，状态随 GameState 存档"]
+  C --> RPT["ProductionRepeatResult / BuildingSnapshot.repeatUnitType<br/>中文注释：选中己方生产建筑后直接选择 Repeat 目标，状态随 GameState 存档"]
   RPT --> E
   C --> RP["BuildingSnapshot.rally<br/>中文注释：选中己方生产建筑后设置后续出兵集结点"]
   RP --> E
@@ -1487,3 +1487,27 @@ flowchart TD
 ```
 
 读图说明：v2.72 只扩展 `BattlefieldScene` 的 presentation。AA 仍对应一次 Core damage，Artillery 地面投影与抬升炮弹共享同一目标和 bounded root；tracked grounding 与模型共用长度并跟随 hull。Reduce Motion 的实时路径不执行 projectile/arc motion，Core、命令、生产、触控、存档和 Web 版不变。实现 commit `a44ccf4` 对应 run `32634177053` 的 artifact、源码合同与双 PNG 已由 Agent C 复判通过；静态 artifact 仍不能证明动态时序或真机性能。
+
+## v2.73 iOS direct production management rail
+
+```mermaid
+flowchart TD
+  P[选中单一己方 producer] --> S[Production summary / Factory Tech]
+  S --> O[三列 tech-legal production options]
+  O --> M[Management rail before full queue]
+  M --> C[Cancel Last: queue empty disabled]
+  M --> R[Repeat Menu: Off + productionOptions]
+  M --> G[Rally / Cancel target]
+  R --> I{captured producer ID still selected?}
+  I -->|yes| W[Controller setRepeatProduction]
+  I -->|no| X[warning + reject stale menu action]
+  W --> E[existing GameEngine setRepeatProduction]
+  E --> F[status + feedback + renderRevision]
+  C --> Q[existing cancel/refund]
+  G --> T[existing pending target arbitration]
+  M --> A[compact 3 columns / regular inherited / accessibility 1 column]
+  A --> H[44pt + VoiceOver + Shift C/P/R]
+  M --> U[full Core queue view]
+```
+
+读图说明：v2.73 只重构 producer management 的 SwiftUI 层级和直接 action wrapper。Repeat 选项来自现有 tech-gated `productionOptions`，不能按当前 metal/pop availability 过滤；Core repeat retry、queue order、refund、rally、save/schema、AI、输入、战斗和 Web 不变。固定云端 PNG 只能检查默认 rail 构图，不能证明 Menu 展开、快捷键、VoiceOver、Dynamic Type 或真实触控。

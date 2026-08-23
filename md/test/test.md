@@ -703,3 +703,21 @@ Agent C 只验收最新 `origin/main` commit 对应 artifact，核对 manifest �
 通过记录：实现 commit `a44ccf4d2d1e6422687aaf2ec6db6fc417cded31` 对应 run `32634177053` / attempt `1` / job `97181340392`，artifact 为 `rustwar-ci-v1.2-main-a44ccf4-run32634177053-attempt1`。Agent C 已下载到 `/private/tmp/rustwar-c-review-32634177053/`（约 1.7M）；manifest 的 branch、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5 和固定 iPhone 17 Pro 完全匹配。JUnit `8 tests / 0 failures / 1 skipped`，唯一 skip 是既有 headless browser 缺失；build log 显示 Swift Core `341 tests`、Xcode list、双架构 build、双场景启动、横屏归一化和双 PNG probe 全部成功。
 
 `ios-home.png` 为 `2622x1206`、透明比例 0，SHA-256 `7c334ef5ecafa4e5afe5cdc313491b5bbabbba5210a07579964696ff0231089f`，与 v2.69.1 最终基线逐字节一致。`ios-combat.png` 为 `2622x1206`、透明比例 0、亮度标准差 `43.29359362233251`，SHA-256 `85dadf8d8aaf273b9f6928a76f4c70b838a72258d0ee4d1a2be0ee72282ddea3`；人工确认短 Tank tracer、重 Heavy shell、Artillery 抬升/ground shadow/四枚 smoke pearls、AA 平行双 tracer 和履带接地层可辨，Quick Orders、Tactical Map、终点/摧毁和状态栏无回退。
+
+## v2.73
+
+本轮修改 `GameController.swift`、`TacticalProductionSectionView.swift`、新增 `TacticalProductionManagementRail.swift` 和 Xcode project source 引用，并同步必要文档；继续执行云端唯一验证。本机禁止运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`；`.wp` 必须保持未跟踪。
+
+代码复判必须确认：
+
+- production presentation 顺序为 summary / Factory Tech / 三列 options / management rail / full queue；生产卡、tech gate、Shift+1-9、queue item 顺序与 progress 不变。
+- compact 普通 Dynamic Type 的 rail 为三列，regular 沿调用方列数，accessibility Dynamic Type 为单列；Cancel、Repeat、Rally 均至少 44pt。
+- Cancel 固定显示、空队列 disabled、非空调用既有尾项取消/退款；Rally 等待态继续复用 toggle action、Cancel 文案、active 非颜色线索和 Shift+R。
+- Repeat 使用 Menu，包含 Off 和全部 `productionOptions`，当前项有 checkmark/filled icon 及 VoiceOver selected trait/value；每项直达 Controller setter，不循环、不按 metal/pop availability 过滤。Shift+P 绑定 Menu trigger，VoiceOver 提供完整 label/value/hint。
+- Controller wrapper 只调用既有 Core `setRepeatProduction` 并沿用 result/status/feedback/revision；captured producer ID 不匹配时拒绝 stale action。RustwarCore、BuildingSnapshot/GameState/save schema、CI workflow 与 Web 未修改。
+
+Agent C 只验收最新 `origin/main` 完整 SHA 对应 artifact，核对 manifest 的 branch、完整 SHA、run id/attempt、schema、Xcode 26.5、iOS 26.5、固定 iPhone 17 Pro，以及 JUnit、主日志、失败摘要、repo state、Swift Core、Xcode list/build、arm64/x86_64 iOS build、production/combat 双启动、横屏归一化和双 PNG probe。新 rail 文件必须明确进入双架构编译。
+
+人工复看 `ios-home.png`：三列 Scout / Light / Hover / Arty / AA / Heavy 卡无回退，management rail 在 options 后、full queue 前，Cancel/Repeat/Rally 同排可辨且不挤压，queue、Factory Tech、Selection、Tactical Map 和状态栏无裁切或重叠。`ios-combat.png` 的 v2.72 武器层级、tracked grounding、Quick Orders、终点/摧毁、Tactical Map 和状态栏无静态回退。
+
+证据边界：固定 PNG 不展开 Menu，不能证明真实点击、Shift+P 焦点、VoiceOver、Dynamic Type 全档位、滚动、stale menu 时序或真机触控；不得用绿色 build 扩大结论。
