@@ -743,3 +743,7 @@ Agent C 只验收最新 `origin/main` 完整 SHA 对应 artifact，核对 manife
 Agent C 只验收 v2.74 最新 `origin/main` 完整 SHA 对应 artifact，核对 manifest、JUnit、主日志、失败摘要、repo state、Xcode 26.5、iOS 26.5、Swift 6.3.2、固定 iPhone 17 Pro、Swift Core、新 boundary test、既有 owner/Attack-Move tests、Xcode list、双架构 build、双启动、横屏归一化和双 PNG probe。预期 Home SHA-256 保持 `f2238e3b...`，Combat 保持 `85dadf8d...`；变化必须人工解释。
 
 证据边界：Core test 证明数值 policy，源码复判证明接线；固定 smoke 不生成目标手势轨迹，不能证明 simultaneous callback 顺序、真实误触率、真机手感、系统同 ID 复用或 seed 后迟到旧触点已绝对区分。
+
+通过记录：实现 commit `098949ab458b43ed3c8bb0437bcf6c9d3db5a3ed` 对应 Actions run `32641409853` / attempt `1` / job `97198955357`；artifact `rustwar-ci-v1.2-main-098949a-run32641409853-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32641409853/`，约 `1.7M`。manifest 的 branch、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5、Swift 6.3.2 与固定 iPhone 17 Pro 完全匹配；JUnit `8 tests / 0 failures / 1 skipped`，唯一 skip 为既有 headless browser regression。
+
+主日志确认 Swift Core `342 tests` 全通过，`singleTouchTravelPolicyConvergesAtPanBoundary`、`attackMoveAcquiresNearbyEnemyAndDamagesBeforeDestination` 与 `attackMoveContinuesAfterDestroyingAcquiredTarget` 明确通过；`SingleTouchTravelPolicy.swift` 和 `BattlefieldView.swift` 均进入 arm64/x86_64 编译，Xcode list/build、双场景启动、横屏归一化与双 PNG probe 全成功。Home SHA-256 `f2238e3bfb7918b0db80f2cda7d97533c670db51e7c91c358a3a24acb72a1bcf`、Combat SHA-256 `85dadf8d8aaf273b9f6928a76f4c70b838a72258d0ee4d1a2be0ee72282ddea3` 与 v2.73 逐字节一致；Agent C 判定 v2.74 artifact 验收通过。

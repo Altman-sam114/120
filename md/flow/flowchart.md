@@ -1530,4 +1530,4 @@ flowchart TD
   R --> N[next fresh sequence starts eligible]
 ```
 
-读图说明：v2.74 只收敛单指 travel policy。12pt 以下维持 Rusted Warfare 式点选/直接下令，达到阈值后当前 sequence 永久转入 pan-safe 路径，即使回移也不提交命令。双指框选、pinch、44pt 命中、直接点按路由、Attack-Move 自动索敌、Core/save、HUD、战斗和 Web 不变；固定 smoke 不证明真实 callback 时序或真机手感。
+读图说明：v2.74 只收敛单指 travel policy。12pt 以下维持 Rusted Warfare 式点选/直接下令，达到阈值后当前 sequence 永久转入 pan-safe 路径，即使回移也不提交命令。实现 `098949ab458b43ed3c8bb0437bcf6c9d3db5a3ed` 对应 run `32641409853` 的 artifact、342 Core tests、双架构 build 和静态哈希已由 Agent C 复判通过。双指框选、pinch、44pt 命中、直接点按路由、Attack-Move 自动索敌、Core/save、HUD、战斗和 Web 不变；固定 smoke 不证明真实 callback 时序或真机手感。

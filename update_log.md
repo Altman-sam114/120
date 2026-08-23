@@ -6563,7 +6563,9 @@
 验证状态：
 
 - 遵循云端唯一验证制度；本机未运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
-- 实现提交与对应 Actions run/artifact 尚待 push 后填写；不得复用 v2.73 artifact。
+- 实现 commit `098949ab458b43ed3c8bb0437bcf6c9d3db5a3ed` 已推送到 `origin/main`。Actions run `32641409853` / attempt `1` / job `97198955357` 的 artifact `rustwar-ci-v1.2-main-098949a-run32641409853-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32641409853/`，约 `1.7M`；manifest 的 branch、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5、Swift 6.3.2 与固定 iPhone 17 Pro 完全匹配。
+- JUnit 为 `8 tests / 0 failures / 1 skipped`，Swift Core `342 tests`；新增 `singleTouchTravelPolicyConvergesAtPanBoundary`、既有 terminal owner 与 Attack-Move acquisition/resume tests 明确通过。新 policy 与 `BattlefieldView` 进入 arm64/x86_64 编译，Xcode list/build、双启动、横屏归一化和双 PNG probe 全部 success。
+- Home SHA-256 为 `f2238e3bfb7918b0db80f2cda7d97533c670db51e7c91c358a3a24acb72a1bcf`，Combat 为 `85dadf8d8aaf273b9f6928a76f4c70b838a72258d0ee4d1a2be0ee72282ddea3`，均与 v2.73 逐字节一致。Agent C 判定 v2.74 artifact 验收通过；唯一 Actions 注释仍为 `upload-artifact@v5` Node 20 被强制按 Node 24 运行，不影响结果。
 
 已知风险：
 
