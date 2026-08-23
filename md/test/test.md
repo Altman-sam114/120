@@ -646,3 +646,19 @@ Agent C 只验收最新 `origin/main` commit 对应的未加密 Actions artifact
 - 每张卡继续经 `tacticalControl()` 保持至少 44pt；不修改 Core、GameState、存档/JSON、Battlefield/Tactical Map 输入、战斗或 Web 版。
 
 Agent C 只验收修复提交对应的最新 `origin/main` 未加密 Actions artifact，核对 manifest 的 branch、完整 `commitSha`、run id、attempt、JUnit、主日志、失败摘要、Swift Core、Xcode list/build、双架构 iOS build、production/combat 双启动、横屏归一化和两份 PNG probe。人工查看新 `ios-home.png` 时必须确认 Scout / Light / Hover / Arty / AA / Heavy 与 `NEED` / `POP` / `LOCK` 不省略、不重叠，Production header、队列和首屏层级清晰；`ios-combat.png` 的 Quick Orders、模型、弹道、爆点、Tactical Map 和状态栏无回退。静态 artifact 仍不能证明真实 VoiceOver、Dynamic Type 全档位、滚动、触控或真机性能。
+
+## v2.70
+
+本轮只修改 Tactical Map 等待实体 marker 目标的 SwiftUI/Controller 参数链路，并同步 README、flow、flowchart、update log 与版本提示词；继续执行云端唯一验证。本机不运行 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图、Node、测试脚本或 `git diff --check`；`.wp` 必须保持未跟踪。
+
+代码复判必须确认：
+
+- `usesTacticalMapPendingMarkerHitRadius` 只包含 Attack、Guard、Repair、Reclaim 与 Build Extractor，不包含 Move、Attack Move、Patrol、Rally、Turret、Factory、Radar、Select Area 或普通相机操作。
+- `TacticalMapView` 只读取该 predicate，并继续复用既有 16pt 屏幕直径到 world-space 半径换算；View 不重复维护命令集合。
+- `handleTacticalMapTap` 把同一 `minimumHitRadius` 传给 Builder 和 Selection resolver；Attack、Guard、Repair 继续使用既有可见性、阵营、稳定排序与最近合法目标资格过滤。
+- Reclaim 使用 `wreckTarget(at:maxDistance: max(95, minimumHitRadius))`，Build Extractor 保持 `resourceTarget(at:maxDistance: max(56, minimumHitRadius))`；默认半径、成功退出、失败重试、反馈和 Core 派发不变。
+- 普通点按居中、点位命令、pending 禁拖、18pt 相机拖动、长按消费、callback generation、VoiceOver、主战场 44pt 命中、TouchSequenceOwner、Core/save/Web 边界没有回退。
+
+Agent C 只验收实现提交对应的最新 `origin/main` 未加密 Actions artifact，核对 manifest 的 `branch=main`、完整 `commitSha`、run id、attempt、schema、runner、Xcode 26.5、iOS Simulator SDK 26.5、固定 iPhone 17 Pro，以及 JUnit、主日志、失败摘要、repo state、Swift Core、Xcode list/build、双架构 iOS build、production/combat 双启动、横屏归一化与两份 PNG probe。人工查看双 PNG 时确认 Production、Quick Orders、模型、弹道、爆点、Tactical Map、状态栏和 command dock 无静态回退。
+
+证据边界：固定 fixture 不执行 Tactical Map marker 偏移点按，因此绿色 build、JUnit、源码复判和静态 PNG 不能证明真实命中率、半径边界、VoiceOver 执行或真机手感；除非最新 run 新增并通过对应触摸自动化，否则必须保留该风险。

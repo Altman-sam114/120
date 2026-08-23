@@ -883,3 +883,11 @@ v2.69 的三列网格和生产 action 保持不变，只调整 `TacticalProducti
 compact 不可用视觉标签按 `ProductionAvailability` 映射为金属不足 `NEED`、人口不足 `POP`、通用不可用 `LOCK`。这只压缩可见 badge，按钮既有 accessibility label/value/hint 仍提供完整单位名、费用、人口、时间和具体不足原因；regular/accessibility 卡片、`productionOptions` 顺序、disabled gate、Shift+1-9、`queueUnit`、队列、Factory Tech、Cancel/Repeat/Rally、Core、存档和 Web 状态不变。
 
 commit `5db992a3325aca239ff5061fffc1f4ccc28c9602` 对应 run `32463246451` 的自动检查全部成功，但 `ios-home.png` 人工复看确认三列名称与 `NEED` 原因发生截断，因此 v2.69 未通过最终视觉验收。v2.69.1 必须以修复提交对应的新 artifact 重新核对 manifest、JUnit、日志和双 PNG；旧 run 不能作为修复通过依据。
+
+## v2.70 iOS Tactical Map marker-target hit consistency
+
+`GameController.usesTacticalMapPendingMarkerHitRadius` 集中定义 Tactical Map 需要实体 marker 触控容错的等待态，集合严格限定为 Attack、Guard、Repair、Reclaim 与 Build Extractor。`TacticalMapView.handleTap` 不再自行枚举命令，只在该 predicate 为真时把既有 `pendingTargetTouchDiameter = 16` 按当前地图视图尺寸换算为 world-space 最小命中半径；普通相机点按和所有点位命令仍传入 0。
+
+`GameController.handleTacticalMapTap` 保持 Area Selection、point command、Builder target、Selection target 和相机居中的既有优先级，但把同一 `minimumHitRadius` 原样交给两个目标 resolver。Guard、Repair 与 Attack 继续复用玩家当前真实可见性、阵营过滤、稳定距离排序和执行资格；Build Extractor 继续使用 `max(56, minimumHitRadius)`，Reclaim 改为使用 `max(95, minimumHitRadius)`，因此默认调用仍保留旧 world 半径，小地图调用则与可见 marker 的屏幕容错一致。
+
+该轮不改变目标成功/失败后的 pending 生命周期、fog/radar、点位命令、普通小地图相机操作、18pt 拖动与 callback generation、主战场 44pt 命中和触摸 owner，也不修改 RustwarCore、GameState、订单、存档/JSON 或 Web。固定云端 artifact 不执行真实 marker 偏移点按，因此只能证明最新 SHA 的编译、启动、既有回归、静态 UI 与源码参数合同；真实命中率和真机手感仍需针对性触摸自动化或设备验证。

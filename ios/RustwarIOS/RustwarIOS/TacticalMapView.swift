@@ -265,7 +265,7 @@ struct TacticalMapView: View {
         guard let worldPoint = worldPoint(for: location, in: size) else {
             return
         }
-        let minimumHitRadius = (controller.isAwaitingAttackTarget || controller.isAwaitingBuildExtractorTarget)
+        let minimumHitRadius = controller.usesTacticalMapPendingMarkerHitRadius
             ? minimumWorldHitRadius(for: size, screenDiameter: Self.pendingTargetTouchDiameter)
             : 0
         controller.handleTacticalMapTap(at: worldPoint, minimumHitRadius: minimumHitRadius)

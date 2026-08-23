@@ -122,6 +122,13 @@ final class GameController {
     var isAwaitingBuildRadarTarget = false
     var isAwaitingRallyTarget = false
     var isAwaitingAreaSelection = false
+    var usesTacticalMapPendingMarkerHitRadius: Bool {
+        isAwaitingAttackTarget ||
+            isAwaitingGuardTarget ||
+            isAwaitingRepairTarget ||
+            isAwaitingReclaimTarget ||
+            isAwaitingBuildExtractorTarget
+    }
     var isPaused = false
     var simulationSpeed = 1.0 {
         didSet {
@@ -1597,16 +1604,10 @@ final class GameController {
         if handlePointCommand(at: point) {
             return
         }
-        if handleBuilderTargetCommand(
-            at: point,
-            minimumHitRadius: isAwaitingBuildExtractorTarget ? minimumHitRadius : 0
-        ) {
+        if handleBuilderTargetCommand(at: point, minimumHitRadius: minimumHitRadius) {
             return
         }
-        if handleSelectionTargetCommand(
-            at: point,
-            minimumHitRadius: isAwaitingAttackTarget ? minimumHitRadius : 0
-        ) {
+        if handleSelectionTargetCommand(at: point, minimumHitRadius: minimumHitRadius) {
             return
         }
         centerCamera(on: point)
@@ -2616,7 +2617,10 @@ final class GameController {
         minimumHitRadius: Double = 0
     ) -> Bool {
         if isAwaitingReclaimTarget {
-            let wreck = engine.state.wreckTarget(at: point)
+            let wreck = engine.state.wreckTarget(
+                at: point,
+                maxDistance: Swift.max(95, minimumHitRadius)
+            )
             let result: UnitCommandResult
             let wreckID: String?
             if let wreck {

@@ -1423,3 +1423,23 @@ flowchart TD
 ```
 
 读图说明：v2.69.1 只重排 dense compact 生产卡内部 presentation，并缩短可见锁定 badge；生产顺序、按钮 action、disabled 条件、regular/accessibility 路径和完整 VoiceOver 语义不变。最终验收必须使用修复 commit 对应的新 artifact，人工确认六个短名与 `NEED` / `POP` / `LOCK` 均不省略、三列无重叠。
+
+## v2.70 iOS Tactical Map marker-target hit consistency
+
+```mermaid
+flowchart TD
+  TAP[Tactical Map tap] --> P{Controller marker-radius predicate?}
+  P -->|Attack / Guard / Repair / Reclaim / Extractor| R[既有 16pt screen diameter → world radius]
+  P -->|point command / normal camera| Z[minimumHitRadius = 0]
+  R --> H[handleTacticalMapTap]
+  Z --> H
+  H --> B[Builder resolver]
+  H --> S[Selection resolver]
+  B --> W[Reclaim max 95/radius · Extractor max 56/radius]
+  S --> V[Attack/Guard/Repair 可见性、阵营、最近合法目标与资格]
+  W --> C[既有 Core command + pending feedback]
+  V --> C
+  Z --> Q[既有 point command 或 camera center]
+```
+
+读图说明：v2.70 只统一 Tactical Map 五类实体 marker 目标的输入容错和参数转发；点位命令不吸附，普通点按居中、fog/radar、18pt 拖动、generation gate、主战场触控、Core、存档和 Web 版不变。固定云端 smoke 不会真实点击 marker，最终验收必须区分源码合同复判与真实触控行为证据。

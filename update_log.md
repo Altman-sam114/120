@@ -6394,3 +6394,33 @@
 已知风险：
 
 - 固定静态 fixture 未覆盖 `POP` / `LOCK` 实际渲染，也不能证明真实 VoiceOver、Dynamic Type 全档位、滚动、键盘快捷键、触控命中、动画时序或真机性能；这些仍需后续针对性验证。
+
+## v2.70 / Tactical Map marker-target hit consistency
+
+日期：2026-08-23
+
+核心变更：
+
+- `GameController` 新增 Tactical Map marker 命中半径 predicate，严格覆盖 Attack、Guard、Repair、Reclaim 与 Build Extractor；`TacticalMapView` 不再重复枚举命令。
+- Tactical Map 继续把既有约 16pt 屏幕直径换算为 world-space 最小命中半径，并把同一数值传给 Builder 与 Selection resolver。
+- Reclaim 开始使用 `max(95, minimumHitRadius)`，Build Extractor 保持 `max(56, minimumHitRadius)`；Attack、Guard、Repair 保持当前可见性、阵营、最近合法目标和执行资格过滤。
+- 点位命令、普通小地图相机操作、fog/radar、18pt 拖动、callback generation、主战场 44pt 命中、Core、存档和 Web 版不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.70-tactical-map-marker-target-hit-consistency.md`
+
+验证状态：
+
+- 本轮遵循云端唯一验证制度；本机未运行 SwiftPM test、Swift typecheck、Xcode build/list、Simulator、Preview、浏览器、截图、Node、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
+- 当前只完成源码与文档实现；必须在提交并 push `origin/main` 后，以该完整 SHA 对应的最新 `Rustwar CI Results` artifact 完成 manifest、JUnit、日志、失败摘要、双架构 build、双场景启动、横屏归一化、双 PNG 和源码合同复判，才可确认通过。
+
+已知风险：
+
+- 固定 fixture 不执行 Tactical Map marker 偏移点按；源码参数链路、绿色 build 和静态 PNG 不能证明真实命中率、超出半径后的拒绝、VoiceOver 执行或真机手感。
