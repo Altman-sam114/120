@@ -6608,3 +6608,37 @@
 - 固定 frozen PNG 能检查同点叠加构图，不能证明动态 fade/scale/rotate、真实密集战斗帧率、任意 zoom/地图、动态 Reduce Motion 或真机观感。
 - 若未来需要按来袭方向或武器类型生成命中特效，必须先设计可靠 Core combat visual event，不能从当前 HP 差分倒推出攻击者。
 - 下一候选为 compact Production summary 去重，让 Arty/AA/Heavy 第二排更早进入 Home 首屏。
+
+## v2.76 / Compact production identity deduplication
+
+日期：2026-08-23
+
+核心变更：
+
+- Compact 普通 Dynamic Type 的固定 producer header 已显示 Production、Land Factory、T2 与 1.25x，`TacticalProductionFocusSummaryView` 不再重复第二层 building/tech/speed identity。
+- Focus summary 继续保留 NOW / QUEUE / UPGRADE；完整 VoiceOver value 仍含 building、tech、speed、Now、Queue、Build 与 Upgrade。
+- Regular trailing 与 accessibility Dynamic Type 继续显示完整 visible identity；没有 compact producer header 的路径不会丢失生产建筑上下文。
+- 不缩小字体、卡片、图标或 44pt；management rail、Factory Tech gate、Scout/Light/Hover/Arty/AA/Heavy 顺序、生产卡、queue、Repeat、Rally、Core、AI、命令、存档和 Web 不变。
+- Steam 官方 Rusted Warfare 页面强调大规模战斗、无限缩放和全战场下令，本轮沿用其低重复、高信息密度方向；媒体访问受用户既有安全偏好限制，未绕过。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.76-compact-production-identity-deduplication.md`
+- `update_log.md`
+
+验证状态：
+
+- v2.75 最终文档 commit `2211873070027eea59b0ea424e40ae351e827f90` 对应 run `32644299678` / attempt `1` / job `97206042010` 的 artifact `rustwar-ci-v1.2-main-2211873-run32644299678-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32644299678/`，JUnit `8/0/1`、Core `342 tests`、双架构 build、双启动与双 PNG probe 全通过；本轮以其 Home `f2238e3b...` / Combat `01fcba16...` 为基线。
+- v2.76 遵循云端唯一验证制度；本机未运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
+- 实现需 push 到 `origin/main` 后只验收该完整 SHA 的 run/artifact；Home 必须改变并确认第二排更早可见，Combat 应与 v2.75 逐字节一致。当前不得宣称 v2.76 云端通过。
+
+已知风险：
+
+- 固定 Home 仅覆盖 compact trailing 普通 Dynamic Type；regular、compact bottom、accessibility、VoiceOver、滚动、点击和所有设备尺寸仍是源码/编译证据边界。
+- 只删除重复信息，不改变 dock 总宽度；极小设备或本地化长文案仍需后续独立验收。
+- 下一轮继续选择触控、模型或战斗视觉中的最高收益项，不把本轮 UI 压缩解释为总目标完成。

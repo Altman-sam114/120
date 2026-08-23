@@ -767,3 +767,19 @@ Agent C 必须核对最新 run 的 manifest、JUnit、主日志、失败摘要�
 人工复看 `ios-combat.png`：`visual-enemy-tank`、`visual-enemy-artillery`、`visual-player-hover` 在 terminal + impact 重叠下仍可辨 hull、炮塔/发射器、朝向和队伍标记；接触点、分段环、辐条与偏心火瓣仍足够清楚。v2.72 火炮弧线/影子/烟珠、AA 平行双线、Tank/Heavy 层级、双方 Turret、Quick Orders、Tactical Map 和状态栏不得回退。固定 frozen PNG 不证明动态时序、密集帧率、任意 zoom/地图、动态 Reduce Motion 或真机观感。
 
 通过基线：实现 commit `4029337830fe5cb906ce97597c795936e735e6b7` 对应 run `32643241133` / attempt `1` / job `97203471829`；artifact `rustwar-ci-v1.2-main-4029337-run32643241133-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32643241133/`，约 `1.7M`。manifest 的 branch、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5、Swift 6.3.2 与固定 iPhone 17 Pro 全匹配；JUnit `8/0/1`，Core `342 tests`，`BattlefieldScene.swift` 双架构编译，Xcode list/build、双启动、横屏归一化与双 PNG probe 全成功。Home SHA-256 为 `f2238e3bfb7918b0db80f2cda7d97533c670db51e7c91c358a3a24acb72a1bcf`，与 v2.74 一致；Combat 为 `01fcba16813a13a14b93dcbd78f13573ae2ab29a98327768af91af5bda0bab9e`。人工确认三个重叠目标模型中心、武器朝向和阵营标记清楚，边缘化 terminal/impact 可辨，v2.72 武器层级、双方 Turret、Quick Orders、Tactical Map 和状态栏无静态回退；Agent C 判定 v2.75 实现 artifact 验收通过。
+
+## v2.76
+
+本轮只修改 `TacticalProductionSectionView.swift` 的 compact normal identity gate 和必要文档；禁止本机运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`。验证只使用最新 `origin/main` 完整 SHA 对应的 GitHub Actions artifact，`.wp` 保持未跟踪。
+
+代码复判必须确认：
+
+- `TacticalProductionFocusSummaryView` 只在 `isCompact && !dynamicTypeSize.isAccessibilitySize` 省略可见 `identitySummary`；不能隐藏整个 summary。
+- Compact NOW / QUEUE / UPGRADE strip 与 `ViewThatFits` full rows fallback 保持；`summaryAccessibilityValue` 继续含 building、tech、speed、Now、Queue、Build 与 Upgrade。
+- Regular trailing 与 accessibility Dynamic Type 继续显示完整 visible identity；compact producer header 继续显示 Production / building / tech / speed。
+- Management rail 顺序、Factory Tech gate、三列 production card、Scout/Light/Hover/Arty/AA/Heavy 顺序、44pt、成本/supply/time、disabled reason、快捷键、queue、退款、Repeat 与 Rally 不变。
+- `GameController`、RustwarCore、AI、命令、战斗、触控、Tactical Map、存档/JSON、Web 和 v2.75 impact 没有改动。
+
+Agent C 必须核对最新 run 的 manifest、JUnit、主日志、失败摘要、repo state、Xcode 26.5、iOS 26.5、Swift 6.3.2 与固定 iPhone 17 Pro；Swift Core 至少 `342 tests`、Xcode list/build、arm64/x86_64 build、production/combat 双启动、横屏归一化和双 PNG probe 全成功。Home 必须改变并人工复看；Combat 应保持 `01fcba16813a13a14b93dcbd78f13573ae2ab29a98327768af91af5bda0bab9e`。
+
+人工复看 `ios-home.png`：header 保留 Production / Land Factory / T2 / 1.25x；summary 不再重复 identity，NOW / QUEUE / UPGRADE 完整；Cancel / Repeat Off / Rally、Scout / Light / Hover 无回退；Arty / AA / Heavy 第二排至少图标和单位名进入首屏且无重叠、压缩或截字。固定 Home 不覆盖 regular、compact bottom、accessibility Dynamic Type、VoiceOver、滚动、点击或所有设备尺寸，这些不得仅凭 build green 宣称已真机验证。

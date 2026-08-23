@@ -16,7 +16,9 @@ struct TacticalProductionFocusSummaryView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-            identitySummary
+            if !isCompact || dynamicTypeSize.isAccessibilitySize {
+                identitySummary
+            }
             focusRows
         }
         .padding(TacticalHUDTheme.compactPadding)

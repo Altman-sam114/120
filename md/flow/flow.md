@@ -949,3 +949,11 @@ Repeat trigger 改为 SwiftUI `Menu`，Off 与 `productionOptions` 的每个 tec
 该变化只重排 presentation 几何，不改 v2.72 Tank/Heavy/Artillery/AA profile、64 effect / 32 decal 上限、fog/visibility、Core、AI、命令、生产、触控、HUD、Tactical Map、存档/JSON 或 Web。Scene 的 terminal 来自开火 presentation，generic impact 来自 HP 差分；Core 没有可靠 attacker impact event，因此二者不能被解释成已关联的来袭方向。固定 Combat fixture 继续在 `visual-enemy-tank`、`visual-enemy-artillery`、`visual-player-hover` 上叠加 terminal 与 impact，用于云端静态检查中心可读性；静态 PNG 不证明真实动画时序、密集帧率、动态 Reduce Motion 或真机观感。
 
 实现 commit `4029337830fe5cb906ce97597c795936e735e6b7` 对应 run `32643241133` / attempt `1` / job `97203471829`；Agent C 已把 artifact `rustwar-ci-v1.2-main-4029337-run32643241133-attempt1` 下载到 `/private/tmp/rustwar-c-review-32643241133/`（约 1.7M）。manifest、JUnit、主日志、失败摘要、repo state、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2、Core `342 tests`、双架构 build、双启动、横屏归一化与双 probe 全匹配。Home SHA-256 `f2238e3bfb7918b0db80f2cda7d97533c670db51e7c91c358a3a24acb72a1bcf` 与 v2.74 一致；Combat 改为 `01fcba16813a13a14b93dcbd78f13573ae2ab29a98327768af91af5bda0bab9e`。人工复判三个重叠目标的 hull/炮塔或发射器/朝向/阵营标记重新清晰，边缘 terminal/impact 仍可辨，v2.72 武器结构和 HUD 无回退；v2.75 实现 artifact 验收通过。
+
+## v2.76 iOS compact production identity deduplication
+
+`TacticalCommandDockView.isCompactProducerContext` 在非 regular、普通 Dynamic Type 且已聚焦生产建筑时启用固定 producer header；该 header 已显示 Production、building name、tech 与 speed。`TacticalProductionFocusSummaryView` 现在只在 `!isCompact || dynamicTypeSize.isAccessibilitySize` 时绘制第二层 `identitySummary`，因此 compact 普通字号直接从 management rail 进入 NOW / QUEUE / UPGRADE focus strip，不再重复 Land Factory / T2 / 1.25x。
+
+`focusRows`、`summaryAccessibilityValue` 和 identity helper 内容不变：regular 与 accessibility Dynamic Type 继续显示完整可见 identity，没有 compact producer header 时不会丢失上下文；VoiceOver 仍朗读建筑、tech、speed、Now、Queue、Build 与 Upgrade。Management rail、Factory Tech gate、三列 production options、44pt、disabled reason、快捷键、queue、退款、Repeat、Rally、Core、AI、命令、存档/JSON 和 Web 不变。
+
+固定 Home fixture 仍是约 210pt compact trailing dock，单位顺序保持 Scout / Light / Hover / Arty / AA / Heavy；本轮只通过删除重复行让第二排上移，不缩小字体、卡片或控件。固定 PNG 可检查普通 compact 首屏位置，不能证明 regular、compact bottom、accessibility、VoiceOver、滚动、真实点击或所有屏幕尺寸。
