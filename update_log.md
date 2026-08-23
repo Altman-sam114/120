@@ -6635,7 +6635,9 @@
 
 - v2.75 最终文档 commit `2211873070027eea59b0ea424e40ae351e827f90` 对应 run `32644299678` / attempt `1` / job `97206042010` 的 artifact `rustwar-ci-v1.2-main-2211873-run32644299678-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32644299678/`，JUnit `8/0/1`、Core `342 tests`、双架构 build、双启动与双 PNG probe 全通过；本轮以其 Home `f2238e3b...` / Combat `01fcba16...` 为基线。
 - v2.76 遵循云端唯一验证制度；本机未运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
-- 实现需 push 到 `origin/main` 后只验收该完整 SHA 的 run/artifact；Home 必须改变并确认第二排更早可见，Combat 应与 v2.75 逐字节一致。当前不得宣称 v2.76 云端通过。
+- 实现 commit `7dea5c3c527ff7ce103950c2c6deb32e17cc78e7` 已推送到 `origin/main`。Actions run `32646212287` / attempt `1` / job `97210761886` 成功；Agent C 已把 artifact `rustwar-ci-v1.2-main-7dea5c3-run32646212287-attempt1` 下载到 `/private/tmp/rustwar-c-review-32646212287/`，目录约 `1.7M`。
+- manifest 的 branch、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5、Swift 6.3.2 与固定 iPhone 17 Pro 完全匹配。JUnit `8 tests / 0 failures / 1 skipped`，Core `342 tests`，`TacticalProductionSectionView.swift` 进入 arm64/x86_64 编译；静态检查、Xcode list/build、双启动、横屏归一化和双 PNG probe 全成功。唯一 skip 为既有 headless browser regression；唯一 Actions 注释为 `upload-artifact@v5` 的 Node 20 被强制按 Node 24 运行，不影响结果。
+- `ios-home.png` 为 `2622x1206`、透明比例 0、SHA-256 `3884b7315d34cb3917d19aaa33ee9cdc84b9d6d1510cc6414752b7aff24c7f51`：重复 Land Factory/T2/1.25x identity 已消失，NOW/QUEUE/UPGRADE、management rail 和第一排完整，Arty/AA/Heavy 图标、名称与关键成本行进入首屏且无重叠。`ios-combat.png` SHA-256 `01fcba16813a13a14b93dcbd78f13573ae2ab29a98327768af91af5bda0bab9e` 与 v2.75 逐字节一致。Agent C 判定 v2.76 实现 artifact 验收通过。
 
 已知风险：
 

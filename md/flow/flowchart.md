@@ -1567,4 +1567,4 @@ flowchart TD
   VO[Summary VoiceOver value] --> FULL[Identity · Now · Queue · Build · Upgrade]
 ```
 
-读图说明：v2.76 只在 compact 普通字号省略第二层可见 producer identity；固定 header 仍是唯一视觉身份来源，focus summary 与 VoiceOver 信息没有删除。Regular 和 accessibility 继续显示完整 identity，三列顺序、卡片尺寸、44pt、management rail、Factory Tech、queue、Core 和 Web 不变。Home PNG 应显示第二排更早进入首屏，Combat 应与 v2.75 逐字节一致。
+读图说明：v2.76 只在 compact 普通字号省略第二层可见 producer identity；固定 header 仍是唯一视觉身份来源，focus summary 与 VoiceOver 信息没有删除。Regular 和 accessibility 继续显示完整 identity，三列顺序、卡片尺寸、44pt、management rail、Factory Tech、queue、Core 和 Web 不变。实现 `7dea5c3c527ff7ce103950c2c6deb32e17cc78e7` 对应 run `32646212287` / attempt `1` 的 artifact、342 Core tests、双架构 build 和双 PNG 已由 Agent C 复判通过；Home `3884b731...` 中 Arty/AA/Heavy 图标、名称与关键成本行进入首屏，Combat 与 v2.75 逐字节一致。
