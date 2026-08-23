@@ -1550,4 +1550,4 @@ flowchart LR
   FROZEN[Frozen combat fixture] --> TABLEAU[Persistent bounded static tableau]
 ```
 
-读图说明：v2.75 只把 projectile terminal 与 generic land impact 的视觉质量从实心中心转成边缘化、断续化、偏心化几何；每段 arc 显式 move，避免弦线穿过模型。terminal 不新增 root，land impact 仍只有一个 bounded root，64 effects / 32 decals、v2.72 武器 profile、水面/摧毁分流、fog、Core、命令、生产、触控、HUD 和 Web 不变。Scene 没有 attacker-specific impact event，不根据命中位置伪造来袭方向；固定 PNG 只能检查三个 fixture 目标上的重叠可读性。
+读图说明：v2.75 只把 projectile terminal 与 generic land impact 的视觉质量从实心中心转成边缘化、断续化、偏心化几何；每段 arc 显式 move，避免弦线穿过模型。terminal 不新增 root，land impact 仍只有一个 bounded root，64 effects / 32 decals、v2.72 武器 profile、水面/摧毁分流、fog、Core、命令、生产、触控、HUD 和 Web 不变。Scene 没有 attacker-specific impact event，不根据命中位置伪造来袭方向。实现 `4029337830fe5cb906ce97597c795936e735e6b7` 对应 run `32643241133` / attempt `1` 的 artifact、342 Core tests、双架构 build 与双 PNG 已由 Agent C 复判通过；Combat SHA-256 `01fcba16...` 中三个 fixture 重叠目标的模型中心重新可读。固定 PNG 仍不能证明动态时序、密集帧率、Reduce Motion 真机或任意缩放。

@@ -6599,7 +6599,9 @@
 
 - v2.74 最终文档 commit `e01b0ee8757959eef9dc6b3a551db559e30237da` 对应 run `32642465248` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-e01b0ee-run32642465248-attempt1` 已下载到 `/private/tmp/rustwar-c-review-32642465248/`（约 1.7M）并复判。JUnit `8/0/1`、Core `342 tests`、双架构 build、双启动与双 PNG probe 全成功，Home/Combat 哈希与 v2.73 一致，上一轮闭环。
 - v2.75 遵循云端唯一验证制度；本机未运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`，`.wp` 保持未跟踪。
-- 实现需 push 到 `origin/main` 后，只验收该完整 SHA 对应 run/artifact；Home 应保持 `f2238e3bfb7918b0db80f2cda7d97533c670db51e7c91c358a3a24acb72a1bcf`，Combat 必须改变并人工确认三个重叠目标仍可读。当前不得宣称 v2.75 云端通过。
+- 实现 commit `4029337830fe5cb906ce97597c795936e735e6b7` 已推送到 `origin/main`。Actions run `32643241133` / attempt `1` / job `97203471829` 成功；Agent C 已把 artifact `rustwar-ci-v1.2-main-4029337-run32643241133-attempt1` 下载到 `/private/tmp/rustwar-c-review-32643241133/`，目录约 `1.7M`。
+- manifest 的 branch、完整 SHA、run/attempt、Xcode 26.5、iOS 26.5、Swift 6.3.2 与固定 iPhone 17 Pro 完全匹配。JUnit `8 tests / 0 failures / 1 skipped`，Core `342 tests`，`BattlefieldScene.swift` 进入 arm64/x86_64 编译；静态检查、Xcode list/build、production/combat 双启动、横屏归一化和双 PNG probe 全成功。唯一 skip 为既有 headless browser regression；唯一 Actions 注释为 `upload-artifact@v5` 的 Node 20 被强制按 Node 24 运行，不影响结果。
+- `ios-home.png` 为 `2622x1206`、透明比例 0、SHA-256 `f2238e3bfb7918b0db80f2cda7d97533c670db51e7c91c358a3a24acb72a1bcf`，与 v2.74 逐字节一致。`ios-combat.png` 为 `2622x1206`、透明比例 0、SHA-256 `01fcba16813a13a14b93dcbd78f13573ae2ab29a98327768af91af5bda0bab9e`；人工确认三个 terminal + impact 重叠目标的 hull、炮塔/发射器、朝向和阵营标记清楚，边缘特效仍可辨，v2.72 武器层级、双方 Turret、Quick Orders、Tactical Map 和状态栏无静态回退。Agent C 判定 v2.75 实现 artifact 验收通过。
 
 已知风险：
 
