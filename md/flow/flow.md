@@ -1013,3 +1013,13 @@ Regular trailing 与所有 accessibility Dynamic Type 继续在固定 header 显
 短提示释放的垂直空间只服务于既有 Quick Orders 的首屏可达性，不隐藏 Move / A-Move / Attack / Stop、Commands、Selection、Production 或 Build 控件，不改变按钮 action、pending target、44pt、快捷键、VoiceOver、Core、存档、触控 owner、战斗、模型、Tactical Map 或 Web 语义。该轮只改变 SwiftUI presentation；单指 simultaneous gesture 路由的潜在拖动死区另列为后续专门轮次，避免和首屏信息层级同时扩大变更面。
 
 固定 Combat PNG 已看到目标提示变短且 Quick Orders / Commands 更早出现，模型、武器层、terminal/impact、选择/HP、Tactical Map 和状态栏无回退；Home 生产 fixture 不进入 compact hint 路径，Home hash 与上一轮一致属于预期。实现 commit `243723bc24aa161cda46a17c50cfb41294b7a0d6` 对应 run `33296047909` / attempt `1` / job `99215769992` 的 artifact `rustwar-ci-v1.2-main-243723b-run33296047909-attempt1`（ID `9727507874`，digest `sha256:da60a08ef50d995983f5361d3015aa8a08f06f98b6fa61673f2afc3d9dbed392`，下载目录约 1.7M）已由 Agent C 下载并核对；JUnit `8/0/1`、Core `344 tests`、SwiftUI 修改文件双架构编译、Xcode list/build、双场景启动、横屏归一化和双 PNG probe 全成功。Home SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat `b6eb46da36d6363de916dce479edb7de4eaa6f01b1c321ba006423656e975021`；Agent C 人工确认 compact hint 层级与既有生产/战斗视觉无静态回退，v2.82 artifact 验收通过。静态云端 artifact 仍不能替代 VoiceOver、Dynamic Type、真实滚动、点击、双指框选或真机触控手感证据。
+
+## v2.83 iOS single-touch route convergence
+
+主战场的单指输入由 `contextLocationGesture` 的一个零距离 `DragGesture` 统一消费。`SpatialEventGesture` 仍负责播种 `TouchSequenceOwner`、识别双指 candidate、框选和 pinch；单指 callback 在 `SingleTouchTravelPolicy.panActivationDistance` 以内继续更新 `battlefieldTouchPreview`，结束时由 context lease 提交点击。
+
+当同一单指 travel 首次达到 12pt，context callback 立即清理 preview，并通过同一 `beginSingleTouchPan` claim `.pan` 或 `.areaSelection`；后续 callback 通过 `updateSingleTouchPan` 增量调用 `controller.pan` 或更新 `SelectionBoxOverlay`，结束时由 `finishSingleTouchPan` 只提交一次区域选择并统一释放 lease、overlay、translation 和 callback 状态。独立 `SpatialTapGesture` 与独立 12pt `DragGesture` 不再参与，消除了两个单指 recognizer 在阈值边界竞争 owner 的路径。
+
+长按仍要求 context lease 处于 `.possible`，双指 candidate 会抑制单指 claim；`MagnifyGesture`、terminal handoff、TouchSequenceOwner、直接 tap 的攻击/移动/Attack-Move/Builder 语义、生产、Core、存档、模型、战斗、HUD、Tactical Map 和 Web 不变。本轮只改变 `BattlefieldView` 的输入路由和清理辅助状态；静态 Actions artifact 可以证明编译与视觉无回退，不能替代真实设备 callback 顺序或触控手感。
+
+v2.83 以 `origin/main` 的 v2.82 文档验收 commit `a526302df15cb6f33c08764455ed0bb4c3105738` 为基线，云端 run、artifact、PNG hash 和 Agent C 结论待本轮 push 后补录。

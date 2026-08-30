@@ -1686,3 +1686,20 @@ flowchart LR
 ```
 
 读图说明：v2.82 用 `TacticalCommandDockView` 的单一 compact normal gate 选择可见 hint 文案，不复制 layout 条件到 Controller；短文案只改变普通 compact 的视觉高度，完整 detail 仍供 VoiceOver 和 regular/accessibility 路径使用。Quick Orders 的 action、pending target、44pt、快捷键、生产/战斗/触控语义不变；Home producer fixture 不进入 hint 路径。实现 commit `243723bc24aa161cda46a17c50cfb41294b7a0d6` 对应 run `33296047909` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-243723b-run33296047909-attempt1`（ID `9727507874`，digest `sha256:da60a08ef50d995983f5361d3015aa8a08f06f98b6fa61673f2afc3d9dbed392`）已由 Agent C 下载并核对；JUnit `8/0/1`、Core `344 tests`、双架构 build、双场景启动、横屏归一化和双 PNG probe 全成功。Home `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`、Combat `b6eb46da36d6363de916dce479edb7de4eaa6f01b1c321ba006423656e975021`；人工复判确认 Combat 首屏提示层级和 Home 生产排版无静态回退，v2.82 artifact 验收通过。静态 PNG 仍不能证明真实触控、滚动、VoiceOver 或 Dynamic Type。
+
+## v2.83 iOS single-touch route convergence
+
+```mermaid
+flowchart LR
+    TOUCH["single finger touch"] --> CONTEXT["one zero-distance context DragGesture"]
+    CONTEXT --> PREVIEW{"travel < 12pt?"}
+    PREVIEW -->|yes| HINT["preview / tap commit"]
+    PREVIEW -->|no| CLAIM["claim pan or areaSelection once"]
+    CLAIM --> PAN["incremental pan or selection overlay"]
+    PAN --> FINISH["single finish + cleanup"]
+    MULTI["SpatialEventGesture"] --> OWNER["TouchSequenceOwner"]
+    OWNER -->|2-finger candidate| MULTI_ROUTE["selection / pinch suppresses tap"]
+    LONG["long press"] -->|only while possible| CONTEXT
+```
+
+读图说明：v2.83 删除独立 `SpatialTapGesture` 和第二个 12pt `DragGesture`，让同一个单指 callback 在 policy 边界直接从 preview/tap 路径转到 pan/area lease；多指、pinch 和长按仍经 shared owner 互斥。`GameController` 的直接点按、Move / Attack / Attack-Move / Builder、Core、生产、模型、战斗和 HUD 语义不变。该图描述源码状态流，云端静态 smoke 不能证明真机手势 callback 顺序或手感。

@@ -897,3 +897,20 @@ Agent C 只验收 v2.80 最新 `origin/main` 完整 SHA 对应 artifact，核对
 云端 PNG 为 `2622x1206`、透明比例 `0`；Home SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat SHA-256 `b6eb46da36d6363de916dce479edb7de4eaa6f01b1c321ba006423656e975021`。Agent C 人工复判确认 compact hint 缩短后 Quick Orders / Commands 更早可见，Move / A-Move / Attack / Stop 与生产 HUD、单位模型、武器层、selection/HP、v2.78 marker、terminal/impact、Tactical Map 和状态栏无裁切、重叠或静态回退；v2.82 artifact 验收通过。
 
 证据边界：固定 PNG 不能证明 VoiceOver、Dynamic Type、滚动、真实点击、双指框选、所有设备尺寸、触控 callback 顺序或真机手感；单指 simultaneous gesture 路由的潜在拖动死区留待 v2.83 专门收敛。
+
+## v2.83 iOS single-touch route convergence
+
+本轮只修改 `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift` 和必要版本文档；遵守云端唯一验证制度。本机禁止运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图生成、Node/browser smoke、测试脚本和 `git diff --check`；`.wp` 保持未跟踪。
+
+源码复判必须确认：
+
+- 战场只保留一个零距离 `contextLocationGesture` 处理单指 tap、preview、pan 和 area selection；不再挂载独立 `SpatialTapGesture` 或第二个 12pt `DragGesture`。
+- travel 首次达到 `SingleTouchTravelPolicy.panActivationDistance`（当前 12pt）时，同一 callback 只 claim 一次 `.pan` 或 `.areaSelection`，清除 preview/last tap；后续使用增量 translation 平移或绘制 `SelectionBoxOverlay`，结束时只提交一次并清理 lease、overlay、translation 和 active flag。
+- 直接 tap 的敌方攻击、空地 Move/Attack-Move、Builder 命令、长按 context、双指框选、pinch、terminal handoff、tap suppression、44pt、TouchSequenceOwner 和所有 Core/UI action 语义保持。
+- 不修改 `SingleTouchTravelPolicy`、Core fixture、Production、BattlefieldScene、模型、战斗特效、存档、HUD 或 Web 版；旧 context lease 只在 `.possible` 下用于 tap/long press，pan lease 负责阈值后的单指路径。
+
+Agent C 只验收 v2.83 最新 `origin/main` 完整 SHA 对应 artifact，核对 manifest、JUnit、主日志、失败摘要、repo state、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro；Core 至少 `344 tests`、`BattlefieldView.swift` arm64/x86_64 编译、Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功。artifact 必须下载到 `/private/tmp/rustwar-c-review-<run_id>/`，不得用旧 run 或本地输出替代。
+
+人工复看最新 Home/Combat PNG：由于本轮只改变输入路由，Home/Combat 应保持 v2.82 的静态构图与 hash；确认生产 HUD、Quick Orders、Selection/Attack guidance、单位模型、武器、terminal/impact、Tactical Map 和状态栏无裁切、重叠或静态回退。证据边界仍包括真实设备 callback 顺序、双指竞争时序、VoiceOver、Dynamic Type、滚动和触控手感。
+
+通过记录：v2.83 实现 commit、run、attempt、artifact、JUnit、Core、双架构、PNG hash 和 Agent C 结论待本轮云端 Actions 完成后补录。

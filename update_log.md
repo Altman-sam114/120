@@ -6845,3 +6845,33 @@
 
 - 短可见文案只改善首屏发现性，不等于真实触控手感已经解决；VoiceOver、Dynamic Type、滚动、双指框选和真机 callback 顺序仍需后续证据。
 - 触控审查发现 `SpatialTapGesture`、零距离 `DragGesture`、12pt `DragGesture` 与长按同时存在，达到 pan 阈值时可能受回调顺序影响；下一轮应单独收敛单指路由，避免和本轮 UI 文案变化混合验收。
+
+## v2.83 / Single-touch route convergence
+
+日期：2026-08-30
+
+当前轮次：
+
+- 针对 v2.82 暴露的 iOS 操作风险，优先收敛 `BattlefieldView` 的单指 recognizer 竞争；本轮不继续扩大战斗视觉或生产 UI 变更面。
+- 删除独立 `SpatialTapGesture` 和独立 12pt `DragGesture`，保留一个零距离 `contextLocationGesture` 同时处理 tap/preview 与阈值后的 pan/Select Area。首次达到 `SingleTouchTravelPolicy` 的 12pt 时，同一 callback claim `.pan` 或 `.areaSelection`，随后统一增量平移/框选和 finish cleanup。
+- 双指 candidate/selection、pinch、长按 context、TouchSequenceOwner terminal handoff、tap suppression、直接 Attack/Move/Attack-Move/Builder 命令和所有 Core/UI 语义保持；本轮不改 `SingleTouchTravelPolicy`、Core、Production、BattlefieldScene、模型、战斗、存档、HUD 或 Web。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.83-single-touch-route-convergence.md`
+- `update_log.md`
+
+验证状态：
+
+- 代码与轮次文档已完成，尚未提交和 push；本轮 Actions run、artifact、JUnit、Core、双架构 build、双场景 PNG 与 Agent C 复判信息待 push 后补写。
+- 本机继续遵守云端唯一制度：不运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node/browser smoke、测试脚本或 `git diff --check`；`.wp` 保持未跟踪。
+
+已知风险：
+
+- 统一源码路径减少了阈值 callback 竞态，但固定云端 smoke 不注入真实 simultaneous gesture callback 顺序，不能证明所有 iOS 设备上的 pan/area 手感、双指竞争或旧触点回调边界。
+- 本轮无预期静态视觉变化；若云端 PNG 发生变化，应优先检查 gesture 路由是否意外触发初始状态或 fixture 时间差，不应直接扩大视觉改动范围。
