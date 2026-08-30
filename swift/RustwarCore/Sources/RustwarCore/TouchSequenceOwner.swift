@@ -63,9 +63,13 @@ public struct TouchSequenceOwner<ID: Hashable>: Equatable {
             !acceptedIDs.isDisjoint(with: cancelledIDs)
     }
 
-    public mutating func beginFreshSequence(with id: ID) -> Lease? {
+    public mutating func beginFreshSequence(
+        with id: ID,
+        terminalEventIDs: Set<ID> = []
+    ) -> Lease? {
         guard (phase == .idle || phase == .cancelled || canYieldTerminalPossibleSequence),
-              !cancelledIDs.contains(id) else {
+              !cancelledIDs.contains(id),
+              terminalEventIDs.subtracting(cancelledIDs).isEmpty else {
             return nil
         }
 

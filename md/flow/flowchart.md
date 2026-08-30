@@ -1607,3 +1607,21 @@ flowchart LR
 ```
 
 读图说明：v2.78 把单位阵营标记从中心条改成 hull 尾缘的单 chevron / 双 tabs，并把敌方两个节点收敛为一个 compound-path shape。标记仍属于 hull，不随独立炮塔或后坐旋转；固定 z 层使它不再被 weapon mount 压住。模型主体、building 标记、selection/HP/damage、武器 presentation、fog、Core、HUD 和输入语义不变。实现 commit `1e15d8a22f6c00bb50f357c57157219b3fa172d9` 对应 run `32651744498` / attempt `1` 的 artifact 已由 Agent C 下载并复判通过；JUnit `8/0/1`、Core `342 tests`、双架构 build、双场景启动、横屏归一化与双 PNG probe 成功，Home `166db0cd...`、Combat `c4557ffe...`。固定 PNG 仍不覆盖动态时序、任意缩放、色觉体验或真机触控。
+
+## v2.79 iOS touch handoff terminal barrier
+
+```mermaid
+flowchart LR
+  E[SpatialEventCollection] --> A[Active IDs]
+  E --> T[Ended / cancelled IDs]
+  T --> Q{All terminal IDs quarantined?}
+  Q -->|no| W[Reject fresh seed<br/>preserve owner + sequence]
+  Q -->|yes| S[beginFreshSequence]
+  A --> S
+  S --> O[Existing tap / pan / area / multitouch arbitration]
+  W --> N[Wait for clean active frame]
+  N --> S
+  O -. no command/state mutation .-> K[Core gameplay / save / Web unchanged]
+```
+
+读图说明：v2.79 不用不可用的假 generation token 推断 SwiftUI 旧触点；它只拒绝“新 active + 未 quarantine terminal”同帧的 fresh seed。未知 terminal 不取消 owner、不递增 sequence、不污染新 ID quarantine；已 quarantine terminal 不阻塞正常 handoff。新增 barrier Core test，双指框选、pinch、pan、长按、直接 Attack/Attack-Move、Core 命令和存档语义保持；静态 smoke 仍不能证明真实 callback 顺序。

@@ -6713,3 +6713,35 @@
 
 - 固定 frozen Combat PNG 能覆盖双方多类单位和部分炮塔/terminal/impact 重叠，不能证明任意 heading、zoom、动态密集开火、色觉用户体验或真机帧率。
 - 高 z 阵营标记有意优先于 weapon mount，本轮 artifact 人工复判未发现尾缘几何覆盖小型单位关键轮廓；固定结果仍不能证明任意 heading/zoom、动态密集战斗、色觉体验或真机性能。
+
+## v2.79 / Touch handoff terminal barrier
+
+日期：2026-08-24
+
+核心变更：
+
+- `BattlefieldView.synchronizeTouchOwner` 将同一 Spatial event frame 的 `.ended` / `.cancelled` touch IDs 作为 terminal evidence 传给 `TouchSequenceOwner.beginFreshSequence`。
+- `TouchSequenceOwner` 只允许所有 terminal ID 已在 cancelled quarantine 中时 fresh seed；未知 terminal 阻塞交接但不取消 owner、不递增 sequence、不 quarantine 新 active ID，后续干净 active frame 可重试。
+- 新 Core test 覆盖未知 terminal 阻塞和已 quarantine terminal 允许 handoff；tap、pan、area selection、多指、pinch、长按、命令和 Core gameplay 语义不变。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `swift/RustwarCore/Sources/RustwarCore/TouchSequenceOwner.swift`
+- `swift/RustwarCore/Tests/RustwarCoreTests/RustwarCoreTests.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.79-touch-handoff-terminal-barrier.md`
+- `update_log.md`
+
+验证状态：
+
+- v2.79 实现与文档 commit、Actions run、artifact、Core test count 和双 PNG 结论待 push 后只按最新 `origin/main` 完整 SHA 补录；不得用 v2.78 artifact 冒充本轮结果。
+- 本轮继续禁止本机 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本和 `git diff --check`；`.wp` 保持未跟踪。
+
+已知风险：
+
+- SwiftUI 现有 callback 没有可靠跨 gesture generation token；若旧 callback 只有未知 active ID、没有 terminal evidence，仍不能被绝对区分。本轮 terminal barrier 只收紧同帧混合 terminal 的安全 handoff。
+- 固定云端 smoke 仍不能证明真实 callback 顺序、手指遮挡、真机触控手感、VoiceOver、Dynamic Type 或长期帧率；若实际手感仍有吞触，应追加真机/XCUITest 证据与更强 handoff 设计。

@@ -606,6 +606,7 @@ struct BattlefieldView: View {
         let activeIDs = Set(touchEvents.filter { $0.phase == .active }.map(\.id))
         let endedIDs = Set(touchEvents.filter { $0.phase == .ended }.map(\.id))
         let cancelledIDs = Set(touchEvents.filter { $0.phase == .cancelled }.map(\.id))
+        let terminalEventIDs = endedIDs.union(cancelledIDs)
         let isYieldingTerminalPossibleSequence = touchOwner.canYieldTerminalPossibleSequence
 
         if allowFreshSeed,
@@ -615,8 +616,15 @@ struct BattlefieldView: View {
            let freshTouch = touchEvents.first(where: {
                 $0.phase == .active && !touchOwner.cancelledIDs.contains($0.id)
            }) {
+            let yieldingSequence = touchOwner.sequence
+            guard let contextLease = touchOwner.beginFreshSequence(
+                with: freshTouch.id,
+                terminalEventIDs: terminalEventIDs
+            ) else {
+                return false
+            }
             if isYieldingTerminalPossibleSequence {
-                clearBattlefieldTouchPreview(for: touchOwner.sequence)
+                clearBattlefieldTouchPreview(for: yieldingSequence)
                 resetContextGestureState()
                 invalidatePanAndPinchGestureCallbacks()
                 panGestureLease = nil
@@ -624,9 +632,6 @@ struct BattlefieldView: View {
                 resetPinchGestureState()
                 multitouchLease = nil
                 isBattlefieldPanActive = false
-            }
-            guard let contextLease = touchOwner.beginFreshSequence(with: freshTouch.id) else {
-                return false
             }
             resetMultitouchSelectionState()
             panGestureLease = nil

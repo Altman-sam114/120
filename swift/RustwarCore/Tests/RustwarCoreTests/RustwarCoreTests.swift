@@ -60,6 +60,26 @@ import Testing
     #expect(ownerWithoutTerminal.beginFreshSequence(with: 52) == nil)
 }
 
+@Test func touchSequenceOwnerRejectsUnknownTerminalDuringFreshHandoff() throws {
+    var owner = TouchSequenceOwner<Int>()
+    let firstLease = try #require(owner.beginFreshSequence(with: 61))
+    #expect(owner.observe(activeIDs: [], endedIDs: [61]) == .accepted)
+    #expect(owner.canYieldTerminalPossibleSequence)
+
+    #expect(owner.beginFreshSequence(with: 62, terminalEventIDs: [999]) == nil)
+    #expect(owner.sequence == firstLease.sequence)
+    #expect(owner.phase == .possible)
+    #expect(owner.acceptedIDs == Set([61]))
+    #expect(owner.cancelledIDs == Set([61]))
+
+    let freshLease = try #require(
+        owner.beginFreshSequence(with: 62, terminalEventIDs: [61])
+    )
+    #expect(freshLease.sequence == firstLease.sequence + 1)
+    #expect(owner.acceptedIDs == Set([62]))
+    #expect(owner.activeIDs == Set([62]))
+}
+
 @Test func touchSequenceOwnerRejectsReplacementAndRequiresFreshSeed() {
     var owner = TouchSequenceOwner<Int>()
     _ = owner.beginFreshSequence(with: 1)

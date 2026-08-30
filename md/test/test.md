@@ -824,3 +824,18 @@ Home 与 Combat 都必须相对 v2.77 基线改变：Home `3884b7315d34cb3917d19
 证据边界：固定 frozen Combat PNG 覆盖双方多类单位和部分重叠状态，不能证明任意 heading/zoom、动态密集战斗、色觉体验、真机性能或全部地图与单位密度。
 
 通过记录：实现 commit `1e15d8a22f6c00bb50f357c57157219b3fa172d9` 对应 run `32651744498` / attempt `1` / job `97224325738`；artifact `rustwar-ci-v1.2-main-1e15d8a-run32651744498-attempt1`（artifact ID `9496465926`，digest `sha256:6719db1f8f61885305d9e0281268164d83e08d9fbb19db73163411544072109ac`）已下载到 `/private/tmp/rustwar-c-review-32651744498/` 并核对通过。manifest 的 branch、完整 SHA、run/attempt、固定工具链与设备全匹配；JUnit `8 tests / 0 failures / 1 skipped`，Core `342 tests`，`BattlefieldScene.swift` 双架构编译、Xcode build、双场景启动、横屏归一化和双 PNG probe 全成功。Home SHA-256 为 `166db0cd24b3966a059707a608d7ca21d0a6de793bb05192d9cc2f5585200ec1`，Combat SHA-256 为 `c4557ffe8c20bf7685875aa66a1532d44e5eaeb21fa6b6354e2fb5273c2102cf`；人工复判确认尾缘单/双标记和现有模型、武器、特效、HUD、Tactical Map 与 command dock 无静态回退。
+
+## v2.79
+
+本轮修改 `BattlefieldView.swift`、`TouchSequenceOwner.swift`、Core touch owner test 和必要文档；继续云端唯一验证。本机禁止 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本和 `git diff --check`，`.wp` 保持未跟踪。
+
+代码复判必须确认：
+
+- `beginFreshSequence(with:terminalEventIDs:)` 在关闭旧 sequence 前拒绝 `terminalEventIDs.subtracting(cancelledIDs)` 非空的 fresh seed；拒绝不调用 `cancel()`、不递增 sequence、不清理 owner、不 quarantine 新 ID。
+- `BattlefieldView.synchronizeTouchOwner` 只把当前 `.ended` / `.cancelled` touch IDs 传入 barrier；后续干净 active frame 仍可 seed，既有已 quarantine terminal handoff 继续通过。
+- tap、direct Attack、空地点 Attack-Move、pending target、12pt pan latch、长按、多指框选、pinch、area selection、replacement rejection、tap suppression、Core 命令、生产、战斗、存档/JSON 和 Web 不变。
+- 新 Core test 覆盖未知 terminal 阻塞与已 quarantine terminal 允许路径，预期 suite 至少 `343 tests`。
+
+Agent C 只验收 v2.79 最新 `origin/main` 完整 SHA 对应 artifact，核对 manifest、JUnit、主日志、失败摘要、repo state、固定工具链、Core 至少 `343 tests`、Xcode list、`BattlefieldView.swift` / `TouchSequenceOwner.swift` 双架构 build、双启动、横屏归一化和双 PNG probe。
+
+证据边界：terminal barrier 不能替代 XCUITest/真机 callback 注入；seed 后只出现未知 active ID 的迟到旧回调仍无法被 SwiftUI 现有 API 绝对区分，不能用静态 PNG 或 Core test 宣称已覆盖该边界。

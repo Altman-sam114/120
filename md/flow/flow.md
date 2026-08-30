@@ -977,3 +977,11 @@ Regular trailing 与所有 accessibility Dynamic Type 继续在固定 header 显
 `addUnitFactionMarking` 现在只创建一个 compound-path `SKShapeNode`：玩家使用尾缘单 chevron rail，敌方使用同一路径中的上下双 rounded tab。两者复用 team fill 与白色描边，通过单/双形状提供非颜色识别；固定 `zPosition = 1.1` 高于 `weaponMount.zPosition = 1`，同时几何留在 hull 尾缘，避免重新覆盖模型中心。七类既有单位与 Heavy Tank 共享同一 helper，building faction marking 不变。
 
 本轮只改变 SpriteKit presentation：unit/body/weapon heading、炮塔旋转与后坐、模型轮廓、selection、HP、damage state、grounding、fog/visibility、terminal/impact、Core 命中/伤害/命令、AI、生产、存档/JSON、Tactical Map、HUD 和 Web 版都不变。实现 commit `1e15d8a22f6c00bb50f357c57157219b3fa172d9` 对应 Actions run `32651744498` / attempt `1` / job `97224325738` 的 artifact `rustwar-ci-v1.2-main-1e15d8a-run32651744498-attempt1` 已由 Agent C 下载并核对通过；JUnit `8/0/1`、Core `342 tests`、双架构 build、双场景启动、横屏归一化和双 PNG probe 全成功。Home `166db0cd...`、Combat `c4557ffe...` 均相对 v2.77 基线改变；人工复判确认尾缘标记、模型、武器层、HUD 与 command dock 无静态回退。固定 PNG 仍不能证明任意 heading/zoom、动态密集战斗、色觉体验、真机性能或触控手感。
+
+## v2.79 iOS touch handoff terminal barrier
+
+`BattlefieldView.synchronizeTouchOwner(with:allowFreshSeed:)` 继续以 `TouchSequenceOwner` 统一管理主战场 tap、context、pan、area selection、多指和 pinch owner。v2.79 在 fresh seed 前收集当前 `SpatialEventCollection` 的 `.ended` / `.cancelled` IDs，并把它们作为 `terminalEventIDs` 传给 `beginFreshSequence`。
+
+`TouchSequenceOwner.beginFreshSequence(with:terminalEventIDs:)` 只有在所有同帧 terminal ID 都已经位于 `cancelledIDs` quarantine 中时才允许交接；未知 terminal 会保留旧 phase、sequence、accepted/active/cancelled 集合，不调用 `cancel()`，也不把新 active ID 加入 quarantine。后续无歧义 active frame 仍可交接。这样把迟到 terminal + fresh active 的歧义 frame 从“直接播种”变成安全等待，同时保留既有 terminal-possible handoff、replacement rejection、second-finger acceptance、finish/reset 和 tap suppression。
+
+本轮只改变输入 owner presentation boundary 和 Core 的纯状态保护；GameEngine、命令、单位/建筑、战斗、生产、存档/JSON、Tactical Map、HUD、BattlefieldScene 和 Web 版不变。新增 Core barrier test；SwiftUI 现有 callback 没有可靠跨 gesture generation token，因此 seed 后仅凭未知 active ID 的旧回调仍不能被宣称绝对区分，真实顺序仍需真机/XCUITest 证据。
