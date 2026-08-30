@@ -6747,3 +6747,33 @@
 
 - SwiftUI 现有 callback 没有可靠跨 gesture generation token；若旧 callback 只有未知 active ID、没有 terminal evidence，仍不能被绝对区分。本轮 terminal barrier 只收紧同帧混合 terminal 的安全 handoff。
 - 固定云端 smoke 仍不能证明真实 callback 顺序、手指遮挡、真机触控手感、VoiceOver、Dynamic Type 或长期帧率；若实际手感仍有吞触，应追加真机/XCUITest 证据与更强 handoff 设计。
+
+## v2.80 / Compact producer section-title deduplication
+
+日期：2026-08-30
+
+当前轮次：
+
+- `TacticalCommandDockView` 在 compact producer context 的固定 header 已显示 `Production / building / tech / speed`；`TacticalProductionSectionView` 原先仍无条件显示第二个 `TacticalSectionHeader(.production)`。
+- 新增 `showsProductionSectionHeader` presentation-only gate：compact、非 accessibility Dynamic Type 且存在 `productionFocusBuildingName` 时隐藏重复可见标题；regular、accessibility Dynamic Type 和无 producer focus 路径继续显示 section header。
+- Management rail、NOW / QUEUE / UPGRADE、Factory Tech、生产卡、队列、Cancel/Repeat/Rally、快捷键、VoiceOver、44pt、Core、存档、战斗、触控和 Web 版不变；不新增 controller/Core 状态。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.80-compact-producer-section-title.md`
+- `update_log.md`
+
+验证状态：
+
+- 本轮按云端唯一验证规则不运行本机 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`；只做 Git 状态、diff 范围与源文件静态复判。
+- v2.79 最终文档 commit `0b2992611e99384f1b75e72a45e7c10713cde507` 对应的 Home `166db0cd...` / Combat `c4557ffe...` 是本轮云端基线；v2.80 实现 commit、run、artifact 和 PNG hash 待 push 后补录。
+
+已知风险：
+
+- 固定云端 PNG 只覆盖 compact trailing 普通 Dynamic Type 的生产 fixture，不能证明 regular、compact bottom、Dynamic Type 全档位、VoiceOver、滚动、真实点击或真机触控手感。
+- 总目标 X 未完成；本轮通过后继续处理触控安全、模型辨识或战斗视觉细化。

@@ -1630,3 +1630,22 @@ flowchart LR
 ```
 
 读图说明：v2.79 不用不可用的假 generation token 推断 SwiftUI 旧触点；若当前 primary 与新 active 同帧出现，owner 先原子记录 primary terminal、暂缓 fresh ID，下一帧再 seed；若 owner 已 terminal-possible，则由 fresh-seed barrier 检查 terminal quarantine。未知 terminal 不取消 owner、不递增 sequence、不污染新 ID quarantine；已 quarantine terminal 不阻塞正常 handoff。新增 mixed-frame 与 barrier Core tests，双指框选、pinch、pan、长按、直接 Attack/Attack-Move、Core 命令和存档语义保持；最新 `a1b5a39` 云端 artifact 的 Core `344 tests`、双架构编译、双启动和双 PNG probe 已通过，静态 smoke 仍不能证明真实 callback 顺序。
+
+## v2.80 iOS compact producer section-title deduplication
+
+```mermaid
+flowchart LR
+  P[Selected producer] --> C{Compact + normal Dynamic Type<br/>+ producer focus?}
+  C -->|yes| H[Fixed producer header<br/>Production · building · tech · speed]
+  C -->|no| SH[Production section header]
+  H --> M[Management rail<br/>Cancel · Repeat · Rally]
+  SH --> M
+  M --> F[Existing Production section content]
+  F --> S[NOW · QUEUE · UPGRADE]
+  S --> T[Factory Tech / production options / queue]
+  V[Accessibility Dynamic Type] --> SH
+  N[No producer focus] --> SH
+  H -. no duplicate visible title .-> F
+```
+
+读图说明：v2.80 只在固定 producer header 已提供 `Production` 身份的 compact 普通字号路径省略相邻重复的 section title；Management rail、focus summary、Factory Tech、生产入口与队列没有被隐藏或重排。Regular、accessibility Dynamic Type 和无 producer focus 的路径继续渲染 section header。该 gate 不新增游戏状态，不改变生产 action、VoiceOver、44pt、Core、存档或 Web；固定 Home 只证明当前 compact fixture 的静态首屏空间变化，最终云端 artifact 待本轮提交后补录。

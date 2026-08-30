@@ -987,3 +987,11 @@ Regular trailing 与所有 accessibility Dynamic Type 继续在固定 header 显
 本轮只改变输入 owner presentation boundary 和 Core 的纯状态保护；GameEngine、命令、单位/建筑、战斗、生产、存档/JSON、Tactical Map、HUD、BattlefieldScene 和 Web 版不变。新增 mixed terminal/fresh-active 与 barrier Core tests；SwiftUI 现有 callback 没有可靠跨 gesture generation token，因此 seed 后仅凭未知 active ID 的旧回调仍不能被宣称绝对区分，真实顺序仍需真机/XCUITest 证据。
 
 修复实现 commit `a1b5a3935a529e120989265ea7d42476bf9865b2` 对应 Actions run `33291279372` / attempt `1` / job `99203215236`；Agent C 已将 artifact `rustwar-ci-v1.2-main-a1b5a39-run33291279372-attempt1`（ID `9726126481`，digest `sha256:998e9ae3d57358ba7601dfd991639314bc0b8c338587496cc5be78e142d64f4b`）下载到 `/private/tmp/rustwar-c-review-33291279372/` 并核对通过。JUnit `8/0/1`、Core `344 tests`、`TouchSequenceOwner.swift` / `BattlefieldView.swift` 双架构编译、双场景启动、横屏归一化和双 PNG probe 全成功；Home `166db0cd...`、Combat `c4557ffe...` 与 v2.78 一致。固定结果只证明该 SHA 的静态构图与云端流程，不替代真实触控顺序、真机手感、VoiceOver、Dynamic Type 或长期帧率证据。
+
+## v2.80 iOS compact producer section-title deduplication
+
+`TacticalCommandDockView.isCompactProducerContext` 已在 compact、普通 Dynamic Type 且存在单一己方 producer focus 时启用固定 `TacticalCompactProducerHeaderView`；该 header 自带 `Production`、建筑名、tech 与 speed。v2.80 让 `TacticalProductionSectionView` 使用同一语义边界：仅当 `isCompact && !dynamicTypeSize.isAccessibilitySize && controller.productionFocusBuildingName != nil` 时省略可见的 `TacticalSectionHeader(.production)`，避免固定 header 与滚动 section 相邻重复标题。
+
+省略只作用于 section title。`TacticalProductionManagementRail`、`TacticalProductionFocusSummaryView`、Factory Tech、production options、queue 和既有 action 继续按原顺序消费同一 `GameController` 派生状态；regular、compact 下的 accessibility Dynamic Type 和无 producer focus 的 Production section 继续保留 section title。没有新增 controller/Core 状态，也没有改变生产队列、升级、Repeat、Rally、快捷键、VoiceOver、44pt、存档/JSON、战斗、触控或 Web 语义。
+
+本轮是 SwiftUI presentation-only 改动。固定 Home PNG 只用于云端复看 compact producer 首屏少一行后的排版；不能替代 regular、compact bottom、Dynamic Type 全档位、VoiceOver、滚动、真实点击或真机触控证据。最终 commit、Actions run、artifact 与 PNG hash 待本轮 `origin/main` 云端验收后补录。

@@ -841,3 +841,20 @@ Agent C 只验收 v2.79 最新 `origin/main` 完整 SHA 对应 artifact，核对
 证据边界：terminal barrier 不能替代 XCUITest/真机 callback 注入；seed 后只出现未知 active ID 的迟到旧回调仍无法被 SwiftUI 现有 API 绝对区分，不能用静态 PNG 或 Core test 宣称已覆盖该边界。
 
 通过记录：修复实现 commit `a1b5a3935a529e120989265ea7d42476bf9865b2` 对应 run `33291279372` / attempt `1` / job `99203215236`；artifact `rustwar-ci-v1.2-main-a1b5a39-run33291279372-attempt1`（ID `9726126481`，digest `sha256:998e9ae3d57358ba7601dfd991639314bc0b8c338587496cc5be78e142d64f4b`）已下载到 `/private/tmp/rustwar-c-review-33291279372/`。manifest 完整匹配；JUnit `8/0/1`、Core `344 tests`、双架构 build、双场景启动、横屏归一化和双 PNG probe 成功，Home `166db0cd...`、Combat `c4557ffe...` 与 v2.78 一致。
+
+## v2.80
+
+本轮只修改 `TacticalProductionSectionView.swift` 的 compact producer section-title presentation gate 和必要文档；继续执行云端唯一验证。禁止本机运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`；`.wp` 保持未跟踪，不得进入提交。
+
+代码复判必须确认：
+
+- `TacticalProductionSectionView` 仅在 `isCompact && !dynamicTypeSize.isAccessibilitySize && controller.productionFocusBuildingName != nil` 时省略可见 `TacticalSectionHeader(.production)`；该条件不能隐藏整个 Production section。
+- compact producer header 继续显示 `Production / building / tech / speed`，并保持既有 accessibility label/value/hint；management rail、focus summary、Factory Tech、production options、queue 和所有 action 继续渲染。
+- regular、compact 下的 accessibility Dynamic Type、无 producer focus 的 Production section 继续显示 section title；不改变 `isCompact` 调用契约或 dock breakpoint。
+- Production section 内部顺序、Cancel / Repeat / Rally、NOW / QUEUE / UPGRADE、Factory Tech、Scout / Light / Hover / Arty / AA / Heavy、queue、Shift 快捷键、VoiceOver、44pt、Core、存档/JSON、战斗、触控和 Web 不变。
+
+Agent C 只验收 v2.80 最新 `origin/main` 完整 SHA 对应 artifact，核对 manifest、JUnit、主日志、失败摘要、repo state、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro；Core 至少 `344 tests`、Xcode list/build、`TacticalProductionSectionView.swift` 双架构编译、production/combat 双启动、横屏归一化和双 PNG probe 全成功。artifact 必须下载到 `/private/tmp/rustwar-c-review-<run_id>/`，不得用旧 run 或本地输出替代。
+
+人工复看最新 `ios-home.png`：header 仍显示 `Production / Land Factory / T2 / 1.25x`；其下不再紧贴出现重复的 Production section title，management rail、NOW / QUEUE / UPGRADE、Factory Tech 和首排生产卡无裁切、重叠或压缩。`ios-combat.png` 应与 v2.79 `c4557ffe...` 一致；若变化必须解释并确认 v2.78 hull marking、v2.72 武器层、v2.75 terminal/impact、Quick Orders、Tactical Map 和状态栏无回退。
+
+固定 PNG 只覆盖 compact trailing 普通 Dynamic Type 的 production fixture，不能证明 regular、compact bottom、accessibility、VoiceOver、滚动、真实点击、全部本地化或真机触控手感。最终 run、artifact、SHA 和 Agent C 结论待云端完成后补录。

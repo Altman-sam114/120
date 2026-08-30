@@ -178,9 +178,15 @@ struct TacticalProductionSectionView: View {
             : TacticalHUDTheme.controlSpacing
     }
 
+    private var showsProductionSectionHeader: Bool {
+        !isCompact || dynamicTypeSize.isAccessibilitySize || controller.productionFocusBuildingName == nil
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
-            TacticalSectionHeader(section: .production)
+            if showsProductionSectionHeader {
+                TacticalSectionHeader(section: .production)
+            }
             TacticalProductionManagementRail(
                 controller: controller,
                 columns: columns,
