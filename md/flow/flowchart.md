@@ -1631,6 +1631,25 @@ flowchart LR
 
 读图说明：v2.79 不用不可用的假 generation token 推断 SwiftUI 旧触点；若当前 primary 与新 active 同帧出现，owner 先原子记录 primary terminal、暂缓 fresh ID，下一帧再 seed；若 owner 已 terminal-possible，则由 fresh-seed barrier 检查 terminal quarantine。未知 terminal 不取消 owner、不递增 sequence、不污染新 ID quarantine；已 quarantine terminal 不阻塞正常 handoff。新增 mixed-frame 与 barrier Core tests，双指框选、pinch、pan、长按、直接 Attack/Attack-Move、Core 命令和存档语义保持；最新 `a1b5a39` 云端 artifact 的 Core `344 tests`、双架构编译、双启动和双 PNG probe 已通过，静态 smoke 仍不能证明真实 callback 顺序。
 
+## v2.81 iOS team-tinted unit armor
+
+```mermaid
+flowchart LR
+  U[UnitSnapshot team + type] --> B[unitBody]
+  B --> C{unit.team}
+  C -->|player| PG[Muted green-gray armorMidColor]
+  C -->|enemy| ER[Muted red-gray armorMidColor]
+  PG --> H[Existing unit hull / mid armor panels]
+  ER --> H
+  H --> M[Existing hull-edge chevron / twin tabs]
+  H --> W[Independent weaponMount + recoilMount]
+  M -. hull heading only .-> R[SpriteKit unit presentation]
+  W -. weapon heading / recoil only .-> R
+  R -. no mutation .-> K[Buildings / Core / commands / input / save unchanged]
+```
+
+读图说明：v2.81 只在 `unitBody` 函数作用域用 team 派生固定不透明的 muted 中间装甲色；同名 `buildingBody` 装甲属性仍保持中性。八类单位的既有几何、暗部、亮部、轮廓、履带、设备色和 v2.78 尾缘单/双标记继续提供层级与非颜色识别。标记仍属于 hull，不随炮塔/后坐旋转；weapon mount、recoil、selection/HP/damage、grounding、fog、terminal/impact、Core、HUD、Tactical Map 和 Web 不变。固定 Home/Combat PNG 只能证明云端 SHA 的静态可读性，不能替代动态转向、色觉、真机性能或触控证据。
+
 ## v2.80 iOS compact producer section-title deduplication
 
 ```mermaid

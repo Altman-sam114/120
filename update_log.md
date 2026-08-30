@@ -6778,3 +6778,33 @@
 
 - 固定云端 PNG 只覆盖 compact trailing 普通 Dynamic Type 的生产 fixture，不能证明 regular、compact bottom、Dynamic Type 全档位、VoiceOver、滚动、真实点击或真机触控手感。
 - 总目标 X 未完成；本轮通过后继续处理触控安全、模型辨识或战斗视觉细化。
+
+## v2.81 / Team-tinted unit armor
+
+日期：2026-08-30
+
+当前轮次：
+
+- `BattlefieldScene.unitBody` 为每个 `UnitSnapshot` 按 `unit.team` 派生固定 muted `armorMidColor`：玩家中间装甲为绿灰，敌方中间装甲为红灰；原钢灰暗部/亮部、outline、履带、设备色和八类单位几何继续负责模型层级。
+- 派生值只在 `unitBody` 函数作用域生效，因此不会改动 `buildingBody` 的同名中性装甲属性。v2.78 hull-local 单 chevron / 双 tabs 阵营标记仍保留并作为高对比非颜色识别层，独立于炮塔/后坐。
+- 本轮是 SpriteKit presentation-only 视觉增强，不改变 weapon/recoil heading、炮口、selection/HP/damage、grounding、fog、terminal/impact、Core、命令、输入、生产、AI、存档、HUD、Tactical Map 或 Web 版。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.81-team-tinted-unit-armor.md`
+- `update_log.md`
+
+验证状态：
+
+- 按云端唯一验证制度，本机不运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`；`.wp` 保持未跟踪。
+- 当前实现和文档提交尚未完成 Actions artifact 验收。Agent C 必须以最新 `origin/main` 完整 SHA 下载未加密结果包，核对 manifest/JUnit/日志/失败摘要、Core 至少 `344 tests`、`BattlefieldScene.swift` 双架构编译、双场景启动、横屏归一化和双 PNG probe。
+
+已知风险：
+
+- 低饱和颜色应补充既有几何与单/双尾缘标记，而不是替代它们；如果固定 Combat PNG 出现偏色过重、模型层级变平或终端特效遮挡，应追加最小修复 commit。
+- 固定 PNG 仍不能证明任意 heading/zoom、色觉体验、动态密集战斗、真机帧率、Reduce Motion 实机效果或触控手感；总目标 X 未完成。

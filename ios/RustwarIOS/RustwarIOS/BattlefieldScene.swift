@@ -3072,6 +3072,7 @@ final class BattlefieldScene: SKScene {
         recoilDistance: Double
     ) -> SKNode {
         let body = SKNode()
+        let armorMidColor = unitArmorMidColor(for: unit.team)
         let weaponMount = SKNode()
         weaponMount.zRotation = weaponRotation
         weaponMount.zPosition = 1
@@ -5182,6 +5183,15 @@ final class BattlefieldScene: SKScene {
             SKColor(red: 0.24, green: 0.92, blue: 0.48, alpha: 1)
         case .enemy:
             SKColor(red: 0.96, green: 0.27, blue: 0.25, alpha: 1)
+        }
+    }
+
+    private func unitArmorMidColor(for team: Team) -> SKColor {
+        switch team {
+        case .player:
+            SKColor(red: 0.28, green: 0.43, blue: 0.39, alpha: 1)
+        case .enemy:
+            SKColor(red: 0.40, green: 0.33, blue: 0.35, alpha: 1)
         }
     }
 

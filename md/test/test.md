@@ -842,6 +842,25 @@ Agent C 只验收 v2.79 最新 `origin/main` 完整 SHA 对应 artifact，核对
 
 通过记录：修复实现 commit `a1b5a3935a529e120989265ea7d42476bf9865b2` 对应 run `33291279372` / attempt `1` / job `99203215236`；artifact `rustwar-ci-v1.2-main-a1b5a39-run33291279372-attempt1`（ID `9726126481`，digest `sha256:998e9ae3d57358ba7601dfd991639314bc0b8c338587496cc5be78e142d64f4b`）已下载到 `/private/tmp/rustwar-c-review-33291279372/`。manifest 完整匹配；JUnit `8/0/1`、Core `344 tests`、双架构 build、双场景启动、横屏归一化和双 PNG probe 成功，Home `166db0cd...`、Combat `c4557ffe...` 与 v2.78 一致。
 
+## v2.81
+
+本轮只修改 `BattlefieldScene.swift` 的单位装甲 presentation 和必要文档；继续执行云端唯一验证。本机禁止 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本和 `git diff --check`；`.wp` 保持未跟踪。
+
+代码复判必须确认：
+
+- `unitBody` 只在自身作用域按 `unit.team` 派生固定不透明的 muted `armorMidColor`；Player 为绿灰、Enemy 为红灰，不能整单位纯色、不能使用随机/时间/纹理/alpha 背景混合。
+- 既有八类 `UnitType`（Builder、Scout、Tank、Heavy Tank、Hover、AA Tank、Artillery、Gunboat）的 `armorMidColor` 结构、几何和节点层级可继续消费该值；`armorDarkColor`、`armorLightColor`、highlight、outline、履带、设备色和 v2.78 尾缘 faction marking 不回退。
+- 该局部值不能改变 `buildingBody` 的中性装甲；`weaponMount` / `recoilMount` 的 heading、后坐、炮口、projectile、terminal/impact、selection/HP/damage、grounding、fog 和节点上限不变。
+- `unitArmorMidColor`（或等价 helper）只做 presentation，输出必须确定、可复现，不写入 Core、GameController、订单、生产、AI、存档或输入状态。
+
+Agent C 只验收 v2.81 最新 `origin/main` 完整 SHA 对应 artifact，核对 manifest、JUnit、主日志、失败摘要、repo state、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro；Core 至少 `344 tests`、`BattlefieldScene.swift` arm64/x86_64 编译、Xcode list/build、production/combat 双启动、横屏归一化和双 PNG probe 全成功。artifact 必须下载到 `/private/tmp/rustwar-c-review-<run_id>/`，不得用旧 run 或本地输出替代。
+
+人工复看最新 `ios-home.png` 与 `ios-combat.png`：玩家单位有克制的绿灰中间装甲，敌方单位有克制的红灰中间装甲；颜色不能淹没深色轮廓、八类单位形状、炮塔/发射器、炮口、选择环、HP/damage、terminal/impact 或 v2.78 尾缘单/双标记。生产 HUD、Quick Orders、Tactical Map、状态栏和 v2.80 Home 首屏无回退；Home、Combat 应相对 v2.80 最终 PNG 改变并记录真实 SHA-256。
+
+证据边界：固定 frozen Combat fixture 覆盖双方多类单位和部分炮塔/terminal/impact 重叠，不能证明任意 heading/zoom、动态密集战斗、色觉用户体验、Reduce Motion 真实设备效果、真机帧率或触控手感。
+
+通过记录：待最新实现 commit、Actions run/attempt/job、artifact ID/digest、下载路径、JUnit/Core 数量、双架构/双 PNG 结果与人工结论完成后补录；未通过时必须在 `main` 追加最小修复并重新验收，不能把待验收提交写成通过。
+
 ## v2.80
 
 本轮只修改 `TacticalProductionSectionView.swift` 的 compact producer section-title presentation gate 和必要文档；继续执行云端唯一验证。禁止本机运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`；`.wp` 保持未跟踪，不得进入提交。

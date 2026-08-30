@@ -988,6 +988,14 @@ Regular trailing 与所有 accessibility Dynamic Type 继续在固定 header 显
 
 修复实现 commit `a1b5a3935a529e120989265ea7d42476bf9865b2` 对应 Actions run `33291279372` / attempt `1` / job `99203215236`；Agent C 已将 artifact `rustwar-ci-v1.2-main-a1b5a39-run33291279372-attempt1`（ID `9726126481`，digest `sha256:998e9ae3d57358ba7601dfd991639314bc0b8c338587496cc5be78e142d64f4b`）下载到 `/private/tmp/rustwar-c-review-33291279372/` 并核对通过。JUnit `8/0/1`、Core `344 tests`、`TouchSequenceOwner.swift` / `BattlefieldView.swift` 双架构编译、双场景启动、横屏归一化和双 PNG probe 全成功；Home `166db0cd...`、Combat `c4557ffe...` 与 v2.78 一致。固定结果只证明该 SHA 的静态构图与云端流程，不替代真实触控顺序、真机手感、VoiceOver、Dynamic Type 或长期帧率证据。
 
+## v2.81 iOS team-tinted unit armor
+
+`BattlefieldScene.drawUnit` 继续从 `UnitSnapshot` 读取 team、type、heading 和 recoil snapshot，再由 `unitBody` 构造 hull-local body、独立 weapon mount、recoil mount、damage/selection/HP 层和 hull 尾缘 faction marking。v2.81 在 `unitBody` 函数作用域内按 `unit.team` 派生固定的 muted `armorMidColor`：Player 使用绿灰中间装甲，Enemy 使用红灰中间装甲；既有 `armorDarkColor`、`armorLightColor`、highlight、outline、履带和设备色仍负责明暗、边缘与类别层级。
+
+该派生值只被八类单位的既有 `fill: armorMidColor` 使用，不改变几何、半径、节点层级、朝向、炮口或后坐，也不会泄漏到 `buildingBody` 的同名中性装甲属性。v2.78 的 hull-local 单 chevron / 双 tabs 仍是高对比非颜色阵营标记，继续独立于 weapon heading；selection ring、HP/damage、grounding、fog、terminal/impact、Core、命令、AI、生产、存档、HUD、Tactical Map 和 Web 不变。
+
+本轮仅改变 SpriteKit 单位 presentation。云端固定 Home/Combat PNG 用于确认双方队伍色偏移能读出但不压过模型轮廓、炮塔/发射器、炮口、现有尾缘标记或战斗信息；静态 artifact 不能证明任意 zoom、动态密集战斗、色觉体验、真机性能或触控手感。实现和 artifact 通过信息待 Agent C 完成最新 `origin/main` 验收后补录。
+
 ## v2.80 iOS compact producer section-title deduplication
 
 `TacticalCommandDockView.isCompactProducerContext` 已在 compact、普通 Dynamic Type 且存在单一己方 producer focus 时启用固定 `TacticalCompactProducerHeaderView`；该 header 自带 `Production`、建筑名、tech 与 speed。v2.80 让 `TacticalProductionSectionView` 使用同一语义边界：仅当 `isCompact && !dynamicTypeSize.isAccessibilitySize && controller.productionFocusBuildingName != nil` 时省略可见的 `TacticalSectionHeader(.production)`，避免固定 header 与滚动 section 相邻重复标题。
