@@ -834,7 +834,7 @@ Home 与 Combat 都必须相对 v2.77 基线改变：Home `3884b7315d34cb3917d19
 - `beginFreshSequence(with:terminalEventIDs:)` 在关闭旧 sequence 前拒绝 `terminalEventIDs.subtracting(cancelledIDs)` 非空的 fresh seed；拒绝不调用 `cancel()`、不递增 sequence、不清理 owner、不 quarantine 新 ID。
 - `BattlefieldView.synchronizeTouchOwner` 只把当前 `.ended` / `.cancelled` touch IDs 传入 barrier；后续干净 active frame 仍可 seed，既有已 quarantine terminal handoff 继续通过。
 - tap、direct Attack、空地点 Attack-Move、pending target、12pt pan latch、长按、多指框选、pinch、area selection、replacement rejection、tap suppression、Core 命令、生产、战斗、存档/JSON 和 Web 不变。
-- 新 Core tests 覆盖 primary terminal 与 fresh active 同帧的 deferred handoff（ended/cancelled 两种 terminal），以及未知 terminal 阻塞与已 quarantine terminal 允许路径，预期 suite 至少 `344 tests`。
+- 新 Core tests 覆盖 primary terminal 与 fresh active 同帧的 deferred handoff（ended/cancelled 两种 terminal）、cancelled primary 的旧 lease 失效，以及未知 terminal 阻塞与已 quarantine terminal 允许路径，预期 suite 至少 `344 tests`。
 
 Agent C 只验收 v2.79 最新 `origin/main` 完整 SHA 对应 artifact，核对 manifest、JUnit、主日志、失败摘要、repo state、固定工具链、Core 至少 `344 tests`、Xcode list、`BattlefieldView.swift` / `TouchSequenceOwner.swift` 双架构 build、双启动、横屏归一化和双 PNG probe。
 

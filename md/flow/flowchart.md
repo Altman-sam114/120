@@ -893,6 +893,7 @@ flowchart TD
   M -->|"no: ordinary single touch"| K["leave sequence/owner cleanup to context or pan end"]
   M -->|"yes"| R["commit eligible area preview; reset multitouch; advance sequence"]
   C["Spatial touch cancelled"] --> X["cancel context owner + reject tap/long press"]
+  C -->|"v2.79 + fresh active"| XD["invalidate old lease; defer fresh seed"]
   E["context onEnded"] --> Q{"ending sequence == current sequence?"}
   Q -->|"no: stale"| T["teardown context only"]
   Q -->|"yes"| A["apply accepted/cancelled owner transition"]

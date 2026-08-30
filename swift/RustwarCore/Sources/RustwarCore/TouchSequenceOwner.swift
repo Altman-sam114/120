@@ -181,6 +181,7 @@ public struct TouchSequenceOwner<ID: Hashable>: Equatable {
         let liveAcceptedIDs = acceptedIDs.subtracting(cancelledIDs)
         let observedTerminalIDs = endedIDs.union(cancelledEventIDs)
         let acceptedTerminalIDs = observedTerminalIDs.intersection(liveAcceptedIDs)
+        let acceptedCancelledIDs = cancelledEventIDs.intersection(liveAcceptedIDs)
 
         let currentActiveIDs = observedActiveIDs.subtracting(cancelledIDs)
         let isPrimaryTerminalHandoff = phase == .possible &&
@@ -193,10 +194,13 @@ public struct TouchSequenceOwner<ID: Hashable>: Equatable {
             // Keep the fresh IDs out of this sequence until a clean frame can seed them.
             activeIDs.removeAll()
             cancelledIDs.formUnion(acceptedTerminalIDs)
+            if !acceptedCancelledIDs.isEmpty {
+                // A cancelled primary must invalidate its old leases even while deferring the fresh IDs.
+                _ = cancel()
+            }
             return .deferred
         }
 
-        let acceptedCancelledIDs = cancelledEventIDs.intersection(liveAcceptedIDs)
         if !acceptedCancelledIDs.isEmpty {
             cancel()
             return .cancelled

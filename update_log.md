@@ -6721,7 +6721,7 @@
 核心变更：
 
 - `BattlefieldView.synchronizeTouchOwner` 将同一 Spatial event frame 的 `.ended` / `.cancelled` touch IDs 作为 terminal evidence 传给 `TouchSequenceOwner.beginFreshSequence`。
-- 追加修复首个混合同帧路径：当 `.possible` owner 的 primary 同帧 terminal 且出现未知 active ID 时，`TouchSequenceOwner.observe` 原子记录 accepted terminal、清空旧 active 并返回 `.deferred`；新 ID 不会被误判为 replacement 或加入 quarantine，下一帧干净 active 再 seed。
+- 追加修复首个混合同帧路径：当 `.possible` owner 的 primary 同帧 terminal 且出现未知 active ID 时，`TouchSequenceOwner.observe` 原子记录 accepted terminal、清空旧 active 并返回 `.deferred`；新 ID 不会被误判为 replacement 或加入 quarantine，下一帧干净 active 再 seed。若 primary 是 `.cancelled`，同时推进 cancellation epoch 使旧 lease 失效。
 - `TouchSequenceOwner` 只允许所有 terminal ID 已在 cancelled quarantine 中时 fresh seed；未知 terminal 阻塞交接但不取消 owner、不递增 sequence、不 quarantine 新 active ID，后续干净 active frame 可重试。
 - 新 Core tests 覆盖 ended/cancelled 混合同帧 deferred handoff、未知 terminal 阻塞和已 quarantine terminal 允许 handoff；tap、pan、area selection、多指、pinch、长按、命令和 Core gameplay 语义不变。
 

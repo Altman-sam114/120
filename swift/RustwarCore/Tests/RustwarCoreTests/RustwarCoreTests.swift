@@ -62,7 +62,8 @@ import Testing
 
 @Test func touchSequenceOwnerRejectsUnknownTerminalDuringFreshHandoff() throws {
     var owner = TouchSequenceOwner<Int>()
-    let firstLease = try #require(owner.beginFreshSequence(with: 61))
+    let firstLeaseOptional = owner.beginFreshSequence(with: 61)
+    let firstLease = try #require(firstLeaseOptional)
     #expect(owner.observe(activeIDs: [], endedIDs: [61]) == .accepted)
     #expect(owner.canYieldTerminalPossibleSequence)
 
@@ -72,9 +73,11 @@ import Testing
     #expect(owner.acceptedIDs == Set([61]))
     #expect(owner.cancelledIDs == Set([61]))
 
-    let freshLease = try #require(
-        owner.beginFreshSequence(with: 62, terminalEventIDs: [61])
+    let freshLeaseOptional = owner.beginFreshSequence(
+        with: 62,
+        terminalEventIDs: [61]
     )
+    let freshLease = try #require(freshLeaseOptional)
     #expect(freshLease.sequence == firstLease.sequence + 1)
     #expect(owner.acceptedIDs == Set([62]))
     #expect(owner.activeIDs == Set([62]))
@@ -90,20 +93,29 @@ import Testing
     #expect(endedOwner.cancelledIDs == Set([71]))
     #expect(!endedOwner.cancelledIDs.contains(72))
 
-    let endedFreshLease = try #require(endedOwner.beginFreshSequence(with: 72))
+    let endedFreshLeaseOptional = endedOwner.beginFreshSequence(with: 72)
+    let endedFreshLease = try #require(endedFreshLeaseOptional)
     #expect(endedFreshLease.sequence == 2)
     #expect(endedOwner.acceptedIDs == Set([72]))
     #expect(endedOwner.activeIDs == Set([72]))
 
     var cancelledOwner = TouchSequenceOwner<Int>()
-    _ = cancelledOwner.beginFreshSequence(with: 81)
+    let cancelledLeaseOptional = cancelledOwner.beginFreshSequence(with: 81)
+    let cancelledLease = try #require(cancelledLeaseOptional)
     #expect(
         cancelledOwner.observe(activeIDs: [82], cancelledEventIDs: [81]) == .deferred
     )
-    #expect(cancelledOwner.phase == .possible)
+    #expect(cancelledOwner.phase == .cancelled)
+    #expect(cancelledOwner.sequence == cancelledLease.sequence + 1)
     #expect(cancelledOwner.activeIDs.isEmpty)
     #expect(cancelledOwner.cancelledIDs == Set([81]))
     #expect(!cancelledOwner.cancelledIDs.contains(82))
+    #expect(!cancelledOwner.accepts(cancelledLease))
+
+    let cancelledFreshLeaseOptional = cancelledOwner.beginFreshSequence(with: 82)
+    let cancelledFreshLease = try #require(cancelledFreshLeaseOptional)
+    #expect(cancelledFreshLease.sequence == cancelledLease.sequence + 2)
+    #expect(cancelledOwner.activeIDs == Set([82]))
 }
 
 @Test func touchSequenceOwnerRejectsReplacementAndRequiresFreshSeed() {
