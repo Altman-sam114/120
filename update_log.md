@@ -6740,7 +6740,7 @@
 验证状态：
 
 - 初始实现 commit `733bb6d1c9fa27aeb27a37167f86b3eae389d996` 对应 run `33290396183` 未通过 Actions 的最终检查；审查确认首个混合同帧仍会把新 ID 判为 replacement，本记录不将该 run 作为验收证据。修复将以追加 commit 重新触发最新 run。
-- 修复后的 v2.79 commit、Actions run、artifact、Core test count 和双 PNG 结论待 push 后只按最新 `origin/main` 完整 SHA 补录；不得用 v2.78 artifact 冒充本轮结果。
+- 修复实现 commit `a1b5a3935a529e120989265ea7d42476bf9865b2` 对应 Actions run `33291279372` / attempt `1` / job `99203215236` 的 artifact `rustwar-ci-v1.2-main-a1b5a39-run33291279372-attempt1`（ID `9726126481`，digest `sha256:998e9ae3d57358ba7601dfd991639314bc0b8c338587496cc5be78e142d64f4b`）已由 Agent C 下载到 `/private/tmp/rustwar-c-review-33291279372/` 并按最新完整 SHA 核对通过。JUnit `8/0/1`、Core `344 tests`、双架构编译、双场景启动、横屏归一化和双 PNG probe 全成功；Home SHA-256 `166db0cd24b3966a059707a608d7ca21d0a6de793bb05192d9cc2f5585200ec1`，Combat SHA-256 `c4557ffe8c20bf7685875aa66a1532d44e5eaeb21fa6b6354e2fb5273c2102cf`；人工复判确认触控 owner 修复没有引入静态 UI/战斗视觉回退。
 - 本轮继续禁止本机 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本和 `git diff --check`；`.wp` 保持未跟踪。
 
 已知风险：

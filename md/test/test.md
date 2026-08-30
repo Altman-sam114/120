@@ -839,3 +839,5 @@ Home 与 Combat 都必须相对 v2.77 基线改变：Home `3884b7315d34cb3917d19
 Agent C 只验收 v2.79 最新 `origin/main` 完整 SHA 对应 artifact，核对 manifest、JUnit、主日志、失败摘要、repo state、固定工具链、Core 至少 `344 tests`、Xcode list、`BattlefieldView.swift` / `TouchSequenceOwner.swift` 双架构 build、双启动、横屏归一化和双 PNG probe。
 
 证据边界：terminal barrier 不能替代 XCUITest/真机 callback 注入；seed 后只出现未知 active ID 的迟到旧回调仍无法被 SwiftUI 现有 API 绝对区分，不能用静态 PNG 或 Core test 宣称已覆盖该边界。
+
+通过记录：修复实现 commit `a1b5a3935a529e120989265ea7d42476bf9865b2` 对应 run `33291279372` / attempt `1` / job `99203215236`；artifact `rustwar-ci-v1.2-main-a1b5a39-run33291279372-attempt1`（ID `9726126481`，digest `sha256:998e9ae3d57358ba7601dfd991639314bc0b8c338587496cc5be78e142d64f4b`）已下载到 `/private/tmp/rustwar-c-review-33291279372/`。manifest 完整匹配；JUnit `8/0/1`、Core `344 tests`、双架构 build、双场景启动、横屏归一化和双 PNG probe 成功，Home `166db0cd...`、Combat `c4557ffe...` 与 v2.78 一致。
