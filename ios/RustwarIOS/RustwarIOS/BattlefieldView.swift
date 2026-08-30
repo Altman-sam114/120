@@ -657,6 +657,8 @@ struct BattlefieldView: View {
         switch observation {
         case .accepted:
             return true
+        case .deferred:
+            return false
         case .ignored:
             return false
         case .cancelled, .replacementRejected:

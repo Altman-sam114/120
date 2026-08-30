@@ -980,8 +980,8 @@ Regular trailing 与所有 accessibility Dynamic Type 继续在固定 header 显
 
 ## v2.79 iOS touch handoff terminal barrier
 
-`BattlefieldView.synchronizeTouchOwner(with:allowFreshSeed:)` 继续以 `TouchSequenceOwner` 统一管理主战场 tap、context、pan、area selection、多指和 pinch owner。v2.79 在 fresh seed 前收集当前 `SpatialEventCollection` 的 `.ended` / `.cancelled` IDs，并把它们作为 `terminalEventIDs` 传给 `beginFreshSequence`。
+`BattlefieldView.synchronizeTouchOwner(with:allowFreshSeed:)` 继续以 `TouchSequenceOwner` 统一管理主战场 tap、context、pan、area selection、多指和 pinch owner。v2.79 在 fresh seed 前收集当前 `SpatialEventCollection` 的 `.ended` / `.cancelled` IDs，并把它们作为 `terminalEventIDs` 传给 `beginFreshSequence`；同一组 event 也交给 owner 做原子 terminal observation。
 
-`TouchSequenceOwner.beginFreshSequence(with:terminalEventIDs:)` 只有在所有同帧 terminal ID 都已经位于 `cancelledIDs` quarantine 中时才允许交接；未知 terminal 会保留旧 phase、sequence、accepted/active/cancelled 集合，不调用 `cancel()`，也不把新 active ID 加入 quarantine。后续无歧义 active frame 仍可交接。这样把迟到 terminal + fresh active 的歧义 frame 从“直接播种”变成安全等待，同时保留既有 terminal-possible handoff、replacement rejection、second-finger acceptance、finish/reset 和 tap suppression。
+`TouchSequenceOwner` 在 owner 仍为 `.possible`、只持有当前 primary 且该 primary 在本 frame 进入 `.ended` / `.cancelled` 时，若同时看到至少一个未知 active ID，会先记录 accepted terminal、清空旧 `activeIDs` 并返回 `.deferred`；未知 active 不会被 replacement rejection 或 cancellation quarantine 污染。下一帧无歧义 active 才能重新 seed。若 owner 已经是 terminal-possible，`beginFreshSequence(with:terminalEventIDs:)` 仍只有在所有同帧 terminal ID 已位于 `cancelledIDs` quarantine 中时才允许交接；未知 terminal 会保留旧 phase、sequence、accepted/active/cancelled 集合，不调用 `cancel()`，也不把新 active ID 加入 quarantine。这样覆盖了 fresh seed 前以及首个混合同帧 observation 两条路径，同时保留既有 replacement rejection、second-finger acceptance、finish/reset 和 tap suppression。
 
-本轮只改变输入 owner presentation boundary 和 Core 的纯状态保护；GameEngine、命令、单位/建筑、战斗、生产、存档/JSON、Tactical Map、HUD、BattlefieldScene 和 Web 版不变。新增 Core barrier test；SwiftUI 现有 callback 没有可靠跨 gesture generation token，因此 seed 后仅凭未知 active ID 的旧回调仍不能被宣称绝对区分，真实顺序仍需真机/XCUITest 证据。
+本轮只改变输入 owner presentation boundary 和 Core 的纯状态保护；GameEngine、命令、单位/建筑、战斗、生产、存档/JSON、Tactical Map、HUD、BattlefieldScene 和 Web 版不变。新增 mixed terminal/fresh-active 与 barrier Core tests；SwiftUI 现有 callback 没有可靠跨 gesture generation token，因此 seed 后仅凭未知 active ID 的旧回调仍不能被宣称绝对区分，真实顺序仍需真机/XCUITest 证据。

@@ -1614,6 +1614,10 @@ flowchart LR
 flowchart LR
   E[SpatialEventCollection] --> A[Active IDs]
   E --> T[Ended / cancelled IDs]
+  A --> H{Primary already terminal<br/>with fresh active?}
+  T --> H
+  H -->|yes| D[Atomically record terminal<br/>defer fresh IDs]
+  D --> W
   T --> Q{All terminal IDs quarantined?}
   Q -->|no| W[Reject fresh seed<br/>preserve owner + sequence]
   Q -->|yes| S[beginFreshSequence]
@@ -1624,4 +1628,4 @@ flowchart LR
   O -. no command/state mutation .-> K[Core gameplay / save / Web unchanged]
 ```
 
-读图说明：v2.79 不用不可用的假 generation token 推断 SwiftUI 旧触点；它只拒绝“新 active + 未 quarantine terminal”同帧的 fresh seed。未知 terminal 不取消 owner、不递增 sequence、不污染新 ID quarantine；已 quarantine terminal 不阻塞正常 handoff。新增 barrier Core test，双指框选、pinch、pan、长按、直接 Attack/Attack-Move、Core 命令和存档语义保持；静态 smoke 仍不能证明真实 callback 顺序。
+读图说明：v2.79 不用不可用的假 generation token 推断 SwiftUI 旧触点；若当前 primary 与新 active 同帧出现，owner 先原子记录 primary terminal、暂缓 fresh ID，下一帧再 seed；若 owner 已 terminal-possible，则由 fresh-seed barrier 检查 terminal quarantine。未知 terminal 不取消 owner、不递增 sequence、不污染新 ID quarantine；已 quarantine terminal 不阻塞正常 handoff。新增 mixed-frame 与 barrier Core tests，双指框选、pinch、pan、长按、直接 Attack/Attack-Move、Core 命令和存档语义保持；静态 smoke 仍不能证明真实 callback 顺序。

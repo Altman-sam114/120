@@ -6721,8 +6721,9 @@
 核心变更：
 
 - `BattlefieldView.synchronizeTouchOwner` 将同一 Spatial event frame 的 `.ended` / `.cancelled` touch IDs 作为 terminal evidence 传给 `TouchSequenceOwner.beginFreshSequence`。
+- 追加修复首个混合同帧路径：当 `.possible` owner 的 primary 同帧 terminal 且出现未知 active ID 时，`TouchSequenceOwner.observe` 原子记录 accepted terminal、清空旧 active 并返回 `.deferred`；新 ID 不会被误判为 replacement 或加入 quarantine，下一帧干净 active 再 seed。
 - `TouchSequenceOwner` 只允许所有 terminal ID 已在 cancelled quarantine 中时 fresh seed；未知 terminal 阻塞交接但不取消 owner、不递增 sequence、不 quarantine 新 active ID，后续干净 active frame 可重试。
-- 新 Core test 覆盖未知 terminal 阻塞和已 quarantine terminal 允许 handoff；tap、pan、area selection、多指、pinch、长按、命令和 Core gameplay 语义不变。
+- 新 Core tests 覆盖 ended/cancelled 混合同帧 deferred handoff、未知 terminal 阻塞和已 quarantine terminal 允许 handoff；tap、pan、area selection、多指、pinch、长按、命令和 Core gameplay 语义不变。
 
 关键文件：
 
@@ -6738,7 +6739,8 @@
 
 验证状态：
 
-- v2.79 实现与文档 commit、Actions run、artifact、Core test count 和双 PNG 结论待 push 后只按最新 `origin/main` 完整 SHA 补录；不得用 v2.78 artifact 冒充本轮结果。
+- 初始实现 commit `733bb6d1c9fa27aeb27a37167f86b3eae389d996` 对应 run `33290396183` 未通过 Actions 的最终检查；审查确认首个混合同帧仍会把新 ID 判为 replacement，本记录不将该 run 作为验收证据。修复将以追加 commit 重新触发最新 run。
+- 修复后的 v2.79 commit、Actions run、artifact、Core test count 和双 PNG 结论待 push 后只按最新 `origin/main` 完整 SHA 补录；不得用 v2.78 artifact 冒充本轮结果。
 - 本轮继续禁止本机 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本和 `git diff --check`；`.wp` 保持未跟踪。
 
 已知风险：

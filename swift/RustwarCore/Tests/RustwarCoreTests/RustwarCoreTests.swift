@@ -80,6 +80,32 @@ import Testing
     #expect(owner.activeIDs == Set([62]))
 }
 
+@Test func touchSequenceOwnerDefersMixedTerminalAndFreshActiveIDs() throws {
+    var endedOwner = TouchSequenceOwner<Int>()
+    _ = endedOwner.beginFreshSequence(with: 71)
+    #expect(endedOwner.observe(activeIDs: [72], endedIDs: [71]) == .deferred)
+    #expect(endedOwner.phase == .possible)
+    #expect(endedOwner.activeIDs.isEmpty)
+    #expect(endedOwner.acceptedIDs == Set([71]))
+    #expect(endedOwner.cancelledIDs == Set([71]))
+    #expect(!endedOwner.cancelledIDs.contains(72))
+
+    let endedFreshLease = try #require(endedOwner.beginFreshSequence(with: 72))
+    #expect(endedFreshLease.sequence == 2)
+    #expect(endedOwner.acceptedIDs == Set([72]))
+    #expect(endedOwner.activeIDs == Set([72]))
+
+    var cancelledOwner = TouchSequenceOwner<Int>()
+    _ = cancelledOwner.beginFreshSequence(with: 81)
+    #expect(
+        cancelledOwner.observe(activeIDs: [82], cancelledEventIDs: [81]) == .deferred
+    )
+    #expect(cancelledOwner.phase == .possible)
+    #expect(cancelledOwner.activeIDs.isEmpty)
+    #expect(cancelledOwner.cancelledIDs == Set([81]))
+    #expect(!cancelledOwner.cancelledIDs.contains(82))
+}
+
 @Test func touchSequenceOwnerRejectsReplacementAndRequiresFreshSeed() {
     var owner = TouchSequenceOwner<Int>()
     _ = owner.beginFreshSequence(with: 1)

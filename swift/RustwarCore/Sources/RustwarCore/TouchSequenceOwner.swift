@@ -33,6 +33,7 @@ public struct TouchSequenceOwner<ID: Hashable>: Equatable {
     public enum Observation: Equatable {
         case ignored
         case accepted
+        case deferred
         case replacementRejected
         case cancelled
     }
@@ -180,16 +181,31 @@ public struct TouchSequenceOwner<ID: Hashable>: Equatable {
         let liveAcceptedIDs = acceptedIDs.subtracting(cancelledIDs)
         let observedTerminalIDs = endedIDs.union(cancelledEventIDs)
         let acceptedTerminalIDs = observedTerminalIDs.intersection(liveAcceptedIDs)
+
+        let currentActiveIDs = observedActiveIDs.subtracting(cancelledIDs)
+        let isPrimaryTerminalHandoff = phase == .possible &&
+            acceptedIDs.count == 1 &&
+            activeIDs == acceptedIDs &&
+            primaryID.map(acceptedTerminalIDs.contains) == true &&
+            !currentActiveIDs.isEmpty &&
+            currentActiveIDs.isDisjoint(with: acceptedIDs)
+        if isPrimaryTerminalHandoff {
+            // Keep the fresh IDs out of this sequence until a clean frame can seed them.
+            activeIDs.removeAll()
+            cancelledIDs.formUnion(acceptedTerminalIDs)
+            return .deferred
+        }
+
         let acceptedCancelledIDs = cancelledEventIDs.intersection(liveAcceptedIDs)
         if !acceptedCancelledIDs.isEmpty {
             cancel()
             return .cancelled
         }
 
-        let currentActiveIDs = observedActiveIDs.subtracting(cancelledIDs)
         guard !currentActiveIDs.isEmpty || observedActiveIDs.isEmpty else {
             return .ignored
         }
+
         let unknownActiveIDs = currentActiveIDs.subtracting(acceptedIDs)
         if !unknownActiveIDs.isEmpty {
             let isSecondFinger = phase == .possible &&
