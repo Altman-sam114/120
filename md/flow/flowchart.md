@@ -1703,3 +1703,17 @@ flowchart LR
 ```
 
 读图说明：v2.83 删除独立 `SpatialTapGesture` 和第二个 12pt `DragGesture`，让同一个单指 callback 在 policy 边界直接从 preview/tap 路径转到 pan/area lease；多指、pinch 和长按仍经 shared owner 互斥。`GameController` 的直接点按、Move / Attack / Attack-Move / Builder、Core、生产、模型、战斗和 HUD 语义不变。实现 commit `0dae3955d858aee68bfbcb1f868dce2248c48f24` 对应 run `33298412664` / attempt `1` 的 artifact `rustwar-ci-v1.2-main-0dae395-run33298412664-attempt1`（ID `9728269520`，digest `sha256:e092e1e24b0ca51a603d5684884721e49fe3e4d7a7c1cdb8ed6763020406c188`）已由 Agent C 下载并核对；JUnit `8/0/1`、Core `344 tests`、`BattlefieldView.swift` 双架构编译、双场景启动、横屏归一化和双 PNG probe 全成功。Home `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`、Combat `b6eb46da36d6363de916dce479edb7de4eaa6f01b1c321ba006423656e975021` 与 v2.82 一致；Agent C 判定 v2.83 artifact 验收通过。该图描述源码状态流，静态 smoke 仍不能证明真机手势 callback 顺序或手感。
+## v2.84 iOS ground impact layer separation
+
+```mermaid
+flowchart LR
+    TERRAIN[Terrain / resources] --> DECAL[Decal layer<br/>scorch marks · max 32]
+    DECAL --> GROUND[Ground impact layer<br/>land / water HP-hit containers]
+    GROUND --> ENTITY[Unit / building entities<br/>hull · turret · selection · HP]
+    ENTITY --> EFFECT[Foreground effects<br/>fire · projectile · terminal · command · death]
+    EFFECT --> FOG[Fog / radar / touch overlays]
+    GROUND -. shared oldest-first budget .-> BUDGET[64 bounded roots<br/>foreground + ground shared]
+    EFFECT -. shared oldest-first budget .-> BUDGET
+```
+
+读图说明：v2.84 只把 generic HP-hit 的 land/water root container 放到 `groundImpactNode`，让实体层保留模型、炮塔/发射器、selection、HP 与 hull faction marking 的清晰轮廓；scorch 仍在 `decalNode`。unit/building fire、projectile/tracer、terminal flash、command confirmation 和 destruction 保持 `effectNode` 前景，水面 destruction 也显式走前景。两层 bounded roots 由 `boundedEffectOrder` 合并按创建顺序 oldest-first 管理，总数上限 64；reset 与 Reduce Motion 清理两层和记录，32 decal 上限不变。Core、命令、输入、生产、AI、存档、fog/visibility、HUD、Tactical Map、模型和 Web 版不变；静态 PNG 不能证明动态时序、真机性能或水面死亡反馈。

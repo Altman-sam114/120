@@ -6877,3 +6877,30 @@
 
 - 统一源码路径减少了阈值 callback 竞态，但固定云端 smoke 不注入真实 simultaneous gesture callback 顺序，不能证明所有 iOS 设备上的 pan/area 手感、双指竞争或旧触点回调边界。
 - 本轮无预期静态视觉变化；若云端 PNG 发生变化，应优先检查 gesture 路由是否意外触发初始状态或 fixture 时间差，不应直接扩大视觉改动范围。
+## v2.84 / iOS ground impact layer separation
+
+日期：2026-08-30
+
+当前轮次：
+
+- `BattlefieldScene` 新增 `groundImpactNode`，插在 `decalNode` 与 `entityNode` 之间；land/water generic HP-hit container 进入该层，scorch mark 继续进入 decal layer。单位 hull、炮塔/发射器、selection、HP 和 v2.78 阵营标记保持在受击反馈之上。
+- unit/building fire、projectile/tracer、terminal flash、command confirmation 与 destruction 保持 foreground `effectNode`；水面 destruction 对 water helper 显式指定 `effectNode`，不改变死亡反馈层级。
+- foreground 与 ground impact 共用 64 个 bounded effect，按 attach 顺序跨层 oldest-first 淘汰；移除 root 会在下次 attach 前从顺序记录清理。Reduce Motion、map reset 同时清理两层及记录，32 个 scorch decal 上限保持。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.84-ground-impact-layer.md`
+
+验证状态：
+
+- 实现代码已完成，当前待提交并推送 `origin/main`；按云端唯一验证规则，本机不运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node/browser smoke、测试脚本或 `git diff --check`。
+- 待 Agent C 仅验收最新完整 SHA 对应 Actions artifact，并核对 manifest、JUnit、Core 至少 `344 tests`、`BattlefieldScene.swift` 双架构编译、双场景启动/横屏归一化、双 PNG probe 和真实哈希；不使用旧 artifact 或本地输出代替。
+
+已知风险：
+
+- 固定 frozen combat fixture 能证明静态层级和既有重叠场景，但不能证明动态密集战斗、任意 zoom/heading、真机帧率、Reduce Motion 实机效果或水面死亡时序；总目标仍未完成。

@@ -916,3 +916,17 @@ Agent C 只验收 v2.83 最新 `origin/main` 完整 SHA 对应 artifact，核对
 通过记录：实现 commit `0dae3955d858aee68bfbcb1f868dce2248c48f24` 对应 run `33298412664` / attempt `1` / job `99221942112`；artifact `rustwar-ci-v1.2-main-0dae395-run33298412664-attempt1`（ID `9728269520`，GitHub digest `sha256:e092e1e24b0ca51a603d5684884721e49fe3e4d7a7c1cdb8ed6763020406c188`，网页大小约 1.32 MB，下载目录 `/private/tmp/rustwar-c-review-33298412664/` 约 1.7M）已由 Agent C 下载并核对。manifest 的 `branch=main`、完整 `commitSha`、run/attempt、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro 完全匹配；JUnit `8 tests / 0 failures / 1 skipped`，Core `344 tests`，`BattlefieldView.swift` 双架构编译，Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功；唯一 skip 为既有 headless-browser regression。
 
 云端 PNG 为 `2622x1206`、透明比例 `0`；Home SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat SHA-256 `b6eb46da36d6363de916dce479edb7de4eaa6f01b1c321ba006423656e975021`，与 v2.82 逐字节一致。Agent C 人工复判确认单指路由调整没有造成生产 HUD、Quick Orders、Selection/Attack guidance、单位模型、武器层、selection/HP、v2.78 marker、terminal/impact、Tactical Map 或状态栏裁切、重叠或静态回退；v2.83 artifact 验收通过。
+## v2.84 ground impact layer separation
+
+本轮只修改 `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift` 与版本文档，继续执行云端唯一验证；本机禁止 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node/browser smoke、测试脚本和 `git diff --check`，`.wp` 保持未跟踪。
+
+源码复判必须确认：
+
+- world layer 顺序为 terrain/resource/decal/ground impact/entity/foreground effect/fog；陆地/水面 HP-hit container 进入 `groundImpactNode`，scorch 仍进入 `decalNode`。
+- unit/building fire、projectile/tracer、terminal flash、command confirmation、非水面 destruction 和水面 destruction 保持 `effectNode` 前景；水面 destruction 通过显式 layer 参数避免误落到地面层。
+- `effectNode` 与 `groundImpactNode` 共用 64 个 bounded root，按 attach 顺序 oldest-first 淘汰；action 已移除的 root 不会污染顺序，persistent frozen effect 也受上限约束。
+- 地图 reset、Reduce Motion 同时清理两层和顺序记录，32 个 scorch decal 上限与淡出保持；Core、fixture、fog/visibility、命令、输入、生产、模型、HUD、Tactical Map、存档/JSON 和 Web 不变。
+
+Agent C 只验收最新 `origin/main` 完整 SHA 对应的未加密 Actions artifact，下载到 `/private/tmp/rustwar-c-review-<run_id>/`，核对 manifest、JUnit、主日志、失败摘要、repo state、run/attempt 和固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro。artifact 必须证明 Core 至少 `344 tests`、`BattlefieldScene.swift` arm64/x86_64 编译、Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功；既有 headless-browser skip 必须如实记录。
+
+人工复看最新 `ios-home.png` 与 `ios-combat.png`：Combat 中 ground impact 不应盖住单位 hull、炮塔/发射器、selection、HP 或 v2.78 阵营标记，前景 terminal/tracer/death 仍清晰；Home 生产 HUD、Tactical Map 和状态栏无回退。记录云端生成的真实 PNG SHA-256，不沿用旧哈希。静态 artifact 不能替代动态密集战斗、任意 heading/zoom、真机帧率、Reduce Motion 实机效果或水面死亡时序证据。

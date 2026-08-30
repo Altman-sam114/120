@@ -1023,3 +1023,12 @@ Regular trailing 与所有 accessibility Dynamic Type 继续在固定 header 显
 长按仍要求 context lease 处于 `.possible`，双指 candidate 会抑制单指 claim；`MagnifyGesture`、terminal handoff、TouchSequenceOwner、直接 tap 的攻击/移动/Attack-Move/Builder 语义、生产、Core、存档、模型、战斗、HUD、Tactical Map 和 Web 不变。本轮只改变 `BattlefieldView` 的输入路由和清理辅助状态；静态 Actions artifact 可以证明编译与视觉无回退，不能替代真实设备 callback 顺序或触控手感。
 
 v2.83 以 `origin/main` 的 v2.82 文档验收 commit `a526302df15cb6f33c08764455ed0bb4c3105738` 为基线。实现 commit `0dae3955d858aee68bfbcb1f868dce2248c48f24` 对应 run `33298412664` / attempt `1` / job `99221942112` 的 artifact `rustwar-ci-v1.2-main-0dae395-run33298412664-attempt1`（ID `9728269520`，digest `sha256:e092e1e24b0ca51a603d5684884721e49fe3e4d7a7c1cdb8ed6763020406c188`，下载目录约 1.7M）已由 Agent C 下载并核对；JUnit `8/0/1`、Core `344 tests`、`BattlefieldView.swift` 双架构编译、Xcode list/build、双场景启动、横屏归一化和双 PNG probe 全成功。Home `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`、Combat `b6eb46da36d6363de916dce479edb7de4eaa6f01b1c321ba006423656e975021` 与 v2.82 一致；Agent C 判定 v2.83 artifact 验收通过。静态 artifact 仍不能替代真实设备 callback 顺序或触控手感。
+## v2.84 iOS ground impact layer separation
+
+`BattlefieldScene.configureScene` 的 world layer 顺序现在为 `terrainNode -> resourceNode -> decalNode -> groundImpactNode -> entityNode -> effectNode -> fogNode`。`spawnImpactEffect` 的陆地与水面 HP-hit container 进入 `groundImpactNode`，因此 ground bloom、impact ring、火花、碎片和水花位于单位 hull、炮塔/发射器、selection、HP 与阵营标记之下；既有 scorch mark 仍由 `decalNode` 管理。
+
+前景 `effectNode` 继续承载 unit/building fire、projectile/tracer、terminal flash、command confirmation 和非水面 destruction explosion。水面 destruction 调用水面 helper 时显式指定 `effectNode`，不因复用水面 impact geometry 改变死亡反馈层级。影响效果的 geometry、颜色、动画、frozen 和 Reduce Motion 行为不变，只重排 root container 的 sibling layer。
+
+`effectNode` 与 `groundImpactNode` 共用 `maximumActiveEffects = 64`。`boundedEffectOrder` 按 attach 顺序保存仍在 scene graph 中的 bounded root；新效果加入前清理已被 action 移除的节点，达到上限时跨两个 layer oldest-first 移除并取消旧 action。persistent frozen effect 也走同一预算；map reset 与 Reduce Motion 同时清除两层和顺序记录。`maximumActiveDecals = 32` 与 scorch 淡出保持。
+
+本轮只改变 `BattlefieldScene` 的 SpriteKit presentation/lifecycle，不改 Core、GameController、命令、输入、生产、AI、存档/JSON、fog/visibility、Tactical Map、HUD、模型或 Web 版；固定 combat fixture 不需变化。最新 Actions artifact 与双 PNG 的真实 run、manifest、测试和哈希待 Agent C 复判后补入本节；静态 PNG 仍不能证明动态密集战斗、真机帧率、任意 zoom 或水面死亡时序。

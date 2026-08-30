@@ -30,6 +30,8 @@ final class BattlefieldScene: SKScene {
         didSet {
             if accessibilityReduceMotion {
                 effectNode.removeAllChildren()
+                groundImpactNode.removeAllChildren()
+                boundedEffectOrder.removeAll()
             }
         }
     }
@@ -39,6 +41,7 @@ final class BattlefieldScene: SKScene {
     private let terrainNode = SKNode()
     private let resourceNode = SKNode()
     private let decalNode = SKNode()
+    private let groundImpactNode = SKNode()
     private let entityNode = SKNode()
     private let effectNode = SKNode()
     private let fogNode = SKNode()
@@ -46,6 +49,7 @@ final class BattlefieldScene: SKScene {
     private let radarNode = SKNode()
     private let maximumActiveEffects = 64
     private let maximumActiveDecals = 32
+    private var boundedEffectOrder: [SKNode] = []
     private var lastUpdateTime: TimeInterval?
     private var renderedMapID: MapID?
     private var renderedMapRevision = -1
@@ -143,6 +147,7 @@ final class BattlefieldScene: SKScene {
         worldNode.addChild(terrainNode)
         worldNode.addChild(resourceNode)
         worldNode.addChild(decalNode)
+        worldNode.addChild(groundImpactNode)
         worldNode.addChild(entityNode)
         worldNode.addChild(effectNode)
         worldNode.addChild(fogNode)
@@ -867,6 +872,8 @@ final class BattlefieldScene: SKScene {
 
     private func resetVisualHistory(with state: GameState) {
         effectNode.removeAllChildren()
+        groundImpactNode.removeAllChildren()
+        boundedEffectOrder.removeAll()
         decalNode.removeAllChildren()
         previousUnitPositions = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, $0.position) })
         unitHeadings = Dictionary(uniqueKeysWithValues: state.units.map { ($0.id, defaultHeading(for: $0.team)) })
@@ -1905,7 +1912,12 @@ final class BattlefieldScene: SKScene {
 
     private func spawnImpactEffect(at position: WorldPoint, intensity: Double, isFrozen: Bool = false) {
         if isWaterImpact(at: position) {
-            spawnWaterImpactEffect(at: position, intensity: intensity, isFrozen: isFrozen)
+            spawnWaterImpactEffect(
+                at: position,
+                intensity: intensity,
+                isFrozen: isFrozen,
+                to: groundImpactNode
+            )
             return
         }
 
@@ -1967,7 +1979,7 @@ final class BattlefieldScene: SKScene {
         addSmokePuffs(intensity: intensity * 0.72, count: 3, to: container, isFrozen: isFrozen)
         addImpactDebris(intensity: intensity, to: container, isFrozen: isFrozen)
         if isFrozen {
-            addPersistentBoundedEffect(container)
+            addPersistentGroundImpact(container)
             return
         } else if accessibilityReduceMotion {
             contact.run(.fadeOut(withDuration: 0.16))
@@ -1988,7 +2000,7 @@ final class BattlefieldScene: SKScene {
                 .rotate(byAngle: 0.2, duration: 0.22)
             ]))
         }
-        addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.26 : 0.72)
+        addBoundedGroundImpact(container, lifetime: accessibilityReduceMotion ? 0.26 : 0.72)
     }
 
     private func isWaterImpact(at position: WorldPoint) -> Bool {
@@ -2001,7 +2013,8 @@ final class BattlefieldScene: SKScene {
     private func spawnWaterImpactEffect(
         at position: WorldPoint,
         intensity: Double,
-        isFrozen: Bool
+        isFrozen: Bool,
+        to layer: SKNode
     ) {
         let scale = CGFloat(Swift.max(0.72, Swift.min(2.4, intensity)))
         let container = SKNode()
@@ -2079,7 +2092,7 @@ final class BattlefieldScene: SKScene {
         }
 
         if isFrozen {
-            addPersistentBoundedEffect(container)
+            addPersistentBoundedEffect(container, to: layer)
             return
         }
 
@@ -2096,7 +2109,11 @@ final class BattlefieldScene: SKScene {
                 .scale(to: 1.55, duration: 0.36)
             ]))
         }
-        addBoundedEffect(container, lifetime: accessibilityReduceMotion ? 0.22 : 0.55)
+        addBoundedEffect(
+            container,
+            lifetime: accessibilityReduceMotion ? 0.22 : 0.55,
+            to: layer
+        )
     }
 
     private func waterSplashArcNode(angle: Double, scale: CGFloat, index: Int) -> SKShapeNode {
@@ -2258,7 +2275,12 @@ final class BattlefieldScene: SKScene {
         isFrozen: Bool = false
     ) {
         if isWaterImpact(at: position) {
-            spawnWaterImpactEffect(at: position, intensity: intensity * 1.18, isFrozen: isFrozen)
+            spawnWaterImpactEffect(
+                at: position,
+                intensity: intensity * 1.18,
+                isFrozen: isFrozen,
+                to: effectNode
+            )
             return
         }
 
@@ -2491,18 +2513,43 @@ final class BattlefieldScene: SKScene {
     }
 
     private func addBoundedEffect(_ effect: SKNode, lifetime: TimeInterval) {
-        while effectNode.children.count >= maximumActiveEffects {
-            effectNode.children.first?.removeFromParent()
-        }
-        effectNode.addChild(effect)
-        effect.run(.sequence([.wait(forDuration: lifetime), .removeFromParent()]))
+        addBoundedEffect(effect, lifetime: lifetime, to: effectNode)
     }
 
     private func addPersistentBoundedEffect(_ effect: SKNode) {
-        while effectNode.children.count >= maximumActiveEffects {
-            effectNode.children.first?.removeFromParent()
+        addPersistentBoundedEffect(effect, to: effectNode)
+    }
+
+    private func addBoundedGroundImpact(_ effect: SKNode, lifetime: TimeInterval) {
+        addBoundedEffect(effect, lifetime: lifetime, to: groundImpactNode)
+    }
+
+    private func addPersistentGroundImpact(_ effect: SKNode) {
+        addPersistentBoundedEffect(effect, to: groundImpactNode)
+    }
+
+    private func addBoundedEffect(
+        _ effect: SKNode,
+        lifetime: TimeInterval,
+        to layer: SKNode
+    ) {
+        attachBoundedEffect(effect, to: layer)
+        effect.run(.sequence([.wait(forDuration: lifetime), .removeFromParent()]))
+    }
+
+    private func addPersistentBoundedEffect(_ effect: SKNode, to layer: SKNode) {
+        attachBoundedEffect(effect, to: layer)
+    }
+
+    private func attachBoundedEffect(_ effect: SKNode, to layer: SKNode) {
+        boundedEffectOrder.removeAll { $0.parent == nil }
+        while boundedEffectOrder.count >= maximumActiveEffects {
+            let oldest = boundedEffectOrder.removeFirst()
+            oldest.removeAllActions()
+            oldest.removeFromParent()
         }
-        effectNode.addChild(effect)
+        layer.addChild(effect)
+        boundedEffectOrder.append(effect)
     }
 
     private func showCombatVisualSmokeIfNeeded(_ state: GameState) {
