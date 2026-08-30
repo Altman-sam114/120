@@ -891,3 +891,9 @@ Agent C 只验收 v2.80 最新 `origin/main` 完整 SHA 对应 artifact，核对
 - 源码复核确认 `.accessibilityValue` 始终为完整 detail，`.accessibilityLabel`、`.isHeader`、等待态外框、Quick Orders action/快捷键、生产和 Core/存档/战斗/触控语义无变化。
 
 本机禁止运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图生成、Node/browser smoke、测试脚本和 `git diff --check`；只允许 Git 状态、变更范围、提交和 push。静态 PNG 不能证明真实 VoiceOver、Dynamic Type、滚动、点击、双指框选或真机触控手感；单指 simultaneous gesture 路由的潜在拖动死区留待下一轮专门验证。
+
+通过记录：实现 commit `243723bc24aa161cda46a17c50cfb41294b7a0d6` 对应 run `33296047909` / attempt `1` / job `99215769992`；artifact `rustwar-ci-v1.2-main-243723b-run33296047909-attempt1`（ID `9727507874`，GitHub digest `sha256:da60a08ef50d995983f5361d3015aa8a08f06f98b6fa61673f2afc3d9dbed392`，网页大小 1.32 MB，下载目录 `/private/tmp/rustwar-c-review-33296047909/` 约 1.7M）已由 Agent C 下载并核对。manifest 的 `branch=main`、完整 `commitSha`、run/attempt、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro 完全匹配；JUnit `8 tests / 0 failures / 1 skipped`，Core `344 tests`，SwiftUI 修改文件双架构编译，Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功；唯一 skip 为既有 headless-browser regression。
+
+云端 PNG 为 `2622x1206`、透明比例 `0`；Home SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat SHA-256 `b6eb46da36d6363de916dce479edb7de4eaa6f01b1c321ba006423656e975021`。Agent C 人工复判确认 compact hint 缩短后 Quick Orders / Commands 更早可见，Move / A-Move / Attack / Stop 与生产 HUD、单位模型、武器层、selection/HP、v2.78 marker、terminal/impact、Tactical Map 和状态栏无裁切、重叠或静态回退；v2.82 artifact 验收通过。
+
+证据边界：固定 PNG 不能证明 VoiceOver、Dynamic Type、滚动、真实点击、双指框选、所有设备尺寸、触控 callback 顺序或真机手感；单指 simultaneous gesture 路由的潜在拖动死区留待 v2.83 专门收敛。
