@@ -6802,6 +6802,7 @@
 验证状态：
 
 - 按云端唯一验证制度，本机不运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`；`.wp` 保持未跟踪。
+- 首次实现提交 `8c397a4b937ad44892ebc8e4183702f1f478382a` 对应 run `33293706252` 的唯一失败是新提示词文件 EOF 多出的空白行触发 `git diff --check`；Node、Swift Core、Xcode list/build、双架构、双场景和双 PNG probe 均成功，因此该 run 不作为 v2.81 验收证据。修复提交将只移除该格式问题并重新触发云端 gate。
 - 当前实现和文档提交尚未完成 Actions artifact 验收。Agent C 必须以最新 `origin/main` 完整 SHA 下载未加密结果包，核对 manifest/JUnit/日志/失败摘要、Core 至少 `344 tests`、`BattlefieldScene.swift` 双架构编译、双场景启动、横屏归一化和双 PNG probe。
 
 已知风险：
