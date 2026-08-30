@@ -1648,7 +1648,7 @@ flowchart LR
   R -. no mutation .-> K[Buildings / Core / commands / input / save unchanged]
 ```
 
-读图说明：v2.81 只在 `unitBody` 函数作用域用 team 派生固定不透明的 muted 中间装甲色；同名 `buildingBody` 装甲属性仍保持中性。八类单位的既有几何、暗部、亮部、轮廓、履带、设备色和 v2.78 尾缘单/双标记继续提供层级与非颜色识别。标记仍属于 hull，不随炮塔/后坐旋转；weapon mount、recoil、selection/HP/damage、grounding、fog、terminal/impact、Core、HUD、Tactical Map 和 Web 不变。固定 Home/Combat PNG 只能证明云端 SHA 的静态可读性，不能替代动态转向、色觉、真机性能或触控证据。
+读图说明：v2.81 只在 `unitBody` 函数作用域用 team 派生固定不透明的 muted 中间装甲色；同名 `buildingBody` 装甲属性仍保持中性。八类单位的既有几何、暗部、亮部、轮廓、履带、设备色和 v2.78 尾缘单/双标记继续提供层级与非颜色识别。标记仍属于 hull，不随炮塔/后坐旋转；weapon mount、recoil、selection/HP/damage、grounding、fog、terminal/impact、Core、HUD、Tactical Map 和 Web 不变。run `33294202486` / attempt `1` 的 artifact 已核对 manifest、JUnit `8/0/1`、Core `344 tests`、双架构 build、双场景启动、横屏归一化和双 PNG probe；Home `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat `d6e042d8b9d7a46bcf4248fb20f94ca52b15b93f1bc892cb188a36d809658fda`。固定 PNG 只能证明云端 SHA 的静态可读性，不能替代动态转向、色觉、真机性能或触控证据。
 
 ## v2.80 iOS compact producer section-title deduplication
 

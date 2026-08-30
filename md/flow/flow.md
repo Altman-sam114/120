@@ -994,7 +994,7 @@ Regular trailing 与所有 accessibility Dynamic Type 继续在固定 header 显
 
 该派生值只被八类单位的既有 `fill: armorMidColor` 使用，不改变几何、半径、节点层级、朝向、炮口或后坐，也不会泄漏到 `buildingBody` 的同名中性装甲属性。v2.78 的 hull-local 单 chevron / 双 tabs 仍是高对比非颜色阵营标记，继续独立于 weapon heading；selection ring、HP/damage、grounding、fog、terminal/impact、Core、命令、AI、生产、存档、HUD、Tactical Map 和 Web 不变。
 
-本轮仅改变 SpriteKit 单位 presentation。云端固定 Home/Combat PNG 用于确认双方队伍色偏移能读出但不压过模型轮廓、炮塔/发射器、炮口、现有尾缘标记或战斗信息；静态 artifact 不能证明任意 zoom、动态密集战斗、色觉体验、真机性能或触控手感。实现和 artifact 通过信息待 Agent C 完成最新 `origin/main` 验收后补录。
+本轮仅改变 SpriteKit 单位 presentation。云端固定 Home/Combat PNG 已确认双方队伍色偏移能读出但不压过模型轮廓、炮塔/发射器、炮口、现有尾缘标记或战斗信息；静态 artifact 不能证明任意 zoom、动态密集战斗、色觉体验、真机性能或触控手感。实现 commit `8c397a4b937ad44892ebc8e4183702f1f478382a`、格式修复 commit `e89fcee6499cd9377ce970bfbea7feb4cc80b188` 对应 run `33294202486` / attempt `1` / job `99210960672`；artifact `rustwar-ci-v1.2-main-e89fcee-run33294202486-attempt1`（ID `9727019052`，约 1.7M）已下载到 `/private/tmp/rustwar-c-review-33294202486/`，GitHub API 未提供 digest。manifest 完整匹配；JUnit `8/0/1`、Core `344 tests`、`BattlefieldScene.swift` 双架构编译、Xcode list/build、双场景启动、横屏归一化和双 PNG probe 全成功；Home SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat `d6e042d8b9d7a46bcf4248fb20f94ca52b15b93f1bc892cb188a36d809658fda`。Agent C 人工复判确认绿灰/红灰装甲、v2.78 尾缘标记、模型层级、炮塔/炮口、战斗特效和 HUD 无静态回退，v2.81 artifact 验收通过。
 
 ## v2.80 iOS compact producer section-title deduplication
 

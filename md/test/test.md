@@ -859,7 +859,7 @@ Agent C 只验收 v2.81 最新 `origin/main` 完整 SHA 对应 artifact，核对
 
 证据边界：固定 frozen Combat fixture 覆盖双方多类单位和部分炮塔/terminal/impact 重叠，不能证明任意 heading/zoom、动态密集战斗、色觉用户体验、Reduce Motion 真实设备效果、真机帧率或触控手感。
 
-通过记录：待最新实现 commit、Actions run/attempt/job、artifact ID/digest、下载路径、JUnit/Core 数量、双架构/双 PNG 结果与人工结论完成后补录；未通过时必须在 `main` 追加最小修复并重新验收，不能把待验收提交写成通过。
+通过记录：实现 commit `8c397a4b937ad44892ebc8e4183702f1f478382a`、格式修复 commit `e89fcee6499cd9377ce970bfbea7feb4cc80b188` 对应 run `33294202486` / attempt `1` / job `99210960672`；artifact `rustwar-ci-v1.2-main-e89fcee-run33294202486-attempt1`（ID `9727019052`，约 1.7M）已下载到 `/private/tmp/rustwar-c-review-33294202486/`，GitHub API 的 `artifact_digest` 为 `null`。manifest 与最新 `origin/main` 完整 SHA 匹配；JUnit `8/0/1`、`BattlefieldScene.swift` 双架构编译、Swift Core `344 tests`、Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功。Home SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`、Combat `d6e042d8b9d7a46bcf4248fb20f94ca52b15b93f1bc892cb188a36d809658fda` 均相对 v2.80 改变；Agent C 人工确认绿灰/红灰装甲、模型、尾缘单/双标记、战斗特效、HUD 和 Tactical Map 无静态回退，v2.81 artifact 验收通过。
 
 ## v2.80
 

@@ -6803,7 +6803,7 @@
 
 - 按云端唯一验证制度，本机不运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`；`.wp` 保持未跟踪。
 - 首次实现提交 `8c397a4b937ad44892ebc8e4183702f1f478382a` 对应 run `33293706252` 的唯一失败是新提示词文件 EOF 多出的空白行触发 `git diff --check`；Node、Swift Core、Xcode list/build、双架构、双场景和双 PNG probe 均成功，因此该 run 不作为 v2.81 验收证据。修复提交将只移除该格式问题并重新触发云端 gate。
-- 当前实现和文档提交尚未完成 Actions artifact 验收。Agent C 必须以最新 `origin/main` 完整 SHA 下载未加密结果包，核对 manifest/JUnit/日志/失败摘要、Core 至少 `344 tests`、`BattlefieldScene.swift` 双架构编译、双场景启动、横屏归一化和双 PNG probe。
+- 修复提交 `e89fcee6499cd9377ce970bfbea7feb4cc80b188` 对应 Actions run `33294202486` / attempt `1` / job `99210960672`；artifact `rustwar-ci-v1.2-main-e89fcee-run33294202486-attempt1`（ID `9727019052`，约 1.7M）已下载到 `/private/tmp/rustwar-c-review-33294202486/`。GitHub API 返回 `artifact_digest=null`，不伪造 digest。manifest 的 branch、完整 SHA、run/attempt、固定工具链与设备全匹配；JUnit `8/0/1`、Core `344 tests`、`BattlefieldScene.swift` 双架构编译、Xcode list/build、双场景启动、横屏归一化和双 PNG probe 全成功；Home SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat `d6e042d8b9d7a46bcf4248fb20f94ca52b15b93f1bc892cb188a36d809658fda`。Agent C 人工复判确认队伍色装甲、v2.78 尾缘标记、模型层级、战斗特效与 HUD 无静态回退，v2.81 artifact 验收通过。
 
 已知风险：
 
