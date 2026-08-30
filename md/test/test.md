@@ -913,4 +913,6 @@ Agent C 只验收 v2.83 最新 `origin/main` 完整 SHA 对应 artifact，核对
 
 人工复看最新 Home/Combat PNG：由于本轮只改变输入路由，Home/Combat 应保持 v2.82 的静态构图与 hash；确认生产 HUD、Quick Orders、Selection/Attack guidance、单位模型、武器、terminal/impact、Tactical Map 和状态栏无裁切、重叠或静态回退。证据边界仍包括真实设备 callback 顺序、双指竞争时序、VoiceOver、Dynamic Type、滚动和触控手感。
 
-通过记录：v2.83 实现 commit、run、attempt、artifact、JUnit、Core、双架构、PNG hash 和 Agent C 结论待本轮云端 Actions 完成后补录。
+通过记录：实现 commit `0dae3955d858aee68bfbcb1f868dce2248c48f24` 对应 run `33298412664` / attempt `1` / job `99221942112`；artifact `rustwar-ci-v1.2-main-0dae395-run33298412664-attempt1`（ID `9728269520`，GitHub digest `sha256:e092e1e24b0ca51a603d5684884721e49fe3e4d7a7c1cdb8ed6763020406c188`，网页大小约 1.32 MB，下载目录 `/private/tmp/rustwar-c-review-33298412664/` 约 1.7M）已由 Agent C 下载并核对。manifest 的 `branch=main`、完整 `commitSha`、run/attempt、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro 完全匹配；JUnit `8 tests / 0 failures / 1 skipped`，Core `344 tests`，`BattlefieldView.swift` 双架构编译，Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功；唯一 skip 为既有 headless-browser regression。
+
+云端 PNG 为 `2622x1206`、透明比例 `0`；Home SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat SHA-256 `b6eb46da36d6363de916dce479edb7de4eaa6f01b1c321ba006423656e975021`，与 v2.82 逐字节一致。Agent C 人工复判确认单指路由调整没有造成生产 HUD、Quick Orders、Selection/Attack guidance、单位模型、武器层、selection/HP、v2.78 marker、terminal/impact、Tactical Map 或状态栏裁切、重叠或静态回退；v2.83 artifact 验收通过。

@@ -6868,7 +6868,9 @@
 
 验证状态：
 
-- 代码与轮次文档已完成，尚未提交和 push；本轮 Actions run、artifact、JUnit、Core、双架构 build、双场景 PNG 与 Agent C 复判信息待 push 后补写。
+- 实现 commit `0dae3955d858aee68bfbcb1f868dce2248c48f24` 已推送到 `origin/main`，对应 Actions run `33298412664` / attempt `1` / job `99221942112` 成功；artifact `rustwar-ci-v1.2-main-0dae395-run33298412664-attempt1`（ID `9728269520`，GitHub digest `sha256:e092e1e24b0ca51a603d5684884721e49fe3e4d7a7c1cdb8ed6763020406c188`，网页大小约 1.32 MB，下载目录约 1.7M）已由 Agent C 下载到 `/private/tmp/rustwar-c-review-33298412664/` 并核对。
+- manifest 的 `branch=main`、完整 SHA、run/attempt、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro 完全匹配。JUnit `8 tests / 0 failures / 1 skipped`、Core `344 tests`、`BattlefieldView.swift` 双架构编译、静态检查、Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功；唯一 skip 为既有 headless-browser regression。代码 reviewer 静态复判为 `No issues`。
+- `ios-home.png` 为 `2622x1206`、透明比例 0、SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，`ios-combat.png` 为 `2622x1206`、透明比例 0、SHA-256 `b6eb46da36d6363de916dce479edb7de4eaa6f01b1c321ba006423656e975021`，均与 v2.82 逐字节一致。Agent C 人工确认统一单指路由没有造成生产 HUD、Quick Orders、Selection/Attack guidance、单位模型、武器层、selection/HP、v2.78 marker、terminal/impact、Tactical Map 或状态栏静态回退，v2.83 artifact 验收通过。
 - 本机继续遵守云端唯一制度：不运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node/browser smoke、测试脚本或 `git diff --check`；`.wp` 保持未跟踪。
 
 已知风险：
