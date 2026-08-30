@@ -27,7 +27,8 @@ struct TacticalCommandDockView: View {
             TacticalCommandDockHeaderView(
                 controller: controller,
                 showsCompactProducerContext: isCompactProducerContext,
-                showsSelectionModePicker: !isCompactNormalContext
+                showsSelectionModePicker: !isCompactNormalContext,
+                showsCompactHint: isCompactNormalContext
             )
             if showsQuickCommandRail {
                 TacticalQuickCommandRail(controller: controller)

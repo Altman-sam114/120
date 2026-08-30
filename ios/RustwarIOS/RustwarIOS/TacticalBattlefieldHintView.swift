@@ -4,6 +4,11 @@ struct TacticalBattlefieldHintView: View {
     let title: String
     let detail: String
     let systemImage: String
+    var compactDetail: String? = nil
+
+    private var visibleDetail: String {
+        compactDetail ?? detail
+    }
 
     var body: some View {
         HStack(alignment: .center, spacing: TacticalHUDTheme.compactSpacing) {
@@ -19,7 +24,7 @@ struct TacticalBattlefieldHintView: View {
                     .foregroundStyle(TacticalHUDTheme.primaryText)
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(detail)
+                Text(visibleDetail)
                     .font(.caption)
                     .foregroundStyle(TacticalHUDTheme.secondaryText)
                     .lineLimit(nil)

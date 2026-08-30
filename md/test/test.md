@@ -877,3 +877,17 @@ Agent C 只验收 v2.80 最新 `origin/main` 完整 SHA 对应 artifact，核对
 人工复看最新 `ios-home.png`：header 仍显示 `Production / Land Factory / T2 / 1.25x`；其下不再紧贴出现重复的 Production section title，management rail、NOW / QUEUE / UPGRADE、Factory Tech 和首排生产卡无裁切、重叠或压缩。`ios-combat.png` 与 v2.79 `c4557ffe8c20bf7685875aa66a1532d44e5eaeb21fa6b6354e2fb5273c2102cf` 逐字节一致；人工确认 v2.78 hull marking、v2.72 武器层、v2.75 terminal/impact、Quick Orders、Tactical Map 和状态栏无回退。
 
 固定 PNG 只覆盖 compact trailing 普通 Dynamic Type 的 production fixture，不能证明 regular、compact bottom、accessibility、VoiceOver、滚动、真实点击、全部本地化或真机触控手感。通过记录：修复实现 commit `86165b7210224f8251e6fc753ada428824cfcea4` 对应 run `33292609260` / attempt `1` / job `99206768465`；artifact `rustwar-ci-v1.2-main-86165b7-run33292609260-attempt1`（ID `9726513313`，digest `sha256:70951d4e15d1c2b09f57e513cf674dfbd2a849ff416ae9b721c68f711dff8830`）已下载到 `/private/tmp/rustwar-c-review-33292609260/`。manifest 与最新 `origin/main` 完整 SHA 匹配；JUnit `8/0/1`、Core `344 tests`、`TacticalProductionSectionView.swift` / `TacticalCommandDockHeaderView.swift` 双架构编译、Xcode list/build、双场景启动、横屏归一化和双 PNG probe 全成功。Home SHA-256 `f7ce884d6d2220971824c86ab986436d48051bacd3862788c46518a7b2d1851d`，Combat `c4557ffe8c20bf7685875aa66a1532d44e5eaeb21fa6b6354e2fb5273c2102cf`；Agent C 人工确认重复 section title 消失，生产内容和战斗视觉无静态回退，v2.80 artifact 验收通过。
+
+## v2.82 iOS compact battlefield hint hierarchy
+
+本轮修改 `GameController.swift`、`TacticalCommandDockView.swift`、`TacticalCommandDockHeaderView.swift` 和 `TacticalBattlefieldHintView.swift` 的 SwiftUI presentation；完整触控说明与短可见文案分离。普通 compact 只显示 `battlefieldInteractionHintCompactDetail`，regular、accessibility Dynamic Type 和 VoiceOver 继续使用完整 `battlefieldInteractionHintDetail`；不得通过缩小字体、隐藏按钮或修改 dock breakpoint 换空间。
+
+云端唯一验收必须确认：
+
+- 最新 `origin/main` 对应 artifact 的 manifest `branch=main`、完整 `commitSha`、run id、run attempt、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro 完全匹配；artifact 下载到 `/private/tmp/rustwar-c-review-<run_id>/`，目录大小已检查。
+- JUnit 仍为 `8 tests / 0 failures / 1 skipped`（若唯一 skip 仍是既有 headless-browser regression，需如实记录），Swift Core 至少 `344 tests`；静态检查、Xcode list/build、修改 Swift 文件的 arm64/x86_64 编译、production/combat 双启动、横屏归一化和双 PNG probe 全成功。
+- `ios-combat.png` 中 Attack target / Selection hint 变为短语，Quick Orders 的 Move / A-Move / Attack / Stop 和后续 Commands 更早可见；按钮不裁切、不重叠且仍至少 44pt。单位模型、炮塔/发射器、selection/HP、v2.78 marker、弹道、terminal/impact、Tactical Map 和状态栏无回退。
+- `ios-home.png` 的 compact producer header、Cancel/Repeat/Rally、NOW/QUEUE/UPGRADE、Factory Tech 与生产卡保持；生产 fixture 不进入 hint 路径，hash 若保持不变属于预期。
+- 源码复核确认 `.accessibilityValue` 始终为完整 detail，`.accessibilityLabel`、`.isHeader`、等待态外框、Quick Orders action/快捷键、生产和 Core/存档/战斗/触控语义无变化。
+
+本机禁止运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图生成、Node/browser smoke、测试脚本和 `git diff --check`；只允许 Git 状态、变更范围、提交和 push。静态 PNG 不能证明真实 VoiceOver、Dynamic Type、滚动、点击、双指框选或真机触控手感；单指 simultaneous gesture 路由的潜在拖动死区留待下一轮专门验证。

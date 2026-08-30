@@ -1668,3 +1668,21 @@ flowchart LR
 ```
 
 读图说明：v2.80 只在固定 producer header 已提供 `Production` 身份的 compact 普通字号路径省略相邻重复的 section title；固定 header 仍是独立 VoiceOver element 并带 `.isHeader` heading trait。Management rail、focus summary、Factory Tech、生产入口与队列没有被隐藏或重排。Regular、accessibility Dynamic Type 和无 producer focus 的路径继续渲染 section header。该 gate 不新增游戏状态，不改变生产 action、VoiceOver、44pt、Core、存档或 Web；固定 Home 只证明当前 compact fixture 的静态首屏空间变化。修复实现 `86165b7` 对应 run `33292609260` / attempt `1` 的 artifact 已由 Agent C 下载并复判通过，Core `344 tests`、双架构 build、双场景启动、双 PNG probe 成功；Home `f7ce884d...`，Combat `c4557ffe...` 与 v2.79 一致。
+
+## v2.82 iOS compact battlefield hint hierarchy
+
+```mermaid
+flowchart LR
+    DOCK["TacticalCommandDockView"] --> GATE{"isCompactNormalContext?"}
+    GATE -->|true| HEADER["Header + compact hint"]
+    GATE -->|false| FULL["Header + full visible hint"]
+    CONTROLLER["GameController hint state"] --> SHORT["battlefieldInteractionHintCompactDetail"]
+    CONTROLLER --> DETAIL["battlefieldInteractionHintDetail"]
+    SHORT --> HEADER
+    DETAIL --> FULL
+    DETAIL --> VOICE["VoiceOver accessibilityValue"]
+    HEADER --> QUICK["Quick Orders earlier in compact first screen"]
+    PROD["compact producer context"] -->|existing gate| PRODUCTION["Production header / cards unchanged"]
+```
+
+读图说明：v2.82 用 `TacticalCommandDockView` 的单一 compact normal gate 选择可见 hint 文案，不复制 layout 条件到 Controller；短文案只改变普通 compact 的视觉高度，完整 detail 仍供 VoiceOver 和 regular/accessibility 路径使用。Quick Orders 的 action、pending target、44pt、快捷键、生产/战斗/触控语义不变；Home producer fixture 不进入 hint 路径。静态 PNG 只能验证 Combat 首屏信息层级与 Home 无回退，不能证明真实触控、滚动、VoiceOver 或 Dynamic Type。

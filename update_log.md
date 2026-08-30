@@ -6809,3 +6809,37 @@
 
 - 低饱和颜色应补充既有几何与单/双尾缘标记，而不是替代它们；如果固定 Combat PNG 出现偏色过重、模型层级变平或终端特效遮挡，应追加最小修复 commit。
 - 固定 PNG 仍不能证明任意 heading/zoom、色觉体验、动态密集战斗、真机帧率、Reduce Motion 实机效果或触控手感；总目标 X 未完成。
+
+## v2.82 / Compact battlefield hint hierarchy
+
+日期：2026-08-30
+
+当前轮次：
+
+- 参考 Rusted Warfare 公开产品页对快速发令、multi-touch、unit groups 和 strategic zoom 的定位，先处理当前 iOS compact command dock 的信息层级，而不是继续重复修改已稳定的 Core 命令或生产状态。
+- `TacticalCommandDockView.isCompactNormalContext` 作为单一 presentation gate 传入 `TacticalCommandDockHeaderView`。普通 compact、非 accessibility Dynamic Type 下，`TacticalBattlefieldHintView` 显示按状态派生的短可见文案，让 Attack target、Move target、Attack-move target、Area selection、Builder/战斗/mixed selection 的下一步操作更早可读。
+- `GameController.battlefieldInteractionHintDetail` 保持完整触控说明；新增 `battlefieldInteractionHintCompactDetail` 只用于普通 compact 视觉文案。`TacticalBattlefieldHintView` 的 accessibility value 仍朗读完整 detail，regular/accessibility 路径仍显示完整 detail。
+- 本轮不改 Quick Orders、生产建筑 header/management rail、生产卡、Core、BattlefieldView 手势、TouchSequenceOwner、BattlefieldScene、模型、战斗特效、存档/JSON 或 Web 版；单指 simultaneous gesture 潜在拖动死区列入下一轮专门触控收敛。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockHeaderView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalBattlefieldHintView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.82-compact-battlefield-hint.md`
+- `update_log.md`
+
+验证状态：
+
+- 实现代码已完成，尚未提交和 push；云端 run、artifact、JUnit、Core、双架构 build、双场景 PNG 与人工复判信息在本轮 push 后补写。
+- 本机继续遵守用户的云端唯一制度：不运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node/browser smoke、测试脚本或 `git diff --check`；`.wp` 保持未跟踪。
+
+已知风险：
+
+- 短可见文案只改善首屏发现性，不等于真实触控手感已经解决；VoiceOver、Dynamic Type、滚动、双指框选和真机 callback 顺序仍需后续证据。
+- 触控审查发现 `SpatialTapGesture`、零距离 `DragGesture`、12pt `DragGesture` 与长按同时存在，达到 pan 阈值时可能受回调顺序影响；下一轮应单独收敛单指路由，避免和本轮 UI 文案变化混合验收。

@@ -5,6 +5,7 @@ struct TacticalCommandDockHeaderView: View {
     @Bindable var controller: GameController
     var showsCompactProducerContext = false
     var showsSelectionModePicker = true
+    var showsCompactHint = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.compactSpacing) {
@@ -22,7 +23,10 @@ struct TacticalCommandDockHeaderView: View {
                     TacticalBattlefieldHintView(
                         title: controller.battlefieldInteractionHintTitle,
                         detail: controller.battlefieldInteractionHintDetail,
-                        systemImage: controller.battlefieldInteractionHintSystemImage
+                        systemImage: controller.battlefieldInteractionHintSystemImage,
+                        compactDetail: showsCompactHint
+                            ? controller.battlefieldInteractionHintCompactDetail
+                            : nil
                     )
                 }
             }

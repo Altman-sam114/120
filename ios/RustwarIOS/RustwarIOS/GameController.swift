@@ -459,6 +459,37 @@ final class GameController {
         return "Tap a unit or building to select; drag pans, pinch zooms, and two fingers box-select."
     }
 
+    var battlefieldInteractionHintCompactDetail: String {
+        if isAwaitingAreaSelection {
+            return "Drag to box-select units."
+        }
+        if isAwaitingAttackTarget {
+            return "Tap an enemy target."
+        }
+        if isAwaitingMoveTarget {
+            return "Tap a destination."
+        }
+        if isAwaitingAttackMoveTarget {
+            return "Tap a destination to move and engage."
+        }
+        if selectedPlayerProducer != nil {
+            return "Tap a unit card to queue it."
+        }
+        if !selectedPlayerUnits.isEmpty {
+            if selectedPlayerCombatUnits.isEmpty {
+                return "Tap ground to move."
+            }
+            if shouldMoveIdleBuildersAlongsideQuickAttackMove {
+                return "Tap enemy to attack • ground moves Builders + A-Move."
+            }
+            return "Tap enemy to attack • ground for A-Move."
+        }
+        if hasPlayerSelectableSelection {
+            return "Tap to select • two-finger box-select."
+        }
+        return "Tap to select • two-finger box-select • pinch zoom."
+    }
+
     var dockSelectionIdentity: [String] {
         if !engine.state.selectedEntityIDs.isEmpty {
             return engine.state.selectedEntityIDs

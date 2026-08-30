@@ -1003,3 +1003,13 @@ Regular trailing 与所有 accessibility Dynamic Type 继续在固定 header 显
 省略只作用于可见 section title；compact producer 的固定 header 继续作为独立 accessibility element 提供 `Production / building / tech / speed`，并保留 `.isHeader` heading trait。`TacticalProductionManagementRail`、`TacticalProductionFocusSummaryView`、Factory Tech、production options、queue 和既有 action 继续按原顺序消费同一 `GameController` 派生状态；regular、compact 下的 accessibility Dynamic Type 和无 producer focus 的 Production section 继续保留 section title。没有新增 controller/Core 状态，也没有改变生产队列、升级、Repeat、Rally、快捷键、VoiceOver、44pt、存档/JSON、战斗、触控或 Web 语义。
 
 本轮是 SwiftUI presentation-only 改动。固定 Home PNG 只用于云端复看 compact producer 首屏少一行后的排版；不能替代 regular、compact bottom、Dynamic Type 全档位、VoiceOver、滚动、真实点击或真机触控证据。修复实现 commit `86165b7210224f8251e6fc753ada428824cfcea4` 对应 Actions run `33292609260` / attempt `1` / job `99206768465`；Agent C 已将 artifact `rustwar-ci-v1.2-main-86165b7-run33292609260-attempt1`（ID `9726513313`，digest `sha256:70951d4e15d1c2b09f57e513cf674dfbd2a849ff416ae9b721c68f711dff8830`）下载到 `/private/tmp/rustwar-c-review-33292609260/` 并核对通过。JUnit `8/0/1`、Core `344 tests`、双架构 build、双场景启动、横屏归一化和双 PNG probe 全成功；Home SHA-256 `f7ce884d6d2220971824c86ab986436d48051bacd3862788c46518a7b2d1851d`，Combat `c4557ffe8c20bf7685875aa66a1532d44e5eaeb21fa6b6354e2fb5273c2102cf`。reviewer 发现并促成补回 compact producer header 的 `.isHeader` trait 后，Agent C 判定 v2.80 artifact 验收通过。
+
+## v2.82 iOS compact battlefield hint hierarchy
+
+`TacticalCommandDockView.isCompactNormalContext` 继续作为普通 compact（compact trailing / compact bottom 且非 accessibility Dynamic Type）的单一 presentation gate，并把该 gate 传给 `TacticalCommandDockHeaderView`。既有 `Selection summary -> Battlefield hint / Command status -> Quick Orders -> ScrollView` 顺序不变；生产建筑仍走 compact producer header，不进入 battlefield hint 的可见路径。
+
+`GameController.battlefieldInteractionHintDetail` 保持完整触控语义，新增只读 `battlefieldInteractionHintCompactDetail` 按同一状态优先级生成短视觉文案：Area、Attack target、Move target、Attack-move target、Builder/战斗/mixed selection 和默认选择路径各自给出明确的点按、拖动或双指操作。`TacticalBattlefieldHintView` 在普通 compact 渲染短 detail，但 `.accessibilityValue` 始终读取完整 detail；regular、accessibility Dynamic Type 和无 compact gate 的 preview 仍显示完整文案。
+
+短提示释放的垂直空间只服务于既有 Quick Orders 的首屏可达性，不隐藏 Move / A-Move / Attack / Stop、Commands、Selection、Production 或 Build 控件，不改变按钮 action、pending target、44pt、快捷键、VoiceOver、Core、存档、触控 owner、战斗、模型、Tactical Map 或 Web 语义。该轮只改变 SwiftUI presentation；单指 simultaneous gesture 路由的潜在拖动死区另列为后续专门轮次，避免和首屏信息层级同时扩大变更面。
+
+固定 Combat PNG 应能看到目标提示变短且 Quick Orders / Commands 更早出现，模型、武器层、terminal/impact、选择/HP、Tactical Map 和状态栏无回退；Home 生产 fixture 不进入 compact hint 路径，若 hash 保持不变属于预期。静态云端 artifact 不能替代 VoiceOver、Dynamic Type、真实滚动、点击、双指框选或真机触控手感证据。v2.82 最终 commit、run、artifact 和 hash 待云端验收后补录。
