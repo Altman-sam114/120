@@ -1648,4 +1648,4 @@ flowchart LR
   H -. no duplicate visible title .-> F
 ```
 
-读图说明：v2.80 只在固定 producer header 已提供 `Production` 身份的 compact 普通字号路径省略相邻重复的 section title；固定 header 仍是独立 VoiceOver element 并带 `.isHeader` heading trait。Management rail、focus summary、Factory Tech、生产入口与队列没有被隐藏或重排。Regular、accessibility Dynamic Type 和无 producer focus 的路径继续渲染 section header。该 gate 不新增游戏状态，不改变生产 action、VoiceOver、44pt、Core、存档或 Web；固定 Home 只证明当前 compact fixture 的静态首屏空间变化，最终云端 artifact 待本轮提交后补录。
+读图说明：v2.80 只在固定 producer header 已提供 `Production` 身份的 compact 普通字号路径省略相邻重复的 section title；固定 header 仍是独立 VoiceOver element 并带 `.isHeader` heading trait。Management rail、focus summary、Factory Tech、生产入口与队列没有被隐藏或重排。Regular、accessibility Dynamic Type 和无 producer focus 的路径继续渲染 section header。该 gate 不新增游戏状态，不改变生产 action、VoiceOver、44pt、Core、存档或 Web；固定 Home 只证明当前 compact fixture 的静态首屏空间变化。修复实现 `86165b7` 对应 run `33292609260` / attempt `1` 的 artifact 已由 Agent C 下载并复判通过，Core `344 tests`、双架构 build、双场景启动、双 PNG probe 成功；Home `f7ce884d...`，Combat `c4557ffe...` 与 v2.79 一致。

@@ -6771,8 +6771,8 @@
 
 验证状态：
 
-- 本轮按云端唯一验证规则不运行本机 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`；只做 Git 状态、diff 范围与源文件静态复判。
-- v2.79 最终文档 commit `0b2992611e99384f1b75e72a45e7c10713cde507` 对应的 Home `166db0cd...` / Combat `c4557ffe...` 是本轮云端基线；v2.80 实现 commit、run、artifact 和 PNG hash 待 push 后补录。
+- 本轮按云端唯一验证规则不运行本机 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node、浏览器 smoke、测试脚本或 `git diff --check`；只做 Git 状态、diff 范围与源文件静态复判。reviewer 发现隐藏 section header 会丢失 heading trait，遂在固定 compact producer header 补回 `.isHeader`，不改变可见布局或操作。
+- 修复实现 commit `86165b7210224f8251e6fc753ada428824cfcea4` 对应 Actions run `33292609260` / attempt `1` / job `99206768465`；artifact `rustwar-ci-v1.2-main-86165b7-run33292609260-attempt1`（ID `9726513313`，digest `sha256:70951d4e15d1c2b09f57e513cf674dfbd2a849ff416ae9b721c68f711dff8830`）已由 Agent C 下载到 `/private/tmp/rustwar-c-review-33292609260/` 并核对通过。manifest 完整匹配；JUnit `8/0/1`、Core `344 tests`、双架构 build、双场景启动、横屏归一化和双 PNG probe 全成功。Home SHA-256 `f7ce884d6d2220971824c86ab986436d48051bacd3862788c46518a7b2d1851d`，Combat SHA-256 `c4557ffe8c20bf7685875aa66a1532d44e5eaeb21fa6b6354e2fb5273c2102cf`；Agent C 人工确认 compact producer 重复 section title 消失，生产内容和战斗视觉无静态回退，v2.80 artifact 验收通过。
 
 已知风险：
 
