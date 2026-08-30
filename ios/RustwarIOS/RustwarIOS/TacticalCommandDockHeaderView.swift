@@ -103,6 +103,7 @@ private struct TacticalCompactProducerHeaderView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(TacticalHUDTheme.panelBackground)
         .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(.isHeader)
         .accessibilityLabel("Production \(controller.productionFocusBuildingName ?? "building")")
         .accessibilityValue("\(controller.productionFocusTechLabel), \(controller.productionFocusProductionSpeedText)")
         .accessibilityHint("Production controls are shown below.")

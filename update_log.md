@@ -6755,12 +6755,13 @@
 当前轮次：
 
 - `TacticalCommandDockView` 在 compact producer context 的固定 header 已显示 `Production / building / tech / speed`；`TacticalProductionSectionView` 原先仍无条件显示第二个 `TacticalSectionHeader(.production)`。
-- 新增 `showsProductionSectionHeader` presentation-only gate：compact、非 accessibility Dynamic Type 且存在 `productionFocusBuildingName` 时隐藏重复可见标题；regular、accessibility Dynamic Type 和无 producer focus 路径继续显示 section header。
+- 新增 `showsProductionSectionHeader` presentation-only gate：compact、非 accessibility Dynamic Type 且存在 `productionFocusBuildingName` 时隐藏重复可见标题；regular、accessibility Dynamic Type 和无 producer focus 路径继续显示 section header。固定 compact producer header 保留原 label/value/hint 并补足 `.isHeader` heading trait，避免 VoiceOver heading/rotor 回退。
 - Management rail、NOW / QUEUE / UPGRADE、Factory Tech、生产卡、队列、Cancel/Repeat/Rally、快捷键、VoiceOver、44pt、Core、存档、战斗、触控和 Web 版不变；不新增 controller/Core 状态。
 
 关键文件：
 
 - `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandDockHeaderView.swift`
 - `README.md`
 - `md/flow/flow.md`
 - `md/flow/flowchart.md`

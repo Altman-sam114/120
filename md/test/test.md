@@ -849,7 +849,7 @@ Agent C 只验收 v2.79 最新 `origin/main` 完整 SHA 对应 artifact，核对
 代码复判必须确认：
 
 - `TacticalProductionSectionView` 仅在 `isCompact && !dynamicTypeSize.isAccessibilitySize && controller.productionFocusBuildingName != nil` 时省略可见 `TacticalSectionHeader(.production)`；该条件不能隐藏整个 Production section。
-- compact producer header 继续显示 `Production / building / tech / speed`，并保持既有 accessibility label/value/hint；management rail、focus summary、Factory Tech、production options、queue 和所有 action 继续渲染。
+- compact producer header 继续显示 `Production / building / tech / speed`，并保持既有 accessibility label/value/hint 与 `.isHeader` heading trait；management rail、focus summary、Factory Tech、production options、queue 和所有 action 继续渲染。
 - regular、compact 下的 accessibility Dynamic Type、无 producer focus 的 Production section 继续显示 section title；不改变 `isCompact` 调用契约或 dock breakpoint。
 - Production section 内部顺序、Cancel / Repeat / Rally、NOW / QUEUE / UPGRADE、Factory Tech、Scout / Light / Hover / Arty / AA / Heavy、queue、Shift 快捷键、VoiceOver、44pt、Core、存档/JSON、战斗、触控和 Web 不变。
 
