@@ -6898,9 +6898,11 @@
 
 验证状态：
 
-- 实现代码已完成，当前待提交并推送 `origin/main`；按云端唯一验证规则，本机不运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node/browser smoke、测试脚本或 `git diff --check`。
-- 待 Agent C 仅验收最新完整 SHA 对应 Actions artifact，并核对 manifest、JUnit、Core 至少 `344 tests`、`BattlefieldScene.swift` 双架构编译、双场景启动/横屏归一化、双 PNG probe 和真实哈希；不使用旧 artifact 或本地输出代替。
+- 实现 commit `33e7a420136945c80e3f6697e5ca6b0e21c7e13c` 已推送 `origin/main`；按云端唯一验证规则，本机不运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图、Node/browser smoke、测试脚本或 `git diff --check`。
+- Agent C 已仅验收最新完整 SHA 对应 Actions artifact，并核对 manifest、JUnit、Core `344 tests`、`BattlefieldScene.swift` 双架构编译、双场景启动/横屏归一化、双 PNG probe 和真实哈希；未使用旧 artifact 或本地输出代替。
 
 已知风险：
 
 - 固定 frozen combat fixture 能证明静态层级和既有重叠场景，但不能证明动态密集战斗、任意 zoom/heading、真机帧率、Reduce Motion 实机效果或水面死亡时序；总目标仍未完成。
+
+通过记录：实现 commit `33e7a420136945c80e3f6697e5ca6b0e21c7e13c` 对应 run `33299697563` / attempt `1` / job `99225356862`；artifact `rustwar-ci-v1.2-main-33e7a42-run33299697563-attempt1`（ID `9728651408`，GitHub API 未提供 digest，下载目录 `/private/tmp/rustwar-c-review-33299697563/` 约 1.7M）已由 Agent C 下载并核对。manifest 完整匹配；JUnit `8/0/1`、Core `344 tests`、`BattlefieldScene.swift` 双架构编译、Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功。Home SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat `723f2460d19a4379d84b3a567fe6a21ce699da593bfc7de2676aba56a9425022`；Agent C 人工复判确认 ground impact 不再覆盖实体关键轮廓，前景 terminal/tracer/death 与 Home HUD 无静态回退。GitHub API 未提供 digest，不伪造该字段。
