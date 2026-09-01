@@ -1738,3 +1738,23 @@ flowchart LR
 读图说明：v2.85 用 `battlefieldInputEpoch` 把输入 callback 与创建时的 pending-command、selection mutation 和 viewport 上下文绑定。epoch 变化时立即清理当前 owner/lease；callback 仍需通过 generation、TouchSequenceOwner 和 epoch 三层门控才可更新 preview、camera、框选或提交命令。`BattlefieldScene` 的 pending glyph 只改变视觉提示，不改变 `GameController`/Core 命令结果；Tactical Map 复用 epoch 但保留自身 tap/drag/long-press 与 18pt 规则。旧触点回调若携带无法区分的未知 ID 仍属于真机证据边界。
 
 v2.85 实现 commit `9d209b83832450277a1d95e0ac83a16aee13123a` 对应 run `33481289474` / attempt `1` / job `99771261711`；artifact `rustwar-ci-v1.2-main-9d209b8-run33481289474-attempt1`（ID `9790353160`，digest `sha256:7b5454df593eb71e2c72460116ff401bd0da5cee669701812d2c472d01ca544a`）已下载到 `/private/tmp/rustwar-c-review-33481289474/` 并核对。JUnit `8/0/1`、Core `344 tests`、双架构/双场景/横屏/双 PNG probe 全成功；Home/Combat 与 v2.84 静态基线逐字节一致。人工复看确认本轮无静态回退，但保留既有 Heavy 指标截断和底部 Commands 滚动发现性问题作为下一轮目标。
+
+## v2.86 compact commands / production metrics / camera lease
+
+```mermaid
+flowchart LR
+    A[紧凑 dock] --> B{普通字号?}
+    B -->|是| C[二级 Commands 至少两列]
+    B -->|否| D[accessibility 一列完整标签]
+    C --> E[Select Area + Same Type 首行并列]
+    F[三列生产卡] --> G[成本/人口一行]
+    G --> H[有效 build time 第二行]
+    I[相机实际变换] --> J[battlefieldCameraRevision++]
+    K[触摸 fresh seed] --> L[保存 input epoch + camera revision]
+    L --> M{相机 lease 仍匹配?}
+    M -->|否| N[清理 preview/owner，丢弃 tap 或长按]
+    M -->|是| O[继续 preview / tap / pending commit]
+    P[当前 pan/pinch 自身更新] --> Q[保留已 claim 手势并正常收尾]
+```
+
+读图说明：v2.86 将 compact 命令密度、生产指标可读性和相机变换边界分别接到既有 SwiftUI/controller 状态流。二级 Commands 的列数只改变 presentation；生产卡仍使用既有 availability/build-time 派生。相机 mutation 只推进 iOS `battlefieldCameraRevision`，fresh touch 保存 `input epoch + camera revision`，外部相机变化立即清理未 claim 的 preview/owner，并使迟到的 tap/long press/pan callback fail closed；已经 claim 的当前 pan/pinch 保持自身手势。所有这些状态都不进入 `GameState`、Core、save payload 或 JSON。

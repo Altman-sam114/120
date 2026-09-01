@@ -347,12 +347,21 @@ private struct TacticalProductionButtonLabel: View {
                 .minimumScaleFactor(0.58)
                 .allowsTightening(true)
                 .frame(maxWidth: .infinity)
-            Text(denseMetrics)
-                .font(.caption2)
-                .foregroundStyle(TacticalHUDTheme.secondaryText)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.52)
+            VStack(alignment: .center, spacing: 1) {
+                Text(denseCostSupply)
+                    .font(.caption2)
+                    .foregroundStyle(TacticalHUDTheme.secondaryText)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.62)
+                Text(denseBuildTime)
+                    .font(.caption2.bold())
+                    .foregroundStyle(TacticalHUDTheme.metricLabel)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.62)
+            }
+            .frame(maxWidth: .infinity)
             if !availability.isAvailable {
                 Label(denseAvailabilityLabel, systemImage: availability.systemImage)
                     .font(.caption2.bold())
@@ -412,8 +421,12 @@ private struct TacticalProductionButtonLabel: View {
         "\(Int(definition.metalCost))M \(definition.supply)P \(formattedBuildTime)"
     }
 
-    private var denseMetrics: String {
-        "\(Int(definition.metalCost))M · \(definition.supply)P · \(Int(buildTime.rounded(.up)))s"
+    private var denseCostSupply: String {
+        "\(Int(definition.metalCost))M · \(definition.supply)P"
+    }
+
+    private var denseBuildTime: String {
+        "\(Int(buildTime.rounded(.up)))s build"
     }
 
     private var denseAvailabilityLabel: String {

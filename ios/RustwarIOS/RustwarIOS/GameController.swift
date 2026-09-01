@@ -86,6 +86,7 @@ final class GameController {
     var renderRevision = 0
     var mapRenderRevision = 0
     private(set) var battlefieldInputEpoch = 0
+    private(set) var battlefieldCameraRevision = 0
     private(set) var selectionFeedbackRevision = 0
     private(set) var commandSuccessFeedbackRevision = 0
     private(set) var warningFeedbackRevision = 0
@@ -2005,7 +2006,9 @@ final class GameController {
 
             currentMapID = payload.currentMapID
             engine = GameEngine(state: payload.state, enemyAIEnabled: payload.enemyAIEnabled)
+            let previousCamera = camera
             camera = payload.camera
+            noteBattlefieldCameraMutation(from: previousCamera)
             isPaused = payload.isPaused
             simulationSpeed = Self.validatedSimulationSpeed(payload.simulationSpeed, fallback: simulationSpeed)
             clearPendingTargetCommands()
@@ -2020,7 +2023,9 @@ final class GameController {
     }
 
     func pan(by screenTranslation: CGSize) {
+        let previousCamera = camera
         camera.pan(by: screenTranslation, viewportSize: battlefieldViewportSize)
+        noteBattlefieldCameraMutation(from: previousCamera)
         renderRevision += 1
     }
 
@@ -2030,7 +2035,9 @@ final class GameController {
         }
         invalidateBattlefieldInput()
         battlefieldViewportSize = size
+        let previousCamera = camera
         camera.adapt(to: size)
+        noteBattlefieldCameraMutation(from: previousCamera)
         renderRevision += 1
     }
 
@@ -2047,12 +2054,16 @@ final class GameController {
     }
 
     func zoom(by magnification: Double) {
+        let previousCamera = camera
         camera.zoom(by: magnification, viewportSize: battlefieldViewportSize)
+        noteBattlefieldCameraMutation(from: previousCamera)
         renderRevision += 1
     }
 
     func resetCamera() {
+        let previousCamera = camera
         camera.reset(to: engine.state.map.camera, viewportSize: battlefieldViewportSize)
+        noteBattlefieldCameraMutation(from: previousCamera)
         reportSelectionFeedback()
         renderRevision += 1
     }
@@ -2077,7 +2088,9 @@ final class GameController {
     }
 
     func centerCamera(on point: WorldPoint) {
+        let previousCamera = camera
         camera.center(on: point, viewportSize: battlefieldViewportSize)
+        noteBattlefieldCameraMutation(from: previousCamera)
         if !isAwaitingTargetCommand {
             commandStatus = "Camera centered"
         }
@@ -2088,7 +2101,9 @@ final class GameController {
         guard !isAwaitingTargetCommand else {
             return
         }
+        let previousCamera = camera
         camera.center(on: point, viewportSize: battlefieldViewportSize)
+        noteBattlefieldCameraMutation(from: previousCamera)
         renderRevision += 1
     }
 
@@ -2147,7 +2162,9 @@ final class GameController {
     private func resetBattle(on mapID: MapID, status: String) {
         let preset = MapPreset.preset(for: mapID)
         engine = GameEngine(mapID: mapID)
+        let previousCamera = camera
         camera.reset(to: preset.camera, viewportSize: battlefieldViewportSize)
+        noteBattlefieldCameraMutation(from: previousCamera)
         clearPendingTargetCommands()
         commandStatus = status
         mapRenderRevision += 1
@@ -2171,6 +2188,13 @@ final class GameController {
 
     private func invalidateBattlefieldInput() {
         battlefieldInputEpoch &+= 1
+    }
+
+    private func noteBattlefieldCameraMutation(from previousCamera: CameraState) {
+        guard camera != previousCamera else {
+            return
+        }
+        battlefieldCameraRevision &+= 1
     }
 
     private func clearPendingTargetCommands() {
@@ -2861,11 +2885,13 @@ final class GameController {
 
         let length = sqrt(dx * dx + dy * dy)
         let worldDistance = Self.keyboardCameraScreenSpeed * deltaTime / camera.zoom
+        let previousCamera = camera
         camera.panByWorldDelta(
             x: dx / length * worldDistance,
             y: dy / length * worldDistance,
             viewportSize: battlefieldViewportSize
         )
+        noteBattlefieldCameraMutation(from: previousCamera)
         return true
     }
 

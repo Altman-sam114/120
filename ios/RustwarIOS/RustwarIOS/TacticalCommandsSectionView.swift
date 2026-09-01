@@ -39,6 +39,10 @@ struct TacticalCommandsSectionView: View {
             showsStop
     }
 
+    private var secondaryColumnCount: Int {
+        dynamicTypeSize.isAccessibilitySize ? 1 : max(2, columns)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             TacticalSectionHeader(section: .commands)
@@ -95,7 +99,7 @@ struct TacticalCommandsSectionView: View {
                 }
             }
 
-            TacticalCommandGrid(columns: columns) {
+            TacticalCommandGrid(columns: secondaryColumnCount) {
                 if controller.canIssueAreaSelection || controller.isAwaitingAreaSelection {
                     Button(
                         controller.areaSelectionCommandButtonTitle,

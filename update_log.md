@@ -6938,3 +6938,35 @@
 - `update_log.md`
 
 通过记录：实现 commit `9d209b83832450277a1d95e0ac83a16aee13123a` 对应 Actions run `33481289474` / attempt `1` / job `99771261711`；artifact `rustwar-ci-v1.2-main-9d209b8-run33481289474-attempt1`（ID `9790353160`，digest `sha256:7b5454df593eb71e2c72460116ff401bd0da5cee669701812d2c472d01ca544a`）已由 Agent C 下载到 `/private/tmp/rustwar-c-review-33481289474/`（约 1.7M）并核对。manifest 的 `branch=main`、完整 `commitSha`、run/attempt、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro 完全匹配；JUnit `8/0/1`、Core `344 tests`、四个 iOS 修改文件双架构编译、Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功，既有 headless-browser regression 为唯一 skip。Home `2622x1206` SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat `2622x1206` SHA-256 `723f2460d19a4379d84b3a567fe6a21ce699da593bfc7de2676aba56a9425022`；Agent C 人工复判确认输入 epoch 与意图 glyph 没有引入静态回退。固定画面仍暴露既有 Heavy 生产卡指标截断与底部 Commands 滚动发现性问题，列入下一轮 UI 修复。
+## v2.86 / iOS compact commands, production metrics and camera lease
+
+日期：2026-09-01
+
+当前轮次：
+
+- 紧凑横屏 Commands 的二级命令在普通字号下改用至少两列，`Select Area` 与 `Same Type` 因此在首行并列；accessibility Dynamic Type 保留一列完整标签，Quick Orders 的 Move / Attack-Move / Attack / Stop 与其他二级 action 不变。
+- 紧凑三列生产卡把成本/人口与有效建造时间分成两行，仍沿用既有 `productionAvailability`、`queueUnit`、Shift+1-9、44pt、VoiceOver 与生产队列语义；没有改 Core 或生产数值。
+- `GameController` 新增只属于 iOS 输入生命周期的 `battlefieldCameraRevision`，覆盖 pan、zoom、viewport adapt、Reset、Focus、Tactical Map drag、读档和键盘相机移动。`BattlefieldView` 将该 revision 与 `battlefieldInputEpoch` 一起绑定到 fresh touch seed；外部相机变化会立即清理未 claim 的旧 preview/owner，并使迟到的 tap/long press/未 claim pan fail closed，当前已 claim 的 Battlefield pan/pinch 可继续自身收尾。
+
+关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/TacticalCommandsSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalProductionSectionView.swift`
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.86-compact-quick-actions-and-production-metrics.md`
+- `update_log.md`
+
+验证状态：
+
+- 实现已完成，尚待推送 `origin/main` 并由最新完整 SHA 对应的 Actions artifact 验收；按照云端唯一验证规则，本机不运行 SwiftPM/Xcode/Simulator/Preview/截图/Node/browser smoke、测试脚本或 `git diff --check`。
+- `.wp` 保持未跟踪且不进入提交；真实 Swift 编译、双场景启动、横屏 PNG、JUnit/Core 计数和 artifact manifest 以云端结果为准。
+
+已知风险：
+
+- 没有 XCUITest 的跨相机变化触控回调注入，无法由静态源码证明每台设备上的 callback 顺序、滚动/VoiceOver/Dynamic Type 全档位和真机手感；seed 后携带无法区分 ID 的旧触点仍是既知输入边界。
+- 固定视觉 fixture 不能替代动态密集战斗、任意 zoom/heading、长局帧率、Reduce Motion 和所有屏幕宽度验证；总目标仍未完成。

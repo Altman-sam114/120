@@ -25,6 +25,7 @@ struct BattlefieldView: View {
     @State private var suppressTapSequence: Int?
     @State private var touchOwner = BattlefieldTouchOwner()
     @State private var touchSequenceInputEpoch: Int?
+    @State private var touchSequenceCameraRevision: Int?
     @State private var contextGestureLease: BattlefieldTouchOwner.Lease?
     @State private var panGestureLease: BattlefieldTouchOwner.Lease?
     @State private var longPressLease: BattlefieldTouchOwner.Lease?
@@ -90,6 +91,9 @@ struct BattlefieldView: View {
                     .onChange(of: controller.battlefieldInputEpoch) { _, _ in
                         cancelSelectionGestures()
                     }
+                    .onChange(of: controller.battlefieldCameraRevision) { _, _ in
+                        cancelTouchSequenceForExternalCameraChange()
+                    }
                     .onDisappear {
                         cancelSelectionGestures()
                     }
@@ -98,6 +102,7 @@ struct BattlefieldView: View {
                     .simultaneousGesture(multitouchSelectionGesture(in: proxy.size))
                     .onLongPressGesture(minimumDuration: 0.45, maximumDistance: 18) {
                         guard acceptsCurrentTouchInput(),
+                              acceptsCurrentTouchCameraLease(),
                               let contextLease = contextGestureLease,
                               longPressCallbackGeneration == contextGestureCallbackGeneration,
                               contextGestureSequenceMatches(contextLease),
@@ -152,6 +157,11 @@ struct BattlefieldView: View {
                 }
                 guard acceptsCurrentTouchInput() else {
                     return
+                }
+                if panGestureLease == nil {
+                    guard acceptsCurrentTouchCameraLease() else {
+                        return
+                    }
                 }
                 if contextGestureStarted,
                    !matchesContextGestureStart(value.startLocation) {
@@ -224,6 +234,11 @@ struct BattlefieldView: View {
                 }
                 guard acceptsCurrentTouchInput() else {
                     return
+                }
+                if panGestureLease == nil {
+                    guard acceptsCurrentTouchCameraLease() else {
+                        return
+                    }
                 }
                 guard contextGestureStarted,
                       let contextLease = contextGestureLease,
@@ -324,8 +339,20 @@ struct BattlefieldView: View {
         return true
     }
 
+    private func acceptsCurrentTouchCameraLease(allowUnseeded: Bool = false) -> Bool {
+        guard let touchSequenceCameraRevision else {
+            return allowUnseeded
+        }
+        guard touchSequenceCameraRevision == controller.battlefieldCameraRevision else {
+            cancelSelectionGestures()
+            return false
+        }
+        return true
+    }
+
     private func clearTouchSequenceInputEpoch() {
         touchSequenceInputEpoch = nil
+        touchSequenceCameraRevision = nil
     }
 
     private func contextGestureSequenceMatches(_ lease: BattlefieldTouchOwner.Lease) -> Bool {
@@ -368,7 +395,8 @@ struct BattlefieldView: View {
               !singleTouchCrossedPanActivationDistance,
               !hasMultitouchCandidate(for: lease.sequence),
               contextGestureSequenceMatches(lease),
-              touchOwner.accepts(lease) else {
+              touchOwner.accepts(lease),
+              acceptsCurrentTouchCameraLease() else {
             return false
         }
         guard let startLocation = contextGestureStartLocation ?? contextGestureSeedLocation,
@@ -416,6 +444,7 @@ struct BattlefieldView: View {
               let seedLocation = contextGestureSeedLocation,
               distance(from: seedLocation, to: startLocation) <=
                 Double(Self.contextGestureStartLocationTolerance),
+              acceptsCurrentTouchCameraLease(),
               let lease = touchOwner.claim(
                 controller.isAwaitingAreaSelection ? .areaSelection : .pan,
                 source: .pan
@@ -580,6 +609,11 @@ struct BattlefieldView: View {
                 guard acceptsCurrentTouchInput(allowUnseeded: true) else {
                     return
                 }
+                if !isMultitouchPinch && pinchLease == nil {
+                    guard acceptsCurrentTouchCameraLease(allowUnseeded: true) else {
+                        return
+                    }
+                }
                 updateMultitouchSelection(with: events)
             }
             .onEnded { events in
@@ -588,6 +622,11 @@ struct BattlefieldView: View {
                 }
                 guard acceptsCurrentTouchInput(allowUnseeded: true) else {
                     return
+                }
+                if !isMultitouchPinch && pinchLease == nil {
+                    guard acceptsCurrentTouchCameraLease(allowUnseeded: true) else {
+                        return
+                    }
                 }
                 finishMultitouchSelection(with: events, viewportSize: viewportSize)
             }
@@ -732,6 +771,7 @@ struct BattlefieldView: View {
             clearSingleTouchPanState()
             contextGestureLease = contextLease
             touchSequenceInputEpoch = controller.battlefieldInputEpoch
+            touchSequenceCameraRevision = controller.battlefieldCameraRevision
             contextGestureSeedSequence = contextLease.sequence
             contextGestureSeedLocation = freshTouch.location
             contextPressLocation = freshTouch.location
@@ -743,6 +783,9 @@ struct BattlefieldView: View {
         }
         if touchSequenceInputEpoch == nil {
             touchSequenceInputEpoch = controller.battlefieldInputEpoch
+        }
+        if touchSequenceCameraRevision == nil {
+            touchSequenceCameraRevision = controller.battlefieldCameraRevision
         }
         let filteredActiveIDs = activeIDs.subtracting(touchOwner.cancelledIDs)
         let sequenceBeforeObservation = touchOwner.sequence
@@ -786,6 +829,9 @@ struct BattlefieldView: View {
               let secondStart = multitouchStartLocations[multitouchIDs[1]],
               let firstCurrent = multitouchCurrentLocations[multitouchIDs[0]],
               let secondCurrent = multitouchCurrentLocations[multitouchIDs[1]] else {
+            return
+        }
+        guard acceptsCurrentTouchCameraLease() else {
             return
         }
 
@@ -832,6 +878,10 @@ struct BattlefieldView: View {
     }
 
     private func finishMultitouchSelection(with events: SpatialEventCollection, viewportSize: CGSize) {
+        if !isMultitouchPinch && pinchLease == nil,
+           !acceptsCurrentTouchCameraLease(allowUnseeded: true) {
+            return
+        }
         let eventTouchIDs = Set(events.filter { $0.kind == .touch }.map(\.id))
         let hadMultitouchClaim = touchOwner.hasMultitouchClaimed
         let hasCurrentMultitouchLease = touchOwner.hasMultitouchClaimed &&
@@ -1035,6 +1085,15 @@ struct BattlefieldView: View {
         resetMultitouchSelectionState()
     }
 
+    private func cancelTouchSequenceForExternalCameraChange() {
+        guard touchSequenceCameraRevision != nil,
+              panGestureLease == nil,
+              pinchLease == nil else {
+            return
+        }
+        cancelSelectionGestures()
+    }
+
     private func resetPinchGestureState() {
         pinchLease = nil
         lastMagnification = 1.0
@@ -1056,6 +1115,7 @@ struct BattlefieldView: View {
     ) {
         guard touchOwner.sequence == sequence,
               touchSequenceInputEpoch == controller.battlefieldInputEpoch,
+              acceptsCurrentTouchCameraLease(),
               touchOwner.phase == .possible,
               !battlefieldPanOccurredForCurrentTouch,
               !isMultitouchSequenceActive else {
