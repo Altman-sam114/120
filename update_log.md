@@ -6963,10 +6963,12 @@
 
 验证状态：
 
-- 实现已完成，尚待推送 `origin/main` 并由最新完整 SHA 对应的 Actions artifact 验收；按照云端唯一验证规则，本机不运行 SwiftPM/Xcode/Simulator/Preview/截图/Node/browser smoke、测试脚本或 `git diff --check`。
+- 实现 commit `02722a75bd1e7017d4ef2d15d31948d12f99885e` 的首个 artifact 检查通过，但静态复看发现窄卡 Commands 文字断词；随后追加 `bd437d2b07a928b8722d40715b3242bfc89dac98` 修复短标题布局与已 claim gesture 的相机 revision 竞态，并以其最新 artifact 作为最终验收。按照云端唯一验证规则，本机不运行 SwiftPM/Xcode/Simulator/Preview/截图/Node/browser smoke、测试脚本或 `git diff --check`。
 - `.wp` 保持未跟踪且不进入提交；真实 Swift 编译、双场景启动、横屏 PNG、JUnit/Core 计数和 artifact manifest 以云端结果为准。
 
 已知风险：
 
 - 没有 XCUITest 的跨相机变化触控回调注入，无法由静态源码证明每台设备上的 callback 顺序、滚动/VoiceOver/Dynamic Type 全档位和真机手感；seed 后携带无法区分 ID 的旧触点仍是既知输入边界。
 - 固定视觉 fixture 不能替代动态密集战斗、任意 zoom/heading、长局帧率、Reduce Motion 和所有屏幕宽度验证；总目标仍未完成。
+
+通过记录：最终修复 commit `bd437d2b07a928b8722d40715b3242bfc89dac98` 对应 Actions run `33487734249` / attempt `1` / job `99791650154`；artifact `rustwar-ci-v1.2-main-bd437d2-run33487734249-attempt1`（ID `9792827895`，digest `sha256:da958b3274976d55d24e47763b6254b4ad87da10c35f577783e9f511f87ebd0e`）已按 Agent C 流程下载到 `/private/tmp/rustwar-c-review-33487734249/`（约 1.7M）并核对。manifest 的 `branch=main`、完整 SHA、run/attempt、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro 完全匹配；JUnit `8/0/1`、Core `344 tests`、本轮 Swift 修改文件双架构编译、Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功，既有 headless-browser regression 为唯一 skip。Home `2622x1206` SHA-256 `9e29718ec238f2bc00e90e4ba7c0362687209275d990ac929ad7a66db99b1c60`，Combat `ed9b607cb12914e84feede51575d761f016e4875d63fa4199c0dea63bf37b14f`；人工复判确认 Commands 首行短标题和生产指标分行可读，既有战斗视觉无静态回退。

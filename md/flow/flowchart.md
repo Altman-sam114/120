@@ -1758,3 +1758,5 @@ flowchart LR
 ```
 
 读图说明：v2.86 将 compact 命令密度、生产指标可读性和相机变换边界分别接到既有 SwiftUI/controller 状态流。二级 Commands 的列数只改变 presentation；生产卡仍使用既有 availability/build-time 派生。相机 mutation 只推进 iOS `battlefieldCameraRevision`，fresh touch 保存 `input epoch + camera revision`，外部相机变化立即清理未 claim 的 preview/owner，并使迟到的 tap/long press/pan callback fail closed；已 claim 的 Area Selection 仍取消，已 claim 的当前 pan/pinch 保持自身手势。所有这些状态都不进入 `GameState`、Core、save payload 或 JSON。
+
+最终修复 commit `bd437d2b07a928b8722d40715b3242bfc89dac98` 对应 run `33487734249` / attempt `1` / job `99791650154`；artifact `rustwar-ci-v1.2-main-bd437d2-run33487734249-attempt1`（ID `9792827895`，digest `sha256:da958b3274976d55d24e47763b6254b4ad87da10c35f577783e9f511f87ebd0e`）已下载到 `/private/tmp/rustwar-c-review-33487734249/` 并核对。JUnit `8/0/1`、Core `344 tests`、双架构/双场景/横屏/双 PNG probe 全成功；Home `9e29718ec238f2bc00e90e4ba7c0362687209275d990ac929ad7a66db99b1c60`、Combat `ed9b607cb12914e84feede51575d761f016e4875d63fa4199c0dea63bf37b14f`。人工复看确认 Commands 首行短标题与生产指标分行可读，既有静态战斗视觉无回退。
