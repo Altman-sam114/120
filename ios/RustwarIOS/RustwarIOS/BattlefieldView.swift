@@ -344,10 +344,18 @@ struct BattlefieldView: View {
             return allowUnseeded
         }
         guard touchSequenceCameraRevision == controller.battlefieldCameraRevision else {
+            if isCurrentBattlefieldCameraGesture {
+                return true
+            }
             cancelSelectionGestures()
             return false
         }
         return true
+    }
+
+    private var isCurrentBattlefieldCameraGesture: Bool {
+        pinchLease != nil ||
+            (panGestureLease != nil && touchOwner.phase == .pan)
     }
 
     private func clearTouchSequenceInputEpoch() {
@@ -1087,8 +1095,7 @@ struct BattlefieldView: View {
 
     private func cancelTouchSequenceForExternalCameraChange() {
         guard touchSequenceCameraRevision != nil,
-              panGestureLease == nil,
-              pinchLease == nil else {
+              !isCurrentBattlefieldCameraGesture else {
             return
         }
         cancelSelectionGestures()

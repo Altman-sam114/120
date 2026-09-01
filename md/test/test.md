@@ -954,14 +954,14 @@ Agent C 只能验收最新 `origin/main` 完整 SHA 对应的未加密 Actions a
 
 本轮修改 `TacticalCommandsSectionView.swift`、`TacticalProductionSectionView.swift`、`GameController.swift` 与 `BattlefieldView.swift`，并同步 README、flow、flowchart、prompt、update log。普通字号的二级 Commands 网格至少两列，使 `Select Area` 与 `Same Type` 在 compact Commands 首行并列；accessibility Dynamic Type 保留一列。紧凑生产卡将成本/人口与建造时间分行，仍使用既有 `productionOptions`、`productionAvailability`、`queueUnit`、快捷键和 VoiceOver 语义。
 
-`GameController.battlefieldCameraRevision` 只属于 iOS 相机/输入生命周期，不进入 Core、save payload 或 JSON。pan、zoom、viewport adapt、Reset、Focus、Tactical Map drag、读档和键盘相机移动实际改变 `CameraState` 时推进 revision；`BattlefieldView` fresh seed 保存 `battlefieldInputEpoch + battlefieldCameraRevision`，外部 revision 变化立即清理未 claim 的 preview/owner/lease。普通 preview、tap、long press、尚未 claim 的单指 pan 与非 pinch 多指选择 callback 在相机 lease 不匹配时也必须丢弃；当前 Battlefield pan/pinch 自己造成的相机变化继续正常收尾。
+`GameController.battlefieldCameraRevision` 只属于 iOS 相机/输入生命周期，不进入 Core、save payload 或 JSON。pan、zoom、viewport adapt、Reset、Focus、Tactical Map drag、读档和键盘相机移动实际改变 `CameraState` 时推进 revision；`BattlefieldView` fresh seed 保存 `battlefieldInputEpoch + battlefieldCameraRevision`，外部 revision 变化立即清理未 claim 的 preview/owner/lease，已 claim 的 Area Selection 也会取消。普通 preview、tap、long press、尚未 claim 的单指 pan 与非 pinch 多指选择 callback 在相机 lease 不匹配时也必须丢弃；当前 Battlefield pan/pinch 自己造成的相机变化继续正常收尾。
 
 云端唯一验收必须确认：
 
 - 最新 `origin/main` 对应未加密 artifact 的 manifest `branch=main`、完整 `commitSha`、run id、run attempt 与固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro 完全匹配；下载目录为 `/private/tmp/rustwar-c-review-<run_id>/` 且已检查大小。
 - JUnit 保持 `8 tests / 0 failures / 1 skipped`（唯一 skip 若仍为既有 headless-browser regression 必须如实记录），Swift Core 至少 `344 tests`；静态检查、Xcode list/build、本轮修改 Swift 文件 arm64/x86_64 编译、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功。
 - `ios-home.png` 中 Heavy、Arty、AA 等紧凑生产卡的成本/人口/时间完整可读，production header、Cancel/Repeat/Rally、NOW/QUEUE/UPGRADE、Factory Tech、Tactical Map 与状态栏无回退。
-- `ios-combat.png` 中 Commands 首行在 predicate 可用时并列显示 `Select Area` 与 `Same Type`；Quick Orders 的 Move/A-Move/Attack/Stop、Patrol/Guard/stance/Repair/Reclaim、单位模型、武器/发射器、selection/HP、v2.78 阵营标记、terminal/impact、Tactical Map 和状态栏无裁切或重叠。
+- `ios-combat.png` 中 Commands 首行在 predicate 可用时并列显示图标上置、两行短标题的 `Select / Area` 与 `Same / Type`；Quick Orders 的 Move/A-Move/Attack/Stop、Patrol/Guard/stance/Repair/Reclaim、单位模型、武器/发射器、selection/HP、v2.78 阵营标记、terminal/impact、Tactical Map 和状态栏无裁切或重叠。
 - 源码复核确认普通 compact、compact bottom、regular、accessibility、VoiceOver、44pt、生产 availability/队列与 Core/存档/战斗/触控语义无变化；没有 XCUITest 时，跨相机变化期间的真实 callback 顺序仍需标注为证据边界。
 
 本机禁止运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图生成、Node/browser smoke、测试脚本和 `git diff --check`；本轮仅进行源码/变更范围复核、提交和 push，最终以最新云端 artifact 为准。`.wp` 必须保持未跟踪且不进入提交。

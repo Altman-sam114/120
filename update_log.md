@@ -6944,9 +6944,9 @@
 
 当前轮次：
 
-- 紧凑横屏 Commands 的二级命令在普通字号下改用至少两列，`Select Area` 与 `Same Type` 因此在首行并列；accessibility Dynamic Type 保留一列完整标签，Quick Orders 的 Move / Attack-Move / Attack / Stop 与其他二级 action 不变。
+- 紧凑横屏 Commands 的二级命令在普通字号下改用至少两列，`Select Area` 与 `Same Type` 因此在首行并列；compact trailing 的两个高频选择按钮使用图标上置、两行短标题，避免窄卡按字符断词，accessibility Dynamic Type 保留一列完整标签，Quick Orders 的 Move / Attack-Move / Attack / Stop 与其他二级 action 不变。
 - 紧凑三列生产卡把成本/人口与有效建造时间分成两行，仍沿用既有 `productionAvailability`、`queueUnit`、Shift+1-9、44pt、VoiceOver 与生产队列语义；没有改 Core 或生产数值。
-- `GameController` 新增只属于 iOS 输入生命周期的 `battlefieldCameraRevision`，覆盖 pan、zoom、viewport adapt、Reset、Focus、Tactical Map drag、读档和键盘相机移动。`BattlefieldView` 将该 revision 与 `battlefieldInputEpoch` 一起绑定到 fresh touch seed；外部相机变化会立即清理未 claim 的旧 preview/owner，并使迟到的 tap/long press/未 claim pan fail closed，当前已 claim 的 Battlefield pan/pinch 可继续自身收尾。
+- `GameController` 新增只属于 iOS 输入生命周期的 `battlefieldCameraRevision`，覆盖 pan、zoom、viewport adapt、Reset、Focus、Tactical Map drag、读档和键盘相机移动。`BattlefieldView` 将该 revision 与 `battlefieldInputEpoch` 一起绑定到 fresh touch seed；外部相机变化会立即清理未 claim 的旧 preview/owner，已 claim 的 Area Selection 也会取消，并使迟到的 tap/long press/未 claim pan fail closed，当前已 claim 的 Battlefield pan/pinch 可继续自身收尾。
 
 关键文件：
 

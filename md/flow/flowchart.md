@@ -1757,4 +1757,4 @@ flowchart LR
     P[当前 pan/pinch 自身更新] --> Q[保留已 claim 手势并正常收尾]
 ```
 
-读图说明：v2.86 将 compact 命令密度、生产指标可读性和相机变换边界分别接到既有 SwiftUI/controller 状态流。二级 Commands 的列数只改变 presentation；生产卡仍使用既有 availability/build-time 派生。相机 mutation 只推进 iOS `battlefieldCameraRevision`，fresh touch 保存 `input epoch + camera revision`，外部相机变化立即清理未 claim 的 preview/owner，并使迟到的 tap/long press/pan callback fail closed；已经 claim 的当前 pan/pinch 保持自身手势。所有这些状态都不进入 `GameState`、Core、save payload 或 JSON。
+读图说明：v2.86 将 compact 命令密度、生产指标可读性和相机变换边界分别接到既有 SwiftUI/controller 状态流。二级 Commands 的列数只改变 presentation；生产卡仍使用既有 availability/build-time 派生。相机 mutation 只推进 iOS `battlefieldCameraRevision`，fresh touch 保存 `input epoch + camera revision`，外部相机变化立即清理未 claim 的 preview/owner，并使迟到的 tap/long press/pan callback fail closed；已 claim 的 Area Selection 仍取消，已 claim 的当前 pan/pinch 保持自身手势。所有这些状态都不进入 `GameState`、Core、save payload 或 JSON。

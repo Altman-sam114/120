@@ -43,6 +43,10 @@ struct TacticalCommandsSectionView: View {
         dynamicTypeSize.isAccessibilitySize ? 1 : max(2, columns)
     }
 
+    private var usesCompactSecondaryLabels: Bool {
+        columns == 1 && !dynamicTypeSize.isAccessibilitySize
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             TacticalSectionHeader(section: .commands)
@@ -101,11 +105,13 @@ struct TacticalCommandsSectionView: View {
 
             TacticalCommandGrid(columns: secondaryColumnCount) {
                 if controller.canIssueAreaSelection || controller.isAwaitingAreaSelection {
-                    Button(
-                        controller.areaSelectionCommandButtonTitle,
-                        systemImage: controller.isAwaitingAreaSelection ? "xmark.circle" : "rectangle.dashed",
-                        action: controller.toggleAreaSelectionCommand
-                    )
+                    Button(action: controller.toggleAreaSelectionCommand) {
+                        secondaryCommandLabel(
+                            title: controller.areaSelectionCommandButtonTitle,
+                            compactTitle: controller.isAwaitingAreaSelection ? "Cancel" : "Select\nArea",
+                            systemImage: controller.isAwaitingAreaSelection ? "xmark.circle" : "rectangle.dashed"
+                        )
+                    }
                     .tacticalControl()
                     .tacticalCommandAccessibility(
                         command: "Select Area",
@@ -116,11 +122,13 @@ struct TacticalCommandsSectionView: View {
                     )
                 }
                 if controller.canSelectSameTypeUnits {
-                    Button(
-                        controller.sameTypeUnitsButtonTitle,
-                        systemImage: "square.on.square",
-                        action: controller.selectSameTypeUnits
-                    )
+                    Button(action: controller.selectSameTypeUnits) {
+                        secondaryCommandLabel(
+                            title: controller.sameTypeUnitsButtonTitle,
+                            compactTitle: "Same\nType",
+                            systemImage: "square.on.square"
+                        )
+                    }
                     .tacticalControl()
                     .keyboardShortcut(commandKey("a"), modifiers: .option)
                     .accessibilityLabel("Select same type")
@@ -187,6 +195,28 @@ struct TacticalCommandsSectionView: View {
                     )
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func secondaryCommandLabel(
+        title: String,
+        compactTitle: String,
+        systemImage: String
+    ) -> some View {
+        if usesCompactSecondaryLabels {
+            VStack(spacing: TacticalHUDTheme.denseSpacing) {
+                Image(systemName: systemImage)
+                    .accessibilityHidden(true)
+                Text(compactTitle)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .accessibilityHidden(true)
+        } else {
+            Label(title, systemImage: systemImage)
         }
     }
 

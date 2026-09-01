@@ -1049,10 +1049,10 @@ v2.83 以 `origin/main` 的 v2.82 文档验收 commit `a526302df15cb6f33c0876445
 
 ## v2.86 iOS compact command discoverability, production metrics and camera lease
 
-本轮继续使用现有单一状态流：`GameController` 的 selection/production 派生值进入 SwiftUI dock；`TacticalCommandsSectionView` 在普通字号下用 `secondaryColumnCount = max(2, columns)`，在 accessibility Dynamic Type 下保留一列完整标签。这样 compact trailing 的 `Select Area` 和 `Same Type` 会在 Commands 首行并列，Quick Orders 的 Move/A-Move/Attack/Stop 仍由固定 rail 提供，Patrol、Guard、stance、Repair、Reclaim 仍在滚动区。
+本轮继续使用现有单一状态流：`GameController` 的 selection/production 派生值进入 SwiftUI dock；`TacticalCommandsSectionView` 在普通字号下用 `secondaryColumnCount = max(2, columns)`，在 accessibility Dynamic Type 下保留一列完整标签。这样 compact trailing 的 `Select Area` 和 `Same Type` 会在 Commands 首行并列；该窄卡路径仅把两个高频选择按钮改成图标上置、两行短标题，regular/accessibility 仍使用原完整标题。Quick Orders 的 Move/A-Move/Attack/Stop 仍由固定 rail 提供，Patrol、Guard、stance、Repair、Reclaim 仍在滚动区。
 
 `TacticalProductionButtonLabel` 的 dense compact presentation 将 `metal · supply` 与有效 build time 拆成两行；数值仍来自 `UnitDefinition` 与 `productionBuildTime`，可用性 badge、`queueUnit`、Shift+1-9 和 accessibility label/value 不变。该排版只改变 view 层，不改变生产队列或 Core 状态。
 
-相机输入流新增 `battlefieldCameraRevision`。`GameController` 在 pan、zoom、viewport adapt、reset、center、Tactical Map drag、读档和键盘相机移动实际改变 `CameraState` 时递增 revision。`BattlefieldView` fresh seed 保存 `battlefieldInputEpoch + battlefieldCameraRevision`；revision 变化时，若不是已 claim 的当前 pan/pinch，立即清理 preview、owner 和 lease；普通 preview、tap、long press、尚未 claim 的单指 pan 与非 pinch 多指选择 callback 也必须匹配两者，否则 fail closed。已经 claim 的当前 Battlefield pan/pinch 允许自身更新相机并正常结束，避免把正常手势误判为外部取消。revision 只属于 iOS 输入生命周期，不写入 `GameState`、save payload 或 JSON。
+相机输入流新增 `battlefieldCameraRevision`。`GameController` 在 pan、zoom、viewport adapt、reset、center、Tactical Map drag、读档和键盘相机移动实际改变 `CameraState` 时递增 revision。`BattlefieldView` fresh seed 保存 `battlefieldInputEpoch + battlefieldCameraRevision`；revision 变化时，若不是已 claim 的当前 Battlefield pan/pinch，立即清理 preview、owner 和 lease；已 claim 的 Area Selection 仍因其屏幕矩形依赖旧相机而取消。普通 preview、tap、long press、尚未 claim 的单指 pan 与非 pinch 多指选择 callback 也必须匹配两者，否则 fail closed。已经 claim 的当前 Battlefield pan/pinch 允许自身更新相机并正常结束，避免把正常手势误判为外部取消。revision 只属于 iOS 输入生命周期，不写入 `GameState`、save payload 或 JSON。
 
 本轮不改变 TouchSequenceOwner、Replace/Add、44pt 命中、直接 Attack/Move/Attack-Move、双指框选、pending command、生产/升级、BattlefieldScene 模型与效果、fog/visibility、Tactical Map 地图语义、存档或 Web 版；固定云端 artifact 重点验证 compact Commands 首行、Heavy/Arty/AA 指标和 Home/Combat 静态构图。无 XCUITest 时，相机跨手势变化期间的真实 callback 顺序仍是证据边界。
