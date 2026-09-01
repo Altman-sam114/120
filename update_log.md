@@ -6922,7 +6922,7 @@
 
 - 本轮不修改 Core 命令结果、单位/建筑模型主体、武器/后坐、战斗数值、effect layer、生产、HUD、存档/JSON 或 Web 版；也不处理命令栏高频二级按钮、生产卡 dense metrics、小地图 marker 层级。
 - 继续遵守本项目云端唯一验证制度，本机不运行 SwiftPM/Xcode/Simulator/Preview/截图/Node/browser smoke、测试脚本或 `git diff --check`；`.wp` 保持未跟踪。
-- 尚未完成本轮 Actions artifact 验收；动态真实设备 callback 顺序、seed 后未知旧触点回调、VoiceOver、Dynamic Type、滚动和真机手感仍不能由静态源码或上一轮 artifact 代替。
+- 本轮实现对应 Actions run `33481289474` / attempt `1` / job `99771261711` 已成功；动态真实设备 callback 顺序、seed 后未知旧触点回调、VoiceOver、Dynamic Type、滚动和真机手感仍不能由静态源码或该 artifact 代替。
 
 本轮关键文件：
 
@@ -6937,4 +6937,4 @@
 - `md/prompt/v1-ios-swift-port/v2.85-input-epoch-and-intent-glyphs.md`
 - `update_log.md`
 
-通过记录待补：实现 commit、最新 `origin/main` 对应 Actions run/attempt/job、artifact 名称/ID/digest（若 GitHub API 提供）、下载目录、manifest/JUnit/Core/双架构/双场景/双 PNG 结果、真实 Home/Combat SHA-256 和 Agent C 复判结论。
+通过记录：实现 commit `9d209b83832450277a1d95e0ac83a16aee13123a` 对应 Actions run `33481289474` / attempt `1` / job `99771261711`；artifact `rustwar-ci-v1.2-main-9d209b8-run33481289474-attempt1`（ID `9790353160`，digest `sha256:7b5454df593eb71e2c72460116ff401bd0da5cee669701812d2c472d01ca544a`）已由 Agent C 下载到 `/private/tmp/rustwar-c-review-33481289474/`（约 1.7M）并核对。manifest 的 `branch=main`、完整 `commitSha`、run/attempt、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro 完全匹配；JUnit `8/0/1`、Core `344 tests`、四个 iOS 修改文件双架构编译、Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功，既有 headless-browser regression 为唯一 skip。Home `2622x1206` SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat `2622x1206` SHA-256 `723f2460d19a4379d84b3a567fe6a21ce699da593bfc7de2676aba56a9425022`；Agent C 人工复判确认输入 epoch 与意图 glyph 没有引入静态回退。固定画面仍暴露既有 Heavy 生产卡指标截断与底部 Commands 滚动发现性问题，列入下一轮 UI 修复。
