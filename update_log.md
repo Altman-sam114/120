@@ -6906,3 +6906,35 @@
 - 固定 frozen combat fixture 能证明静态层级和既有重叠场景，但不能证明动态密集战斗、任意 zoom/heading、真机帧率、Reduce Motion 实机效果或水面死亡时序；总目标仍未完成。
 
 通过记录：实现 commit `33e7a420136945c80e3f6697e5ca6b0e21c7e13c` 对应 run `33299697563` / attempt `1` / job `99225356862`；artifact `rustwar-ci-v1.2-main-33e7a42-run33299697563-attempt1`（ID `9728651408`，GitHub API 未提供 digest，下载目录 `/private/tmp/rustwar-c-review-33299697563/` 约 1.7M）已由 Agent C 下载并核对。manifest 完整匹配；JUnit `8/0/1`、Core `344 tests`、`BattlefieldScene.swift` 双架构编译、Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功。Home SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat `723f2460d19a4379d84b3a567fe6a21ce699da593bfc7de2676aba56a9425022`；Agent C 人工复判确认 ground impact 不再覆盖实体关键轮廓，前景 terminal/tracer/death 与 Home HUD 无静态回退。GitHub API 未提供 digest，不伪造该字段。
+
+## v2.85 / iOS input epoch isolation and intent glyphs
+
+日期：2026-09-01
+
+当前轮次：
+
+- 触控审查确认，命令模式、Replace/Add、视口变化或战场离开时，旧 SwiftUI callback 可能继续看到新的 pending state；如果只清理单个 boolean，迟到 release 仍可能误提交新命令。本轮在 `GameController` 增加不进入 Core/save 的 `battlefieldInputEpoch`，在所有 pending command 清理、selection mutation 和真实 viewport resize 时推进版本。
+- `BattlefieldView` 在 `SpatialEventGesture` fresh seed 时保存 epoch，context tap/preview、统一单指 pan/Select Area、long press、pinch、多指结束和最终 commit 都必须通过当前 epoch；epoch/尺寸/view 生命周期变化会清理 owner、lease、preview、overlay 与 callback state。既有 `TouchSequenceOwner` quarantine、v2.79 terminal barrier 和 callback generation 继续作为独立所有权边界。
+- `TacticalMapView` 复用同一个 epoch 门控 tap、18pt camera drag 和 long press，保留 map 自己的 callback generation、pending marker hit radius、fog/radar、相机和 target 语义。
+- `BattlefieldScene` 的 pending touch preview 不再只显示通用白色十字；Move、Attack-Move、Attack、Rally、Guard、Repair、Build、Reclaim 复用 post-command confirmation 几何，Select/Invalid 使用角括号，Invalid 继续显示 slash。glyph 是 presentation-only，不写回 Core。
+
+非目标与边界：
+
+- 本轮不修改 Core 命令结果、单位/建筑模型主体、武器/后坐、战斗数值、effect layer、生产、HUD、存档/JSON 或 Web 版；也不处理命令栏高频二级按钮、生产卡 dense metrics、小地图 marker 层级。
+- 继续遵守本项目云端唯一验证制度，本机不运行 SwiftPM/Xcode/Simulator/Preview/截图/Node/browser smoke、测试脚本或 `git diff --check`；`.wp` 保持未跟踪。
+- 尚未完成本轮 Actions artifact 验收；动态真实设备 callback 顺序、seed 后未知旧触点回调、VoiceOver、Dynamic Type、滚动和真机手感仍不能由静态源码或上一轮 artifact 代替。
+
+本轮关键文件：
+
+- `ios/RustwarIOS/RustwarIOS/GameController.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldView.swift`
+- `ios/RustwarIOS/RustwarIOS/TacticalMapView.swift`
+- `ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`
+- `README.md`
+- `md/flow/flow.md`
+- `md/flow/flowchart.md`
+- `md/test/test.md`
+- `md/prompt/v1-ios-swift-port/v2.85-input-epoch-and-intent-glyphs.md`
+- `update_log.md`
+
+通过记录待补：实现 commit、最新 `origin/main` 对应 Actions run/attempt/job、artifact 名称/ID/digest（若 GitHub API 提供）、下载目录、manifest/JUnit/Core/双架构/双场景/双 PNG 结果、真实 Home/Combat SHA-256 和 Agent C 复判结论。

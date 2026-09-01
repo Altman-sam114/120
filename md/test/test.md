@@ -932,3 +932,20 @@ Agent C 只验收最新 `origin/main` 完整 SHA 对应的未加密 Actions arti
 人工复看最新 `ios-home.png` 与 `ios-combat.png`：Combat 中 ground impact 不应盖住单位 hull、炮塔/发射器、selection、HP 或 v2.78 阵营标记，前景 terminal/tracer/death 仍清晰；Home 生产 HUD、Tactical Map 和状态栏无回退。记录云端生成的真实 PNG SHA-256，不沿用旧哈希。静态 artifact 不能替代动态密集战斗、任意 heading/zoom、真机帧率、Reduce Motion 实机效果或水面死亡时序证据。
 
 通过记录：实现 commit `33e7a420136945c80e3f6697e5ca6b0e21c7e13c` 对应 run `33299697563` / attempt `1` / job `99225356862`；artifact `rustwar-ci-v1.2-main-33e7a42-run33299697563-attempt1`（ID `9728651408`，GitHub API 未提供 digest，下载目录 `/private/tmp/rustwar-c-review-33299697563/` 约 1.7M）已由 Agent C 下载并核对。manifest 完整匹配；JUnit `8/0/1`、Core `344 tests`、`BattlefieldScene.swift` 双架构编译、Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功。Home SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat `723f2460d19a4379d84b3a567fe6a21ce699da593bfc7de2676aba56a9425022`；既有 headless-browser regression 为唯一 skip，人工复判无静态视觉回退。
+
+## v2.85 iOS input epoch isolation and intent glyphs
+
+本轮继续执行云端唯一验证；本机禁止 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图生成、Node/browser smoke、测试脚本和 `git diff --check`。本机只允许查看 `git status`、变更范围和源码；`.wp` 必须保持未跟踪且不进入提交。
+
+源码复判必须确认：
+
+- `GameController.battlefieldInputEpoch` 只作为 iOS 输入生命周期版本，不进入 Core/save/JSON；`clearPendingTargetCommands()`、Replace/Add 改变和真实 viewport resize 都会使当前触控上下文失效。
+- `BattlefieldView` seed 时保存 epoch；context tap/preview、12pt pan/Select Area、long press、pinch、多指结束、tap/command commit 与 preview 更新均拒绝不匹配 epoch，size/epoch/disappear cleanup 不留下旧 owner、lease、overlay 或 preview。
+- `TacticalMapView` 的 tap、18pt camera drag 和 long press 同样要求当前 epoch，callback generation、pending marker hit radius、fog/radar 和相机语义保持。
+- `BattlefieldScene` pending preview 保留 halo/reticle 和 invalid slash，并按 intent 显示复用 command confirmation 的几何 glyph；不改变单位、战斗、effect layer 或固定 scene fixture。
+
+Agent C 只能验收最新 `origin/main` 完整 SHA 对应的未加密 Actions artifact，下载到 `/private/tmp/rustwar-c-review-<run_id>/`，核对 manifest、JUnit、主日志、失败摘要、repo state、branch、run/attempt 和固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro。artifact 必须证明 Core 至少 `344 tests`、`BattlefieldView.swift` / `TacticalMapView.swift` / `GameController.swift` / `BattlefieldScene.swift` 修改文件双架构编译、Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功；既有 headless-browser skip 如仍存在需如实记录。
+
+人工复看最新 `ios-home.png` 和 `ios-combat.png`：本轮 pending preview 不在固定 production/combat fixture 中，Home/Combat 预期保持 v2.84 的静态构图，必须记录云端生成的真实 SHA-256；生产 header、management rail、NOW/QUEUE/UPGRADE、生产卡、单位 hull/炮塔/发射器、selection/HP、v2.78 阵营标记、terminal/tracer/death、Tactical Map 和状态栏不得出现回退或裁切。PNG 不能证明真实 gesture callback 顺序、动态 preview glyph、VoiceOver、Dynamic Type、滚动或真机手感。
+
+通过记录待补：实现 commit、Actions run/attempt/job、artifact 名称/ID/digest（若 API 提供）、下载目录、manifest SHA、JUnit、Core 测试数、双架构/双场景结果、PNG hash 和 Agent C 结论必须来自本轮最新 artifact；不能沿用 v2.84 结果。

@@ -85,6 +85,7 @@ final class GameController {
     let cloudVisualScenario: CloudVisualScenario?
     var renderRevision = 0
     var mapRenderRevision = 0
+    private(set) var battlefieldInputEpoch = 0
     private(set) var selectionFeedbackRevision = 0
     private(set) var commandSuccessFeedbackRevision = 0
     private(set) var warningFeedbackRevision = 0
@@ -95,6 +96,7 @@ final class GameController {
             guard selectionMutation != oldValue else {
                 return
             }
+            invalidateBattlefieldInput()
             clearLastBattlefieldTap()
             commandStatus = selectionMutation == .add ? "Add selection mode" : "Replace selection mode"
             reportSelectionFeedback()
@@ -1670,7 +1672,7 @@ final class GameController {
 
     func toggleMoveCommand() {
         if isAwaitingMoveTarget {
-            isAwaitingMoveTarget = false
+            clearPendingTargetCommands()
             commandStatus = nil
         } else if canIssueMove {
             clearPendingTargetCommands()
@@ -1683,7 +1685,7 @@ final class GameController {
 
     func toggleAreaSelectionCommand() {
         if isAwaitingAreaSelection {
-            isAwaitingAreaSelection = false
+            clearPendingTargetCommands()
             commandStatus = nil
         } else if canIssueAreaSelection {
             clearPendingTargetCommands()
@@ -1696,7 +1698,7 @@ final class GameController {
 
     func toggleAttackCommand() {
         if isAwaitingAttackTarget {
-            isAwaitingAttackTarget = false
+            clearPendingTargetCommands()
             commandStatus = nil
         } else if canIssueAttack {
             clearPendingTargetCommands()
@@ -1727,7 +1729,7 @@ final class GameController {
 
     func toggleAttackMoveCommand() {
         if isAwaitingAttackMoveTarget {
-            isAwaitingAttackMoveTarget = false
+            clearPendingTargetCommands()
             commandStatus = nil
         } else if canIssueAttackMove {
             clearPendingTargetCommands()
@@ -1742,7 +1744,7 @@ final class GameController {
 
     func togglePatrolCommand() {
         if isAwaitingPatrolTarget {
-            isAwaitingPatrolTarget = false
+            clearPendingTargetCommands()
             commandStatus = nil
         } else if canIssuePatrol {
             clearPendingTargetCommands()
@@ -1755,7 +1757,7 @@ final class GameController {
 
     func toggleGuardCommand() {
         if isAwaitingGuardTarget {
-            isAwaitingGuardTarget = false
+            clearPendingTargetCommands()
             commandStatus = nil
         } else if canIssueGuard {
             clearPendingTargetCommands()
@@ -1768,7 +1770,7 @@ final class GameController {
 
     func toggleRepairCommand() {
         if isAwaitingRepairTarget {
-            isAwaitingRepairTarget = false
+            clearPendingTargetCommands()
             commandStatus = nil
         } else if canIssueRepair {
             clearPendingTargetCommands()
@@ -1781,7 +1783,7 @@ final class GameController {
 
     func toggleReclaimCommand() {
         if isAwaitingReclaimTarget {
-            isAwaitingReclaimTarget = false
+            clearPendingTargetCommands()
             commandStatus = nil
         } else if canIssueReclaim {
             clearPendingTargetCommands()
@@ -1794,7 +1796,7 @@ final class GameController {
 
     func toggleBuildExtractorCommand() {
         if isAwaitingBuildExtractorTarget {
-            isAwaitingBuildExtractorTarget = false
+            clearPendingTargetCommands()
             commandStatus = nil
         } else if canIssueBuildExtractor {
             clearPendingTargetCommands()
@@ -1807,7 +1809,7 @@ final class GameController {
 
     func toggleBuildTurretCommand() {
         if isAwaitingBuildTurretTarget {
-            isAwaitingBuildTurretTarget = false
+            clearPendingTargetCommands()
             commandStatus = nil
         } else if canIssueBuildTurret {
             clearPendingTargetCommands()
@@ -1820,7 +1822,7 @@ final class GameController {
 
     func toggleBuildFactoryCommand() {
         if isAwaitingBuildFactoryTarget {
-            isAwaitingBuildFactoryTarget = false
+            clearPendingTargetCommands()
             commandStatus = nil
         } else if canIssueBuildFactory {
             clearPendingTargetCommands()
@@ -1833,7 +1835,7 @@ final class GameController {
 
     func toggleBuildRadarCommand() {
         if isAwaitingBuildRadarTarget {
-            isAwaitingBuildRadarTarget = false
+            clearPendingTargetCommands()
             commandStatus = nil
         } else if canIssueBuildRadar {
             clearPendingTargetCommands()
@@ -1890,7 +1892,7 @@ final class GameController {
 
     func toggleRallyCommand() {
         if isAwaitingRallyTarget {
-            isAwaitingRallyTarget = false
+            clearPendingTargetCommands()
             commandStatus = nil
         } else if canIssueRally {
             clearPendingTargetCommands()
@@ -2026,6 +2028,7 @@ final class GameController {
         guard size.width > 0, size.height > 0, size != battlefieldViewportSize else {
             return
         }
+        invalidateBattlefieldInput()
         battlefieldViewportSize = size
         camera.adapt(to: size)
         renderRevision += 1
@@ -2166,7 +2169,12 @@ final class GameController {
         return targets.count == 1 ? "unit" : "units"
     }
 
+    private func invalidateBattlefieldInput() {
+        battlefieldInputEpoch &+= 1
+    }
+
     private func clearPendingTargetCommands() {
+        invalidateBattlefieldInput()
         clearLastBattlefieldTap()
         isAwaitingMoveTarget = false
         isAwaitingAttackTarget = false

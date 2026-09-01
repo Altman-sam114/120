@@ -1034,3 +1034,15 @@ v2.83 以 `origin/main` 的 v2.82 文档验收 commit `a526302df15cb6f33c0876445
 本轮只改变 `BattlefieldScene` 的 SpriteKit presentation/lifecycle，不改 Core、GameController、命令、输入、生产、AI、存档/JSON、fog/visibility、Tactical Map、HUD、模型或 Web 版；固定 combat fixture 不需变化。最新 Actions artifact 与双 PNG 的真实 run、manifest、测试和哈希已由 Agent C 复判；静态 PNG 仍不能证明动态密集战斗、真机帧率、任意 zoom 或水面死亡时序。
 
 通过记录：实现 commit `33e7a420136945c80e3f6697e5ca6b0e21c7e13c` 对应 run `33299697563` / attempt `1` / job `99225356862`；artifact `rustwar-ci-v1.2-main-33e7a42-run33299697563-attempt1`（ID `9728651408`，GitHub API 未提供 digest，下载目录 `/private/tmp/rustwar-c-review-33299697563/` 约 1.7M）已由 Agent C 下载并核对。manifest 的 `branch=main`、完整 `commitSha`、run/attempt、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 完全匹配；JUnit `8/0/1`、Core `344 tests`、`BattlefieldScene.swift` 双架构编译、Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功。Home SHA-256 `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat `723f2460d19a4379d84b3a567fe6a21ce699da593bfc7de2676aba56a9425022`；人工复判确认受击层级、前景战斗反馈、Home HUD 和 Tactical Map 无静态回退。
+
+## v2.85 iOS input epoch isolation and intent glyphs
+
+`GameController.battlefieldInputEpoch` 是主战场与 Tactical Map 共用的输入生命周期版本。`clearPendingTargetCommands()` 在进入、切换和取消所有等待目标/区域命令时先推进 epoch；`selectionMutation` 改变 Replace/Add、`updateBattlefieldViewportSize` 发生真实尺寸变化时也推进 epoch。它不是 Core 状态、存档字段或玩法数值，只用于让当前 SwiftUI gesture sequence 与它创建时看到的命令/视口上下文绑定。
+
+`BattlefieldView` 在 `SpatialEventGesture` 为当前 primary seed owner 时保存 epoch。context tap/preview、12pt 后的 pan/Select Area、long press、pinch、多指结束和最终 tap/command commit 都必须与当前 epoch 相等；尺寸变化、epoch 变化和 view 离开会清理 owner、lease、preview、overlay、callback generation 与序列 epoch。这样旧 callback 即使晚到，也不能直接提交已经被切换或取消的 pending 命令。TouchSequenceOwner 的 accepted/cancelled ID quarantine、v2.79 terminal barrier 和既有 `sequence` 仍负责触点所有权；seed 后仅凭 SwiftUI 未带 epoch 的未知触点仍不能宣称绝对可区分。
+
+`TacticalMapView` 复用同一个 epoch 门控 tap、camera drag 和长按 context；map 自己的 callback generation、18pt 拖动阈值、pending marker hit radius、fog/radar 和相机语义不变。`BattlefieldScene.drawTouchPreview` 继续使用固定屏幕尺寸的 halo/reticle，但其中心 glyph 现在复用 command confirmation 的 Move、Attack-Move、Attack、Rally、Guard、Repair、Build、Reclaim 路径；Select 和 Invalid 使用角括号，Invalid 保留红色 slash。几何和颜色只属于 presentation，不写回 Core。
+
+本轮只改变 iOS 输入生命周期和 pending preview 的 presentation：GameEngine、命令结果、生产队列、单位/建筑模型主体、武器/后坐、战斗数值、效果层、HUD、Tactical Map 的地图语义、存档/JSON、Web 版和 `.wp` 不变。命令栏高频二级操作、生产卡 dense metrics 和小地图 marker 层级留到后续独立轮次。云端 artifact 需要证明修改的 Swift 文件双架构编译、Core 基线、双场景启动与 PNG 无静态回退；动态 callback 顺序、真机手感、VoiceOver、Dynamic Type、滚动和长局帧率仍是证据边界。
+
+当前实现 commit 尚未完成 Agent C 云端验收；不得把本地源码审查或上一轮 artifact 当作 v2.85 通过依据。

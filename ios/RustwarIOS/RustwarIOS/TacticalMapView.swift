@@ -16,6 +16,7 @@ struct TacticalMapView: View {
     @State private var animatedCommandConfirmationRevision = 0
     @State private var commandConfirmationProgress: CGFloat = 1
     @State private var mapGestureCallbackGeneration = 0
+    @State private var mapGestureInputEpoch: Int?
 
     var body: some View {
         let callbackGeneration = mapGestureCallbackGeneration
@@ -91,11 +92,18 @@ struct TacticalMapView: View {
                 }
                 resetMapGestureState()
             }
+            .onChange(of: controller.battlefieldInputEpoch) { _, _ in
+                resetMapGestureState()
+            }
+            .onDisappear {
+                resetMapGestureState()
+            }
             .onLongPressGesture(
                 minimumDuration: 0.45,
                 maximumDistance: Self.cameraDragActivationDistance
             ) {
                 guard callbackGeneration == mapGestureCallbackGeneration,
+                      mapGestureInputEpoch == controller.battlefieldInputEpoch,
                       !isDraggingCamera else {
                     return
                 }
@@ -197,6 +205,14 @@ struct TacticalMapView: View {
                 guard callbackGeneration == mapGestureCallbackGeneration else {
                     return
                 }
+                if let mapGestureInputEpoch,
+                   mapGestureInputEpoch != controller.battlefieldInputEpoch {
+                    resetMapGestureState()
+                    return
+                }
+                if mapGestureInputEpoch == nil {
+                    mapGestureInputEpoch = controller.battlefieldInputEpoch
+                }
 
                 if let start = mapGestureStartLocation,
                    hypot(
@@ -237,6 +253,10 @@ struct TacticalMapView: View {
                 guard callbackGeneration == mapGestureCallbackGeneration else {
                     return
                 }
+                guard mapGestureInputEpoch == controller.battlefieldInputEpoch else {
+                    resetMapGestureState()
+                    return
+                }
 
                 defer {
                     resetMapGestureState()
@@ -255,6 +275,7 @@ struct TacticalMapView: View {
 
     private func resetMapGestureState() {
         mapGestureCallbackGeneration &+= 1
+        mapGestureInputEpoch = nil
         mapGestureStartLocation = nil
         contextPressLocation = nil
         didRecognizeContextPress = false

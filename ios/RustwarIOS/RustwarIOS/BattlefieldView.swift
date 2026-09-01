@@ -24,6 +24,7 @@ struct BattlefieldView: View {
     @State private var suppressTapUntil: TimeInterval?
     @State private var suppressTapSequence: Int?
     @State private var touchOwner = BattlefieldTouchOwner()
+    @State private var touchSequenceInputEpoch: Int?
     @State private var contextGestureLease: BattlefieldTouchOwner.Lease?
     @State private var panGestureLease: BattlefieldTouchOwner.Lease?
     @State private var longPressLease: BattlefieldTouchOwner.Lease?
@@ -68,7 +69,11 @@ struct BattlefieldView: View {
                         controller.updateBattlefieldViewportSize(proxy.size)
                         scene.renderNow()
                     }
-                    .onChange(of: proxy.size) { _, newSize in
+                    .onChange(of: proxy.size) { oldSize, newSize in
+                        guard oldSize != newSize else {
+                            return
+                        }
+                        cancelSelectionGestures()
                         scene.size = newSize
                         controller.updateBattlefieldViewportSize(newSize)
                         scene.renderNow()
@@ -82,11 +87,18 @@ struct BattlefieldView: View {
                     .onChange(of: accessibilityReduceMotion) { _, reduceMotion in
                         scene.accessibilityReduceMotion = reduceMotion
                     }
+                    .onChange(of: controller.battlefieldInputEpoch) { _, _ in
+                        cancelSelectionGestures()
+                    }
+                    .onDisappear {
+                        cancelSelectionGestures()
+                    }
                     .simultaneousGesture(contextLocationGesture(in: proxy.size))
                     .simultaneousGesture(magnifyGesture())
                     .simultaneousGesture(multitouchSelectionGesture(in: proxy.size))
                     .onLongPressGesture(minimumDuration: 0.45, maximumDistance: 18) {
-                        guard let contextLease = contextGestureLease,
+                        guard acceptsCurrentTouchInput(),
+                              let contextLease = contextGestureLease,
                               longPressCallbackGeneration == contextGestureCallbackGeneration,
                               contextGestureSequenceMatches(contextLease),
                               touchOwner.accepts(contextLease),
@@ -115,6 +127,7 @@ struct BattlefieldView: View {
                             viewportSize: proxy.size
                         )
                         _ = touchOwner.finish(lease)
+                        clearTouchSequenceInputEpoch()
                         longPressLease = nil
                         invalidateNonContextGestureCallbacks()
                         resetContextGestureState()
@@ -135,6 +148,9 @@ struct BattlefieldView: View {
         return DragGesture(minimumDistance: 0)
             .onChanged { value in
                 guard callbackGeneration == contextGestureCallbackGeneration else {
+                    return
+                }
+                guard acceptsCurrentTouchInput() else {
                     return
                 }
                 if contextGestureStarted,
@@ -206,6 +222,9 @@ struct BattlefieldView: View {
                 guard callbackGeneration == contextGestureCallbackGeneration else {
                     return
                 }
+                guard acceptsCurrentTouchInput() else {
+                    return
+                }
                 guard contextGestureStarted,
                       let contextLease = contextGestureLease,
                       contextGestureSequenceMatches(contextLease) else {
@@ -221,6 +240,7 @@ struct BattlefieldView: View {
                         clearBattlefieldTouchPreview(for: contextLease.sequence)
                         if touchOwner.phase == .possible {
                             _ = touchOwner.cancel()
+                            clearTouchSequenceInputEpoch()
                             invalidateNonContextGestureCallbacks()
                             battlefieldPanOccurredForCurrentTouch = true
                         }
@@ -237,6 +257,7 @@ struct BattlefieldView: View {
                 guard touchOwner.accepts(contextLease) else {
                     if contextLease.sequence == touchOwner.sequence {
                         clearBattlefieldTouchPreview(for: contextLease.sequence)
+                        clearTouchSequenceInputEpoch()
                         resetContextGestureState()
                     }
                     return
@@ -252,6 +273,7 @@ struct BattlefieldView: View {
                 guard !isBeforeStart,
                       acceptsContextGestureEvent(at: value.time) else {
                     _ = touchOwner.cancel()
+                    clearTouchSequenceInputEpoch()
                     clearBattlefieldTouchPreview(for: contextLease.sequence)
                     invalidateNonContextGestureCallbacks()
                     resetContextGestureState()
@@ -269,6 +291,7 @@ struct BattlefieldView: View {
                 if touchOwner.phase == .possible,
                    contextLease.sequence == touchOwner.sequence {
                     _ = touchOwner.cancel()
+                    clearTouchSequenceInputEpoch()
                     invalidateNonContextGestureCallbacks()
                     battlefieldPanOccurredForCurrentTouch = true
                 }
@@ -288,6 +311,21 @@ struct BattlefieldView: View {
         contextGestureStartLocation = nil
         contextGestureLastEventTime = nil
         singleTouchCrossedPanActivationDistance = false
+    }
+
+    private func acceptsCurrentTouchInput(allowUnseeded: Bool = false) -> Bool {
+        guard let touchSequenceInputEpoch else {
+            return allowUnseeded
+        }
+        guard touchSequenceInputEpoch == controller.battlefieldInputEpoch else {
+            cancelSelectionGestures()
+            return false
+        }
+        return true
+    }
+
+    private func clearTouchSequenceInputEpoch() {
+        touchSequenceInputEpoch = nil
     }
 
     private func contextGestureSequenceMatches(_ lease: BattlefieldTouchOwner.Lease) -> Bool {
@@ -323,6 +361,7 @@ struct BattlefieldView: View {
         lease: BattlefieldTouchOwner.Lease
     ) -> Bool {
         guard touchOwner.phase == .possible,
+              touchSequenceInputEpoch == controller.battlefieldInputEpoch,
               !isMultitouchSequenceActive,
               !isBattlefieldPanActive,
               !battlefieldPanOccurredForCurrentTouch,
@@ -347,6 +386,7 @@ struct BattlefieldView: View {
             viewportSize: viewportSize
         )
         _ = touchOwner.finish(lease)
+        clearTouchSequenceInputEpoch()
         invalidateNonContextGestureCallbacks()
         resetContextGestureState()
         battlefieldPanOccurredForCurrentTouch = true
@@ -441,6 +481,7 @@ struct BattlefieldView: View {
                touchOwner.phase != .cancelled {
                 _ = touchOwner.cancel()
             }
+            clearTouchSequenceInputEpoch()
             invalidateNonContextGestureCallbacks()
             resetContextGestureState()
             battlefieldPanOccurredForCurrentTouch = true
@@ -462,12 +503,14 @@ struct BattlefieldView: View {
         let result = touchOwner.finish(lease)
         guard result != .ignored else {
             clearSingleTouchPanState()
+            clearTouchSequenceInputEpoch()
             invalidateNonContextGestureCallbacks()
             resetContextGestureState()
             battlefieldPanOccurredForCurrentTouch = true
             return false
         }
         clearSingleTouchPanState()
+        clearTouchSequenceInputEpoch()
         invalidateNonContextGestureCallbacks()
         resetContextGestureState()
         battlefieldPanOccurredForCurrentTouch = true
@@ -491,6 +534,9 @@ struct BattlefieldView: View {
                 guard callbackGeneration == pinchGestureCallbackGeneration else {
                     return
                 }
+                guard acceptsCurrentTouchInput() else {
+                    return
+                }
                 guard let lease = pinchLease,
                       touchOwner.accepts(lease) else {
                     return
@@ -506,12 +552,16 @@ struct BattlefieldView: View {
                 guard callbackGeneration == pinchGestureCallbackGeneration else {
                     return
                 }
+                guard acceptsCurrentTouchInput() else {
+                    return
+                }
                 guard let lease = pinchLease,
                       touchOwner.accepts(lease) else {
                     return
                 }
                 clearBattlefieldTouchPreview(for: lease.sequence)
                 _ = touchOwner.finish(lease)
+                clearTouchSequenceInputEpoch()
                 resetPinchGestureState()
                 multitouchLease = nil
                 invalidateNonContextGestureCallbacks()
@@ -527,10 +577,16 @@ struct BattlefieldView: View {
                 guard callbackGeneration == multitouchGestureCallbackGeneration else {
                     return
                 }
+                guard acceptsCurrentTouchInput(allowUnseeded: true) else {
+                    return
+                }
                 updateMultitouchSelection(with: events)
             }
             .onEnded { events in
                 guard callbackGeneration == multitouchGestureCallbackGeneration else {
+                    return
+                }
+                guard acceptsCurrentTouchInput(allowUnseeded: true) else {
                     return
                 }
                 finishMultitouchSelection(with: events, viewportSize: viewportSize)
@@ -559,6 +615,7 @@ struct BattlefieldView: View {
             isMultitouchRejected = true
             isMultitouchPinch = false
             clearMultitouchSelectionPreview()
+            clearTouchSequenceInputEpoch()
             resetContextGestureState()
             battlefieldPanOccurredForCurrentTouch = true
             return
@@ -674,6 +731,7 @@ struct BattlefieldView: View {
             resetMultitouchSelectionState()
             clearSingleTouchPanState()
             contextGestureLease = contextLease
+            touchSequenceInputEpoch = controller.battlefieldInputEpoch
             contextGestureSeedSequence = contextLease.sequence
             contextGestureSeedLocation = freshTouch.location
             contextPressLocation = freshTouch.location
@@ -682,6 +740,9 @@ struct BattlefieldView: View {
 
         guard touchOwner.hasActiveOwner else {
             return false
+        }
+        if touchSequenceInputEpoch == nil {
+            touchSequenceInputEpoch = controller.battlefieldInputEpoch
         }
         let filteredActiveIDs = activeIDs.subtracting(touchOwner.cancelledIDs)
         let sequenceBeforeObservation = touchOwner.sequence
@@ -704,6 +765,7 @@ struct BattlefieldView: View {
             multitouchCandidateSequence = nil
             clearMultitouchSelectionPreview()
             clearBattlefieldTouchPreview(for: sequenceBeforeObservation)
+            clearTouchSequenceInputEpoch()
             resetContextGestureState()
             invalidateNonContextGestureCallbacks()
             clearSingleTouchPanState()
@@ -803,6 +865,7 @@ struct BattlefieldView: View {
         }
         if wasCancelledMultitouch || touchOwner.phase == .cancelled {
             _ = touchOwner.finishCancelledMultitouch()
+            clearTouchSequenceInputEpoch()
             resetMultitouchSelectionState()
             multitouchLease = nil
             resetPinchGestureState()
@@ -847,6 +910,7 @@ struct BattlefieldView: View {
         resetMultitouchSelectionState()
         multitouchLease = nil
         resetPinchGestureState()
+        clearTouchSequenceInputEpoch()
         invalidateNonContextGestureCallbacks()
         resetContextGestureState()
         clearBattlefieldTouchPreview(for: previewSequence)
@@ -870,6 +934,7 @@ struct BattlefieldView: View {
         let sequence = touchOwner.sequence
         _ = touchOwner.cancel()
         _ = touchOwner.finishCancelledMultitouch()
+        clearTouchSequenceInputEpoch()
         clearTapSuppression()
         clearMultitouchSelectionPreview()
         clearBattlefieldTouchPreview(for: sequence)
@@ -958,6 +1023,7 @@ struct BattlefieldView: View {
         clearBattlefieldTouchPreview()
         controller.clearLastBattlefieldTap()
         touchOwner.reset()
+        clearTouchSequenceInputEpoch()
         resetContextGestureState()
         invalidateNonContextGestureCallbacks()
         clearSingleTouchPanState()
@@ -989,6 +1055,7 @@ struct BattlefieldView: View {
         sequence: Int
     ) {
         guard touchOwner.sequence == sequence,
+              touchSequenceInputEpoch == controller.battlefieldInputEpoch,
               touchOwner.phase == .possible,
               !battlefieldPanOccurredForCurrentTouch,
               !isMultitouchSequenceActive else {

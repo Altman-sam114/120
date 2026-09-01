@@ -204,16 +204,16 @@ final class BattlefieldScene: SKScene {
         reticle.glowWidth = 1.2
         marker.addChild(reticle)
 
-        let crosshair = CGMutablePath()
-        crosshair.move(to: CGPoint(x: -10, y: 0))
-        crosshair.addLine(to: CGPoint(x: 10, y: 0))
-        crosshair.move(to: CGPoint(x: 0, y: -10))
-        crosshair.addLine(to: CGPoint(x: 0, y: 10))
-        let crosshairNode = SKShapeNode(path: crosshair)
-        crosshairNode.strokeColor = .white.withAlphaComponent(0.9)
-        crosshairNode.lineWidth = 1.4
-        crosshairNode.lineCap = .round
-        marker.addChild(crosshairNode)
+        // Keep the pending-touch symbol consistent with the post-command marker,
+        // so a player can read the action from geometry as well as color.
+        let glyph = SKShapeNode(path: touchPreviewGlyphPath(for: preview.intent))
+        glyph.strokeColor = color.withAlphaComponent(preview.intent == .invalid ? 0.84 : 0.98)
+        glyph.fillColor = .clear
+        glyph.lineWidth = 2.2
+        glyph.lineCap = .round
+        glyph.lineJoin = .round
+        glyph.glowWidth = 0.8
+        marker.addChild(glyph)
 
         let center = SKShapeNode(circleOfRadius: preview.intent == .invalid ? 4 : 3)
         center.fillColor = color
@@ -235,6 +235,31 @@ final class BattlefieldScene: SKScene {
         }
 
         touchPreviewNode.addChild(marker)
+    }
+
+    private func touchPreviewGlyphPath(for intent: BattlefieldTouchPreview.Intent) -> CGPath {
+        switch intent {
+        case .select, .invalid:
+            let path = CGMutablePath()
+            addCornerBrackets(to: path, radius: 17, length: 8)
+            return path
+        case .move:
+            return commandConfirmationPath(for: .move)
+        case .attackMove:
+            return commandConfirmationPath(for: .attackMove)
+        case .attack:
+            return commandConfirmationPath(for: .attack)
+        case .rally:
+            return commandConfirmationPath(for: .rally)
+        case .guardTarget:
+            return commandConfirmationPath(for: .guardTarget)
+        case .repair:
+            return commandConfirmationPath(for: .repair)
+        case .build:
+            return commandConfirmationPath(for: .build)
+        case .reclaim:
+            return commandConfirmationPath(for: .reclaim)
+        }
     }
 
     private func syncCamera(_ camera: CameraState) {

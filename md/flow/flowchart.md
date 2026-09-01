@@ -1719,3 +1719,20 @@ flowchart LR
 读图说明：v2.84 只把 generic HP-hit 的 land/water root container 放到 `groundImpactNode`，让实体层保留模型、炮塔/发射器、selection、HP 与 hull faction marking 的清晰轮廓；scorch 仍在 `decalNode`。unit/building fire、projectile/tracer、terminal flash、command confirmation 和 destruction 保持 `effectNode` 前景，水面 destruction 也显式走前景。两层 bounded roots 由 `boundedEffectOrder` 合并按创建顺序 oldest-first 管理，总数上限 64；reset 与 Reduce Motion 清理两层和记录，32 decal 上限不变。Core、命令、输入、生产、AI、存档、fog/visibility、HUD、Tactical Map、模型和 Web 版不变；静态 PNG 不能证明动态时序、真机性能或水面死亡反馈。
 
 通过记录：实现 commit `33e7a420136945c80e3f6697e5ca6b0e21c7e13c` 对应 run `33299697563` / attempt `1` / job `99225356862`；artifact `rustwar-ci-v1.2-main-33e7a42-run33299697563-attempt1`（ID `9728651408`，GitHub API 未提供 digest）已由 Agent C 下载到 `/private/tmp/rustwar-c-review-33299697563/` 并核对。manifest 完整匹配，JUnit `8/0/1`、Core `344 tests`、`BattlefieldScene.swift` 双架构编译、双场景启动/横屏归一化和双 PNG probe 全成功；Home `8ca15f5341017c1760863c38d64c70bb5b86c789907cd2371c44ce2e5ff2513f`，Combat `723f2460d19a4379d84b3a567fe6a21ce699da593bfc7de2676aba56a9425022`。人工复判确认 ground impact 位于实体下方，foreground terminal/tracer/death 仍清晰。
+
+## v2.85 iOS input epoch and preview state flow
+
+```mermaid
+flowchart LR
+    CHANGE["pending command / Replace-Add / viewport change"] --> EPOCH["battlefieldInputEpoch += 1"]
+    EPOCH --> RESET["cancel active Battlefield + Tactical Map gestures"]
+    SEED["SpatialEventGesture fresh seed"] --> BIND["owner lease + seed epoch"]
+    BIND --> MATCH{"callback epoch matches?"}
+    MATCH -->|no| DROP["drop callback / clear stale preview"]
+    MATCH -->|yes| ROUTE["tap / preview / pan / area / pinch / long press"]
+    ROUTE --> COMMIT["single semantic command commit"]
+    PREVIEW["pending intent"] --> GLYPH["command-shaped glyph + existing color"]
+    GLYPH --> VISUAL["BattlefieldScene presentation only"]
+```
+
+读图说明：v2.85 用 `battlefieldInputEpoch` 把输入 callback 与创建时的 pending-command、selection mutation 和 viewport 上下文绑定。epoch 变化时立即清理当前 owner/lease；callback 仍需通过 generation、TouchSequenceOwner 和 epoch 三层门控才可更新 preview、camera、框选或提交命令。`BattlefieldScene` 的 pending glyph 只改变视觉提示，不改变 `GameController`/Core 命令结果；Tactical Map 复用 epoch 但保留自身 tap/drag/long-press 与 18pt 规则。旧触点回调若携带无法区分的未知 ID 仍属于真机证据边界。
