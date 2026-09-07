@@ -967,3 +967,9 @@ Agent C 只能验收最新 `origin/main` 完整 SHA 对应的未加密 Actions a
 本机禁止运行 SwiftPM test/typecheck、Swift parse/typecheck、Xcode build/list、Simulator、Preview、截图生成、Node/browser smoke、测试脚本和 `git diff --check`；本轮仅进行源码/变更范围复核、提交和 push，最终以最新云端 artifact 为准。`.wp` 必须保持未跟踪且不进入提交。
 
 通过记录：最终修复 commit `bd437d2b07a928b8722d40715b3242bfc89dac98` 对应 Actions run `33487734249` / attempt `1` / job `99791650154`；artifact `rustwar-ci-v1.2-main-bd437d2-run33487734249-attempt1`（ID `9792827895`，digest `sha256:da958b3274976d55d24e47763b6254b4ad87da10c35f577783e9f511f87ebd0e`）已按 Agent C 流程下载到 `/private/tmp/rustwar-c-review-33487734249/`（约 1.7M）并核对。manifest 的 `branch=main`、完整 SHA、run/attempt、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro 完全匹配；JUnit `8/0/1`、Core `344 tests`、本轮 Swift 修改文件双架构编译、Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功，唯一 skip 为既有 headless-browser regression。Home `2622x1206` SHA-256 `9e29718ec238f2bc00e90e4ba7c0362687209275d990ac929ad7a66db99b1c60`，Combat `ed9b607cb12914e84feede51575d761f016e4875d63fa4199c0dea63bf37b14f`；人工复看确认 compact Commands 首行的 `Select / Area` 与 `Same / Type` 可读、生产卡指标完整分行，既有模型、武器、selection/HP、阵营标记、terminal/impact、Tactical Map 和状态栏无静态回退。真实跨相机 callback 时序、Dynamic Type/VoiceOver 全档位、滚动和真机手感仍需后续证据。
+
+## v2.87 / Dock direct navigation acceptance
+
+人工要求全部云端测试，禁止本地 Swift/Node/Xcode/Simulator/Preview、测试脚本与 diff --check。源码和 diff 阅读不执行验证程序。现有 workflow 在云端运行静态检查、Core 至少 344 tests、iOS 双架构 build、双场景启动、PNG probe；C 必须下载最新 main 完整 SHA 的必要结果包并核对 manifest/run/attempt/JUnit/build.log/失败摘要。
+
+源码复核：四个锚点始终存在；生产 focus 时 Orders 文案 Factory；选择改变及等待态开始回顶；导航不改变选择或命令；各 eager section 的 shortcut 保留。正常字号导航四等分、44pt，辅助功能完整 Label 横向滚动。header 与 Quick Orders 进入 ScrollView，导航保持可达。检查云端 Home/Combat 导航可见、生产/战场无重叠。固定 PNG 不证明点击跳转、横竖屏所有尺寸、VoiceOver、多指框选或真机手感；本轮不能声称解决全部操作问题。

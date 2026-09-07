@@ -36,6 +36,8 @@
 		A00100000000000000000027 /* TacticalBattlefieldHintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000027 /* TacticalBattlefieldHintView.swift */; };
 		A00100000000000000000028 /* TacticalQuickCommandRail.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000028 /* TacticalQuickCommandRail.swift */; };
 		A00100000000000000000029 /* TacticalProductionManagementRail.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000029 /* TacticalProductionManagementRail.swift */; };
+		A00100000000000000000031 /* TacticalDockNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000031 /* TacticalDockNavigationView.swift */; };
+		A00100000000000000000030 /* TacticalDockDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000030 /* TacticalDockDestination.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -68,6 +70,8 @@
 		A00200000000000000000027 /* TacticalBattlefieldHintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalBattlefieldHintView.swift; sourceTree = "<group>"; };
 		A00200000000000000000028 /* TacticalQuickCommandRail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalQuickCommandRail.swift; sourceTree = "<group>"; };
 		A00200000000000000000029 /* TacticalProductionManagementRail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalProductionManagementRail.swift; sourceTree = "<group>"; };
+		A00200000000000000000031 /* TacticalDockNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalDockNavigationView.swift; sourceTree = "<group>"; };
+		A00200000000000000000030 /* TacticalDockDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalDockDestination.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,6 +114,8 @@
 				A00200000000000000000020 /* TacticalBuildSectionView.swift */,
 				A00200000000000000000021 /* TacticalProductionSectionView.swift */,
 				A00200000000000000000029 /* TacticalProductionManagementRail.swift */,
+				A00200000000000000000031 /* TacticalDockNavigationView.swift */,
+				A00200000000000000000030 /* TacticalDockDestination.swift */,
 				A00200000000000000000022 /* TacticalSelectionSectionView.swift */,
 				A00200000000000000000023 /* TacticalGroupsSectionView.swift */,
 				A00200000000000000000024 /* TacticalSessionSectionView.swift */,
@@ -225,6 +231,8 @@
 				A00100000000000000000020 /* TacticalBuildSectionView.swift in Sources */,
 				A00100000000000000000021 /* TacticalProductionSectionView.swift in Sources */,
 				A00100000000000000000029 /* TacticalProductionManagementRail.swift in Sources */,
+				A00100000000000000000031 /* TacticalDockNavigationView.swift in Sources */,
+				A00100000000000000000030 /* TacticalDockDestination.swift in Sources */,
 				A00100000000000000000022 /* TacticalSelectionSectionView.swift in Sources */,
 				A00100000000000000000023 /* TacticalGroupsSectionView.swift in Sources */,
 				A00100000000000000000024 /* TacticalSessionSectionView.swift in Sources */,

@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct TacticalCommandDockView: View {
-    private static let scrollTopID = "tactical-command-dock-top"
-
     @Bindable var controller: GameController
     let layoutRole: TacticalHUDLayoutRole
 
@@ -23,59 +21,70 @@ struct TacticalCommandDockView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            TacticalCommandDockHeaderView(
-                controller: controller,
-                showsCompactProducerContext: isCompactProducerContext,
-                showsSelectionModePicker: !isCompactNormalContext,
-                showsCompactHint: isCompactNormalContext
-            )
-            if showsQuickCommandRail {
-                TacticalQuickCommandRail(controller: controller)
-            }
-            Divider()
-            ScrollViewReader { scrollProxy in
+        ScrollViewReader { scrollProxy in
+            VStack(spacing: 0) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: TacticalHUDTheme.sectionSpacing) {
-                        if hasProductionControls {
-                            TacticalProductionSectionView(
-                                controller: controller,
-                                columns: commandColumnCount,
-                                isCompact: layoutRole != .regularTrailing
-                            )
-                        }
-                        if hasSelectedBuildingUpgradeControls {
-                            TacticalBuildSectionView(controller: controller, columns: commandColumnCount)
-                        }
-                        if hasCommandControls {
-                            TacticalCommandsSectionView(
-                                controller: controller,
-                                columns: commandColumnCount,
-                                showsStop: shouldShowStop,
-                                showsPrimaryCommands: !showsQuickCommandRail
-                            )
-                        }
-                        if hasBuildControls && !hasSelectedBuildingUpgradeControls {
-                            TacticalBuildSectionView(controller: controller, columns: commandColumnCount)
-                        }
-                        TacticalSelectionSectionView(
+                    VStack(spacing: 0) {
+                        TacticalCommandDockHeaderView(
                             controller: controller,
-                            columns: commandColumnCount,
-                            showsSelectionModePicker: isCompactNormalContext
+                            showsCompactProducerContext: isCompactProducerContext,
+                            showsSelectionModePicker: !isCompactNormalContext,
+                            showsCompactHint: isCompactNormalContext
                         )
-                        TacticalGroupsSectionView(controller: controller, columns: commandColumnCount)
-                        TacticalSessionSectionView(controller: controller, columns: commandColumnCount)
+                        .id(TacticalDockDestination.orders)
+                        if showsQuickCommandRail {
+                            TacticalQuickCommandRail(controller: controller)
+                        }
+                        VStack(alignment: .leading, spacing: TacticalHUDTheme.sectionSpacing) {
+                            if hasProductionControls {
+                                TacticalProductionSectionView(
+                                    controller: controller,
+                                    columns: commandColumnCount,
+                                    isCompact: layoutRole != .regularTrailing
+                                )
+                            }
+                            if hasSelectedBuildingUpgradeControls {
+                                TacticalBuildSectionView(controller: controller, columns: commandColumnCount)
+                            }
+                            if hasCommandControls {
+                                TacticalCommandsSectionView(
+                                    controller: controller,
+                                    columns: commandColumnCount,
+                                    showsStop: shouldShowStop,
+                                    showsPrimaryCommands: !showsQuickCommandRail
+                                )
+                            }
+                            if hasBuildControls && !hasSelectedBuildingUpgradeControls {
+                                TacticalBuildSectionView(controller: controller, columns: commandColumnCount)
+                            }
+                            TacticalSelectionSectionView(
+                                controller: controller,
+                                columns: commandColumnCount,
+                                showsSelectionModePicker: isCompactNormalContext
+                            )
+                            .id(TacticalDockDestination.selection)
+                            TacticalGroupsSectionView(controller: controller, columns: commandColumnCount)
+                                .id(TacticalDockDestination.groups)
+                            TacticalSessionSectionView(controller: controller, columns: commandColumnCount)
+                                .id(TacticalDockDestination.session)
+                        }
+                        .padding(TacticalHUDTheme.contentPadding)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .id(Self.scrollTopID)
-                    .padding(TacticalHUDTheme.contentPadding)
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .scrollIndicators(.visible)
                 .onChange(of: controller.dockSelectionIdentity) { _, _ in
-                    withTransaction(Transaction(animation: nil)) {
-                        scrollProxy.scrollTo(Self.scrollTopID, anchor: .top)
+                    navigate(to: .orders, using: scrollProxy)
+                }
+                .onChange(of: controller.isAwaitingTargetCommand) { _, isAwaiting in
+                    if isAwaiting {
+                        navigate(to: .orders, using: scrollProxy)
                     }
                 }
+                TacticalDockNavigationView(
+                    showsProducer: controller.productionFocusBuildingName != nil,
+                    navigate: { navigate(to: $0, using: scrollProxy) }
+                )
             }
         }
         .background {
@@ -90,6 +99,14 @@ struct TacticalCommandDockView: View {
                 .frame(width: 1)
         }
         .accessibilityElement(children: .contain)
+    }
+
+    private func navigate(to destination: TacticalDockDestination, using proxy: ScrollViewProxy) {
+        // Keep navigation immediate, including Reduce Motion. The eager sections
+        // stay mounted so their existing keyboard shortcuts remain available.
+        withTransaction(Transaction(animation: nil)) {
+            proxy.scrollTo(destination, anchor: .top)
+        }
     }
 
     private var hasCommandControls: Bool {

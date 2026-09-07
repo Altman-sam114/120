@@ -6972,3 +6972,13 @@
 - 固定视觉 fixture 不能替代动态密集战斗、任意 zoom/heading、长局帧率、Reduce Motion 和所有屏幕宽度验证；总目标仍未完成。
 
 通过记录：最终修复 commit `bd437d2b07a928b8722d40715b3242bfc89dac98` 对应 Actions run `33487734249` / attempt `1` / job `99791650154`；artifact `rustwar-ci-v1.2-main-bd437d2-run33487734249-attempt1`（ID `9792827895`，digest `sha256:da958b3274976d55d24e47763b6254b4ad87da10c35f577783e9f511f87ebd0e`）已按 Agent C 流程下载到 `/private/tmp/rustwar-c-review-33487734249/`（约 1.7M）并核对。manifest 的 `branch=main`、完整 SHA、run/attempt、固定 Xcode 26.5 / iOS 26.5 / Swift 6.3.2 / iPhone 17 Pro 完全匹配；JUnit `8/0/1`、Core `344 tests`、本轮 Swift 修改文件双架构编译、Xcode list/build、production/combat 双场景启动、横屏归一化和双 PNG probe 全成功，既有 headless-browser regression 为唯一 skip。Home `2622x1206` SHA-256 `9e29718ec238f2bc00e90e4ba7c0362687209275d990ac929ad7a66db99b1c60`，Combat `ed9b607cb12914e84feede51575d761f016e4875d63fa4199c0dea63bf37b14f`；人工复判确认 Commands 首行短标题和生产指标分行可读，既有战斗视觉无静态回退。
+
+## v2.87 / iOS 指令栏直达导航与可滚动上下文
+
+日期：2026-09-07。A/B/C 由当前主任务顺序执行，遵循人工不增开子智能体要求。
+
+- A：`md/prompt/v1-ios-swift-port/v2.87-dock-direct-navigation.md` 定义目标与云端 gate。
+- B：`TacticalCommandDockView.swift` 将 header/Quick Orders 移入统一 ScrollView，四个稳定锚点保留 eager section 与快捷键；选择变化或进入等待命令返回顶部。`TacticalDockDestination.swift` 定义导航域；`TacticalDockNavigationView.swift` 提供固定 44pt 导航与辅助功能横向完整标签，Xcode project 注册新源码。
+- 验证：未运行任何本地测试、build、typecheck 或 diff --check（人工明确禁止）；仅源码/diff 阅读。待本轮 push 后 C 核对最新 SHA 对应 artifact。
+- 基线：开始时 main=origin/main=`09aba48129cdd53ec3db1268ec4ed070bf77853b`；run `33489124022` attempt 1 已完成，必要包 `rustwar-ci-v1.2-main-09aba48-run33489124022-attempt1` 已下载到 `/private/tmp/rustwar-c-review-33489124022/`（1.7M），manifest/JUnit/失败摘要匹配成功，JUnit 8/0/1。这只是重构前基线。
+- 剩余目标：云端真实导航/多指 UI 测试、触摸手感、战斗和单位模型进一步重构；本轮不代表顶级游戏目标完成。`.wp` 保持未跟踪。
