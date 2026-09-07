@@ -192,7 +192,7 @@ struct TacticalProductionSectionView: View {
                 columns: columns,
                 isCompact: isCompact
             )
-            if controller.productionFocusBuildingName != nil {
+            if controller.productionFocusBuildingName != nil && (!isCompact || dynamicTypeSize.isAccessibilitySize) {
                 TacticalProductionFocusSummaryView(
                     controller: controller,
                     isCompact: isCompact
@@ -210,6 +210,9 @@ struct TacticalProductionSectionView: View {
                         productionButton(for: unitType, shortcutIndex: index)
                     }
                 }
+            }
+            if controller.productionFocusBuildingName != nil && isCompact && !dynamicTypeSize.isAccessibilitySize {
+                TacticalProductionFocusSummaryView(controller: controller, isCompact: isCompact)
             }
             if !controller.productionQueueItems.isEmpty {
                 TacticalProductionQueueView(items: controller.productionQueueItems)

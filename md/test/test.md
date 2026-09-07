@@ -973,3 +973,7 @@ Agent C 只能验收最新 `origin/main` 完整 SHA 对应的未加密 Actions a
 人工要求全部云端测试，禁止本地 Swift/Node/Xcode/Simulator/Preview、测试脚本与 diff --check。源码和 diff 阅读不执行验证程序。现有 workflow 在云端运行静态检查、Core 至少 344 tests、iOS 双架构 build、双场景启动、PNG probe；C 必须下载最新 main 完整 SHA 的必要结果包并核对 manifest/run/attempt/JUnit/build.log/失败摘要。
 
 源码复核：四个锚点始终存在；生产 focus 时 Orders 文案 Factory；选择改变及等待态开始回顶；导航不改变选择或命令；各 eager section 的 shortcut 保留。正常字号导航四等分、44pt，辅助功能完整 Label 横向滚动。header 与 Quick Orders 进入 ScrollView，导航保持可达。检查云端 Home/Combat 导航可见、生产/战场无重叠。固定 PNG 不证明点击跳转、横竖屏所有尺寸、VoiceOver、多指框选或真机手感；本轮不能声称解决全部操作问题。
+
+### v2.87 云端复判追加修复
+
+首个实现 `4e16f9a984dabf5310f5293851be2475fd3791ec` 的 run `34079773510` / attempt 1 构建通过，结果包 `rustwar-ci-v1.2-main-4e16f9a-run34079773510-attempt1`（ID 10003535939）已下载到 `/private/tmp/rustwar-c-review-34079773510/`（1.7M）；manifest 匹配、Core 344 tests、JUnit 8/0/1、双架构 build/双启动/PNG probe 成功。C 画面复判要求继续修复首屏内容空间：compact 普通字号 Quick Orders 改为四列图标上置，字号大于 large 恢复两列、accessibility 一列，保持 44pt 与 action/shortcut。compact 非辅助功能字号的 NOW/QUEUE/UPGRADE summary 移到生产卡之后、队列之前，保留科技升级优先和生产 availability。其余布局保持。必须以追加修复后最新 SHA artifact 重新验收，不以首个绿构建宣布最终通过。

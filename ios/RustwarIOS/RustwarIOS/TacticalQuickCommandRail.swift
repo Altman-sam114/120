@@ -2,11 +2,12 @@ import SwiftUI
 
 struct TacticalQuickCommandRail: View {
     @Bindable var controller: GameController
+    var usesCompactRow = false
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var columns: Int {
-        dynamicTypeSize.isAccessibilitySize ? 1 : 2
+        dynamicTypeSize.isAccessibilitySize ? 1 : (usesCompactRow && dynamicTypeSize <= .large ? 4 : 2)
     }
 
     var body: some View {
@@ -99,18 +100,30 @@ struct TacticalQuickCommandRail: View {
         hint: String
     ) -> some View {
         let button = Button(action: action) {
-            Label {
-                Text(displayTitle)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .minimumScaleFactor(0.78)
-                    .allowsTightening(true)
-            } icon: {
-                Image(systemName: systemImage)
-                    .accessibilityHidden(true)
+            if columns == 4 {
+                VStack(spacing: TacticalHUDTheme.denseSpacing) {
+                    Image(systemName: systemImage)
+                        .font(.body)
+                        .accessibilityHidden(true)
+                    Text(displayTitle)
+                        .font(.caption2.bold())
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity)
+            } else {
+                Label {
+                    Text(displayTitle)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .minimumScaleFactor(0.78)
+                        .allowsTightening(true)
+                } icon: {
+                    Image(systemName: systemImage)
+                        .accessibilityHidden(true)
+                }
             }
         }
-            .tacticalControl()
+            .buttonStyle(TacticalBorderedButtonStyle(expandsHorizontally: columns != 4))
             .accessibilityLabel(isAwaitingTarget ? "Cancel \(command) target" : command)
             .accessibilityValue(isAwaitingTarget ? "Waiting for \(command) target" : "Ready")
             .accessibilityHint(isAwaitingTarget ? "Cancels \(command) target selection." : hint)

@@ -33,7 +33,10 @@ struct TacticalCommandDockView: View {
                         )
                         .id(TacticalDockDestination.orders)
                         if showsQuickCommandRail {
-                            TacticalQuickCommandRail(controller: controller)
+                            TacticalQuickCommandRail(
+                                controller: controller,
+                                usesCompactRow: layoutRole != .regularTrailing
+                            )
                         }
                         VStack(alignment: .leading, spacing: TacticalHUDTheme.sectionSpacing) {
                             if hasProductionControls {

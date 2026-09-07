@@ -6982,3 +6982,7 @@
 - 验证：未运行任何本地测试、build、typecheck 或 diff --check（人工明确禁止）；仅源码/diff 阅读。待本轮 push 后 C 核对最新 SHA 对应 artifact。
 - 基线：开始时 main=origin/main=`09aba48129cdd53ec3db1268ec4ed070bf77853b`；run `33489124022` attempt 1 已完成，必要包 `rustwar-ci-v1.2-main-09aba48-run33489124022-attempt1` 已下载到 `/private/tmp/rustwar-c-review-33489124022/`（1.7M），manifest/JUnit/失败摘要匹配成功，JUnit 8/0/1。这只是重构前基线。
 - 剩余目标：云端真实导航/多指 UI 测试、触摸手感、战斗和单位模型进一步重构；本轮不代表顶级游戏目标完成。`.wp` 保持未跟踪。
+
+### v2.87 云端复判追加修复
+
+首个实现 `4e16f9a984dabf5310f5293851be2475fd3791ec` 的 run `34079773510` / attempt 1 构建通过，结果包 `rustwar-ci-v1.2-main-4e16f9a-run34079773510-attempt1`（ID 10003535939）已下载到 `/private/tmp/rustwar-c-review-34079773510/`（1.7M）；manifest 匹配、Core 344 tests、JUnit 8/0/1、双架构 build/双启动/PNG probe 成功。C 画面复判要求继续修复首屏内容空间：compact 普通字号 Quick Orders 改为四列图标上置，字号大于 large 恢复两列、accessibility 一列，保持 44pt 与 action/shortcut。compact 非辅助功能字号的 NOW/QUEUE/UPGRADE summary 移到生产卡之后、队列之前，保留科技升级优先和生产 availability。其余布局保持。必须以追加修复后最新 SHA artifact 重新验收，不以首个绿构建宣布最终通过。

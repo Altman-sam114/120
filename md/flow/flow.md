@@ -1062,3 +1062,7 @@ v2.83 以 `origin/main` 的 v2.82 文档验收 commit `a526302df15cb6f33c0876445
 ## v2.87 / Dock navigation ownership
 
 `TacticalDockDestination` 定义 Orders/Selection/Groups/Session 四个稳定滚动锚点。`TacticalCommandDockView` 的单一 ScrollViewReader 拥有定位，滚动内容依次为 selection/producer header、Quick Orders、生产/升级/指令、选择、编队、Session。header 与 rail 参与滚动，避免固定高度吞掉短屏幕或 Dynamic Type 可用空间。固定 `TacticalDockNavigationView` 只触发 scrollTo，不改写 controller/Core。eager VStack 保留各 section 的 keyboardShortcut 注册。`dockSelectionIdentity` 改变或 `isAwaitingTargetCommand` 进入 true 时立即返回 Orders 顶部；普通生产 tick 不重置滚动。辅助功能导航横向滚动完整 Label，正常字号四列图标和文字；无动画，保留 Reduce Motion。
+
+### v2.87 云端复判追加修复
+
+首个实现 `4e16f9a984dabf5310f5293851be2475fd3791ec` 的 run `34079773510` / attempt 1 构建通过，结果包 `rustwar-ci-v1.2-main-4e16f9a-run34079773510-attempt1`（ID 10003535939）已下载到 `/private/tmp/rustwar-c-review-34079773510/`（1.7M）；manifest 匹配、Core 344 tests、JUnit 8/0/1、双架构 build/双启动/PNG probe 成功。C 画面复判要求继续修复首屏内容空间：compact 普通字号 Quick Orders 改为四列图标上置，字号大于 large 恢复两列、accessibility 一列，保持 44pt 与 action/shortcut。compact 非辅助功能字号的 NOW/QUEUE/UPGRADE summary 移到生产卡之后、队列之前，保留科技升级优先和生产 availability。其余布局保持。必须以追加修复后最新 SHA artifact 重新验收，不以首个绿构建宣布最终通过。
