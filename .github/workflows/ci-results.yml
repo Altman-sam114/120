@@ -13,6 +13,7 @@ jobs:
   ci-results:
     name: Build CI result package
     runs-on: macos-26
+    timeout-minutes: 45
     env:
       CI_FLOW_VERSION: v1.2
       PROJECT_NAME: Rustwar
@@ -137,6 +138,12 @@ jobs:
           fi
           diff_status=$?
           echo "git diff --check exit=$diff_status" >> "$build_log"
+          echo >> "$build_log"
+
+          echo "== workflow YAML parse ==" >> "$build_log"
+          ruby -e 'require "yaml"; YAML.parse_file(".github/workflows/ci-results.yml"); puts "yaml ok"' >> "$build_log" 2>&1
+          yaml_status=$?
+          echo "workflow YAML parse exit=$yaml_status" >> "$build_log"
           echo >> "$build_log"
 
           echo "== node --check app.js ==" >> "$build_log"
@@ -337,6 +344,51 @@ jobs:
             echo "combat_pixel_probe_exit=${combat_screenshot_probe_status}"
           } > ci-results/ios-simulator-info.txt
 
+          echo "== actual iOS interaction tests ==" >> "$build_log"
+          ui_test_execution_status=77
+          ui_summary_export_status=77
+          ui_tree_export_status=77
+          ui_result_bundle="${RUNNER_TEMP}/RustwarUIResults.xcresult"
+          if [[ "$xcode_build_status" -eq 0 && "$simulator_boot_status" -eq 0 ]]; then
+            xcrun simctl terminate "$simulator_udid" "$IOS_BUNDLE_ID" >> "$build_log" 2>&1
+            xcodebuild \
+              -project "$IOS_PROJECT" \
+              -scheme "$IOS_SCHEME" \
+              -destination "platform=iOS Simulator,id=${simulator_udid}" \
+              -derivedDataPath "$derived_data_path" \
+              -resultBundlePath "$ui_result_bundle" \
+              -parallel-testing-enabled NO \
+              -test-iterations 1 \
+              -test-timeouts-enabled YES \
+              -default-test-execution-time-allowance 120 \
+              -maximum-test-execution-time-allowance 180 \
+              ONLY_ACTIVE_ARCH=YES \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGN_IDENTITY="" \
+              test >> "$build_log" 2>&1
+            ui_test_execution_status=$?
+          fi
+          if [[ -d "$ui_result_bundle" ]]; then
+            xcrun xcresulttool get test-results summary --path "$ui_result_bundle" \
+              > ci-results/ios-ui-test-summary.json 2>> "$build_log"
+            ui_summary_export_status=$?
+            xcrun xcresulttool get test-results tests --path "$ui_result_bundle" \
+              > ci-results/ios-ui-test-tree.json 2>> "$build_log"
+            ui_tree_export_status=$?
+          fi
+          node ci/validate-ios-ui-results.js \
+            ci-results/ios-ui-test-summary.json ci-results/ios-ui-test-tree.json \
+            "$ui_test_execution_status" ci-results/ios-ui-test-gate.json >> "$build_log" 2>&1
+          ui_test_status=$?
+          if [[ "$ui_summary_export_status" -ne 0 || "$ui_tree_export_status" -ne 0 ]]; then
+            ui_test_status=1
+          fi
+          echo "xcodebuild test exit=$ui_test_execution_status" >> "$build_log"
+          echo "UI summary export exit=$ui_summary_export_status" >> "$build_log"
+          echo "UI test tree export exit=$ui_tree_export_status" >> "$build_log"
+          echo "UI tests mandatory gate exit=$ui_test_status" >> "$build_log"
+          echo >> "$build_log"
+
           if [[ -n "$simulator_udid" ]]; then
             echo "== clean up iOS Simulator ==" >> "$build_log"
             xcrun simctl shutdown "$simulator_udid" >> "$build_log" 2>&1
@@ -354,7 +406,7 @@ jobs:
 
           {
             echo "## CI Failure Summary"
-            if [[ "$toolchain_status" -eq 0 && "$diff_status" -eq 0 && "$node_status" -eq 0 && "$swift_status" -eq 0 && "$xcode_list_status" -eq 0 && "$xcode_build_status" -eq 0 && "$simulator_visual_status" -eq 0 ]]; then
+            if [[ "$toolchain_status" -eq 0 && "$diff_status" -eq 0 && "$node_status" -eq 0 && "$swift_status" -eq 0 && "$xcode_list_status" -eq 0 && "$xcode_build_status" -eq 0 && "$simulator_visual_status" -eq 0 && "$ui_test_status" -eq 0 && "$yaml_status" -eq 0 ]]; then
               echo "- Result: success"
             else
               echo "- Result: failure"
@@ -366,6 +418,8 @@ jobs:
             echo "- xcodebuild -list ${IOS_PROJECT}: $([[ "$xcode_list_status" -eq 0 ]] && echo success || echo failure)"
             echo "- xcodebuild ${IOS_SCHEME}: $([[ "$xcode_build_status" -eq 0 ]] && echo success || echo failure)"
             echo "- iOS Simulator launches and screenshots: $([[ "$simulator_visual_status" -eq 0 ]] && echo success || echo failure)"
+            echo "- workflow YAML parse: $([[ "$yaml_status" -eq 0 ]] && echo success || echo failure)"
+            echo "- actual iOS interaction tests (at least 8, no failures/skips): $([[ "$ui_test_status" -eq 0 ]] && echo success || echo failure)"
             echo "- Browser smoke/regression: skipped; Rustwar currently has no headless browser CI."
           } > ci-results/ci-failure-summary.md
 
@@ -377,7 +431,7 @@ jobs:
             git log --oneline -5
           } > ci-results/repo-state.txt
 
-          if [[ "$toolchain_status" -eq 0 && "$diff_status" -eq 0 && "$node_status" -eq 0 && "$swift_status" -eq 0 && "$xcode_list_status" -eq 0 && "$xcode_build_status" -eq 0 && "$simulator_visual_status" -eq 0 ]]; then
+          if [[ "$toolchain_status" -eq 0 && "$diff_status" -eq 0 && "$node_status" -eq 0 && "$swift_status" -eq 0 && "$xcode_list_status" -eq 0 && "$xcode_build_status" -eq 0 && "$simulator_visual_status" -eq 0 && "$ui_test_status" -eq 0 && "$yaml_status" -eq 0 ]]; then
             overall="success"
           else
             overall="failure"
@@ -385,6 +439,8 @@ jobs:
           echo "$overall" > ci-results/overall-status.txt
 
           CHECK_TOOLCHAIN_STATUS="$toolchain_status" \
+          CHECK_YAML_STATUS="$yaml_status" \
+          CHECK_UI_TEST_STATUS="$ui_test_status" \
           CHECK_DIFF_STATUS="$diff_status" \
           CHECK_NODE_STATUS="$node_status" \
           CHECK_SWIFT_STATUS="$swift_status" \
@@ -416,7 +472,19 @@ jobs:
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&apos;");
 
+          const uiReportPath = "ci-results/ios-ui-test-gate.json";
+          const uiReport = fs.existsSync(uiReportPath) ? JSON.parse(fs.readFileSync(uiReportPath, "utf8")) : null;
           const checks = [
+            {
+              name: "workflow YAML parse",
+              ok: process.env.CHECK_YAML_STATUS === "0",
+              message: "Ruby YAML parser for the CI workflow."
+            },
+            {
+              name: "actual iOS interaction tests",
+              ok: process.env.CHECK_UI_TEST_STATUS === "0",
+              message: "xcodebuild test must execute at least 8 UI tests with all expected cases, zero failures and zero skips."
+            },
             {
               name: "pinned Xcode 26.5 toolchain",
               ok: process.env.CHECK_TOOLCHAIN_STATUS === "0",
@@ -513,10 +581,16 @@ jobs:
             swiftVersion: process.env.SWIFT_VERSION,
             toolchainOutcome: process.env.CHECK_TOOLCHAIN_STATUS === "0" ? "success" : "failure",
             resultBundlePath: null,
+            uiTestOutcome: process.env.CHECK_UI_TEST_STATUS === "0" ? "success" : "failure",
+            uiTestReport: uiReport,
+            uiTestSummaryPath: fs.existsSync("ci-results/ios-ui-test-summary.json") ? "ci-results/ios-ui-test-summary.json" : null,
+            uiTestTreePath: fs.existsSync("ci-results/ios-ui-test-tree.json") ? "ci-results/ios-ui-test-tree.json" : null,
+            uiTestGatePath: uiReportPath,
+            workflowYAMLOutcome: process.env.CHECK_YAML_STATUS === "0" ? "success" : "failure",
             junitPath: "ci-results/junit.xml",
             buildLogPath: "ci-results/build.log",
             failureSummaryPath: "ci-results/ci-failure-summary.md",
-            staticChecksOutcome: process.env.CHECK_DIFF_STATUS === "0" && process.env.CHECK_NODE_STATUS === "0" ? "success" : "failure",
+            staticChecksOutcome: process.env.CHECK_DIFF_STATUS === "0" && process.env.CHECK_NODE_STATUS === "0" && process.env.CHECK_YAML_STATUS === "0" ? "success" : "failure",
             buildOutcome: process.env.CHECK_XCODE_BUILD_STATUS === "0" ? "success" : "failure",
             simulatorVisualOutcome: process.env.CHECK_SIMULATOR_VISUAL_STATUS === "0" ? "success" : "failure",
             simulatorLaunchOutcome: process.env.CHECK_SIMULATOR_LAUNCH_STATUS === "0" ? "success" : "failure",
@@ -531,7 +605,7 @@ jobs:
             combatScreenshotProbeOutcome: process.env.CHECK_COMBAT_SCREENSHOT_PROBE_STATUS === "0" ? "success" : "failure",
             combatScreenshotPath: process.env.CHECK_COMBAT_SIMULATOR_SCREENSHOT_STATUS === "0" ? "ci-results/ios-combat.png" : null,
             combatScreenshotMetricsPath: process.env.CHECK_COMBAT_SCREENSHOT_PROBE_STATUS === "0" ? "ci-results/ios-combat-screenshot-metrics.txt" : null,
-            testOutcome: process.env.CHECK_SWIFT_STATUS === "0" ? "success" : "failure",
+            testOutcome: process.env.CHECK_SWIFT_STATUS === "0" && process.env.CHECK_UI_TEST_STATUS === "0" ? "success" : "failure",
             swiftPackagePath: process.env.SWIFT_PACKAGE_PATH,
             swiftPackageOutcome: process.env.CHECK_SWIFT_STATUS === "0" ? "success" : "failure",
             xcodeProject: process.env.IOS_PROJECT,

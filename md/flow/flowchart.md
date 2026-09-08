@@ -1791,3 +1791,21 @@ flowchart TD
     Complete --> Lease[原 lease finish 只能成功一次]
     Lease --> Selection[既有 Replace/Add 区域选择]
 ```
+
+
+## v2.89 / 真实 iOS 操作云端 gate
+
+```mermaid
+flowchart TD
+    Launch[专用 interaction launch argument] --> Fixture[暂停真实 GameState + 关闭 AI]
+    Fixture --> App[正式 SwiftUI / SpriteKit 界面]
+    XCTest[XCUITest 坐标点击/拖动与按钮] --> App
+    App --> Controller[GameController 输入与 action]
+    Controller --> Core[GameEngine 状态与模拟]
+    Core --> Snapshot[只读 accessibility 状态摘要]
+    Snapshot --> Assert[选择/命令/伤害/队列/扣费断言]
+    Assert --> Result[xcresult summary + tests tree]
+    Result --> Gate[退出码 + 至少八项 + 零失败/跳过 + 名称]
+    Gate --> Package[manifest / JUnit / failure summary / overall]
+    Package --> C[最新 main SHA artifact 复判]
+```

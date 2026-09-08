@@ -62,7 +62,10 @@ struct BattlefieldView: View {
         GeometryReader { proxy in
             ZStack {
                 SpriteView(scene: scene, options: [.allowsTransparency])
+                    .accessibilityElement(children: .ignore)
                     .accessibilityLabel("Rustwar battlefield")
+                    .accessibilityIdentifier("battlefield")
+                    .accessibilityValue(controller.interactionTestSnapshot(viewportSize: proxy.size))
                     .task {
                         scene.controller = controller
                         scene.accessibilityReduceMotion = accessibilityReduceMotion

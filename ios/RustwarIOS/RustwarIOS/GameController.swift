@@ -83,6 +83,7 @@ final class GameController {
     var engine: GameEngine
     var camera: CameraState
     let cloudVisualScenario: CloudVisualScenario?
+    let runsInteractionTests: Bool
     var renderRevision = 0
     var mapRenderRevision = 0
     private(set) var battlefieldInputEpoch = 0
@@ -157,12 +158,18 @@ final class GameController {
         mapID: MapID = .coast,
         startsPaused: Bool = false,
         initiallySelectedPlayerBuildingType: BuildingType? = nil,
-        cloudVisualScenario: CloudVisualScenario? = nil
+        cloudVisualScenario: CloudVisualScenario? = nil,
+        runsInteractionTests: Bool = false,
+        interactionTestLowMetal: Bool = false
     ) {
         let preset = MapPreset.preset(for: mapID)
         self.currentMapID = mapID
         self.cloudVisualScenario = cloudVisualScenario
-        if cloudVisualScenario == .combat {
+        self.runsInteractionTests = runsInteractionTests
+        if runsInteractionTests {
+            self.engine = GameEngine(state: CloudInteractionFixture.state(mapID: mapID, lowMetal: interactionTestLowMetal), enemyAIEnabled: false)
+            self.camera = CloudInteractionFixture.camera
+        } else if cloudVisualScenario == .combat {
             self.engine = GameEngine(state: Self.combatVisualSmokeState(mapID: mapID), enemyAIEnabled: false)
             self.camera = CameraState(center: WorldPoint(1_930, 1_560), zoom: 1.12)
         } else if cloudVisualScenario == .production {

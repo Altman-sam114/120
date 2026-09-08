@@ -1072,3 +1072,14 @@ v2.83 以 `origin/main` 的 v2.82 文档验收 commit `a526302df15cb6f33c0876445
 双指触控 ownership 仍由 `TouchSequenceOwner` 与 iOS epoch/camera lease 控制。新 `TwoFingerReleaseTracker<ID>` 是纯输入状态，不进入 GameState/JSON。原 pair 的 active/累计 ended 必须覆盖两指；第三指、替换、无 ended 的缺失、任意取消进入 cancelled。首次 ended 将 tracking 变为 releasing（同帧两指结束则 complete）；只有 tracking 帧及首次 release 帧可更新几何/意图，尾指单独移动不扩大框。
 
 `BattlefieldView` 的 Spatial onChanged/onEnded 先 synchronize owner，再共用 `updateMultitouchReleaseFrame`，读取原始 pair 事件中的 ended，避免被 owner 历史 quarantine 过滤。complete 后 `finishClaimedMultitouchSelection` 再核对 epoch、camera lease、phase 与旧 lease，仅 committed 调用既有多指选择 controller action。输入取消/reset 同时清理 tracker。MagnifyGesture 的既有 pinch lease 收尾保持，不产生框选。
+
+
+## v2.89 / 云端界面输入验收边界
+
+`RustwarIOSUITests` 由共享 RustwarIOS scheme 的 TestAction 执行。专用 `--rustwar-ci-interaction-tests` 参数令 App 使用 `CloudInteractionFixture` 的暂停、平坦地形、关闭 AI 的真实 GameState；`--rustwar-ci-low-metal` 只改变该 fixture 起始金属。正常启动与两组固定视觉 fixture 不变。真实点击仍经过 BattlefieldView/SwiftUI button → GameController → GameEngine。
+
+`GameController+InteractionSnapshot.swift` 仅在 interaction 参数下提供只读 accessibilityValue：来自 engine 的 selection、order、HP、queue、upgrade 与 camera 派生屏幕坐标；没有测试 mutation API。`battlefield`、`produce-<type>`、`command-select-area` 与 dock scroll identifier 用于定位正式界面。XCUITest 每项独立启动 App，以真实 battlefield frame 定位实体、触发坐标 tap/drag 或按钮。
+
+CI 在既有双架构 build 与 production/combat 截图后、同一 Simulator 清理前执行 `xcodebuild test`。xcresulttool 导出 summary/tree，`ci/validate-ios-ui-results.js` 检查执行退出码、至少八项、全部通过/无跳过和八项名称存在，输出 gate JSON。此状态同时进入 overall、manifest aggregate testOutcome、JUnit 与失败摘要。新增 YAML parse 也只在云端执行。artifact 保留三份必要 UI JSON，不上传完整 xcresult、DerivedData 或录屏。
+
+本轮 area test 是显式 Select Area 加单指拖动，不等价于双指 Spatial callbacks。v2.88 tracker 的六项纯逻辑测试仍作为补充；精确两指释放和真机性能没有被此 gate 证明。

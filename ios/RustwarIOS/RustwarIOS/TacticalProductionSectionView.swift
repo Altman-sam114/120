@@ -240,6 +240,7 @@ struct TacticalProductionSectionView: View {
             .tacticalControl()
             .disabled(!availability.isAvailable)
             .keyboardShortcut(shortcutKey, modifiers: .shift)
+            .accessibilityIdentifier("produce-\(unitType.rawValue)")
             .accessibilityLabel(productionAccessibilityLabel(for: definition))
             .accessibilityValue(availability.accessibilityValue)
             .accessibilityHint(availability.accessibilityHint)
@@ -258,6 +259,7 @@ struct TacticalProductionSectionView: View {
             }
             .tacticalControl()
             .disabled(!availability.isAvailable)
+            .accessibilityIdentifier("produce-\(unitType.rawValue)")
             .accessibilityLabel(productionAccessibilityLabel(for: definition))
             .accessibilityValue(availability.accessibilityValue)
             .accessibilityHint(availability.accessibilityHint)

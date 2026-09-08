@@ -76,6 +76,7 @@ struct TacticalCommandDockView: View {
                     }
                 }
                 .scrollIndicators(.visible)
+                .accessibilityIdentifier("command-dock-scroll")
                 .onChange(of: controller.dockSelectionIdentity) { _, _ in
                     navigate(to: .orders, using: scrollProxy)
                 }

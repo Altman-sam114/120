@@ -8,6 +8,7 @@ struct RustwarIOSApp: App {
 
     init() {
         let arguments = ProcessInfo.processInfo.arguments
+        let runsInteractionTests = arguments.contains(CloudInteractionFixture.launchArgument)
         let isProductionVisualSmoke = arguments.contains("--rustwar-ci-visual-smoke")
         let isCombatVisualSmoke = arguments.contains("--rustwar-ci-combat-visual-smoke")
         let visualScenario: CloudVisualScenario? = isCombatVisualSmoke
@@ -15,9 +16,11 @@ struct RustwarIOSApp: App {
             : (isProductionVisualSmoke ? .production : nil)
         _controller = State(
             initialValue: GameController(
-                startsPaused: visualScenario != nil,
+                startsPaused: visualScenario != nil || runsInteractionTests,
                 initiallySelectedPlayerBuildingType: isProductionVisualSmoke ? .landFactory : nil,
-                cloudVisualScenario: visualScenario
+                cloudVisualScenario: visualScenario,
+                runsInteractionTests: runsInteractionTests,
+                interactionTestLowMetal: arguments.contains("--rustwar-ci-low-metal")
             )
         )
     }

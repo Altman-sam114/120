@@ -6993,4 +6993,15 @@ v2.87 通过记录（2026-09-08 复判）：`e682865ee74ec48b18602ec2b293f507b7f
 
 2026-09-08，主任务顺序执行 A/B/C，不增开子智能体。A 提示词：`md/prompt/v1-ios-swift-port/v2.88-two-finger-release-lifecycle.md`。B 新增 `TwoFingerReleaseTracker.swift`，按原 pair 累计 ended IDs，区分 tracking/releasing/complete/cancelled；`BattlefieldView.swift` 的 Spatial update/finish 共用一条 frame-update helper，在首次正常释放时冻结意图/几何、两指结束后通过原 owner lease 一次提交。输入 epoch/相机/取消门控优先，reset 清理 tracker；Core 游戏状态、生产、存档、Web、模型/战斗数值不变。新增六组 `TwoFingerReleaseTrackerTests.swift` 回归，预计 Core 350 项，由云端证明实际数量与结果。
 
-本机未运行任何测试、build、typecheck、Simulator、Preview 或 diff --check。Git fetch 初次 HTTPS 超时，随后 pull --ff-only 成功且最新 SHA 已由 API 复核。v2.88 待 push 后验收最新 artifact；固定 PNG 不覆盖真实 SwiftUI 事件时序、VoiceOver 或真机手感。总目标继续包括云端 UI 事件测试、渲染节点复用、模型和战斗美术重构。`.wp` 保留未跟踪。
+本机未运行任何测试、build、typecheck、Simulator、Preview 或 diff --check。Git fetch 初次 HTTPS 超时，随后 pull --ff-only 成功且最新 SHA 已由 API 复核。v2.88 当时待 push 后验收最新 artifact，现已由下方通过记录闭环；固定 PNG 不覆盖真实 SwiftUI 事件时序、VoiceOver 或真机手感。总目标继续包括云端 UI 事件测试、渲染节点复用、模型和战斗美术重构。`.wp` 保留未跟踪。
+
+
+v2.88 通过记录（2026-09-08）：`9b000bc50fad84ad5b11bbebcaf9fc47ec998bb8` 对应 run `34173334096` / attempt 1 / job `101897776842`；artifact `rustwar-ci-v1.2-main-9b000bc-run34173334096-attempt1`（ID `10036706559`，digest `sha256:3f0e814d1df032c9149518c5be2d3bff10de28153dc0ce4c892633cd749f53ca`）已下载到 `/private/tmp/rustwar-c-review-34173334096/`。manifest 最新完整 SHA/branch/run/attempt 一致；Core 350 项、六项新增释放测试、JUnit 8/0/1、arm64/x86_64 build、双启动/PNG probe 成功。Home/Combat 与 v2.87 一致；`agent-c-review.md` 保存在该缓存目录。此通过不包含真实双指输入。
+
+## v2.89 / 云端真实 iOS 操作回归
+
+2026-09-08，主任务顺序执行 A/B/C，不新增子智能体。A 提示词 `md/prompt/v1-ios-swift-port/v2.89-cloud-ios-interaction-tests.md`。B 新增独立 `RustwarIOSUITests` target、共享 scheme、八项 XCUITest；App 的专用 fixture 仅构造起始状态，通过正式 battlefield 手势与按钮执行操作。只读 accessibility 摘要来自真实 engine/controller，没有测试写状态接口。新增生产、选择区域和 dock scroll 标识便于准确定位。
+
+workflow 在同一 pinned Simulator 执行实际 xcodebuild test，导出必要 xcresult summary/tree；新增 JS gate 同时验证退出码、数量、全通过/无跳过与八项名称。UI 和云端 YAML parse 各作为一个 JUnit 项，预期汇总 10/0/1；manifest/testOutcome/失败摘要/overall 同步加 gate。artifact 不包含巨型 xcresult、缓存或录屏。本轮未改变 Core 战斗/生产数值与 Web。
+
+本机只读取/编辑与控制 Git 范围，没有运行任何测试、build、parse/typecheck、Simulator、Preview 或 diff --check；`.wp` 保留未跟踪。版本等待最新提交 push 后的云端实际结果，不能预先宣称八项通过。精确双指拖动/先后释放、真机手感/帧率以及视觉重构仍为后续目标。

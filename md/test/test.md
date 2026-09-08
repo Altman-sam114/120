@@ -10,6 +10,15 @@
 - 每个实现提交必须 push 到 `origin/main`，以精确 commit SHA 定位 `Rustwar CI Results` run；Agent C 下载唯一 artifact 后核对 manifest、JUnit、主日志、失败摘要和 repo state。
 - CI 失败时只能追加修复 commit 并重新走云端验证，不得用本机结果替代。
 
+## v2.89 新增云端 iOS 操作门控
+
+- 在同一 pinned Xcode 26.5 / iOS 26.5 / iPhone 17 Pro Simulator 中，双架构 build 和双静态场景之后执行共享 scheme 的 `xcodebuild test`，禁并行、一次迭代、每项默认 120 秒/上限 180 秒，整个 job 上限 45 分钟。未发现目标或只 build-for-testing 不能通过。
+- 八项 UI 测试逐项启动 fixture，真实点 tank/Builder 和空地、Play 后敌方 HP 减少、拖动只平移且下一次点选有效、工厂生产与升级/扣费、无资源生产禁用、Groups/Select/Game/Orders 导航与自动聚焦、显式 Select Area 拖动后多单位地面命令。
+- Core 基线至少 350 项；UI summary 必须 total >=8、passed=total、failed=0、skipped=0、testResult=Passed，tests tree 包含八项预期方法，xcodebuild 退出码为 0。`ci/validate-ios-ui-results.js` 云端执行并输出 `ios-ui-test-gate.json`。
+- artifact 增加 `ios-ui-test-summary.json`、`ios-ui-test-tree.json`、`ios-ui-test-gate.json`。manifest 新增 UI 状态/计数/报告路径，aggregate testOutcome 同时包含 Core 和 UI；JUnit 预期 `10 tests / 0 failures / 1 skipped`，另一个新增项为云端 Ruby YAML parse，唯一预期 skip 仍为 Web browser regression。
+- C 下载最新 SHA 的 artifact 后核对全部 UI 方法与日志中的执行结果，不能只看 Actions 绿灯。失败需追加修复 commit；不删门控、不通过测试 API 直接发命令代替触摸。完整 xcresult、DerivedData 和录屏不上传。
+- 这些测试未覆盖精确双指 settle/先后抬起、VoiceOver、Dynamic Type 全档位、真机帧率或手指遮挡。静态双 PNG 与 Core tracker 也不能替代这些证据。
+
 ## 固定前缀 / 环境要求
 
 - Web 原型无构建步骤、无包管理器、无后端、无数据库、无容器依赖。

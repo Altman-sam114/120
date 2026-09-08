@@ -113,6 +113,7 @@ struct TacticalCommandsSectionView: View {
                         )
                     }
                     .tacticalControl()
+                    .accessibilityIdentifier("command-select-area")
                     .tacticalCommandAccessibility(
                         command: "Select Area",
                         isAwaitingTarget: controller.isAwaitingAreaSelection,
