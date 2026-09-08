@@ -7005,3 +7005,7 @@ v2.88 通过记录（2026-09-08）：`9b000bc50fad84ad5b11bbebcaf9fc47ec998bb8` 
 workflow 在同一 pinned Simulator 执行实际 xcodebuild test，导出必要 xcresult summary/tree；新增 JS gate 同时验证退出码、数量、全通过/无跳过与八项名称。UI 和云端 YAML parse 各作为一个 JUnit 项，预期汇总 10/0/1；manifest/testOutcome/失败摘要/overall 同步加 gate。artifact 不包含巨型 xcresult、缓存或录屏。本轮未改变 Core 战斗/生产数值与 Web。
 
 本机只读取/编辑与控制 Git 范围，没有运行任何测试、build、parse/typecheck、Simulator、Preview 或 diff --check；`.wp` 保留未跟踪。版本等待最新提交 push 后的云端实际结果，不能预先宣称八项通过。精确双指拖动/先后释放、真机手感/帧率以及视觉重构仍为后续目标。
+
+### v2.89 首轮云端拒绝与项目引用修复
+
+实现 `bae4894b51eea1dcd3f1b841e103b56c3371202f` 的 run `34176186518` / attempt 1 / job `101905933534` 失败。C 经 Altman-sam114 登录下载 `rustwar-ci-v1.2-main-bae4894-run34176186518-attempt1`（ID `10037349178`，digest `sha256:e4b8e718c9947a09da9997d809783defac310b946bbb9d2996ed30394d7a292b`）至 `/private/tmp/rustwar-c-review-34176186518/`（96K），manifest 完整匹配。Core 350、静态检查和 YAML 成功；Xcode project parse 失败，UI 实际执行 0 项，mandatory gate 正确拒绝，JUnit 10/3/2。原因是新增含 `+` 文件名的 PBX path 未加引号。B 追加引用修复，保留全部测试门控；需由下一次最新 SHA 云端证明项目可读、编译和实际操作结果。
