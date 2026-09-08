@@ -6986,3 +6986,11 @@
 ### v2.87 云端复判追加修复
 
 首个实现 `4e16f9a984dabf5310f5293851be2475fd3791ec` 的 run `34079773510` / attempt 1 构建通过，结果包 `rustwar-ci-v1.2-main-4e16f9a-run34079773510-attempt1`（ID 10003535939）已下载到 `/private/tmp/rustwar-c-review-34079773510/`（1.7M）；manifest 匹配、Core 344 tests、JUnit 8/0/1、双架构 build/双启动/PNG probe 成功。C 画面复判要求继续修复首屏内容空间：compact 普通字号 Quick Orders 改为四列图标上置，字号大于 large 恢复两列、accessibility 一列，保持 44pt 与 action/shortcut。compact 非辅助功能字号的 NOW/QUEUE/UPGRADE summary 移到生产卡之后、队列之前，保留科技升级优先和生产 availability。其余布局保持。必须以追加修复后最新 SHA artifact 重新验收，不以首个绿构建宣布最终通过。
+
+v2.87 通过记录（2026-09-08 复判）：`e682865ee74ec48b18602ec2b293f507b7f93427` 对应 run `34080828685` / attempt 1 / job `101615630285`；artifact `rustwar-ci-v1.2-main-e682865-run34080828685-attempt1`（ID `10003852128`，digest `sha256:5c190eb199731f8cd804d9b3f1175c4064846da0bb37f561c1af403d588fb1db`，1.7M）下载到 `/private/tmp/rustwar-c-review-34080828685/`。manifest 与 GitHub API 最新 main SHA 匹配；JUnit 8/0/1、Core 344 tests、iOS 双架构 build、双场景启动/PNG probe 成功。复看 Quick Orders 四按钮完整可读、生产首排完整；二级 Commands 与后续生产行仍需滚动，不能声称全菜单首屏可见或真实导航点击已验证。唯一 skip 为既有浏览器回归。
+
+## v2.88 / 双指释放生命周期
+
+2026-09-08，主任务顺序执行 A/B/C，不增开子智能体。A 提示词：`md/prompt/v1-ios-swift-port/v2.88-two-finger-release-lifecycle.md`。B 新增 `TwoFingerReleaseTracker.swift`，按原 pair 累计 ended IDs，区分 tracking/releasing/complete/cancelled；`BattlefieldView.swift` 的 Spatial update/finish 共用一条 frame-update helper，在首次正常释放时冻结意图/几何、两指结束后通过原 owner lease 一次提交。输入 epoch/相机/取消门控优先，reset 清理 tracker；Core 游戏状态、生产、存档、Web、模型/战斗数值不变。新增六组 `TwoFingerReleaseTrackerTests.swift` 回归，预计 Core 350 项，由云端证明实际数量与结果。
+
+本机未运行任何测试、build、typecheck、Simulator、Preview 或 diff --check。Git fetch 初次 HTTPS 超时，随后 pull --ff-only 成功且最新 SHA 已由 API 复核。v2.88 待 push 后验收最新 artifact；固定 PNG 不覆盖真实 SwiftUI 事件时序、VoiceOver 或真机手感。总目标继续包括云端 UI 事件测试、渲染节点复用、模型和战斗美术重构。`.wp` 保留未跟踪。

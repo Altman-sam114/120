@@ -1774,3 +1774,20 @@ flowchart TD
     Contents --> Action[既有 controller action 与 keyboardShortcut]
     Action --> Core[原有 Core 命令和生产逻辑]
 ```
+
+## v2.88 / 双指先后释放
+
+```mermaid
+flowchart TD
+    Frame[Spatial changed / ended] --> Owner[epoch + camera + TouchSequenceOwner]
+    Owner --> Pair[原 pair active / ended / cancelled]
+    Pair --> Tracker[TwoFingerReleaseTracker]
+    Tracker -->|tracking| Geometry[更新意图与框选]
+    Tracker -->|首指 ended| Freeze[使用首指最后位置并冻结]
+    Freeze -->|尾指仍 active| Wait[保留框选 不提交]
+    Wait -->|尾指 ended| Complete[complete]
+    Tracker -->|两指同时 ended| Complete
+    Tracker -->|取消/第三指/无 ended 丢指| Cancel[取消并清理]
+    Complete --> Lease[原 lease finish 只能成功一次]
+    Lease --> Selection[既有 Replace/Add 区域选择]
+```

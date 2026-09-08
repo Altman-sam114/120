@@ -1066,3 +1066,9 @@ v2.83 以 `origin/main` 的 v2.82 文档验收 commit `a526302df15cb6f33c0876445
 ### v2.87 云端复判追加修复
 
 首个实现 `4e16f9a984dabf5310f5293851be2475fd3791ec` 的 run `34079773510` / attempt 1 构建通过，结果包 `rustwar-ci-v1.2-main-4e16f9a-run34079773510-attempt1`（ID 10003535939）已下载到 `/private/tmp/rustwar-c-review-34079773510/`（1.7M）；manifest 匹配、Core 344 tests、JUnit 8/0/1、双架构 build/双启动/PNG probe 成功。C 画面复判要求继续修复首屏内容空间：compact 普通字号 Quick Orders 改为四列图标上置，字号大于 large 恢复两列、accessibility 一列，保持 44pt 与 action/shortcut。compact 非辅助功能字号的 NOW/QUEUE/UPGRADE summary 移到生产卡之后、队列之前，保留科技升级优先和生产 availability。其余布局保持。必须以追加修复后最新 SHA artifact 重新验收，不以首个绿构建宣布最终通过。
+
+## v2.88 / Two-finger release state
+
+双指触控 ownership 仍由 `TouchSequenceOwner` 与 iOS epoch/camera lease 控制。新 `TwoFingerReleaseTracker<ID>` 是纯输入状态，不进入 GameState/JSON。原 pair 的 active/累计 ended 必须覆盖两指；第三指、替换、无 ended 的缺失、任意取消进入 cancelled。首次 ended 将 tracking 变为 releasing（同帧两指结束则 complete）；只有 tracking 帧及首次 release 帧可更新几何/意图，尾指单独移动不扩大框。
+
+`BattlefieldView` 的 Spatial onChanged/onEnded 先 synchronize owner，再共用 `updateMultitouchReleaseFrame`，读取原始 pair 事件中的 ended，避免被 owner 历史 quarantine 过滤。complete 后 `finishClaimedMultitouchSelection` 再核对 epoch、camera lease、phase 与旧 lease，仅 committed 调用既有多指选择 controller action。输入取消/reset 同时清理 tracker。MagnifyGesture 的既有 pinch lease 收尾保持，不产生框选。

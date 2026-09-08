@@ -977,3 +977,9 @@ Agent C 只能验收最新 `origin/main` 完整 SHA 对应的未加密 Actions a
 ### v2.87 云端复判追加修复
 
 首个实现 `4e16f9a984dabf5310f5293851be2475fd3791ec` 的 run `34079773510` / attempt 1 构建通过，结果包 `rustwar-ci-v1.2-main-4e16f9a-run34079773510-attempt1`（ID 10003535939）已下载到 `/private/tmp/rustwar-c-review-34079773510/`（1.7M）；manifest 匹配、Core 344 tests、JUnit 8/0/1、双架构 build/双启动/PNG probe 成功。C 画面复判要求继续修复首屏内容空间：compact 普通字号 Quick Orders 改为四列图标上置，字号大于 large 恢复两列、accessibility 一列，保持 44pt 与 action/shortcut。compact 非辅助功能字号的 NOW/QUEUE/UPGRADE summary 移到生产卡之后、队列之前，保留科技升级优先和生产 availability。其余布局保持。必须以追加修复后最新 SHA artifact 重新验收，不以首个绿构建宣布最终通过。
+
+## v2.88 / 双指释放云端回归
+
+仅云端运行 `swift test --package-path swift/RustwarCore`，新增六组 TwoFingerReleaseTracker 测试，预期总数至少 350；覆盖先后/同时结束、重复 ended、释放后几何 gate、第三指/替换/无 terminal 丢指、取消、非法 pair/重新 active 以及 TouchSequenceOwner 联合一次 committed。源码复核实际 Spatial update/finish 共用 tracker、首指冻结且尾指不重新计算 dwell，owner/epoch/camera 取消优先，所有 reset 清理 tracker。
+
+C 必须下载最新 origin/main SHA 对应必要 artifact，核对 manifest/JUnit/build.log/失败摘要/run/attempt/固定工具链；双架构 iOS build、双启动/PNG probe 全成功，Home/Combat 相对 v2.87 无本轮静态变化。测试不注入真实 SwiftUI 触控，所以不证明真机 callback 顺序或手感。本机禁止 Swift/Node/Xcode/Simulator/Preview、typecheck、测试脚本、diff --check。

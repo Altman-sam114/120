@@ -48,6 +48,7 @@ struct BattlefieldView: View {
     @State private var multitouchStartLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
     @State private var multitouchCurrentLocations: [SpatialEventCollection.Event.ID: CGPoint] = [:]
     @State private var multitouchStartTime: TimeInterval?
+    @State private var multitouchReleaseTracker: TwoFingerReleaseTracker<SpatialEventCollection.Event.ID>?
     @State private var isMultitouchSequenceActive = false
     @State private var isMultitouchSelection = false
     @State private var isMultitouchPinch = false
@@ -622,7 +623,7 @@ struct BattlefieldView: View {
                         return
                     }
                 }
-                updateMultitouchSelection(with: events)
+                updateMultitouchSelection(with: events, viewportSize: viewportSize)
             }
             .onEnded { events in
                 guard callbackGeneration == multitouchGestureCallbackGeneration else {
@@ -640,7 +641,7 @@ struct BattlefieldView: View {
             }
     }
 
-    private func updateMultitouchSelection(with events: SpatialEventCollection) {
+    private func updateMultitouchSelection(with events: SpatialEventCollection, viewportSize: CGSize) {
         markMultitouchCandidate(in: events)
         guard synchronizeTouchOwner(with: events, allowFreshSeed: true) else {
             return
@@ -659,6 +660,7 @@ struct BattlefieldView: View {
             controller.clearLastBattlefieldTap()
         }
         if touchOwner.phase == .cancelled {
+            multitouchReleaseTracker = nil
             isMultitouchRejected = true
             isMultitouchPinch = false
             clearMultitouchSelectionPreview()
@@ -712,20 +714,45 @@ struct BattlefieldView: View {
                 multitouchStartLocations[touch.id] = touch.location
                 multitouchCurrentLocations[touch.id] = touch.location
             }
-        } else {
-            guard Set(activeTouches.map(\.id)) == Set(multitouchIDs) else {
-                cancelMultitouchSequence()
-                return
-            }
-            for touch in activeTouches where multitouchIDs.contains(touch.id) {
-                multitouchCurrentLocations[touch.id] = touch.location
-            }
+            multitouchReleaseTracker = TwoFingerReleaseTracker(fingerIDs: Set(multitouchIDs))
         }
 
-        classifyMultitouchIntent()
-        if isMultitouchSelection {
-            updateMultitouchSelectionPreview()
+        if updateMultitouchReleaseFrame(with: events) {
+            finishClaimedMultitouchSelection(viewportSize: viewportSize)
         }
+    }
+
+    /// Both Spatial callbacks use the same pair lifecycle. Normal ended events
+    /// must be read before filtering terminal IDs out of the event collection.
+    private func updateMultitouchReleaseFrame(with events: SpatialEventCollection) -> Bool {
+        guard var tracker = multitouchReleaseTracker else {
+            cancelMultitouchSequence()
+            return false
+        }
+        let acceptsGeometry = tracker.acceptsGeometryUpdate
+        let pairEvents = events.filter { $0.kind == .touch && tracker.fingerIDs.contains($0.id) }
+        let phase = tracker.observe(
+            activeIDs: Set(pairEvents.filter { $0.phase == .active }.map(\.id)),
+            endedIDs: Set(pairEvents.filter { $0.phase == .ended }.map(\.id)),
+            cancelledIDs: Set(pairEvents.filter { $0.phase == .cancelled }.map(\.id))
+        )
+        multitouchReleaseTracker = tracker
+        guard phase != .cancelled else {
+            cancelMultitouchSequence()
+            return false
+        }
+        if acceptsGeometry, touchOwner.phase == .multitouch {
+            for event in pairEvents {
+                multitouchCurrentLocations[event.id] = event.location
+            }
+            // Include the first lift's final positions, then freeze both the
+            // box and undecided/selection intent until the second finger lifts.
+            classifyMultitouchIntent()
+            if isMultitouchSelection {
+                updateMultitouchSelectionPreview()
+            }
+        }
+        return phase == .complete
     }
 
     private func synchronizeTouchOwner(
@@ -810,6 +837,7 @@ struct BattlefieldView: View {
         case .ignored:
             return false
         case .cancelled, .replacementRejected:
+            multitouchReleaseTracker = nil
             isMultitouchRejected = true
             isMultitouchPinch = false
             isMultitouchSequenceActive = false
@@ -935,18 +963,22 @@ struct BattlefieldView: View {
         guard !acceptedEventTouchIDs.isEmpty else {
             return
         }
-        let previewSequence = touchOwner.sequence
-        if touchOwner.phase == .multitouch {
-            for event in events where event.kind == .touch && multitouchIDs.contains(event.id) {
-                multitouchCurrentLocations[event.id] = event.location
-            }
-            // A settle-then-lift two-finger frame classifies at release once the dwell elapses.
-            classifyMultitouchIntent()
-            if isMultitouchSelection {
-                updateMultitouchSelectionPreview()
-            }
+        if updateMultitouchReleaseFrame(with: events) {
+            finishClaimedMultitouchSelection(viewportSize: viewportSize)
         }
+    }
 
+    private func finishClaimedMultitouchSelection(viewportSize: CGSize) {
+        guard acceptsCurrentTouchInput(),
+              multitouchReleaseTracker?.phase == .complete else {
+            return
+        }
+        if !isMultitouchPinch && pinchLease == nil,
+           !acceptsCurrentTouchCameraLease() {
+            cancelMultitouchSequence()
+            return
+        }
+        let previewSequence = touchOwner.sequence
         let shouldSelect = touchOwner.phase == .multitouch &&
             isMultitouchSelection &&
             !isMultitouchRejected &&
@@ -1047,6 +1079,7 @@ struct BattlefieldView: View {
         multitouchStartLocations.removeAll()
         multitouchCurrentLocations.removeAll()
         multitouchStartTime = nil
+        multitouchReleaseTracker = nil
         isMultitouchSequenceActive = false
         isMultitouchSelection = false
         isMultitouchPinch = false
