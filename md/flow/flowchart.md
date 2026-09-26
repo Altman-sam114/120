@@ -1,3 +1,11 @@
+## v2.95 HUD presentation path
+
+```text
+Core snapshot -> GameController -> compact selection summary / translucent dock -> battlefield remains visible
+```
+
+The path changes only SwiftUI presentation metrics; touch ownership and command flow are unchanged.
+
 # 项目流程图
 
 ## v2.91.1 / 模型缓存的帧间复用

@@ -1,3 +1,7 @@
+## v2.95 / HUD visual hierarchy
+
+Selection summary and command dock remain presentation-only SwiftUI layers. Normal Dynamic Type constrains selection text to two lines; accessibility sizes retain up to three. Dock/metric opacity is reduced without changing battlefield input, command dispatch, Core state, production, or SpriteKit entity rendering.
+
 # 项目核心流程文档
 
 ## v2.91.1 / SpriteKit 缓存生命周期修复

@@ -34,19 +34,20 @@ struct TacticalSelectionSummaryView: View {
                 }
             }
 
-            HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.compactSpacing) {
+            HStack(alignment: .center, spacing: TacticalHUDTheme.compactSpacing) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.subheadline.bold())
                     .foregroundStyle(TacticalHUDTheme.accent)
                     .accessibilityHidden(true)
                 Text(selectedSummary)
                     .font(.subheadline.bold())
-                    .lineLimit(nil)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 2)
+                    .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 0.9 : 0.78)
+                    .allowsTightening(true)
                     .foregroundStyle(TacticalHUDTheme.primaryText)
             }
             .padding(.horizontal, TacticalHUDTheme.denseSpacing)
-            .padding(.vertical, 3)
+            .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 5 : 4)
             .background(TacticalHUDTheme.metricBackground, in: Capsule())
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Selected")

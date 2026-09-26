@@ -41,7 +41,8 @@ struct TacticalCommandDockHeaderView: View {
                 TacticalSelectionModePicker(controller: controller)
             }
         }
-        .padding(TacticalHUDTheme.compactPadding)
+        .padding(.horizontal, TacticalHUDTheme.compactPadding)
+        .padding(.vertical, TacticalHUDTheme.denseSpacing)
         .background {
             ZStack {
                 TacticalHUDTheme.panelBackground

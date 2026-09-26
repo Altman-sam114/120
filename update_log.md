@@ -1,3 +1,7 @@
+## v2.95 / iOS HUD 视觉层级精修
+
+2026-09-26。基于 v2.94 最新云端截图，压缩普通字号选中摘要为最多两行并保留 Dynamic Type 辅助空间；降低 command dock 与指标胶囊不透明度，减少对战场和战术地图的遮挡；收紧 dock header 垂直内边距。未修改 Core、触控路由、生产、战斗数值、SpriteKit 模型或 Web。提示词：`md/prompt/v1-ios-swift-port/v2.95-hud-visual-hierarchy.md`。本机不运行任何测试或构建，等待最新 main artifact。
+
 # 项目版本更新记录
 
 ## v2.91.1 / 修复模型缓存的查找与生命周期
