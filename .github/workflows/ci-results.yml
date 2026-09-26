@@ -358,7 +358,6 @@ jobs:
               -derivedDataPath "$derived_data_path" \
               -resultBundlePath "$ui_result_bundle" \
               -parallel-testing-enabled NO \
-              -test-iterations 1 \
               -test-timeouts-enabled YES \
               -default-test-execution-time-allowance 120 \
               -maximum-test-execution-time-allowance 180 \

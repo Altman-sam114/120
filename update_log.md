@@ -1,5 +1,11 @@
 # 项目版本更新记录
 
+## v2.89.1 / 恢复云端真实触控测试入口
+
+2026-09-26，Agent X 在单一主任务内依次执行 A/B/C，不增开子智能体。最新 main `1cbef51ef167ffc8febfa73d9f35021d054441eb` 的 run `34176459046` / attempt 1 未通过：artifact `rustwar-ci-v1.2-main-1cbef51-run34176459046-attempt1`（ID `10037725080`，digest `sha256:46716f50ad9aefbb6b8584aedcf94b3cc31ce85e872928517ce57999dff62d8a`）已用已登录 Altman-sam114 下载到 `/private/tmp/rustwar-c-review-34176459046/`（1.7M）。Core、App build 与固定截图成功，但 UI gate 为 executionExit=64、total=0，日志明确拒绝 `-test-iterations 1`。
+
+B 删除该无效参数，保留默认单次执行、八项真实操作测试与无跳过门控。A 提示词为 `md/prompt/v1-ios-swift-port/v2.89.1-cloud-test-invocation.md`。README/test 记录真实基线和人工确认的云端设备例外：FAC4325D 只限制本机，云端沿用临时 iPhone。本机不运行任何测试/编译/Simulator/diff --check。实现待最新 SHA 云端复判；`.wp` 不纳入提交。
+
 本文记录项目正式版本、重要维护事项、关键决策和遗留问题，不做日常流水账。
 
 ## 维护规则
