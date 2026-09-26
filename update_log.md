@@ -1,5 +1,11 @@
 # 项目版本更新记录
 
+## v2.90.1 / 云端 UI 结果字段兼容
+
+2026-09-26，v2.90 的 run `36235655807` / attempt 1 已真实执行全部 8 项 iOS UI 测试且 8/8 通过、0 失败、0 跳过；artifact `rustwar-ci-v1.2-main-5868262-run36235655807-attempt1`（ID `10903479409`，digest `sha256:c8acf88474442d4b519628fa0ce0d85f34e30aa1d959580fd245238f3fb8fdb6`）下载到 `/private/tmp/rustwar-c-review-36235655807/` 并核对。整体仍为 failure 的唯一原因是 `ci/validate-ios-ui-results.js` 读取不存在的 `testResult`，而 Xcode 26.5 summary 使用 `result: "Passed"`；manifest/JUnit/build/App/截图/Core 均成功，UI gate 仅因字段兼容错误失败。
+
+v2.90.1 兼容 `summary.result ?? summary.testResult`，保持所有严格计数和测试名称检查。提示词为 `md/prompt/v1-ios-swift-port/v2.90.1-ci-result-field.md`。本机不运行检查、测试、编译或 Simulator，等待新 SHA 云端结果。
+
 ## v2.90 / 移动端命中热区与单指终端恢复
 
 2026-09-26，Agent X 延续同一主任务，不增开子智能体。v2.89.1 最新 run `36233472902` / attempt 1 已真实执行八项 UI 测试，5 通过、3 失败：首次 Tank 点按、拖动后新点按、dock/选择工具切换后的工厂点按均在 accessibility snapshot 中保持原选择，证明点按终端没有提交而非 Core 命令错误。

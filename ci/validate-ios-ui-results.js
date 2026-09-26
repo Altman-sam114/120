@@ -21,7 +21,9 @@ try {
   report.passed = summary.passedTests;
   report.failed = summary.failedTests;
   report.skipped = summary.skippedTests;
-  report.result = summary.testResult;
+  // xcresulttool's current JSON uses `result`; older toolchains exposed
+  // `testResult`. Accept both while keeping the strict Passed gate below.
+  report.result = summary.result ?? summary.testResult;
   const exportedTree = JSON.stringify(tests);
   report.missingTests = expected.filter((name) => !exportedTree.includes(name));
   const counts = [report.total, report.passed, report.failed, report.skipped];
