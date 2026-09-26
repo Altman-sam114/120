@@ -2724,6 +2724,14 @@ final class BattlefieldScene: SKScene {
         symbol.glowWidth = 1.2
         marker.addChild(symbol)
 
+        // Rusted Warfare-style order feedback: a second, softer pulse makes the
+        // exact tap location readable above busy units and projectiles.
+        let pulse = SKShapeNode(circleOfRadius: 25)
+        pulse.fillColor = .clear
+        pulse.strokeColor = color.withAlphaComponent(0.72)
+        pulse.lineWidth = 2.0
+        marker.addChild(pulse)
+
         if accessibilityReduceMotion {
             marker.alpha = 0.96
             marker.run(.fadeOut(withDuration: 0.32))
@@ -2731,6 +2739,14 @@ final class BattlefieldScene: SKScene {
         } else {
             marker.alpha = 0
             marker.setScale(screenScale * 0.78)
+            pulse.run(.sequence([
+                .group([
+                    .scale(to: 2.15, duration: 0.58),
+                    .fadeOut(withDuration: 0.58)
+                ]),
+                .removeFromParent()
+            ]))
+            symbol.run(.repeatForever(.rotate(byAngle: .pi * 2, duration: 1.2)))
             marker.run(.sequence([
                 .fadeIn(withDuration: 0.06),
                 .group([

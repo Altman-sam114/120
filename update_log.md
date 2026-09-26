@@ -7049,3 +7049,7 @@ workflow 在同一 pinned Simulator 执行实际 xcodebuild test，导出必要 
 ## v2.92.1 / 紧凑生产卡高度收敛
 
 云端 v2.92 已通过，但 Home PNG 显示两列生产网格的第三行仍被底部 dock 截断。本次追加修复将 compact 卡改为图标、名称、资源/人口、建造时间的横向组合，并把不可用状态收敛为状态图标；regular、accessibility、生产语义和 44pt 触控保持。等待最新云端 artifact 复判。
+
+## v2.93 / Rusted Warfare 式命令落点反馈
+
+原生战场命令确认标记增加独立柔和扩散环和短暂符号旋转，玩家在密集单位、弹道和水面背景上能更快识别刚刚点下的 Move、Attack-Move、Attack、Rally、Guard、Repair、Build、Reclaim 命令落点。Reduce Motion 路径保持静态淡出；Core、输入、命令语义、单位模型和生产不变。待云端双场景与 8 项 UI 测试验收。

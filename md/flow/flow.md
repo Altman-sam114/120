@@ -1105,3 +1105,7 @@ v2.90.1 修正 `ci/validate-ios-ui-results.js` 对 Xcode 26.5 `xcresulttool` sum
 ## v2.92 / 紧凑生产卡布局
 
 TacticalProductionSectionView 根据 HUD role 派生生产网格：compact 使用两列以保留卡片最小可读宽度，regular trailing 保持三列，Dynamic Type accessibility 保持一列；这只影响 SwiftUI presentation，不改变生产队列或 Core 状态流。
+
+## v2.93 / 命令落点表现
+
+命令确认仍由 GameController revision 驱动；BattlefieldScene 在 marker 上叠加 bounded pulse 与短时 symbol rotation，仅改变 SpriteKit presentation，不改变命令状态流。
