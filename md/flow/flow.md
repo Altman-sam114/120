@@ -1083,3 +1083,11 @@ v2.83 以 `origin/main` 的 v2.82 文档验收 commit `a526302df15cb6f33c0876445
 CI 在既有双架构 build 与 production/combat 截图后、同一 Simulator 清理前执行 `xcodebuild test`。xcresulttool 导出 summary/tree，`ci/validate-ios-ui-results.js` 检查执行退出码、至少八项、全部通过/无跳过和八项名称存在，输出 gate JSON。此状态同时进入 overall、manifest aggregate testOutcome、JUnit 与失败摘要。新增 YAML parse 也只在云端执行。artifact 保留三份必要 UI JSON，不上传完整 xcresult、DerivedData 或录屏。
 
 本轮 area test 是显式 Select Area 加单指拖动，不等价于双指 Spatial callbacks。v2.88 tracker 的六项纯逻辑测试仍作为补充；精确两指释放和真机性能没有被此 gate 证明。
+
+## v2.90 / 单指终端恢复与移动端命中热区
+
+`BattlefieldView.contextLocationGesture` 仍是单指 tap/preview/pan/Select Area 的唯一语义路由，`SpatialEventGesture` 负责触点 seed 和多指识别。当 SwiftUI 在同一短触点上先发送 `DragGesture.onEnded`、后发送 Spatial seed callback 时，v2.90 的 `commitFallbackSingleTap` 只在同一 input epoch、camera revision、`.possible` owner、无 pan/pinch/multitouch、未跨 12pt 且未 suppression 的条件下提交一次原有 `GameController.handleBattlefieldTap`，随后 reset owner、preview、callback generation 和 sequence。它不新增命令路径，也不绕过 pending command、可见性、Builder/Combat 资格或 Core 规则。
+
+`GameController.minimumBattlefieldTouchTargetDiameter` 从 44pt 调整为 56pt。该值只作为 iOS 交互的最小世界命中半径，SpriteKit 模型轮廓、Core 选择几何、单位/建筑位置、攻击范围和战斗数值不变；更大的 halo 让手机手指能稳定点选单位、建筑和敌方目标。云端 interaction fixture 的八项 XCUITest 覆盖首次点选、拖动后新点选、dock/选择切换后的建筑点选、生产/升级、区域选择与 Attack-Move，v2.90 run 已全部通过。
+
+v2.90.1 修正 `ci/validate-ios-ui-results.js` 对 Xcode 26.5 `xcresulttool` summary 字段的兼容：优先读取 `summary.result`，兼容旧版 `summary.testResult`；退出码、八项名称、计数、零失败/跳过仍是严格门控。UI 测试 artifact 的结果字段进入 JUnit、manifest `testOutcome` 和 overall，不允许用静态截图替代操作证据。

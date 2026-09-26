@@ -1809,3 +1809,22 @@ flowchart TD
     Gate --> Package[manifest / JUnit / failure summary / overall]
     Package --> C[最新 main SHA artifact 复判]
 ```
+
+## v2.90 / 单指终端恢复
+
+```mermaid
+flowchart TD
+    Touch[DragGesture / SpatialEventGesture] --> Seed[保存 input epoch + camera revision]
+    Seed --> Decision{短距离单指且 owner possible?}
+    Decision -->|正常 context lease| Tap[既有 tap / preview / pan 路由]
+    Decision -->|Drag ended 先到| Fallback[commitFallbackSingleTap]
+    Fallback --> Guard[无 pan / pinch / multitouch / suppression]
+    Guard -->|通过| Controller[GameController.handleBattlefieldTap]
+    Guard -->|失败| Drop[清理并丢弃迟到 callback]
+    Controller --> Reset[reset owner / preview / callback generation]
+    Tap --> Reset
+    Hit[56pt iOS hit halo] --> Controller
+    Controller --> Core[既有选择、Move、Attack-Move、Attack 与生产语义]
+```
+
+读图说明：v2.90 的兜底只修复 SwiftUI 两个手势回调的先后竞态；它必须先通过输入 epoch、相机 revision、owner phase 和多指/拖动门控，再调用原有 controller。56pt 只影响 iOS 触控可达性，不改变 SpriteKit 外观或 Core 命中规则。v2.90.1 的结果字段兼容位于云端 artifact 汇总层，不进入游戏状态流。
