@@ -78,7 +78,9 @@ final class GameController {
     private static let doubleTapSameTypeInterval: TimeInterval = 0.32
     private static let doubleTapSameTypeMaximumDistance: CGFloat = 44
     private static let nearbySameTypeSelectionRadius = 760.0
-    private static let minimumBattlefieldTouchTargetDiameter = 44.0
+    // A forgiving phone-sized target halo keeps RTS commands usable without
+    // changing the visual contour or the Core hit geometry.
+    private static let minimumBattlefieldTouchTargetDiameter = 56.0
 
     var engine: GameEngine
     var camera: CameraState

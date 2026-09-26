@@ -249,6 +249,12 @@ struct BattlefieldView: View {
                       contextGestureSequenceMatches(contextLease) else {
                     if panGestureLease != nil {
                         _ = finishSingleTouchPan(with: value, viewportSize: viewportSize)
+                    } else if commitFallbackSingleTap(
+                        at: value.location,
+                        startLocation: value.startLocation,
+                        viewportSize: viewportSize
+                    ) {
+                        return
                     }
                     return
                 }
@@ -330,6 +336,50 @@ struct BattlefieldView: View {
         contextGestureStartLocation = nil
         contextGestureLastEventTime = nil
         singleTouchCrossedPanActivationDistance = false
+    }
+
+    /// DragGesture may deliver its terminal callback before the
+    /// SpatialEventGesture callback that marks a tap as started. A short
+    /// single-finger release is still an unambiguous battlefield tap; commit
+    /// it once and fully reset the owner so the next touch is fresh.
+    @discardableResult
+    private func commitFallbackSingleTap(
+        at screenPoint: CGPoint,
+        startLocation: CGPoint,
+        viewportSize: CGSize
+    ) -> Bool {
+        guard !isMultitouchSequenceActive,
+              pinchLease == nil,
+              panGestureLease == nil,
+              !isBattlefieldPanActive,
+              !battlefieldPanOccurredForCurrentTouch,
+              !singleTouchCrossedPanActivationDistance,
+              let seedLocation = contextGestureSeedLocation,
+              distance(from: seedLocation, to: startLocation) <=
+                Double(Self.contextGestureStartLocationTolerance),
+              SingleTouchTravelPolicy.allowsTapOrPreview(
+                  travelDistance: distance(from: seedLocation, to: screenPoint)
+              ),
+              touchSequenceInputEpoch == controller.battlefieldInputEpoch,
+              acceptsCurrentTouchCameraLease(allowUnseeded: false),
+              touchOwner.phase == .possible else {
+            return false
+        }
+
+        let sequence = touchOwner.sequence
+        guard !tapIsSuppressed(for: sequence) else {
+            return false
+        }
+        clearBattlefieldTouchPreview(for: sequence)
+        controller.handleBattlefieldTap(screenPoint: screenPoint, viewportSize: viewportSize)
+        _ = touchOwner.cancel()
+        touchOwner.reset()
+        clearTouchSequenceInputEpoch()
+        invalidateNonContextGestureCallbacks()
+        resetContextGestureState()
+        battlefieldPanOccurredForCurrentTouch = true
+        scene.renderNow()
+        return true
     }
 
     private func acceptsCurrentTouchInput(allowUnseeded: Bool = false) -> Bool {

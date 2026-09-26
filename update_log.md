@@ -1,5 +1,13 @@
 # 项目版本更新记录
 
+## v2.90 / 移动端命中热区与单指终端恢复
+
+2026-09-26，Agent X 延续同一主任务，不增开子智能体。v2.89.1 最新 run `36233472902` / attempt 1 已真实执行八项 UI 测试，5 通过、3 失败：首次 Tank 点按、拖动后新点按、dock/选择工具切换后的工厂点按均在 accessibility snapshot 中保持原选择，证明点按终端没有提交而非 Core 命令错误。
+
+本轮在 `GameController.swift` 将最小战场触控命中直径从 44pt 提升到 56pt，符合手机 RTS 的可触达热区；在 `BattlefieldView.swift` 增加 DragGesture ended 的安全单指兜底，处理 SpatialEventGesture seed 回调迟到时仍提交正式点按，并在提交后清理 owner、preview、epoch 和回调 generation。多指、捏合、长按、pending command、相机 lease 和 Core 语义保持。提示词为 `md/prompt/v1-ios-swift-port/v2.90-touch-hit-and-terminal-recovery.md`。
+
+本机不运行任何测试、build、Simulator、Preview、截图或 diff --check；等待最新 origin/main artifact 验收。
+
 ## v2.89.1 / 恢复云端真实触控测试入口
 
 2026-09-26，Agent X 在单一主任务内依次执行 A/B/C，不增开子智能体。最新 main `1cbef51ef167ffc8febfa73d9f35021d054441eb` 的 run `34176459046` / attempt 1 未通过：artifact `rustwar-ci-v1.2-main-1cbef51-run34176459046-attempt1`（ID `10037725080`，digest `sha256:46716f50ad9aefbb6b8584aedcf94b3cc31ce85e872928517ce57999dff62d8a`）已用已登录 Altman-sam114 下载到 `/private/tmp/rustwar-c-review-34176459046/`（1.7M）。Core、App build 与固定截图成功，但 UI gate 为 executionExit=64、total=0，日志明确拒绝 `-test-iterations 1`。

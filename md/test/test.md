@@ -5,6 +5,7 @@
 ## 当前强制制度：云端唯一验证
 
 - 2026-09-26：人工确认 FAC4325D UDID 限制仅适用于本机，GitHub Actions 可沿用临时 iPhone Simulator。v2.89.1 删除 Xcode 拒绝的 `-test-iterations 1`；不指定迭代次数即默认执行一次。不得为消除失败降低八项 UI 测试门控或把零执行写成通过。
+- v2.90 新增云端回归证据：八项操作测试必须覆盖首次单指点选、拖动后的新点选、切换 dock/选择动作后的建筑点选，以及命中热区扩展。单指终端兜底不能绕过 pending command、camera lease、multitouch 或取消 epoch；Core、静态截图和无触摸 smoke 不能替代该回归。
 
 - 2026-07-11 起，用户明确要求后续全部测试在云端运行并禁止本地测试；本节覆盖下方保留的历史本地命令说明，直到用户明确改变制度。
 - 禁止本机运行 `git diff --check`、`node --check`、Swift parse/typecheck、`swift test`、`xcodebuild`、Simulator、Preview、浏览器 smoke 或任何测试脚本。
