@@ -4,6 +4,8 @@
 
 ## 当前强制制度：云端唯一验证
 
+- v2.91.1 必须重新验收 SpriteKit 模型缓存：mount 查找编译通过；body 复用前脱离旧父节点；可见实体缓存清理；连续帧、双场景与八项实际 UI 测试不崩溃。v2.91 的 run 36237766372 为 JUnit 10/3/1，App 未构建且 UI 未成功执行，不能沿用为通过基线。本轮不运行任何本机检查。
+
 - 2026-09-26：人工确认 FAC4325D UDID 限制仅适用于本机，GitHub Actions 可沿用临时 iPhone Simulator。v2.89.1 删除 Xcode 拒绝的 `-test-iterations 1`；不指定迭代次数即默认执行一次。不得为消除失败降低八项 UI 测试门控或把零执行写成通过。
 - v2.90 新增云端回归证据：八项操作测试必须覆盖首次单指点选、拖动后的新点选、切换 dock/选择动作后的建筑点选，以及命中热区扩展。单指终端兜底不能绕过 pending command、camera lease、multitouch 或取消 epoch；Core、静态截图和无触摸 smoke 不能替代该回归。
 - v2.90 云端结果 `36235655807` 已确认 XCTest 8/8 通过；结果包整体失败仅因 `ci/validate-ios-ui-results.js` 读取旧字段 `testResult`，而 Xcode 26.5 使用 `result=Passed`。修复为兼容 `result` 与旧字段后，必须用新 SHA artifact 再次核对 overall/JUnit。

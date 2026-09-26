@@ -1,5 +1,11 @@
 # 项目版本更新记录
 
+## v2.91.1 / 修复模型缓存的查找与生命周期
+
+2026-09-27，Agent X 单任务依次执行 A/B/C。已下载并核对 v2.91 main `acbf8da0ceb556c359e2924158990070c1428d42` 的 run `36237766372` / attempt 1，artifact `rustwar-ci-v1.2-main-acbf8da-run36237766372-attempt1`，ID `10905016101`，digest `sha256:188e1fdd8e11da38cf05a6ecb04b2c6e4f402ad883e62f6056dde159e393c925`，目录 `/private/tmp/rustwar-c-review-36237766372/` 304K。JUnit 10/3/1；Core 成功，但四处非法 recursively 参数导致 App 构建失败，UI 未执行，验收不通过。
+
+修复 `BattlefieldScene.swift`：按 mount 层级使用 SpriteKit 查找接口，复用前 removeFromParent，每帧清理不可见/已移除实体的 body 和签名。提示词 `md/prompt/v1-ios-swift-port/v2.91.1-model-cache-lifecycle.md`；同步 README、flow/flowchart、test。本机未运行任何检查、编译或测试。新实现待最新 SHA 云端验收，不能提前宣称性能提升或触控验收通过。
+
 ## v2.91 / 战场模型节点缓存
 
 2026-09-26，继续单一主任务迭代。`BattlefieldScene` 的单位/建筑实体此前每帧从 compound shape 重新创建，密集战斗会产生大量短生命周期 SpriteKit 节点。本轮加入按实体 id 和类型/阵营/科技等级签名的静态 body cache；复用时重新挂接 body，并实时更新单位 weapon/recoil mount、建筑 turret/recoil mount。动态 shadow、selection/HP、施工/升级、damage、order/rally/range preview 和效果层仍保持每帧真实派生；map reset 清空缓存。

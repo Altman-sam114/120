@@ -855,18 +855,28 @@ final class BattlefieldScene: SKScene {
         primarySelectedID: String?
     ) {
         entityNode.removeAllChildren()
+        // The cache owns geometry only while its entity is rendered. Retiring
+        // invisible/dead entries also releases their detached entity containers.
+        let visibleBuildings = state.buildings.filter { isVisibleToPlayer($0, visibility: playerVisibility) }
+        let visibleUnits = state.units.filter { isVisibleToPlayer($0, visibility: playerVisibility) }
+        let buildingIDs = Set(visibleBuildings.map(\.id))
+        let unitIDs = Set(visibleUnits.map(\.id))
+        cachedBuildingBodies = cachedBuildingBodies.filter { buildingIDs.contains($0.key) }
+        cachedBuildingBodySignatures = cachedBuildingBodySignatures.filter { buildingIDs.contains($0.key) }
+        cachedUnitBodies = cachedUnitBodies.filter { unitIDs.contains($0.key) }
+        cachedUnitBodySignatures = cachedUnitBodySignatures.filter { unitIDs.contains($0.key) }
         let primaryAttackPreviewID = primarySelectedCombatUnitID(in: state, fallback: primarySelectedID)
         for wreck in state.wrecks {
             drawWreck(wreck)
         }
-        for building in state.buildings where isVisibleToPlayer(building, visibility: playerVisibility) {
+        for building in visibleBuildings {
             drawBuilding(
                 building,
                 selectedIDs: selectedIDs,
                 primarySelectedID: primarySelectedID
             )
         }
-        for unit in state.units where isVisibleToPlayer(unit, visibility: playerVisibility) {
+        for unit in visibleUnits {
             drawUnit(
                 unit,
                 selectedIDs: selectedIDs,
@@ -2992,10 +3002,12 @@ final class BattlefieldScene: SKScene {
             cachedBuildingBodies[building.id] = body
             cachedBuildingBodySignatures[building.id] = bodySignature
         }
-        body.childNode(withName: "building-turret-mount", recursively: true)?.zRotation =
-            turretHeadings[building.id] ?? defaultHeading(for: building.team)
-        body.childNode(withName: "building-recoil-mount", recursively: true)?.position.x =
-            -CGFloat(turretRecoilDistance(for: building, definition: definition))
+        if let turretMount = body.childNode(withName: "building-turret-mount") {
+            turretMount.zRotation = turretHeadings[building.id] ?? defaultHeading(for: building.team)
+            turretMount.childNode(withName: "building-recoil-mount")?.position.x =
+                -CGFloat(turretRecoilDistance(for: building, definition: definition))
+        }
+        body.removeFromParent()
         node.addChild(body)
         if building.buildProgress < 1 {
             addConstructionFrame(size: definition.size, to: node)
@@ -3099,11 +3111,13 @@ final class BattlefieldScene: SKScene {
             cachedUnitBodies[unit.id] = body
             cachedUnitBodySignatures[unit.id] = bodySignature
         }
-        body.childNode(withName: "unit-weapon-mount", recursively: true)?.zRotation =
-            weaponHeading - hullHeading
-        body.childNode(withName: "unit-recoil-mount", recursively: true)?.position.x =
-            -CGFloat(weaponRecoilDistance(for: unit, definition: definition))
+        if let weaponMount = body.childNode(withName: "unit-weapon-mount") {
+            weaponMount.zRotation = weaponHeading - hullHeading
+            weaponMount.childNode(withName: "unit-recoil-mount")?.position.x =
+                -CGFloat(weaponRecoilDistance(for: unit, definition: definition))
+        }
         body.zRotation = hullHeading
+        body.removeFromParent()
         node.addChild(body)
         addDamageState(
             currentHitPoints: unit.hitPoints,

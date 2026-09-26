@@ -1,5 +1,21 @@
 # 项目流程图
 
+## v2.91.1 / 模型缓存的帧间复用
+
+```mermaid
+flowchart LR
+  State[当前 Core snapshot 与 playerVisibility] --> Visible[派生可见单位和建筑]
+  Visible --> Prune[裁剪 body 与 signature 缓存]
+  Prune --> Lookup{实体签名匹配?}
+  Lookup -->|是| Reuse[复用静态 body]
+  Lookup -->|否| Build[重建当前模型 body]
+  Reuse --> Mount[更新一级 weapon/turret 及 recoil 子节点]
+  Build --> Mount
+  Mount --> Detach[body.removeFromParent]
+  Detach --> Attach[挂接本帧实体容器]
+  Attach --> Overlay[派生 selection HP damage 等动态外观]
+```
+
 ## 核心逻辑图
 
 读图说明：从左到右看一次对局如何启动、接收输入、修改状态、推进模拟并输出画面。蓝图中的每个节点都对应当前 `app.js` 中的真实职责，不表示新架构。

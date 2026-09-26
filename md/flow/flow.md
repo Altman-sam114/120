@@ -1,5 +1,9 @@
 # 项目核心流程文档
 
+## v2.91.1 / SpriteKit 缓存生命周期修复
+
+drawEntities 先移除上一帧实体容器，按当前 playerVisibility 派生可见 units/buildings，并用可见 id 集合裁剪 body/signature 字典。drawUnit/drawBuilding 复用当前签名的 body，直接查找一级 weapon/turret mount 及其 recoil 子节点并写入当帧角度/后坐；挂接新实体容器前调用 removeFromParent。不可见/死亡实体不保留缓存，重新可见时从真实 snapshot 重建，map reset 仍整体清空。缓存不持有 Core 状态，不改变输入、命令、战斗和存档。v2.91 的非法 recursively API 已移除，是否可运行以新 SHA 云端验收为准。
+
 ## 0. 一句话总览
 
 当前 Web 完整玩法主链路是：浏览器事件驱动 `input` 和 `selectedIds`，命令函数修改集中式 `state`，`requestAnimationFrame(loop)` 每帧执行模拟更新、UI 刷新和 Canvas 渲染。
