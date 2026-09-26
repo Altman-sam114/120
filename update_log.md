@@ -7041,3 +7041,7 @@ workflow 在同一 pinned Simulator 执行实际 xcodebuild test，导出必要 
 ### v2.89 首轮云端拒绝与项目引用修复
 
 实现 `bae4894b51eea1dcd3f1b841e103b56c3371202f` 的 run `34176186518` / attempt 1 / job `101905933534` 失败。C 经 Altman-sam114 登录下载 `rustwar-ci-v1.2-main-bae4894-run34176186518-attempt1`（ID `10037349178`，digest `sha256:e4b8e718c9947a09da9997d809783defac310b946bbb9d2996ed30394d7a292b`）至 `/private/tmp/rustwar-c-review-34176186518/`（96K），manifest 完整匹配。Core 350、静态检查和 YAML 成功；Xcode project parse 失败，UI 实际执行 0 项，mandatory gate 正确拒绝，JUnit 10/3/2。原因是新增含 `+` 文件名的 PBX path 未加引号。B 追加引用修复，保留全部测试门控；需由下一次最新 SHA 云端证明项目可读、编译和实际操作结果。
+
+## v2.92 / 紧凑生产卡可读性
+
+2026-09-27，Agent X 串行推进 iOS HUD 优化。紧凑生产 dock 的生产卡由三列调整为两列，成本/人口、建造时间和不可用状态在短屏幕上保持完整可读并满足 44pt 触控；regular trailing 与辅助功能字号继续使用既有布局。仅改 SwiftUI presentation，生产队列、升级、Core、命令、战斗模型和 Web 版不变。实现后仅提交并推送云端，等待最新 Actions artifact 复判。

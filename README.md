@@ -328,3 +328,5 @@ v2.50：原生 iOS 生产建筑 dock 首屏增加只读 Production focus summary
 ## 协作与云端验证
 
 后续 Agent A/B/C 迭代使用 `main` 直推和 GitHub Actions 云端唯一验证：Agent B 提交并 push 到 `origin/main`，Actions 执行检查并上传未加密 CI 结果包，Agent C 下载并核对 manifest、JUnit、工具链/模拟器信息、日志、失败摘要和必要截图后再给出验收结论；当前用户制度禁止本地测试。`agentx:` 用于主控循环：Agent X 接收总目标并推进小轮次，但不得跳过 Agent C 云端 artifact 验收。v1.97 起固定 Xcode 26.5 / iOS Simulator SDK 26.5，v2.1 起 CI flow v1.2 会启动固定 iPhone 17 Pro 并生成经过像素探针的首屏证据，v2.15 起同一 run 还会独立重启固定战斗场景并生成第二张战斗证据。详细规则见 `AGENTS.md`、`md/test/test.md` 和 `md/flow/flow.md`。
+
+- v2.92 起，iOS 紧凑生产 dock 使用两列生产卡，短屏幕上 Heavy/Arty/AA 等成本、人口、时间和状态保持可读；regular 与辅助功能布局保持原有密度。

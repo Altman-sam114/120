@@ -169,7 +169,9 @@ struct TacticalProductionSectionView: View {
         if dynamicTypeSize.isAccessibilitySize {
             return 1
         }
-        return 3
+        // Two columns keep every compact producer card readable and reachable
+        // on short iPhone layouts; regular trailing docks retain the denser grid.
+        return isCompact ? 2 : 3
     }
 
     private var sectionSpacing: CGFloat {

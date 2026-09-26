@@ -1863,3 +1863,16 @@ flowchart LR
 ```
 
 读图说明：缓存只保存静态模型节点，动态 overlay 和武器 mount 每帧仍读取最新状态；地图 reset 或 signature 变化不会复用错误阵营、单位类型或科技等级的几何。该路径不改变 Core 命令和战斗结果。
+
+## v2.92 紧凑生产布局
+
+```mermaid
+flowchart LR
+  Role[HUD layout role] --> Grid{Dynamic Type / compact?}
+  Grid -->|accessibility| One[一列生产卡]
+  Grid -->|compact normal| Two[两列生产卡]
+  Grid -->|regular| Three[三列生产卡]
+  One --> Cards[成本/人口/时间/状态]
+  Two --> Cards
+  Three --> Cards
+```

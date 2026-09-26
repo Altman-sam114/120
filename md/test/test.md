@@ -999,3 +999,7 @@ Agent C 只能验收最新 `origin/main` 完整 SHA 对应的未加密 Actions a
 仅云端运行 `swift test --package-path swift/RustwarCore`，新增六组 TwoFingerReleaseTracker 测试，预期总数至少 350；覆盖先后/同时结束、重复 ended、释放后几何 gate、第三指/替换/无 terminal 丢指、取消、非法 pair/重新 active 以及 TouchSequenceOwner 联合一次 committed。源码复核实际 Spatial update/finish 共用 tracker、首指冻结且尾指不重新计算 dwell，owner/epoch/camera 取消优先，所有 reset 清理 tracker。
 
 C 必须下载最新 origin/main SHA 对应必要 artifact，核对 manifest/JUnit/build.log/失败摘要/run/attempt/固定工具链；双架构 iOS build、双启动/PNG probe 全成功，Home/Combat 相对 v2.87 无本轮静态变化。测试不注入真实 SwiftUI 触控，所以不证明真机 callback 顺序或手感。本机禁止 Swift/Node/Xcode/Simulator/Preview、typecheck、测试脚本、diff --check。
+
+## v2.92 紧凑生产卡云端门控
+
+最新 main artifact 必须确认 Home 截图中紧凑生产卡使用两列，Heavy/Arty/AA 的成本、人口、建造时间和不可用状态完整可读；8 项 iOS 真实操作测试、Core、双架构 build、production/combat 双场景和 PNG probe 继续全部通过。本机不运行 Swift、Xcode、Simulator、测试脚本或 diff 检查。

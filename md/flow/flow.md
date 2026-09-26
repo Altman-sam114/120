@@ -1101,3 +1101,7 @@ v2.90.1 修正 `ci/validate-ios-ui-results.js` 对 Xcode 26.5 `xcresulttool` sum
 `BattlefieldScene.drawEntities` 仍按当前可见状态刷新实体 root，但 `unitBody` 与 `buildingBody` 的静态 compound geometry 现在按实体 id 与 type/team/upgrade signature 缓存。root 每帧重新承载 shadow、selection、HP、construction/upgrade、damage 等动态 overlay；cached body 重新挂接后，命名的 weapon/turret/recoil mount 由当前 frame 的 heading 与 recoil distance 更新。这样视觉模型继续使用原有几何和颜色，密集战斗减少 shape allocation。
 
 缓存仅属于 SpriteKit presentation：地图或状态重置时清空，signature 改变时重建；不进入 GameState、Core、JSON、存档或 Web。Projectile/tracer/impact/decal/effect bounded lifetime、fog/radar、命令预览与 HUD 流程不变。云端 production/combat PNG 和 build 是本轮静态证据，不能替代长期真机帧率测量。
+
+## v2.92 / 紧凑生产卡布局
+
+TacticalProductionSectionView 根据 HUD role 派生生产网格：compact 使用两列以保留卡片最小可读宽度，regular trailing 保持三列，Dynamic Type accessibility 保持一列；这只影响 SwiftUI presentation，不改变生产队列或 Core 状态流。
