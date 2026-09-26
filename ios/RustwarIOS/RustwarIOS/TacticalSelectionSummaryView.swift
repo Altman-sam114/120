@@ -34,13 +34,23 @@ struct TacticalSelectionSummaryView: View {
                 }
             }
 
-            Text(selectedSummary)
-                .font(.subheadline.bold())
-                .lineLimit(nil)
-                .fixedSize(horizontal: false, vertical: true)
-                .foregroundStyle(TacticalHUDTheme.primaryText)
-                .accessibilityLabel("Selected")
-                .accessibilityValue(selectedSummary)
+            HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.compactSpacing) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(TacticalHUDTheme.accent)
+                    .accessibilityHidden(true)
+                Text(selectedSummary)
+                    .font(.subheadline.bold())
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .foregroundStyle(TacticalHUDTheme.primaryText)
+            }
+            .padding(.horizontal, TacticalHUDTheme.denseSpacing)
+            .padding(.vertical, 3)
+            .background(TacticalHUDTheme.metricBackground, in: Capsule())
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Selected")
+            .accessibilityValue(selectedSummary)
 
             if let radarUpgradeSummary {
                 Label(radarUpgradeSummary, systemImage: "dot.radiowaves.left.and.right")
