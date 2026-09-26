@@ -1091,3 +1091,9 @@ CI 在既有双架构 build 与 production/combat 截图后、同一 Simulator �
 `GameController.minimumBattlefieldTouchTargetDiameter` 从 44pt 调整为 56pt。该值只作为 iOS 交互的最小世界命中半径，SpriteKit 模型轮廓、Core 选择几何、单位/建筑位置、攻击范围和战斗数值不变；更大的 halo 让手机手指能稳定点选单位、建筑和敌方目标。云端 interaction fixture 的八项 XCUITest 覆盖首次点选、拖动后新点选、dock/选择切换后的建筑点选、生产/升级、区域选择与 Attack-Move，v2.90 run 已全部通过。
 
 v2.90.1 修正 `ci/validate-ios-ui-results.js` 对 Xcode 26.5 `xcresulttool` summary 字段的兼容：优先读取 `summary.result`，兼容旧版 `summary.testResult`；退出码、八项名称、计数、零失败/跳过仍是严格门控。UI 测试 artifact 的结果字段进入 JUnit、manifest `testOutcome` 和 overall，不允许用静态截图替代操作证据。
+
+## v2.91 / Battlefield 静态模型缓存
+
+`BattlefieldScene.drawEntities` 仍按当前可见状态刷新实体 root，但 `unitBody` 与 `buildingBody` 的静态 compound geometry 现在按实体 id 与 type/team/upgrade signature 缓存。root 每帧重新承载 shadow、selection、HP、construction/upgrade、damage 等动态 overlay；cached body 重新挂接后，命名的 weapon/turret/recoil mount 由当前 frame 的 heading 与 recoil distance 更新。这样视觉模型继续使用原有几何和颜色，密集战斗减少 shape allocation。
+
+缓存仅属于 SpriteKit presentation：地图或状态重置时清空，signature 改变时重建；不进入 GameState、Core、JSON、存档或 Web。Projectile/tracer/impact/decal/effect bounded lifetime、fog/radar、命令预览与 HUD 流程不变。云端 production/combat PNG 和 build 是本轮静态证据，不能替代长期真机帧率测量。

@@ -1828,3 +1828,22 @@ flowchart TD
 ```
 
 读图说明：v2.90 的兜底只修复 SwiftUI 两个手势回调的先后竞态；它必须先通过输入 epoch、相机 revision、owner phase 和多指/拖动门控，再调用原有 controller。56pt 只影响 iOS 触控可达性，不改变 SpriteKit 外观或 Core 命中规则。v2.90.1 的结果字段兼容位于云端 artifact 汇总层，不进入游戏状态流。
+
+## v2.91 / 模型生命周期
+
+```mermaid
+flowchart LR
+    State[当前 GameState snapshot] --> Signature[type + team + tech level]
+    Signature --> Cache{静态 body cache}
+    Cache -->|miss/change| Build[构建 compound unit/building geometry]
+    Cache -->|hit| Reuse[复用 body 并重新挂接]
+    State --> Mount[heading + recoil 更新 weapon/turret mount]
+    State --> Overlay[shadow / selection / HP / damage / construction]
+    Reuse --> EntityRoot[当前实体 root]
+    Build --> EntityRoot
+    Mount --> EntityRoot
+    Overlay --> EntityRoot
+    EntityRoot --> SpriteKit[SpriteKit presentation]
+```
+
+读图说明：缓存只保存静态模型节点，动态 overlay 和武器 mount 每帧仍读取最新状态；地图 reset 或 signature 变化不会复用错误阵营、单位类型或科技等级的几何。该路径不改变 Core 命令和战斗结果。

@@ -69,6 +69,12 @@ final class BattlefieldScene: SKScene {
     private var previousBuildingTypes: [String: BuildingType] = [:]
     private var previousBuildingTeams: [String: Team] = [:]
     private var renderedCombatVisualSmoke = false
+    // Keep static compound geometry alive between frames. Dynamic overlays are
+    // still rebuilt so selection, HP, construction and damage stay accurate.
+    private var cachedUnitBodies: [String: SKNode] = [:]
+    private var cachedUnitBodySignatures: [String: String] = [:]
+    private var cachedBuildingBodies: [String: SKNode] = [:]
+    private var cachedBuildingBodySignatures: [String: String] = [:]
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -915,6 +921,10 @@ final class BattlefieldScene: SKScene {
         previousBuildingTypes = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.type) })
         previousBuildingTeams = Dictionary(uniqueKeysWithValues: state.buildings.map { ($0.id, $0.team) })
         renderedCombatVisualSmoke = false
+        cachedUnitBodies.removeAll()
+        cachedUnitBodySignatures.removeAll()
+        cachedBuildingBodies.removeAll()
+        cachedBuildingBodySignatures.removeAll()
     }
 
     private func updateVisualHistoryAndEffects(
@@ -2967,12 +2977,25 @@ final class BattlefieldScene: SKScene {
         let node = SKNode()
         node.position = spritePoint(for: building.position)
         addBuildingShadow(size: definition.size, to: node)
-        let body = buildingBody(
-            for: building,
-            size: definition.size,
-            turretHeading: turretHeadings[building.id] ?? defaultHeading(for: building.team),
-            turretRecoilDistance: turretRecoilDistance(for: building, definition: definition)
-        )
+        let bodySignature = "\(building.type.rawValue)|\(building.team.rawValue)|\(building.upgradeLevel)"
+        let body: SKNode
+        if cachedBuildingBodySignatures[building.id] == bodySignature,
+           let cachedBody = cachedBuildingBodies[building.id] {
+            body = cachedBody
+        } else {
+            body = buildingBody(
+                for: building,
+                size: definition.size,
+                turretHeading: turretHeadings[building.id] ?? defaultHeading(for: building.team),
+                turretRecoilDistance: turretRecoilDistance(for: building, definition: definition)
+            )
+            cachedBuildingBodies[building.id] = body
+            cachedBuildingBodySignatures[building.id] = bodySignature
+        }
+        body.childNode(withName: "building-turret-mount", recursively: true)?.zRotation =
+            turretHeadings[building.id] ?? defaultHeading(for: building.team)
+        body.childNode(withName: "building-recoil-mount", recursively: true)?.position.x =
+            -CGFloat(turretRecoilDistance(for: building, definition: definition))
         node.addChild(body)
         if building.buildProgress < 1 {
             addConstructionFrame(size: definition.size, to: node)
@@ -3061,12 +3084,25 @@ final class BattlefieldScene: SKScene {
             to: node
         )
         let weaponHeading = unitWeaponHeadings[unit.id] ?? hullHeading
-        let body = unitBody(
-            for: unit,
-            radius: definition.radius,
-            weaponRotation: weaponHeading - hullHeading,
-            recoilDistance: weaponRecoilDistance(for: unit, definition: definition)
-        )
+        let bodySignature = "\(unit.type.rawValue)|\(unit.team.rawValue)"
+        let body: SKNode
+        if cachedUnitBodySignatures[unit.id] == bodySignature,
+           let cachedBody = cachedUnitBodies[unit.id] {
+            body = cachedBody
+        } else {
+            body = unitBody(
+                for: unit,
+                radius: definition.radius,
+                weaponRotation: weaponHeading - hullHeading,
+                recoilDistance: weaponRecoilDistance(for: unit, definition: definition)
+            )
+            cachedUnitBodies[unit.id] = body
+            cachedUnitBodySignatures[unit.id] = bodySignature
+        }
+        body.childNode(withName: "unit-weapon-mount", recursively: true)?.zRotation =
+            weaponHeading - hullHeading
+        body.childNode(withName: "unit-recoil-mount", recursively: true)?.position.x =
+            -CGFloat(weaponRecoilDistance(for: unit, definition: definition))
         body.zRotation = hullHeading
         node.addChild(body)
         addDamageState(
@@ -3146,9 +3182,11 @@ final class BattlefieldScene: SKScene {
         let body = SKNode()
         let armorMidColor = unitArmorMidColor(for: unit.team)
         let weaponMount = SKNode()
+        weaponMount.name = "unit-weapon-mount"
         weaponMount.zRotation = weaponRotation
         weaponMount.zPosition = 1
         let recoilMount = SKNode()
+        recoilMount.name = "unit-recoil-mount"
         recoilMount.position.x = -CGFloat(recoilDistance)
         switch unit.type {
         case .builder:
@@ -3925,6 +3963,7 @@ final class BattlefieldScene: SKScene {
                 body.addChild(anchor)
             }
             let cannon = SKNode()
+            cannon.name = "building-turret-mount"
             cannon.zRotation = turretHeading
             cannon.addChild(polygonNode([
                 CGPoint(x: -half * 0.38, y: -half * 0.36),
@@ -3940,6 +3979,7 @@ final class BattlefieldScene: SKScene {
                 lineWidth: 1.4
             ))
             let barrelMount = SKNode()
+            barrelMount.name = "building-recoil-mount"
             barrelMount.position.x = -CGFloat(turretRecoilDistance)
             barrelMount.addChild(rectNode(
                 CGRect(x: half * 0.12, y: -half * 0.12, width: half * 0.88, height: half * 0.24),

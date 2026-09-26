@@ -1,5 +1,11 @@
 # 项目版本更新记录
 
+## v2.91 / 战场模型节点缓存
+
+2026-09-26，继续单一主任务迭代。`BattlefieldScene` 的单位/建筑实体此前每帧从 compound shape 重新创建，密集战斗会产生大量短生命周期 SpriteKit 节点。本轮加入按实体 id 和类型/阵营/科技等级签名的静态 body cache；复用时重新挂接 body，并实时更新单位 weapon/recoil mount、建筑 turret/recoil mount。动态 shadow、selection/HP、施工/升级、damage、order/rally/range preview 和效果层仍保持每帧真实派生；map reset 清空缓存。
+
+关键文件：`ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift`、README、`md/test/test.md`、`md/flow`、`md/prompt/v1-ios-swift-port/v2.91-battlefield-model-cache.md`。本机不运行任何验证，等待云端双场景与真实 UI artifact。
+
 ## v2.90.1 / 云端 UI 结果字段兼容
 
 2026-09-26，v2.90 的 run `36235655807` / attempt 1 已真实执行全部 8 项 iOS UI 测试且 8/8 通过、0 失败、0 跳过；artifact `rustwar-ci-v1.2-main-5868262-run36235655807-attempt1`（ID `10903479409`，digest `sha256:c8acf88474442d4b519628fa0ce0d85f34e30aa1d959580fd245238f3fb8fdb6`）下载到 `/private/tmp/rustwar-c-review-36235655807/` 并核对。整体仍为 failure 的唯一原因是 `ci/validate-ios-ui-results.js` 读取不存在的 `testResult`，而 Xcode 26.5 summary 使用 `result: "Passed"`；manifest/JUnit/build/App/截图/Core 均成功，UI gate 仅因字段兼容错误失败。
