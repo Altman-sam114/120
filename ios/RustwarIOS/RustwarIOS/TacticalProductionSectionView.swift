@@ -344,40 +344,37 @@ private struct TacticalProductionButtonLabel: View {
     }
 
     private var denseCompactBody: some View {
-        VStack(alignment: .center, spacing: TacticalHUDTheme.denseSpacing) {
+        HStack(alignment: .center, spacing: TacticalHUDTheme.compactSpacing) {
             productionIcon
                 .font(.title2.weight(.semibold))
-                .frame(height: 22)
-            Text(denseDisplayName)
-                .font(.caption.bold())
-                .lineLimit(1)
-                .minimumScaleFactor(0.58)
-                .allowsTightening(true)
-                .frame(maxWidth: .infinity)
-            VStack(alignment: .center, spacing: 1) {
+                .frame(width: 26, height: 30)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(denseDisplayName)
+                    .font(.caption.bold())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.58)
+                    .allowsTightening(true)
                 Text(denseCostSupply)
                     .font(.caption2)
                     .foregroundStyle(TacticalHUDTheme.secondaryText)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.62)
-                Text(denseBuildTime)
-                    .font(.caption2.bold())
-                    .foregroundStyle(TacticalHUDTheme.metricLabel)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.62)
+                HStack(spacing: TacticalHUDTheme.denseSpacing) {
+                    Text(denseBuildTime)
+                        .font(.caption2.bold())
+                        .foregroundStyle(TacticalHUDTheme.metricLabel)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.62)
+                    if !availability.isAvailable {
+                        Image(systemName: availability.systemImage)
+                            .foregroundStyle(TacticalHUDTheme.unavailableForeground)
+                            .accessibilityHidden(true)
+                    }
+                }
             }
-            .frame(maxWidth: .infinity)
-            if !availability.isAvailable {
-                Label(denseAvailabilityLabel, systemImage: availability.systemImage)
-                    .font(.caption2.bold())
-                    .foregroundStyle(TacticalHUDTheme.unavailableForeground)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.46)
-                    .allowsTightening(true)
-                    .accessibilityHidden(true)
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .center)
     }

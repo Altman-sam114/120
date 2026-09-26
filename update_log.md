@@ -7045,3 +7045,7 @@ workflow 在同一 pinned Simulator 执行实际 xcodebuild test，导出必要 
 ## v2.92 / 紧凑生产卡可读性
 
 2026-09-27，Agent X 串行推进 iOS HUD 优化。紧凑生产 dock 的生产卡由三列调整为两列，成本/人口、建造时间和不可用状态在短屏幕上保持完整可读并满足 44pt 触控；regular trailing 与辅助功能字号继续使用既有布局。仅改 SwiftUI presentation，生产队列、升级、Core、命令、战斗模型和 Web 版不变。实现后仅提交并推送云端，等待最新 Actions artifact 复判。
+
+## v2.92.1 / 紧凑生产卡高度收敛
+
+云端 v2.92 已通过，但 Home PNG 显示两列生产网格的第三行仍被底部 dock 截断。本次追加修复将 compact 卡改为图标、名称、资源/人口、建造时间的横向组合，并把不可用状态收敛为状态图标；regular、accessibility、生产语义和 44pt 触控保持。等待最新云端 artifact 复判。
