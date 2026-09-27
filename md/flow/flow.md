@@ -1,3 +1,7 @@
+## v2.98 / projectile energy pulse
+
+`projectileNode` animates only its existing glow child with a short repeating scale pulse. Projectile trajectory, terminal effects, damage and Core state are unchanged.
+
 ## v2.97 / unit faction glow
 
 `drawUnit` adds a bounded presentation-only ellipse beneath the cached hull. Team color and selection state affect only alpha/stroke; weapons, selection ring, HP, Core commands and effects remain separate.

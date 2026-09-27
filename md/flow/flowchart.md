@@ -1,3 +1,9 @@
+## v2.98 projectile presentation
+
+```text
+fire command -> projectile path + pulsing glow -> terminal flash -> damage
+```
+
 ## v2.97 unit presentation
 
 ```text

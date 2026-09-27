@@ -1,3 +1,7 @@
+## v2.98 / 弹体能量脉动
+
+2026-09-27。`projectileNode` 为现有弹体光晕加入短周期 scale pulse，增强发射反馈；未改变弹道、终点闪光、伤害、效果上限、Core 或 Web。提示词：`md/prompt/v1-ios-swift-port/v2.98-projectile-energy-pulse.md`。等待云端验收。
+
 ## v2.97 / 单位阵营底光
 
 2026-09-27。`BattlefieldScene.drawUnit` 在单位阴影与缓存 hull 之间增加低亮度 team glow，选中时略增强描边但不遮挡 hull、炮塔、血条或选择环。仅 SpriteKit presentation 改动；提示词：`md/prompt/v1-ios-swift-port/v2.97-unit-faction-glow.md`。等待云端验收。

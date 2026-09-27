@@ -1,3 +1,7 @@
+## v2.98 云端战斗特效验收
+
+Combat 截图和源码复看确认弹体光晕脉动不遮挡单位 hull、血条、selection、terminal/impact；Core、双架构 build、8 项 UI、双场景和 PNG probe 必须通过。
+
 ## v2.97 云端模型验收
 
 截图复看 Combat：阵营底光应保持低亮度，不盖住 hull、炮塔、血条、selection、terminal/impact；Core、双架构 build、8 项 UI、双场景和 PNG probe 必须通过。
