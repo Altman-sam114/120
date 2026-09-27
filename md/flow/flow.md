@@ -1,3 +1,7 @@
+## v2.96 / Quick Orders active state
+
+Quick Orders derives the existing active border from `isAwaitingTarget`; it is presentation-only and does not alter command dispatch or touch ownership.
+
 ## v2.95 / HUD visual hierarchy
 
 Selection summary and command dock remain presentation-only SwiftUI layers. Normal Dynamic Type constrains selection text to two lines; accessibility sizes retain up to three. Dock/metric opacity is reduced without changing battlefield input, command dispatch, Core state, production, or SpriteKit entity rendering.

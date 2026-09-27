@@ -1,3 +1,7 @@
+## v2.96 云端验收
+
+复看 combat PNG 与真实 UI 测试：等待 Move/A-Move/Attack 目标时对应按钮必须有 active border；8 项操作测试、Core、双架构 build、双场景和 PNG probe 全部通过。
+
 ## v2.95 云端 HUD 验收
 
 只在 GitHub Actions 验证。除既有 browser skip 外，Core、双架构 build、8 项真实 iOS 操作、双场景启动和 PNG probe 必须通过；截图复看确认普通字号选中摘要不超过两行、生产与战斗 dock 无裁切且战场层仍可辨识。

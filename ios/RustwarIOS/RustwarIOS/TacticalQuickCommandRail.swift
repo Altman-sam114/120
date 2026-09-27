@@ -123,7 +123,12 @@ struct TacticalQuickCommandRail: View {
                 }
             }
         }
-            .buttonStyle(TacticalBorderedButtonStyle(expandsHorizontally: columns != 4))
+            .buttonStyle(
+                TacticalBorderedButtonStyle(
+                    isActive: isAwaitingTarget,
+                    expandsHorizontally: columns != 4
+                )
+            )
             .accessibilityLabel(isAwaitingTarget ? "Cancel \(command) target" : command)
             .accessibilityValue(isAwaitingTarget ? "Waiting for \(command) target" : "Ready")
             .accessibilityHint(isAwaitingTarget ? "Cancels \(command) target selection." : hint)

@@ -1,3 +1,9 @@
+## v2.96 command feedback
+
+```text
+Quick Order tap -> pending target state -> active border -> battlefield target tap
+```
+
 ## v2.95 HUD presentation path
 
 ```text
