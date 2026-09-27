@@ -1,3 +1,9 @@
+## v2.99 accessibility gate
+
+```text
+projectile glow -> Reduce Motion? -> static glow : pulsing glow
+```
+
 ## v2.98 projectile presentation
 
 ```text

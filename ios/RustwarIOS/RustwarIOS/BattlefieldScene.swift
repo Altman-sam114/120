@@ -1818,10 +1818,12 @@ final class BattlefieldScene: SKScene {
         glow.strokeColor = .clear
         glow.lineWidth = 0
         projectile.addChild(glow)
-        glow.run(.repeatForever(.sequence([
-            .scale(to: 1.14, duration: 0.10),
-            .scale(to: 0.92, duration: 0.14)
-        ])))
+        if !accessibilityReduceMotion {
+            glow.run(.repeatForever(.sequence([
+                .scale(to: 1.14, duration: 0.10),
+                .scale(to: 0.92, duration: 0.14)
+            ])))
+        }
 
         if trailLength > 0 {
             let vaporTrail = SKShapeNode(rect: CGRect(

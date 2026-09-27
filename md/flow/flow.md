@@ -1,3 +1,7 @@
+## v2.99 / projectile Reduce Motion
+
+The existing `accessibilityReduceMotion` gate now suppresses the repeating projectile glow action while retaining its static presentation.
+
 ## v2.98 / projectile energy pulse
 
 `projectileNode` animates only its existing glow child with a short repeating scale pulse. Projectile trajectory, terminal effects, damage and Core state are unchanged.

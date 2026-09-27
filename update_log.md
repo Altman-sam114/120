@@ -1,3 +1,7 @@
+## v2.99 / 弹体 Reduce Motion 兼容
+
+2026-09-27。v2.98 弹体光晕脉动接入现有 `accessibilityReduceMotion` 门控；减少动态时保留静态光晕。未改变弹道、终点、伤害、Core 或 Web。提示词：`md/prompt/v1-ios-swift-port/v2.99-projectile-reduce-motion.md`。等待云端验收。
+
 ## v2.98 / 弹体能量脉动
 
 2026-09-27。`projectileNode` 为现有弹体光晕加入短周期 scale pulse，增强发射反馈；未改变弹道、终点闪光、伤害、效果上限、Core 或 Web。提示词：`md/prompt/v1-ios-swift-port/v2.98-projectile-energy-pulse.md`。等待云端验收。
