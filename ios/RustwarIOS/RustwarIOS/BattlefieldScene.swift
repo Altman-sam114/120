@@ -2899,7 +2899,9 @@ final class BattlefieldScene: SKScene {
 
         if hasExploredHiddenTiles {
             let node = SKShapeNode(path: exploredPath)
-            node.fillColor = SKColor.black.withAlphaComponent(0.34)
+            // Keep explored fog readable without turning path joins at the
+            // viewport edge into a solid black artifact.
+            node.fillColor = SKColor(red: 0.02, green: 0.06, blue: 0.07, alpha: 0.26)
             node.strokeColor = .clear
             node.lineWidth = 0
             fogNode.addChild(node)
@@ -2907,7 +2909,7 @@ final class BattlefieldScene: SKScene {
 
         if hasUnexploredTiles {
             let node = SKShapeNode(path: unexploredPath)
-            node.fillColor = SKColor.black.withAlphaComponent(0.62)
+            node.fillColor = SKColor(red: 0.01, green: 0.03, blue: 0.04, alpha: 0.44)
             node.strokeColor = .clear
             node.lineWidth = 0
             fogNode.addChild(node)

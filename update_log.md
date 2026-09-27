@@ -1,3 +1,7 @@
+## v3.2 / fog edge visual polish
+
+2026-09-27。v3.1.1 云端 Home 截图复看发现战场左侧战争迷雾路径在视口边缘形成突兀黑色竖块。本轮将已探索/未探索 fog 改为深青战术色并降低 alpha，保持可见性、雷达、实体和命令语义不变。提示词：md/prompt/v1-ios-swift-port/v3.2-fog-edge-polish.md。等待云端验收。
+
 ## v3.1.1 / CI runner concurrency
 
 2026-09-27。v3.1 重跑长期停留在 queued，且旧 run 曾卡在结果生成 step。本轮为 .github/workflows/ci-results.yml 增加按 ref 的 concurrency group，重复 main run 自动取消旧 run，避免 runner 竞争；不改变产品逻辑或测试门控。提示词：md/prompt/v1-ios-swift-port/v3.1.1-ci-run-concurrency.md。等待云端复验。

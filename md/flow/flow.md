@@ -1,3 +1,7 @@
+## v3.2 / fog edge presentation
+
+战争迷雾仍由 visibility/explored snapshot 派生，但边缘层使用深青透明色，避免多矩形路径在视口边缘形成纯黑视觉块；不改变可见性过滤和雷达 contact。
+
 ## v3.1 / viewport and dock presentation
 
 `BattlefieldScene` 使用战术深色 clear color 覆盖地图边缘，`TacticalHUDLayoutMetrics` 为横屏 dock 提供更宽的紧凑/regular 范围，使生产卡指标保持可读；Core、输入、生产和战斗状态流不变。
