@@ -1,3 +1,7 @@
+## v2.97 / unit faction glow
+
+`drawUnit` adds a bounded presentation-only ellipse beneath the cached hull. Team color and selection state affect only alpha/stroke; weapons, selection ring, HP, Core commands and effects remain separate.
+
 ## v2.96 / Quick Orders active state
 
 Quick Orders derives the existing active border from `isAwaitingTarget`; it is presentation-only and does not alter command dispatch or touch ownership.

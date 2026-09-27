@@ -1,3 +1,9 @@
+## v2.97 unit presentation
+
+```text
+unit snapshot -> shadow -> faction glow -> cached hull/weapon -> HP/selection
+```
+
 ## v2.96 command feedback
 
 ```text

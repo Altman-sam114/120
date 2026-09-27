@@ -1,3 +1,7 @@
+## v2.97 云端模型验收
+
+截图复看 Combat：阵营底光应保持低亮度，不盖住 hull、炮塔、血条、selection、terminal/impact；Core、双架构 build、8 项 UI、双场景和 PNG probe 必须通过。
+
 ## v2.96 云端验收
 
 复看 combat PNG 与真实 UI 测试：等待 Move/A-Move/Attack 目标时对应按钮必须有 active border；8 项操作测试、Core、双架构 build、双场景和 PNG probe 全部通过。

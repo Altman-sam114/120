@@ -3111,6 +3111,12 @@ final class BattlefieldScene: SKScene {
             hullHeading: hullHeading,
             to: node
         )
+        addUnitTeamGlow(
+            team: unit.team,
+            radius: definition.radius,
+            isSelected: isSelected,
+            to: node
+        )
         let weaponHeading = unitWeaponHeadings[unit.id] ?? hullHeading
         let bodySignature = "\(unit.type.rawValue)|\(unit.team.rawValue)"
         let body: SKNode
@@ -3151,6 +3157,30 @@ final class BattlefieldScene: SKScene {
         }
         drawHealthBar(current: unit.hitPoints, max: unit.maxHitPoints, width: definition.radius * 2.4, yOffset: definition.radius + 8, on: node)
         entityNode.addChild(node)
+    }
+
+    /// A restrained faction light makes small units readable over water and
+    /// impact effects without competing with the hull, weapon, or selection ring.
+    private func addUnitTeamGlow(
+        team: Team,
+        radius: Double,
+        isSelected: Bool,
+        to node: SKNode
+    ) {
+        let glow = ellipseNode(
+            CGRect(
+                x: -radius * 0.82,
+                y: -radius * 0.32,
+                width: radius * 1.64,
+                height: radius * 0.64
+            ),
+            fill: teamColor(team).withAlphaComponent(isSelected ? 0.16 : 0.10),
+            stroke: teamColor(team).withAlphaComponent(isSelected ? 0.42 : 0.24),
+            lineWidth: isSelected ? 1.0 : 0.7
+        )
+        glow.zPosition = -1.6
+        glow.blendMode = .add
+        node.addChild(glow)
     }
 
     private func drawAttackRangePreview(for unit: UnitSnapshot, attackRange: Double) {
