@@ -1,3 +1,7 @@
+## v3.1.1 CI 队列复验
+
+新增 workflow concurrency 后，必须只验收最新 origin/main SHA 对应 run；旧 queued/in-progress run 应被自动取消，不能作为结果依据。
+
 ## v3.0 云端受击反馈验收
 
 Combat 截图和源码复看确认阵营色偏保持克制，不盖住 hull、炮塔、血条、selection、terminal/impact；Core、双架构 build、8 项 UI、双场景和 PNG probe 必须通过。

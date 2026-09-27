@@ -1,3 +1,7 @@
+## v3.1.1 / CI runner concurrency
+
+2026-09-27。v3.1 重跑长期停留在 queued，且旧 run 曾卡在结果生成 step。本轮为 .github/workflows/ci-results.yml 增加按 ref 的 concurrency group，重复 main run 自动取消旧 run，避免 runner 竞争；不改变产品逻辑或测试门控。提示词：md/prompt/v1-ios-swift-port/v3.1.1-ci-run-concurrency.md。等待云端复验。
+
 ## v3.1 / Tactical viewport and production dock
 
 2026-09-27。根据 v3.0 云端 iPhone 17 Pro 截图，SpriteKit 战场 clear color 改为战术深色，避免旋转/紧凑 dock resize 时出现突兀黑边；横屏 regular/compact dock 宽度提高，生产卡成本、人口和建造时间获得更稳定的可读空间。只改 iOS presentation/layout，不改 Core、触控命令、生产数值或 Web。提示词：`md/prompt/v1-ios-swift-port/v3.1-tactical-viewport-and-dock.md`。等待云端验收。

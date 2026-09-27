@@ -9,6 +9,12 @@ on:
 permissions:
   contents: read
 
+# Keep a single authoritative main run. A queued retry must not compete with
+# an older stalled macOS job for the same runner pool.
+concurrency:
+  group: rustwar-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ci-results:
     name: Build CI result package
