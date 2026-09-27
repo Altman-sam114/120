@@ -1020,7 +1020,11 @@ final class BattlefieldScene: SKScene {
             if let previousHitPoints = previousUnitHitPoints[unit.id],
                unit.hitPoints < previousHitPoints,
                isVisible {
-                spawnImpactEffect(at: unit.position, intensity: impactIntensity(for: unit.type))
+                spawnImpactEffect(
+                    at: unit.position,
+                    intensity: impactIntensity(for: unit.type),
+                    accent: teamColor(unit.team)
+                )
             }
 
             previousUnitPositions[unit.id] = unit.position
@@ -1068,7 +1072,7 @@ final class BattlefieldScene: SKScene {
             if let previousHitPoints = previousBuildingHitPoints[building.id],
                building.hitPoints < previousHitPoints,
                isVisible {
-                spawnImpactEffect(at: building.position, intensity: 1.2)
+                spawnImpactEffect(at: building.position, intensity: 1.2, accent: teamColor(building.team))
             }
 
             previousBuildingCooldowns[building.id] = building.weaponCooldown
@@ -1961,7 +1965,12 @@ final class BattlefieldScene: SKScene {
         }
     }
 
-    private func spawnImpactEffect(at position: WorldPoint, intensity: Double, isFrozen: Bool = false) {
+    private func spawnImpactEffect(
+        at position: WorldPoint,
+        intensity: Double,
+        accent: SKColor? = nil,
+        isFrozen: Bool = false
+    ) {
         if isWaterImpact(at: position) {
             spawnWaterImpactEffect(
                 at: position,
@@ -1977,13 +1986,14 @@ final class BattlefieldScene: SKScene {
         let container = SKNode()
         container.position = spritePoint(for: position)
 
+        let impactAccent = accent ?? SKColor.systemOrange
         let groundBloom = SKShapeNode(ellipseOf: CGSize(
             width: 24 * intensity,
             height: 12 * intensity
         ))
         groundBloom.position.y = -CGFloat(2.5 * intensity)
         groundBloom.fillColor = SKColor.systemOrange.withAlphaComponent(0.15)
-        groundBloom.strokeColor = SKColor.systemYellow.withAlphaComponent(0.38)
+        groundBloom.strokeColor = impactAccent.withAlphaComponent(0.38)
         groundBloom.lineWidth = 1
         groundBloom.zPosition = -3
         container.addChild(groundBloom)
@@ -1993,7 +2003,7 @@ final class BattlefieldScene: SKScene {
             innerRadius: 7.2 * intensity,
             outerRadius: 11.4 * intensity,
             rotation: 0.18,
-            color: SKColor.systemOrange.withAlphaComponent(0.82),
+            color: impactAccent.withAlphaComponent(0.82),
             lineWidth: 1.15
         )
         outerCorona.zPosition = -1.4
@@ -2004,7 +2014,7 @@ final class BattlefieldScene: SKScene {
             segmentCount: 5,
             coverage: 0.54,
             rotation: 0.42,
-            color: SKColor.systemYellow.withAlphaComponent(0.84),
+            color: impactAccent.withAlphaComponent(0.84),
             lineWidth: 1.05
         )
         innerCorona.zPosition = -0.6
@@ -2012,7 +2022,7 @@ final class BattlefieldScene: SKScene {
 
         let contact = SKShapeNode(circleOfRadius: Swift.max(1.2, 1.45 * intensity))
         contact.fillColor = .white.withAlphaComponent(0.88)
-        contact.strokeColor = SKColor.systemOrange.withAlphaComponent(0.9)
+        contact.strokeColor = impactAccent.withAlphaComponent(0.9)
         contact.lineWidth = 0.9
         container.addChild(contact)
 
@@ -2022,11 +2032,11 @@ final class BattlefieldScene: SKScene {
 
         let ring = SKShapeNode(circleOfRadius: 8 * intensity)
         ring.fillColor = .clear
-        ring.strokeColor = SKColor.systemOrange.withAlphaComponent(0.9)
+        ring.strokeColor = impactAccent.withAlphaComponent(0.9)
         ring.lineWidth = 2
         container.addChild(ring)
 
-        addImpactSparks(intensity: intensity, color: .systemOrange, to: container, isFrozen: isFrozen)
+        addImpactSparks(intensity: intensity, color: impactAccent, to: container, isFrozen: isFrozen)
         addSmokePuffs(intensity: intensity * 0.72, count: 3, to: container, isFrozen: isFrozen)
         addImpactDebris(intensity: intensity, to: container, isFrozen: isFrozen)
         if isFrozen {

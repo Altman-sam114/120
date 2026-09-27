@@ -1,3 +1,9 @@
+## v3.0 impact feedback
+
+```text
+damage snapshot -> team accent + heat core -> bounded impact layer -> fade
+```
+
 ## v2.99 accessibility gate
 
 ```text

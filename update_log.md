@@ -1,3 +1,7 @@
+## v3.0 / 阵营受击色偏
+
+2026-09-27。受击单位/建筑将 team color 作为既有 impact bloom、corona、contact 和 sparks 的轻微 accent，橙黄热源仍作为默认核心。未改变水面层、伤害、Core 或 Web。提示词：`md/prompt/v1-ios-swift-port/v3.0-faction-impact-accent.md`。等待云端验收。
+
 ## v2.99 / 弹体 Reduce Motion 兼容
 
 2026-09-27。v2.98 弹体光晕脉动接入现有 `accessibilityReduceMotion` 门控；减少动态时保留静态光晕。未改变弹道、终点、伤害、Core 或 Web。提示词：`md/prompt/v1-ios-swift-port/v2.99-projectile-reduce-motion.md`。等待云端验收。

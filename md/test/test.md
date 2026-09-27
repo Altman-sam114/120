@@ -1,3 +1,7 @@
+## v3.0 云端受击反馈验收
+
+Combat 截图和源码复看确认阵营色偏保持克制，不盖住 hull、炮塔、血条、selection、terminal/impact；Core、双架构 build、8 项 UI、双场景和 PNG probe 必须通过。
+
 ## v2.99 云端无障碍验收
 
 云端源码/结果复核确认 Reduce Motion 下不安排弹体重复缩放，普通模式保留脉动；Core、双架构 build、8 项 UI、双场景和 PNG probe 必须通过。

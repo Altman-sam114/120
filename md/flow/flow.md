@@ -1,3 +1,7 @@
+## v3.0 / faction impact accent
+
+`spawnImpactEffect` accepts an optional team accent for visible unit/building damage. It tints existing bloom/corona/contact/sparks while preserving the default orange fallback and water layer.
+
 ## v2.99 / projectile Reduce Motion
 
 The existing `accessibilityReduceMotion` gate now suppresses the repeating projectile glow action while retaining its static presentation.
