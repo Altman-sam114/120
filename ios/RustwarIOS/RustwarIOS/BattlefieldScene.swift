@@ -147,7 +147,9 @@ final class BattlefieldScene: SKScene {
     }
 
     private func configureScene() {
-        backgroundColor = .black
+        // Keep any fractional camera edge in the same tactical palette as the
+        // terrain. A black strip reads as a broken map during rotation/pinch.
+        backgroundColor = SKColor(red: 0.055, green: 0.10, blue: 0.11, alpha: 1)
         anchorPoint = .zero
         addChild(worldNode)
         worldNode.addChild(terrainNode)

@@ -1,3 +1,7 @@
+## v3.1 / viewport and dock presentation
+
+`BattlefieldScene` 使用战术深色 clear color 覆盖地图边缘，`TacticalHUDLayoutMetrics` 为横屏 dock 提供更宽的紧凑/regular 范围，使生产卡指标保持可读；Core、输入、生产和战斗状态流不变。
+
 ## v3.0 / faction impact accent
 
 `spawnImpactEffect` accepts an optional team accent for visible unit/building damage. It tints existing bloom/corona/contact/sparks while preserving the default orange fallback and water layer.

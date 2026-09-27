@@ -86,6 +86,8 @@ struct CameraState: Codable, Equatable {
         // Ensure visible world is not larger than the map, which creates black letterbox bars.
         let minZoomForWidth = Double(viewportSize.width) / GameConstants.mapWidth
         let minZoomForHeight = Double(viewportSize.height) / GameConstants.mapHeight
+        // Fill both axes so SpriteKit never exposes its black clear color at
+        // the edge of a phone viewport after rotation or a compact dock resize.
         let fillZoom = max(minZoomForWidth, minZoomForHeight)
         if fillZoom.isFinite, fillZoom > 0 {
             zoom = min(Self.maximumZoom, max(zoom, fillZoom, Self.minimumZoom))

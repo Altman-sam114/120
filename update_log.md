@@ -1,3 +1,7 @@
+## v3.1 / Tactical viewport and production dock
+
+2026-09-27。根据 v3.0 云端 iPhone 17 Pro 截图，SpriteKit 战场 clear color 改为战术深色，避免旋转/紧凑 dock resize 时出现突兀黑边；横屏 regular/compact dock 宽度提高，生产卡成本、人口和建造时间获得更稳定的可读空间。只改 iOS presentation/layout，不改 Core、触控命令、生产数值或 Web。提示词：`md/prompt/v1-ios-swift-port/v3.1-tactical-viewport-and-dock.md`。等待云端验收。
+
 ## v3.0 / 阵营受击色偏
 
 2026-09-27。受击单位/建筑将 team color 作为既有 impact bloom、corona、contact 和 sparks 的轻微 accent，橙黄热源仍作为默认核心。未改变水面层、伤害、Core 或 Web。提示词：`md/prompt/v1-ios-swift-port/v3.0-faction-impact-accent.md`。等待云端验收。

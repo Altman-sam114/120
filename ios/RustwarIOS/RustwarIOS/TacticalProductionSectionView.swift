@@ -171,6 +171,8 @@ struct TacticalProductionSectionView: View {
         }
         // Two columns keep every compact producer card readable and reachable
         // on short iPhone layouts; regular trailing docks retain the denser grid.
+        // Compact cards need enough horizontal room for cost, population and
+        // build time; the wider tactical dock keeps every metric readable.
         return isCompact ? 2 : 3
     }
 

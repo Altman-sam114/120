@@ -15,8 +15,8 @@ struct TacticalHUDLayoutMetrics: Equatable {
         static let shortLandscapeMaximumHeight: CGFloat = 520
         static let regularWidthThreshold: CGFloat = 700
         static let compactTrailingWidthThreshold: CGFloat = 560
-        static let regularDockWidthRange: ClosedRange<CGFloat> = 240...280
-        static let compactDockWidthRange: ClosedRange<CGFloat> = 204...224
+        static let regularDockWidthRange: ClosedRange<CGFloat> = 260...310
+        static let compactDockWidthRange: ClosedRange<CGFloat> = 232...286
         static let bottomDockHeightRange: ClosedRange<CGFloat> = 200...288
         static let accessibilityBottomDockHeightRange: ClosedRange<CGFloat> = 216...320
         static let minimumCompactDockHeight: CGFloat = 168
@@ -61,12 +61,12 @@ struct TacticalHUDLayoutMetrics: Equatable {
         switch role {
         case .regularTrailing:
             return clamped(
-                containerSize.width * 0.24,
+                containerSize.width * 0.26,
                 to: Constants.regularDockWidthRange
             )
         case .compactTrailing:
             return clamped(
-                containerSize.width * 0.24,
+                containerSize.width * 0.28,
                 to: Constants.compactDockWidthRange
             )
         case .compactBottom:

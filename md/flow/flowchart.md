@@ -1,3 +1,11 @@
+## v3.1 / iOS viewport and production dock
+
+```mermaid
+flowchart LR
+  Geometry[容器 geometry] --> Layout[更宽横屏 dock] --> Cards[生产卡指标可读]
+  Camera[相机/地图边缘] --> Palette[战术 clear color] --> View[无突兀黑边]
+```
+
 ## v3.0 impact feedback
 
 ```text
