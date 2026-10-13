@@ -37,20 +37,30 @@ struct TacticalMetricView: View {
     let systemImage: String
     var spokenLabel: String?
     var spokenValue: String?
+    var isInline = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Label(label.uppercased(), systemImage: systemImage)
-                .font(.caption.bold())
-                .foregroundStyle(TacticalHUDTheme.metricLabel)
+        let layout = isInline
+            ? AnyLayout(HStackLayout(spacing: TacticalHUDTheme.compactSpacing))
+            : AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
+        layout {
+            if isInline {
+                Image(systemName: systemImage)
+                    .font(.caption.bold())
+                    .foregroundStyle(TacticalHUDTheme.metricLabel)
+            } else {
+                Label(label.uppercased(), systemImage: systemImage)
+                    .font(.caption.bold())
+                    .foregroundStyle(TacticalHUDTheme.metricLabel)
+            }
             Text(value)
-                .font(.headline)
+                .font(isInline ? .subheadline.monospaced().bold() : .headline)
                 .monospacedDigit()
                 .foregroundStyle(TacticalHUDTheme.primaryText)
                 .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.horizontal, TacticalHUDTheme.compactPadding)
-        .padding(.vertical, TacticalHUDTheme.statusMetricVerticalPadding)
+        .padding(.vertical, isInline ? 6 : TacticalHUDTheme.statusMetricVerticalPadding)
         .background(
             TacticalHUDTheme.metricBackground,
             in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)

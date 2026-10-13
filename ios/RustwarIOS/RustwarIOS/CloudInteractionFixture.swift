@@ -31,6 +31,9 @@ enum CloudInteractionFixture {
             building(.command, id: "input-command", at: WorldPoint(1_800, 1_980)),
             building(.command, id: "input-enemy-command", at: WorldPoint(2_600, 1_800), team: .enemy)
         ]
+        if ProcessInfo.processInfo.arguments.contains("--rustwar-ci-factory-tech2") {
+            state.buildings[0].upgradeLevel = 2
+        }
         state.metal[.player] = lowMetal ? 0 : 5_000
         return state
     }

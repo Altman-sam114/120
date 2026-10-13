@@ -1,3 +1,9 @@
+## v3.4 / 首屏生产与操作闭环
+
+云端 UI gate 至少 **10 项**，保留原 8 项；新增 `testFactoryPaletteAndUpgradeVisibleWithoutScrolling` 和 `testTech2PaletteQueuesHeavyThenReturnsToBattlefield`。T1 五卡+升级、T2 六卡均需整卡位于 command-dock-scroll frame 内、isHittable、height>=44；禁止先 swipeUp 再宣称首屏通过。T2 真实点击重坦，检查队列+420 金属扣费，再点坦克/空地检查 Attack-Move。tech2 fixture 仅构造初态，无测试命令注入。
+
+完整云端要求仍为 350 Core、双架构 build、双 PNG probe、15 reporter self-tests 与 JUnit 11/0/1。artifact 新增必要的 `ci-reporting-tests.log`，C 核对自测实际计数。人工复看 Home 全生产卡与资源/时间可读；Combat 指令区无回退。辅助功能字号允许滚动，不把普通字号首屏断言外推全部字号。
+
 ## v3.3 / CI 执行完整性云端门控
 
 仅云端运行 `node --test ci/finalize-results.test.js`；覆盖完整成功、checks 取消/失败/跳过、报告自测失败、四个 identity 字段错配、缺文件和 JUnit 失败/跳过。既有 Swift Core、双架构 build、双画面 probe 和八项 XCUITest 保持。正常最终 JUnit 为 **11 tests / 0 failures / 1 skipped**，第 11 项为 CI execution and package integrity；原始检查仍为 10 项。唯一 skip 为 Web browser regression。

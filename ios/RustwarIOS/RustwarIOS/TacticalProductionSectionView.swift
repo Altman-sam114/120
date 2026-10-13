@@ -191,11 +191,6 @@ struct TacticalProductionSectionView: View {
             if showsProductionSectionHeader {
                 TacticalSectionHeader(section: .production)
             }
-            TacticalProductionManagementRail(
-                controller: controller,
-                columns: columns,
-                isCompact: isCompact
-            )
             if controller.productionFocusBuildingName != nil && (!isCompact || dynamicTypeSize.isAccessibilitySize) {
                 TacticalProductionFocusSummaryView(
                     controller: controller,
@@ -215,6 +210,11 @@ struct TacticalProductionSectionView: View {
                     }
                 }
             }
+            TacticalProductionManagementRail(
+                controller: controller,
+                columns: columns,
+                isCompact: isCompact
+            )
             if controller.productionFocusBuildingName != nil && isCompact && !dynamicTypeSize.isAccessibilitySize {
                 TacticalProductionFocusSummaryView(controller: controller, isCompact: isCompact)
             }
@@ -296,177 +296,6 @@ struct TacticalProductionSectionView: View {
 
 }
 
-private struct TacticalProductionButtonLabel: View {
-    let unitType: UnitType
-    let definition: UnitDefinition
-    let buildTime: Double
-    let availability: ProductionAvailability
-    let usesCompactLayout: Bool
-    let usesDenseCompactLayout: Bool
-
-    var body: some View {
-        if usesDenseCompactLayout {
-            denseCompactBody
-        } else if usesCompactLayout {
-            VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-                HStack(spacing: TacticalHUDTheme.denseSpacing) {
-                    productionIcon
-                    Text(compactDisplayName)
-                        .font(.caption.bold())
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.72)
-                }
-                availabilityBadge
-                Text(compactMetrics)
-                    .font(.caption2)
-                    .foregroundStyle(TacticalHUDTheme.secondaryText)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.68)
-            }
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        } else {
-            HStack(spacing: TacticalHUDTheme.compactSpacing) {
-                productionIcon
-                    .frame(width: 26)
-                VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-                    Text(definition.name)
-                        .font(.footnote.bold())
-                        .lineLimit(2)
-                    HStack(spacing: TacticalHUDTheme.compactSpacing) {
-                        productionMetric(Int(definition.metalCost).formatted(), systemImage: "hexagon.fill")
-                        productionMetric(definition.supply.formatted(), systemImage: "person.2.fill")
-                        productionMetric(formattedBuildTime, systemImage: "timer")
-                    }
-                    availabilityBadge
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private var denseCompactBody: some View {
-        HStack(alignment: .center, spacing: TacticalHUDTheme.compactSpacing) {
-            productionIcon
-                .font(.title2.weight(.semibold))
-                .frame(width: 26, height: 30)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(denseDisplayName)
-                    .font(.caption.bold())
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.58)
-                    .allowsTightening(true)
-                Text(denseCostSupply)
-                    .font(.caption2)
-                    .foregroundStyle(TacticalHUDTheme.secondaryText)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.62)
-                HStack(spacing: TacticalHUDTheme.denseSpacing) {
-                    Text(denseBuildTime)
-                        .font(.caption2.bold())
-                        .foregroundStyle(TacticalHUDTheme.metricLabel)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.62)
-                    if !availability.isAvailable {
-                        Image(systemName: availability.systemImage)
-                            .foregroundStyle(TacticalHUDTheme.unavailableForeground)
-                            .accessibilityHidden(true)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .frame(maxWidth: .infinity, minHeight: 44, alignment: .center)
-    }
-
-    private var productionIcon: some View {
-        Image(systemName: unitType.productionSystemImage)
-            .font(.title3.weight(.semibold))
-            .foregroundStyle(TacticalHUDTheme.accent)
-            .accessibilityHidden(true)
-    }
-
-    @ViewBuilder
-    private var availabilityBadge: some View {
-        if !availability.isAvailable {
-            Label(availability.shortLabel, systemImage: availability.systemImage)
-                .font(.caption2.bold())
-                .foregroundStyle(TacticalHUDTheme.unavailableForeground)
-                .padding(.horizontal, TacticalHUDTheme.denseSpacing)
-                .padding(.vertical, 2)
-                .background(
-                    TacticalHUDTheme.unavailableBackground,
-                    in: Capsule()
-                )
-                .overlay {
-                    Capsule()
-                        .stroke(TacticalHUDTheme.unavailableStroke, lineWidth: 1)
-                }
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
-                .accessibilityHidden(true)
-        }
-    }
-
-    private func productionMetric(_ value: String, systemImage: String) -> some View {
-        Label(value, systemImage: systemImage)
-            .font(.caption2)
-            .foregroundStyle(TacticalHUDTheme.secondaryText)
-            .monospacedDigit()
-            .lineLimit(1)
-            .minimumScaleFactor(0.72)
-    }
-
-    private var formattedBuildTime: String {
-        "\(buildTime.formatted(.number.precision(.fractionLength(0...1))))s"
-    }
-
-    private var compactMetrics: String {
-        "\(Int(definition.metalCost))M \(definition.supply)P \(formattedBuildTime)"
-    }
-
-    private var denseCostSupply: String {
-        "\(Int(definition.metalCost))M · \(definition.supply)P"
-    }
-
-    private var denseBuildTime: String {
-        "\(Int(buildTime.rounded(.up)))s build"
-    }
-
-    private var denseAvailabilityLabel: String {
-        switch availability {
-        case .available: "READY"
-        case .unavailable: "LOCK"
-        case .insufficientMetal: "NEED"
-        case .insufficientSupply: "POP"
-        }
-    }
-
-    private var compactDisplayName: String {
-        switch unitType {
-        case .artillery:
-            "Arty"
-        default:
-            unitType.productionQueueDisplayName(fallback: definition.name)
-        }
-    }
-
-    private var denseDisplayName: String {
-        switch unitType {
-        case .builder: "Build"
-        case .scout: "Scout"
-        case .tank: "Light"
-        case .heavyTank: "Heavy"
-        case .hover: "Hover"
-        case .aaTank: "AA"
-        case .artillery: "Arty"
-        case .gunboat: "Boat"
-        }
-    }
-}
-
 private struct TacticalFactoryTechView: View {
     @Bindable var controller: GameController
     let isCompact: Bool
@@ -485,15 +314,12 @@ private struct TacticalFactoryTechView: View {
     @ViewBuilder
     private var compactBody: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-            compactFactoryHeader
             if controller.showsSelectedFactoryUpgradeControl {
                 compactUpgradeControl
             } else if let progress = controller.selectedFactoryUpgradeProgress {
                 compactUpgradeProgress(progress: progress)
             }
         }
-        .padding(.horizontal, TacticalHUDTheme.compactPadding)
-        .padding(.vertical, TacticalHUDTheme.denseSpacing)
         .foregroundStyle(TacticalHUDTheme.primaryText)
         .background(
             TacticalHUDTheme.selectionBackground,
@@ -504,54 +330,6 @@ private struct TacticalFactoryTechView: View {
                 .stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1)
         }
         .accessibilityElement(children: .contain)
-    }
-
-    private var compactFactoryHeader: some View {
-        HStack(alignment: .center, spacing: TacticalHUDTheme.denseSpacing) {
-            factoryIcon
-            VStack(alignment: .leading, spacing: 0) {
-                Text("FACTORY TECH")
-                    .font(.caption2.bold())
-                    .foregroundStyle(TacticalHUDTheme.metricLabel)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-                HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.compactSpacing) {
-                    Text("T\(controller.selectedFactoryTechLevel)")
-                        .font(.headline.bold())
-                        .monospacedDigit()
-                    Text(compactProductionSpeedText)
-                        .font(.caption)
-                        .foregroundStyle(TacticalHUDTheme.secondaryText)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
-                }
-            }
-            Spacer(minLength: 0)
-            Text(compactFactoryStatusTitle)
-                .font(.caption2.bold())
-                .foregroundStyle(factoryStatusForeground)
-                .padding(.horizontal, TacticalHUDTheme.denseSpacing)
-                .padding(.vertical, TacticalHUDTheme.denseSpacing)
-                .background(
-                    factoryStatusBackground,
-                    in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
-                )
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
-        }
-        .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
-    }
-
-    private var compactProductionSpeedText: String {
-        controller.selectedFactoryProductionSpeedText.replacing(" production", with: "")
-    }
-
-    private var compactFactoryStatusTitle: String {
-        if controller.selectedFactoryUpgradeProgress != nil {
-            return "UPGRADING"
-        }
-        return controller.showsSelectedFactoryUpgradeControl ? "T2 READY" : "MAX"
     }
 
     private var compactUpgradeControl: some View {
@@ -566,7 +344,6 @@ private struct TacticalFactoryTechView: View {
             }
             .frame(
                 maxWidth: .infinity,
-                minHeight: TacticalHUDTheme.controlMinimumHeight,
                 alignment: .leading
             )
         }
@@ -920,7 +697,7 @@ private struct TacticalQueuedProductionView: View {
     }
 }
 
-private extension UnitType {
+extension UnitType {
     func productionQueueDisplayName(fallback: String) -> String {
         switch self {
         case .tank:

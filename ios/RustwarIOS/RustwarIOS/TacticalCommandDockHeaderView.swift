@@ -81,30 +81,30 @@ private struct TacticalCompactProducerHeaderView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-            HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.compactSpacing) {
-                Label("Production", systemImage: "gearshape.2.fill")
-                    .font(.caption.bold())
-                    .foregroundStyle(TacticalHUDTheme.metricLabel)
-                Spacer(minLength: 0)
+        HStack(alignment: .center, spacing: TacticalHUDTheme.compactSpacing) {
+            Image(systemName: "gearshape.2.fill")
+                .foregroundStyle(TacticalHUDTheme.metricLabel)
+                .accessibilityHidden(true)
+            Text(controller.productionFocusBuildingName ?? "Production")
+                .font(.subheadline.bold())
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .foregroundStyle(TacticalHUDTheme.primaryText)
+                .layoutPriority(1)
+            Spacer(minLength: 0)
+            VStack(alignment: .trailing, spacing: 0) {
                 Text(controller.productionFocusTechLabel)
                     .font(.caption.bold())
                     .monospacedDigit()
                     .foregroundStyle(TacticalHUDTheme.primaryText)
                 Text(productionSpeedText)
-                    .font(.caption)
+                    .font(.caption2)
                     .monospacedDigit()
                     .foregroundStyle(TacticalHUDTheme.secondaryText)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.72)
             }
-            Text(controller.productionFocusBuildingName ?? "Production")
-                .font(.headline.bold())
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
-                .foregroundStyle(TacticalHUDTheme.primaryText)
         }
-        .padding(TacticalHUDTheme.compactPadding)
+        .padding(.vertical, TacticalHUDTheme.denseSpacing)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(TacticalHUDTheme.panelBackground)
         .accessibilityElement(children: .ignore)

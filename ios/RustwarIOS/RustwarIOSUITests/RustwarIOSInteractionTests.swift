@@ -25,12 +25,13 @@ final class RustwarIOSInteractionTests: XCTestCase {
     }
 
     @MainActor
-    private func launch(lowMetal: Bool = false) async throws -> XCUIApplication {
+    private func launch(lowMetal: Bool = false, tech2: Bool = false) async throws -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = XCUIApplication()
         app.launchArguments = ["--rustwar-ci-interaction-tests", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         if lowMetal { app.launchArguments.append("--rustwar-ci-low-metal") }
+        if tech2 { app.launchArguments.append("--rustwar-ci-factory-tech2") }
         app.launch()
         XCTAssertTrue(battlefield(app).waitForExistence(timeout: 15))
         try await waitFor(app, "fixture loaded") { $0.units.count == 4 }
@@ -72,6 +73,16 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let point = CGVector(dx: 0.5 + (x - state.cameraX) * state.zoom / Double(field.frame.width),
                              dy: 0.5 - (y - state.cameraY) * state.zoom / Double(field.frame.height))
         return field.coordinate(withNormalizedOffset: point)
+    }
+
+    @MainActor
+    private func assertFullyVisible(_ button: XCUIElement, in app: XCUIApplication,
+                                    file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(button.exists, file: file, line: line)
+        XCTAssertTrue(button.isHittable, "No scrolling should be needed: \(button.identifier)", file: file, line: line)
+        let viewport = app.scrollViews["command-dock-scroll"].frame
+        XCTAssertTrue(viewport.contains(button.frame), "Card clipped: \(button.frame), viewport \(viewport)", file: file, line: line)
+        XCTAssertGreaterThanOrEqual(button.frame.height, 44, file: file, line: line)
     }
 
     @MainActor
@@ -120,7 +131,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "factory selected") { $0.selected == ["input-factory"] }
         let scout = app.buttons["produce-scout"]
         XCTAssertTrue(scout.waitForExistence(timeout: 5))
-        if !scout.isHittable { app.scrollViews["command-dock-scroll"].swipeUp() }
+        assertFullyVisible(scout, in: app)
         XCTAssertTrue(scout.isEnabled)
         let metal = try snapshot(app).metal
         scout.tap()
@@ -150,7 +161,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "factory selected") { $0.selected == ["input-factory"] }
         let scout = app.buttons["produce-scout"]
         XCTAssertTrue(scout.waitForExistence(timeout: 5))
-        if !scout.isHittable { app.scrollViews["command-dock-scroll"].swipeUp() }
+        assertFullyVisible(scout, in: app)
         XCTAssertFalse(scout.isEnabled)
         scout.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         XCTAssertEqual(try snapshot(app).entity("input-factory")?.queue, 0)
@@ -197,5 +208,34 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "fresh ground order after area selection") {
             $0.entity("input-tank")?.order == "attackMove" && $0.entity("input-wing")?.order == "attackMove"
         }
+    }
+
+    @MainActor
+    func testFactoryPaletteAndUpgradeVisibleWithoutScrolling() async throws {
+        let app = try await launch()
+        try tapEntity("input-factory", in: app)
+        try await waitFor(app, "factory selected") { $0.selected == ["input-factory"] }
+        for unit in ["scout", "tank", "hover", "artillery", "aaTank"] {
+            assertFullyVisible(app.buttons["produce-\(unit)"], in: app)
+        }
+        assertFullyVisible(app.buttons["Upgrade land factory to tech level 2"], in: app)
+    }
+
+    @MainActor
+    func testTech2PaletteQueuesHeavyThenReturnsToBattlefield() async throws {
+        let app = try await launch(tech2: true)
+        try tapEntity("input-factory", in: app)
+        try await waitFor(app, "T2 factory selected") { $0.selected == ["input-factory"] }
+        for unit in ["scout", "tank", "hover", "artillery", "aaTank", "heavyTank"] {
+            assertFullyVisible(app.buttons["produce-\(unit)"], in: app)
+        }
+        app.buttons["produce-heavyTank"].tap()
+        try await waitFor(app, "heavy queued through actual button") {
+            $0.entity("input-factory")?.queue == 1 && $0.metal == 4_580
+        }
+        try tapEntity("input-tank", in: app)
+        try await waitFor(app, "production panel does not trap selection") { $0.selected == ["input-tank"] }
+        try worldCoordinate(1_540, 1_740, in: app).tap()
+        try await waitFor(app, "fresh ground command after production") { $0.entity("input-tank")?.order == "attackMove" }
     }
 }

@@ -1,3 +1,19 @@
+## v3.4 / 生产面板优先级
+
+```mermaid
+flowchart TD
+    Tap[真实点选生产建筑] --> Focus[现有 controller producer focus]
+    Focus --> Header[单层建筑身份与科技]
+    Header --> Tech[直接升级或进度]
+    Tech --> Cards[UnitType 缩略图与生产卡]
+    Cards --> Queue[既有 queueUnit 与资源人口校验]
+    Cards --> Management[后置 Cancel / Repeat / Rally 与队列]
+    Queue --> TapUnit[重新点战场单位]
+    TapUnit --> Ground[点空地 Move / Attack-Move]
+    Tests[云端整卡可见与真实操作断言] --> Cards
+    Tests --> Ground
+```
+
 ## v3.3 / 云端结果完整性
 
 ```mermaid

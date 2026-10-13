@@ -9,6 +9,12 @@ struct TacticalStatusBarView: View {
     @Bindable var controller: GameController
     let layoutRole: TacticalHUDLayoutRole
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var usesInlineMetrics: Bool {
+        layoutRole != .regularTrailing && !dynamicTypeSize.isAccessibilitySize
+    }
+
     var body: some View {
         HStack(spacing: TacticalHUDTheme.controlSpacing) {
             metricsStrip
@@ -33,28 +39,32 @@ struct TacticalStatusBarView: View {
 
     private var metricsStrip: some View {
         ScrollView(.horizontal) {
-            HStack(spacing: TacticalHUDTheme.sectionSpacing) {
+            HStack(spacing: usesInlineMetrics ? TacticalHUDTheme.compactSpacing : TacticalHUDTheme.sectionSpacing) {
                 TacticalMetricView(
                     label: "Metal",
                     value: controller.playerEconomy.metal.formatted(.number.precision(.fractionLength(0))),
-                    systemImage: "hexagon.fill"
+                    systemImage: "hexagon.fill",
+                    isInline: usesInlineMetrics
                 )
                 TacticalMetricView(
                     label: "Income",
-                    value: controller.playerEconomy.income.formatted(.number.precision(.fractionLength(1))),
-                    systemImage: "arrow.up.right"
+                    value: "+\(controller.playerEconomy.income.formatted(.number.precision(.fractionLength(1))))",
+                    systemImage: "arrow.up.right",
+                    isInline: usesInlineMetrics
                 )
                 TacticalMetricView(
                     label: "Pop",
                     value: "\(controller.playerEconomy.supplyUsed)/\(controller.playerEconomy.supplyCap)",
-                    systemImage: "person.3.fill"
+                    systemImage: "person.3.fill",
+                    isInline: usesInlineMetrics
                 )
                 TacticalMetricView(
                     label: "Radar",
                     value: "\(controller.playerRadarStationCount)/\(controller.playerRadarContactCount)",
                     systemImage: "dot.radiowaves.left.and.right",
                     spokenLabel: "Radar intelligence",
-                    spokenValue: controller.radarIntelAccessibilitySummary
+                    spokenValue: controller.radarIntelAccessibilitySummary,
+                    isInline: usesInlineMetrics
                 )
             }
             .padding(.vertical, 1)
@@ -81,7 +91,7 @@ struct TacticalStatusBarView: View {
             .keyboardShortcut(commandKey("p"), modifiers: [])
             .accessibilityInputLabels(["Pause", "Play"])
 
-            if layoutRole == .compactBottom {
+            if layoutRole != .regularTrailing {
                 speedPicker(style: .menu)
                     .frame(minWidth: 88)
             } else {

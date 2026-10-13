@@ -1,3 +1,9 @@
+## v3.4 / Production console presentation
+
+短横屏状态栏通过 isInline 使用单行资源 + 紧凑速度菜单，不改 controller。producer header 只显示建筑名、tech/speed，compact Factory Tech 仅保留 upgrade/progress 实际操作。生产 section 顺序为科技动作 -> 单位卡 -> management rail -> 队列摘要/队列，仍在原 ScrollView 的 eager hierarchy 内，快捷键不卸载。生产 label 拆到 TacticalProductionButtonLabel，原创 Canvas TacticalUnitPortrait 只读 UnitType，不创建第二份模拟或修改 battlefield 模型。
+
+CloudInteractionFixture 的 tech2 参数只改变专用 UI 测试初态。新增测试仍真实点击正式按钮和 battlefield，assertFullyVisible 同时检查整卡在 scroll viewport 内、isHittable 和 >=44pt。10 项名称进入严格 UI gate，CI reporting self-test 原始日志也纳入必要 artifact 文件。Core、输入生命周期、生产数值与存档保持。
+
 ## v3.3 / CI execution integrity
 
 workflow 先运行 reporting helper 自测，然后执行固定工具链/静态/Core/iOS/双画面/八项 UI 检查。检查日志实时串流；checks step 限时 35 分钟。独立 always finalizer 按当前环境的 branch/SHA/run/attempt、步骤 outcome、必要非空结果文件和原始 10/0/1 JUnit 决定 pipelineOutcome，追加第 11 个执行完整性 testcase；保留检查证据但取消/不完整不能 overall success。artifact 上传先于限时 Simulator teardown，最终退出 gate 使用已 finalise 的 overall。产品状态流未变。

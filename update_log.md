@@ -1,3 +1,11 @@
+## v3.4 / Production console refactor
+
+2026-10-13。单智能体串行 A/B/C，无本地验证。依据最新云端截图的生产第三行裁切，重构短横屏资源栏、producer header、生产/管理层级和科技升级区域；拆分生产 label，新增八类原创 Canvas 单位缩略图；不改变 Core、战斗模型、触控命令、生产数值、存档或 Web。新增两项首屏和生产->战场实际操作 UI 测试，原测试去掉自动滚动兜底，UI gate 扩到10项；CI 自测日志纳入必要包。提示词 `md/prompt/v1-ios-swift-port/v3.4-production-console.md`。待本轮最新 SHA 云端验收，不能用 v3.3 结果代替。
+
+前轮 v3.3 通过：`50e442171ed0835707d7f996d67ae63c1b12a3dc`，run `38342552596` / attempt 1 / job `115116577565`；artifact `rustwar-ci-v1.2-main-50e4421-run38342552596-attempt1`（ID11788100980，digest sha256:a487f5ca30b362842ce9ef7723aff9cd3fe15f7e34486e6766cd76c570571977）已下载到 `/private/tmp/rustwar-c-review-38342552596/`（1.9M）。manifest 身份与 pipeline/checks/reporter 全匹配，JUnit11/0/1、Core350、UI8/8、reporter15/15、双架构与双画面成功；人工复看无前轮产品回退。C review 留在该缓存。
+
+本轮已实际百度搜索铁锈战争操作并查看 Corroding Games 官方产品页与战斗截图；仅参考设计不复制资源。当前图形与操作离正式品质仍有差距，下一阶段需实际多指输入证据、模型/战斗/地形精修及性能数据。模拟器截图左侧黑胶囊是硬件遮挡，不能再作为战争迷雾错误处理。`.wp` 保持未跟踪。
+
 ## v3.3 / CI execution integrity
 
 2026-10-13。读取最新 main `a1fdca453338ccab5173da814a7fe4e8e336df3f` 与 run `36312312711` / attempt 1，Altman-sam114 登录后下载必要包（1.9M）。实际 8/8 UI 成功，但 GitHub checks step/整次 run 为 cancelled，旧包却整体 success；取消具体来源未由日志证明，不能宣称构建失败或通过。

@@ -10,7 +10,9 @@ const expected = [
   "testFactoryUpgradeUsesRealAction",
   "testUnavailableProductionDoesNotQueue",
   "testDockNavigationAndFactoryRefocus",
-  "testAreaSelectionThenGroundOrder"
+  "testAreaSelectionThenGroundOrder",
+  "testFactoryPaletteAndUpgradeVisibleWithoutScrolling",
+  "testTech2PaletteQueuesHeavyThenReturnsToBattlefield"
 ];
 const [summaryPath, testsPath, exitCode, outputPath] = process.argv.slice(2);
 const report = { outcome: "failure", executionExit: Number(exitCode), expectedTests: expected, total: 0, passed: 0, failed: 0, skipped: 0 };

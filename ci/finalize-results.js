@@ -2,7 +2,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const requiredFiles = [
-  "build.log", "junit.xml", "ci-failure-summary.md", "repo-state.txt",
+  "build.log", "junit.xml", "ci-failure-summary.md", "repo-state.txt", "ci-reporting-tests.log",
   "toolchain-info.txt", "ios-simulator-info.txt", "ios-home.png", "ios-combat.png",
   "ios-screenshot-metrics.txt", "ios-combat-screenshot-metrics.txt",
   "ios-ui-test-summary.json", "ios-ui-test-tree.json", "ios-ui-test-gate.json"
