@@ -1,3 +1,11 @@
+## v3.3 / CI execution integrity
+
+2026-10-13。读取最新 main `a1fdca453338ccab5173da814a7fe4e8e336df3f` 与 run `36312312711` / attempt 1，Altman-sam114 登录后下载必要包（1.9M）。实际 8/8 UI 成功，但 GitHub checks step/整次 run 为 cancelled，旧包却整体 success；取消具体来源未由日志证明，不能宣称构建失败或通过。
+
+本轮将日志实时串流、checks 限时、结果 finalizer 与上传后清理分开；增加报告 helper 云端自测，finalizer 核对步骤结论、精确身份、文件与 JUnit，新增 pipelineOutcome 和第 11 个汇总 gate。取消不能用已完成的绿色测试掩盖。所有产品逻辑不变。提示词 `md/prompt/v1-ios-swift-port/v3.3-ci-execution-integrity.md`。
+
+本地未运行任何测试/build/parse/typecheck/diff --check，仅读取/编辑/Git；`.wp` 保持未跟踪。待新 SHA 云端 run 下载验收后才启动下轮 HUD 重构。总目标未完成。
+
 ## v3.2 / fog edge visual polish
 
 2026-09-27。v3.1.1 云端 Home 截图复看发现战场左侧战争迷雾路径在视口边缘形成突兀黑色竖块。本轮将已探索/未探索 fog 改为深青战术色并降低 alpha，保持可见性、雷达、实体和命令语义不变。提示词：md/prompt/v1-ios-swift-port/v3.2-fog-edge-polish.md。等待云端验收。

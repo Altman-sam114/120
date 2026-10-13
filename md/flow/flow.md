@@ -1,3 +1,7 @@
+## v3.3 / CI execution integrity
+
+workflow 先运行 reporting helper 自测，然后执行固定工具链/静态/Core/iOS/双画面/八项 UI 检查。检查日志实时串流；checks step 限时 35 分钟。独立 always finalizer 按当前环境的 branch/SHA/run/attempt、步骤 outcome、必要非空结果文件和原始 10/0/1 JUnit 决定 pipelineOutcome，追加第 11 个执行完整性 testcase；保留检查证据但取消/不完整不能 overall success。artifact 上传先于限时 Simulator teardown，最终退出 gate 使用已 finalise 的 overall。产品状态流未变。
+
 ## v3.2 / fog edge presentation
 
 战争迷雾仍由 visibility/explored snapshot 派生，但边缘层使用深青透明色，避免多矩形路径在视口边缘形成纯黑视觉块；不改变可见性过滤和雷达 contact。

@@ -58,7 +58,15 @@ jobs:
             echo "ARTIFACT_NAME=$artifact_name"
           } >> "$GITHUB_ENV"
 
+      - name: Verify CI reporting helpers
+        id: reporter-tests
+        shell: bash
+        run: node --test ci/finalize-results.test.js
+
       - name: Run checks and write result package
+        id: checks
+        if: ${{ !cancelled() }}
+        timeout-minutes: 35
         shell: bash
         env:
           BEFORE_SHA: ${{ github.event.before }}
@@ -83,6 +91,11 @@ jobs:
             echo "developer_dir=${DEVELOPER_DIR}"
             echo
           } > "$build_log"
+
+          # Stream actual command output instead of appearing stalled for minutes.
+          tail -f "$build_log" &
+          log_stream_pid=$!
+          trap 'kill "$log_stream_pid" 2>/dev/null || true' EXIT
 
           echo "== pinned Apple toolchain ==" >> "$build_log"
           toolchain_status=0
@@ -394,15 +407,6 @@ jobs:
           echo "UI tests mandatory gate exit=$ui_test_status" >> "$build_log"
           echo >> "$build_log"
 
-          if [[ -n "$simulator_udid" ]]; then
-            echo "== clean up iOS Simulator ==" >> "$build_log"
-            xcrun simctl shutdown "$simulator_udid" >> "$build_log" 2>&1
-            echo "simulator shutdown exit=$?" >> "$build_log"
-            xcrun simctl delete "$simulator_udid" >> "$build_log" 2>&1
-            echo "simulator delete exit=$?" >> "$build_log"
-            echo >> "$build_log"
-          fi
-
           if [[ "$simulator_create_status" -eq 0 && "$simulator_boot_status" -eq 0 && "$simulator_install_status" -eq 0 && "$simulator_launch_status" -eq 0 && "$simulator_process_status" -eq 0 && "$simulator_screenshot_status" -eq 0 && "$screenshot_orientation_status" -eq 0 && "$screenshot_probe_status" -eq 0 && "$combat_simulator_launch_status" -eq 0 && "$combat_simulator_process_status" -eq 0 && "$combat_simulator_screenshot_status" -eq 0 && "$combat_screenshot_orientation_status" -eq 0 && "$combat_screenshot_probe_status" -eq 0 ]]; then
             simulator_visual_status=0
           else
@@ -624,6 +628,14 @@ jobs:
           fs.writeFileSync("ci-results/ci-artifact-manifest.json", `${JSON.stringify(manifest, null, 2)}\n`);
           NODE
 
+      - name: Finalize authoritative result
+        if: always()
+        shell: bash
+        env:
+          CHECKS_STEP_OUTCOME: ${{ steps.checks.outcome }}
+          REPORTER_TEST_OUTCOME: ${{ steps.reporter-tests.outcome }}
+        run: node ci/finalize-results.js ci-results
+
       - name: Upload CI result package
         uses: actions/upload-artifact@v5
         if: always()
@@ -631,6 +643,17 @@ jobs:
           name: ${{ env.ARTIFACT_NAME }}
           path: ci-results
           if-no-files-found: error
+
+      - name: Clean up cloud Simulator
+        if: always()
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          simulator_udid="$(sed -n 's/^udid=//p' ci-results/ios-simulator-info.txt 2>/dev/null || true)"
+          if [[ "$simulator_udid" =~ ^[0-9A-Fa-f-]{36}$ ]]; then
+            xcrun simctl shutdown "$simulator_udid" || true
+            xcrun simctl delete "$simulator_udid" || true
+          fi
 
       - name: Fail when checks failed
         if: always()

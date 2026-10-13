@@ -1,3 +1,9 @@
+## v3.3 / CI 执行完整性云端门控
+
+仅云端运行 `node --test ci/finalize-results.test.js`；覆盖完整成功、checks 取消/失败/跳过、报告自测失败、四个 identity 字段错配、缺文件和 JUnit 失败/跳过。既有 Swift Core、双架构 build、双画面 probe 和八项 XCUITest 保持。正常最终 JUnit 为 **11 tests / 0 failures / 1 skipped**，第 11 项为 CI execution and package integrity；原始检查仍为 10 项。唯一 skip 为 Web browser regression。
+
+C 必须同时确认 GitHub API run conclusion=success、manifest pipelineOutcome/checksStepOutcome/reporterTestOutcome 全成功且 packageIntegrityProblems 为空。被取消 run 即使已完成 8/8 UI，也不能验收。checks step 35 分钟、job 45 分钟、上传后 Simulator teardown 两分钟；不能因超过时间自动降低门槛。此节覆盖历史 8/10 项汇总说明。
+
 ## v3.1.1 CI 队列复验
 
 新增 workflow concurrency 后，必须只验收最新 origin/main SHA 对应 run；旧 queued/in-progress run 应被自动取消，不能作为结果依据。

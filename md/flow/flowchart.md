@@ -1,3 +1,20 @@
+## v3.3 / 云端结果完整性
+
+```mermaid
+flowchart TD
+    Helpers[云端报告自测] --> Checks[35 分钟限时检查与实时日志]
+    Checks --> Final[always finalizer]
+    Identity[当前 branch / SHA / run / attempt] --> Final
+    Evidence[文件 / JUnit / step outcome] --> Final
+    Final -->|完整成功| Pass[pipeline success]
+    Final -->|取消 / 失败 / 缺失| Fail[pipeline failure 保留已完成证据]
+    Pass --> Upload[上传必要结果包]
+    Fail --> Upload
+    Upload --> Cleanup[限时清理云端 Simulator]
+    Cleanup --> Gate[最终状态 gate]
+    Gate --> C[Agent C 核对 API conclusion 与 artifact]
+```
+
 ## v3.1 / iOS viewport and production dock
 
 ```mermaid
