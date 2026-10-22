@@ -1,3 +1,13 @@
+## v3.4.1 / 资源条尺寸边界
+
+```mermaid
+flowchart LR
+    Width[状态栏可用宽度] --> Controls[Play 和固定88pt速度菜单]
+    Width --> Metrics[剩余空间四项资源]
+    Metrics --> UI[云端点工厂前后整项可见断言]
+    UI --> Gate[11项实际操作全部通过]
+```
+
 ## v3.4 / 生产面板优先级
 
 ```mermaid

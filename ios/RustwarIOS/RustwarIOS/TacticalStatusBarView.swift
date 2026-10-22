@@ -70,6 +70,7 @@ struct TacticalStatusBarView: View {
             .padding(.vertical, 1)
         }
         .scrollIndicators(.hidden)
+        .accessibilityIdentifier("status-metrics")
         .frame(maxWidth: .infinity, alignment: .leading)
         .layoutPriority(0)
     }
@@ -93,17 +94,17 @@ struct TacticalStatusBarView: View {
 
             if layoutRole != .regularTrailing {
                 speedPicker(style: .menu)
-                    .frame(minWidth: 88)
+                    .frame(width: 88)
             } else {
                 ViewThatFits(in: .horizontal) {
                     speedPicker(style: .segmented)
                         .frame(width: 220)
                     speedPicker(style: .menu)
-                        .frame(minWidth: 88)
+                        .frame(width: 88)
                 }
             }
         }
-        .fixedSize(horizontal: false, vertical: true)
+        .fixedSize(horizontal: true, vertical: true)
         .layoutPriority(1)
     }
 
@@ -116,6 +117,7 @@ struct TacticalStatusBarView: View {
         }
         .controlSize(.regular)
         .accessibilityLabel("Simulation speed")
+        .lineLimit(1)
 
         switch style {
         case .segmented:
@@ -126,7 +128,7 @@ struct TacticalStatusBarView: View {
             picker
                 .pickerStyle(.menu)
                 .tacticalMenuPicker()
-                .frame(minWidth: 88)
+                .frame(width: 88)
         }
     }
 

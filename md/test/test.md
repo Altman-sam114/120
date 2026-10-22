@@ -1,3 +1,9 @@
+## v3.4.1 / Resource visibility and CI recovery
+
+Required UI tests: **11**, including `testStatusResourcesVisibleBeforeAndAfterFactoryFocus`. Before and after actual factory selection, the resource viewport must exceed 300pt and all four metric frames must have positive width and be entirely within it. The existing first-screen production tests remain mandatory. Cloud checks must also confirm the repaired EOF whitespace, YAML, 350 Core, dual builds, both PNG probes, 15 reporter tests and JUnit 11/0/1. No local verification is authorized.
+
+Previous run 38349186838 / attempt 1 is failure: 10 UI passed but git diff --check rejected a new EOF blank line; JUnit11/2/1. Downloaded artifact identity matched and both screenshots exposed a zero-width resource strip. Neither the successful UI subset nor build substitutes for new-SHA full acceptance.
+
 ## v3.4 / 首屏生产与操作闭环
 
 云端 UI gate 至少 **10 项**，保留原 8 项；新增 `testFactoryPaletteAndUpgradeVisibleWithoutScrolling` 和 `testTech2PaletteQueuesHeavyThenReturnsToBattlefield`。T1 五卡+升级、T2 六卡均需整卡位于 command-dock-scroll frame 内、isHittable、height>=44；禁止先 swipeUp 再宣称首屏通过。T2 真实点击重坦，检查队列+420 金属扣费，再点坦克/空地检查 Attack-Move。tech2 fixture 仅构造初态，无测试命令注入。

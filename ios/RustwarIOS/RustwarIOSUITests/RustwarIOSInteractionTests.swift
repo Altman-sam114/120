@@ -222,6 +222,27 @@ final class RustwarIOSInteractionTests: XCTestCase {
     }
 
     @MainActor
+    func testStatusResourcesVisibleBeforeAndAfterFactoryFocus() async throws {
+        let app = try await launch()
+        for factoryFocused in [false, true] {
+            if factoryFocused {
+                try tapEntity("input-factory", in: app)
+                try await waitFor(app, "factory selected") { $0.selected == ["input-factory"] }
+            }
+            let viewport = app.scrollViews["status-metrics"].frame
+            XCTAssertGreaterThan(viewport.width, 300, "Resource strip collapsed behind speed control")
+            for metric in ["metal", "income", "pop", "radar"] {
+                let element = app.descendants(matching: .any)
+                    .matching(identifier: "status-metric-\(metric)").firstMatch
+                XCTAssertTrue(element.exists)
+                XCTAssertGreaterThan(element.frame.width, 20)
+                XCTAssertTrue(viewport.contains(element.frame), "Resource hidden: \(metric)")
+            }
+            XCTAssertTrue(app.buttons["Play"].isHittable)
+        }
+    }
+
+    @MainActor
     func testTech2PaletteQueuesHeavyThenReturnsToBattlefield() async throws {
         let app = try await launch(tech2: true)
         try tapEntity("input-factory", in: app)

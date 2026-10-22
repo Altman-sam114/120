@@ -1,3 +1,9 @@
+## v3.4.1 / Resource strip and CI repair
+
+2026-10-22。Agent X 单智能体串行 A/B/C。最新 main b8a4f9570a6f9f5d30520b53df84225d3aded150 的 run 38349186838 / attempt 1 已用 Altman-sam114 登录下载核对：artifact rustwar-ci-v1.2-main-b8a4f95-run38349186838-attempt1（ID11790228550，digest sha256:2225cbc30fe9a584bc62378b0fa82a12faaa5f7d0f36b6ffe21ff144beb80294），缓存 /private/tmp/rustwar-c-review-38349186838/ 为1.8M。Core350、UI10/10、reporter15、双架构与双画面通过；唯一原始失败是 TacticalProductionButtonLabel.swift 末尾新增空行，执行完整性 gate 同时失败，JUnit11/2/1。C 不通过。
+
+截图另见速度菜单横向扩张吞掉四项资源。本轮约束菜单宽度和 controls intrinsic width，恢复资源条，增加四项资源在点工厂前后整项可见的真实 UI 测试；严格 UI gate 升至11项。删除已定位的 EOF 空行，不降低任何门控。同步 README、flow、test、提示词。所有验证只在云端，本机只读写与 Git；.wp 保持原样。等待最新提交云端结果，总目标未完成。
+
 ## v3.4 / Production console refactor
 
 2026-10-13。单智能体串行 A/B/C，无本地验证。依据最新云端截图的生产第三行裁切，重构短横屏资源栏、producer header、生产/管理层级和科技升级区域；拆分生产 label，新增八类原创 Canvas 单位缩略图；不改变 Core、战斗模型、触控命令、生产数值、存档或 Web。新增两项首屏和生产->战场实际操作 UI 测试，原测试去掉自动滚动兜底，UI gate 扩到10项；CI 自测日志纳入必要包。提示词 `md/prompt/v1-ios-swift-port/v3.4-production-console.md`。待本轮最新 SHA 云端验收，不能用 v3.3 结果代替。

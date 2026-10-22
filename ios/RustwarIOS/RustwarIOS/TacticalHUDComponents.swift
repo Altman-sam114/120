@@ -72,6 +72,7 @@ struct TacticalMetricView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spokenLabel ?? label)
         .accessibilityValue(spokenValue ?? value)
+        .accessibilityIdentifier("status-metric-\(label.lowercased())")
     }
 }
 

@@ -1,3 +1,7 @@
+## v3.4.1 / Status strip width ownership
+
+TacticalStatusBarView gives compact speed menus an explicit 88pt width and statusControls their intrinsic horizontal size. The remaining width belongs to the horizontal resource strip rather than the menu's infinity frame. Four read-only metric elements have stable accessibility identifiers. Cloud UI checks their full frames before and after actual factory selection; input, Core, costs and saves are unchanged. Required UI count is 11. The previous failed artifact remains a failure despite 10/10 product UI tests.
+
 ## v3.4 / Production console presentation
 
 短横屏状态栏通过 isInline 使用单行资源 + 紧凑速度菜单，不改 controller。producer header 只显示建筑名、tech/speed，compact Factory Tech 仅保留 upgrade/progress 实际操作。生产 section 顺序为科技动作 -> 单位卡 -> management rail -> 队列摘要/队列，仍在原 ScrollView 的 eager hierarchy 内，快捷键不卸载。生产 label 拆到 TacticalProductionButtonLabel，原创 Canvas TacticalUnitPortrait 只读 UnitType，不创建第二份模拟或修改 battlefield 模型。

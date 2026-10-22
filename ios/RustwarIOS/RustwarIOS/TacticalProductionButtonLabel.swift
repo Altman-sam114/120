@@ -159,4 +159,3 @@ struct TacticalProductionButtonLabel: View {
         }
     }
 }
-
