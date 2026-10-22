@@ -9416,7 +9416,7 @@ import Testing
     #expect(GameDefinitions.building(.command).produces == [.builder])
 }
 
-@Test func queueUnitDeductsMetalAndSpawnsAtFactoryRally() throws {
+@Test func queueUnitDeductsMetalExitsFactoryAndReachesRally() throws {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
     let factoryTarget = engine.select(at: WorldPoint(930, 2_105), includeEnemies: false)
@@ -9445,11 +9445,15 @@ import Testing
     #expect(engine.state.units.count == startingUnitCount + 1)
     #expect(spawnedUnit.type == .scout)
     #expect(spawnedUnit.team == .player)
-    #expect(spawnedUnit.position == completedFactory.rally)
-    #expect(spawnedUnit.position == newRally)
+    #expect(spawnedUnit.position != newRally)
+    #expect(spawnedUnit.order == .move(destination: newRally))
+    for _ in 0..<8 { engine.update(deltaTime: 1) }
+    let arrived = try #require(engine.state.units.first { $0.id == spawnedUnit.id })
+    #expect(arrived.position == completedFactory.rally)
+    #expect(arrived.position == newRally)
 }
 
-@Test func queueUnitBuildsBuilderAtCommandCenterRally() throws {
+@Test func queueUnitBuildsBuilderExitsCommandCenterAndReachesRally() throws {
     var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
 
     let commandTarget = engine.select(at: WorldPoint(720, 2_110), includeEnemies: false)
@@ -9477,8 +9481,12 @@ import Testing
     #expect(engine.state.units.count == startingUnitCount + 1)
     #expect(spawnedUnit.type == .builder)
     #expect(spawnedUnit.team == .player)
-    #expect(spawnedUnit.position == completedCommand.rally)
-    #expect(spawnedUnit.position == newRally)
+    #expect(spawnedUnit.position != newRally)
+    #expect(spawnedUnit.order == .move(destination: newRally))
+    for _ in 0..<8 { engine.update(deltaTime: 1) }
+    let arrived = try #require(engine.state.units.first { $0.id == spawnedUnit.id })
+    #expect(arrived.position == completedCommand.rally)
+    #expect(arrived.position == newRally)
     #expect(engine.state.supply(for: .player).used == startingSupply + GameDefinitions.unit(.builder).supply)
 }
 

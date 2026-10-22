@@ -41,6 +41,10 @@ enum CloudInteractionFixture {
             state.buildings[1].position = WorldPoint(1_620, 1_900)
             state.buildings[1].rally = WorldPoint(1_540, 1_840)
         }
+        if ProcessInfo.processInfo.arguments.contains("--rustwar-ci-navigation-obstacle") {
+            state.units[1].position = WorldPoint(1_390, 1_740)
+            state.buildings.append(building(.turret, id: "input-obstacle", at: WorldPoint(1_500, 1_810)))
+        }
         if ProcessInfo.processInfo.arguments.contains("--rustwar-ci-factory-tech2") {
             state.buildings[0].upgradeLevel = 2
         }

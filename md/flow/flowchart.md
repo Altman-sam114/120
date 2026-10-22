@@ -1,3 +1,23 @@
+## v3.13 / 通行、恢复与出厂
+
+```mermaid
+flowchart TD
+    Orders[真实订单 / 原落点与方阵] --> Cache[Engine运行时路径缓存 / 不进存档]
+    Map[地形 / 存活建筑脚印 / 实际半径] --> Grid[有界网格 / 连续路段碰撞]
+    Grid --> Cache
+    Cache --> Legal{当前位置合法?}
+    Legal -->|是| Route[A* / 原落点或可达近处 / 工兵工作范围]
+    Legal -->|旧状态已陷入| Escape[仅初始重叠区域 / 连续按速度脱困]
+    Escape --> Route
+    Route --> Move[消耗完整移动预算 / 原射程内开火]
+    Complete[生产达到正常时长] --> Exit{存在合法空出口?}
+    Exit -->|否| Paid[保留已付费完成队列]
+    Paid --> Exit
+    Exit -->|是| Spawn[创建一个单位 / Move到原集结点]
+    Spawn --> Cache
+    Move --> Cloud[云端新增Core / 17实际UI / 双架构五图 / 精确C复判]
+```
+
 ## v3.12 / 指挥中心到新工兵真实操作
 
 ```mermaid

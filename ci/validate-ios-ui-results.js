@@ -18,7 +18,8 @@ const expected = [
   "testTwoFingerTapDoesNotIssueOrdersAndFreshTapWorks",
   "testStopRetainsStationaryInRangeDefense",
   "testRenderedSelectionAndVerticalPanFollowTheFinger",
-  "testCommandCenterShowsAndQueuesBuilderThenFreshMoveWorks"
+  "testCommandCenterShowsAndQueuesBuilderThenFreshMoveWorks",
+  "testRenderedUnitDetoursAroundBuildingAndArrives"
 ];
 const [summaryPath, testsPath, exitCode, outputPath] = process.argv.slice(2);
 const report = { outcome: "failure", executionExit: Number(exitCode), expectedTests: expected, total: 0, passed: 0, failed: 0, skipped: 0 };

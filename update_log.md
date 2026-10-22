@@ -1,3 +1,13 @@
+## v3.13 / Navigation, legal exits and continuous legacy recovery
+
+2026-10-23。单智能体串行A/B/C，确认远端main为b1并同步。NavigationGrid新增实际半径circle/连续capsule-rectangle碰撞、八邻居A*堆/无斜切/有限96x64网格校验、精确合法端点和可达近处。UnitNavigationState由GameEngine构造/reset，地形随engine固定、存活建筑脚印变化重建、按真实订单/类型/位置/目标/工作范围缓存，静态失败不逐帧A*、移动目标11pt/0.25s重算、Stop和失活清理。moveUnit接入所有原订单、跨waypoint消耗原速度预算，普通Move沿途开火与战斗/经济数值保持。Builder首选group点失败时尝试125/125/92范围的0.92安全工作圈，保存字段与原相机/手势/渲染不改。
+
+旧状态已陷入水域/建筑/地图边缘时，load不移动/丢单位、不拒绝v1；后续移动意图仅对初始重叠建筑和连通禁行地形族生成临时escape world，以Dijkstra寻找最近可达正常落点，按速度连续脱困后恢复严格通行并继续原订单，无瞬移/永久豁免。生产完成后找192个有界周边出口候选，检查地形/建筑/存活单位；堵住保留已付款完成项/进度，出口清空才移除一个并生成一个ID，再普通Move到旧rally和原repeat逻辑。两旧瞬时rally测试明确改为出厂后到达，原扣费/计时/数量/类型/队伍/人口与最终rally断言保留。
+
+新增31Core方法，预期392->423；云端实际17thUI点选真实绘制Tank、隔炮塔点地、Play观测绕行/脚印合法/原落点到达、暂停后新Builder点选Move。16旧UI初态及断言保留，JS名单/workflow说明16->17；24reporter、双架构/五图/compiler/JUnit11-0-1保持。README/flow/test/版本提示词同步，无任何本地验证，.wp未动，待新SHA云端C。尚无单位间避让/LOS/悬崖/真机性能或完整原作声明。
+
+前轮生产C通过：b1b22064521637859d31847a508b50c73d0cfbf7/run39866746471/attempt1/job120130725334，GitHub success16m20s。准确artifact rustwar-ci-v1.2-main-b1b2206-run39866746471-attempt1（ID12464044430，digestsha256:8e90795f3d8984e3a90f02f7fea1e05b8735486eabe5383b8517862f6aa05914）下载11M至/private/tmp/rustwar-c-review-39866746471/，身份/integrity匹配；392Core、16UI（262.060s）、24reporter、双架构/五场景/compiler0/JUnit11-0-1通过。新测试29.660s，真实unit-18队列1->0并到达1549.9982299826295/1890.0000000000002，所有旧操作保持。五图已复看：Home936fbc2eeb493c42a0a8a0b123ef181373a48e8bafe7d3608eaedaa51616ae3d缺额80/100/120/70/320M完整，Galleryb4c7553b4dbfa3aea409e771f8527fe29255c74e66e6d78dcd90810d120db1f5完整Builder与18组合/左向符号，Combat8eed683fb0e95d1653be484cecc30ff591055431ef72819b47c2c59f9858d1b8陆地白热/烟尘/焦痕和原水面样例清楚。Islands/Lava与接受地形基线字节相同且重看。此证据不证明动态/真机性能，总目标继续。
+
 ## v3.12 / Production clarity and actual Builder completion
 
 2026-10-23。单智能体串行A/B/C，v3.11精确C通过后同步main。Dense生产卡Build改完整Builder，金属不足的锁替换为existing ProductionAvailability实际差额-NM，其他不可用图标、完整accessibility、成本/人口/时间/触控尺寸/快捷键与生产规则保持。新增初态专用flag使CC1620/1900和rally1540/1840可见且避开原factory，原15fixture不变；没有修复正常游戏direct-at-rally出生/出口，此问题留给导航轮。

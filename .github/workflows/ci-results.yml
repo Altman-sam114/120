@@ -451,7 +451,7 @@ jobs:
             echo "- xcodebuild ${IOS_SCHEME}: $([[ "$xcode_build_status" -eq 0 ]] && echo success || echo failure)"
             echo "- iOS Simulator launches and screenshots: $([[ "$simulator_visual_status" -eq 0 ]] && echo success || echo failure)"
             echo "- workflow YAML parse: $([[ "$yaml_status" -eq 0 ]] && echo success || echo failure)"
-            echo "- actual iOS interaction tests (at least 16, no failures/skips): $([[ "$ui_test_status" -eq 0 ]] && echo success || echo failure)"
+            echo "- actual iOS interaction tests (at least 17, no failures/skips): $([[ "$ui_test_status" -eq 0 ]] && echo success || echo failure)"
             echo "- Browser smoke/regression: skipped; Rustwar currently has no headless browser CI."
           } > ci-results/ci-failure-summary.md
 
@@ -522,7 +522,7 @@ jobs:
             {
               name: "actual iOS interaction tests",
               ok: process.env.CHECK_UI_TEST_STATUS === "0",
-              message: "xcodebuild test must execute at least 16 UI tests with all expected cases, zero failures and zero skips."
+              message: "xcodebuild test must execute at least 17 UI tests with all expected cases, zero failures and zero skips."
             },
             {
               name: "pinned Xcode 26.5 toolchain",

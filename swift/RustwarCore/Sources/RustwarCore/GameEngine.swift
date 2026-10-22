@@ -16,16 +16,19 @@ public struct GameEngine: Sendable {
 
     public private(set) var state: GameState
     public private(set) var enemyAIEnabled: Bool
+    private var navigation: UnitNavigationState
 
     public init(mapID: MapID = .coast, mode: GameMode = .skirmish, enemyAIEnabled: Bool = true) {
         self.state = GameState(mapID: mapID, mode: mode)
         self.enemyAIEnabled = enemyAIEnabled
+        self.navigation = UnitNavigationState(terrain: self.state.terrain)
     }
 
     public init(state: GameState, enemyAIEnabled: Bool = true) {
         self.state = state
         self.state.updateExploredVisibility()
         self.enemyAIEnabled = enemyAIEnabled
+        self.navigation = UnitNavigationState(terrain: self.state.terrain)
     }
 
     public mutating func setEnemyAIEnabled(_ isEnabled: Bool) {
@@ -115,6 +118,7 @@ public struct GameEngine: Sendable {
 
     public mutating func reset(mapID: MapID = .coast) {
         state = GameState(mapID: mapID)
+        navigation = UnitNavigationState(terrain: state.terrain)
     }
 
     @discardableResult
@@ -488,6 +492,7 @@ public struct GameEngine: Sendable {
 
         for unitIndex in unitIndices {
             state.units[unitIndex].order = nil
+            navigation.cancel(unitID: state.units[unitIndex].id)
         }
         return .issued
     }
@@ -1183,6 +1188,7 @@ public struct GameEngine: Sendable {
     }
 
     private mutating func updateUnitOrders(deltaTime: Double) {
+        navigation.prepare(buildings: state.buildings, units: state.units)
         for unitIndex in state.units.indices {
             guard state.units[unitIndex].hitPoints > 0 else {
                 continue
@@ -1400,7 +1406,8 @@ public struct GameEngine: Sendable {
                 speed: definition.speed,
                 stoppingDistance: stoppingDistance,
                 deltaTime: deltaTime,
-                clearsOrderOnArrival: false
+                clearsOrderOnArrival: false,
+                workRegion: NavigationWorkRegion(center: building.position, radius: Self.builderBuildRange * 0.92)
             )
             return
         }
@@ -1458,7 +1465,8 @@ public struct GameEngine: Sendable {
                 speed: definition.speed,
                 stoppingDistance: stoppingDistance,
                 deltaTime: deltaTime,
-                clearsOrderOnArrival: false
+                clearsOrderOnArrival: false,
+                workRegion: NavigationWorkRegion(center: target.position, radius: Self.builderRepairRange * 0.92)
             )
             return
         }
@@ -1488,7 +1496,8 @@ public struct GameEngine: Sendable {
                 speed: definition.speed,
                 stoppingDistance: stoppingDistance,
                 deltaTime: deltaTime,
-                clearsOrderOnArrival: false
+                clearsOrderOnArrival: false,
+                workRegion: NavigationWorkRegion(center: wreck.position, radius: Self.builderReclaimRange * 0.92)
             )
             return
         }
@@ -1511,44 +1520,16 @@ public struct GameEngine: Sendable {
         speed: Double,
         stoppingDistance: Double,
         deltaTime: Double,
-        clearsOrderOnArrival: Bool = true
+        clearsOrderOnArrival: Bool = true,
+        workRegion: NavigationWorkRegion? = nil
     ) -> Bool {
-        let position = state.units[unitIndex].position
-        let dx = destination.x - position.x
-        let dy = destination.y - position.y
-        let distanceSquared = dx * dx + dy * dy
-        guard distanceSquared > 0 else {
-            if clearsOrderOnArrival {
-                state.units[unitIndex].order = nil
-            }
-            return true
+        let result = navigation.advance(state.units[unitIndex], toward: destination, stoppingDistance: stoppingDistance,
+                                        travel: speed * deltaTime, elapsed: state.elapsed, workRegion: workRegion)
+        state.units[unitIndex].position = result.position
+        if result.arrived && clearsOrderOnArrival && stoppingDistance <= 0 {
+            state.units[unitIndex].order = nil
         }
-
-        let distance = distanceSquared.squareRoot()
-        let travel = speed * deltaTime
-        let remainingDistance = max(0, distance - stoppingDistance)
-        if travel >= remainingDistance {
-            if stoppingDistance <= 0 {
-                state.units[unitIndex].position = destination
-                if clearsOrderOnArrival {
-                    state.units[unitIndex].order = nil
-                }
-            } else if distance > 0 {
-                let ratio = remainingDistance / distance
-                state.units[unitIndex].position = WorldPoint(
-                    position.x + dx * ratio,
-                    position.y + dy * ratio
-                )
-            }
-            return true
-        } else {
-            let ratio = travel / distance
-            state.units[unitIndex].position = WorldPoint(
-                position.x + dx * ratio,
-                position.y + dy * ratio
-            )
-            return false
-        }
+        return result.arrived
     }
 
     @discardableResult
@@ -1733,9 +1714,16 @@ public struct GameEngine: Sendable {
                 continue
             }
 
-            let completedItem = state.buildings[buildingIndex].productionQueue.removeFirst()
             let building = state.buildings[buildingIndex]
-            spawnUnit(type: completedItem.unitType, team: building.team, position: building.rally)
+            let completedItem = building.productionQueue[0]
+            let world = NavigationWorld(terrain: state.terrain,
+                                        obstacles: state.buildings.filter { $0.hitPoints > 0 }.map(NavigationObstacle.init))
+            guard let exit = world.producerExit(for: building, type: completedItem.unitType, units: state.units) else {
+                state.buildings[buildingIndex].productionQueue[0].progress = completedItem.buildTime
+                continue
+            }
+            state.buildings[buildingIndex].productionQueue.removeFirst()
+            spawnUnit(type: completedItem.unitType, team: building.team, position: exit, rally: building.rally)
             enqueueRepeatedUnitIfReady(at: buildingIndex)
         }
     }
@@ -1821,7 +1809,7 @@ public struct GameEngine: Sendable {
         }
     }
 
-    private mutating func spawnUnit(type: UnitType, team: Team, position: WorldPoint) {
+    private mutating func spawnUnit(type: UnitType, team: Team, position: WorldPoint, rally: WorldPoint) {
         let definition = GameDefinitions.unit(type)
         state.units.append(
             UnitSnapshot(
@@ -1830,7 +1818,8 @@ public struct GameEngine: Sendable {
                 team: team,
                 position: position.clampedToMap(),
                 hitPoints: definition.hitPoints,
-                maxHitPoints: definition.hitPoints
+                maxHitPoints: definition.hitPoints,
+                order: .move(destination: rally.clampedToMap())
             )
         )
     }

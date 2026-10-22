@@ -49,7 +49,8 @@ final class RustwarIOSInteractionTests: XCTestCase {
 
     @MainActor
     private func launch(lowMetal: Bool = false, tech2: Bool = false, centeredUnit: Bool = false,
-                        stationaryDefense: Bool = false, commandCenterVisible: Bool = false) async throws -> XCUIApplication {
+                        stationaryDefense: Bool = false, commandCenterVisible: Bool = false,
+                        navigationObstacle: Bool = false) async throws -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = XCUIApplication()
@@ -59,6 +60,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         if centeredUnit { app.launchArguments.append("--rustwar-ci-centered-unit") }
         if stationaryDefense { app.launchArguments.append("--rustwar-ci-stationary-defense") }
         if commandCenterVisible { app.launchArguments.append("--rustwar-ci-visible-command-center") }
+        if navigationObstacle { app.launchArguments.append("--rustwar-ci-navigation-obstacle") }
         app.launch()
         XCTAssertTrue(battlefield(app).waitForExistence(timeout: 15))
         try await waitFor(app, "fixture and rendered anchors loaded") {
@@ -114,6 +116,46 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let viewport = app.scrollViews["command-dock-scroll"].frame
         XCTAssertTrue(viewport.contains(button.frame), "Card clipped: \(button.frame), viewport \(viewport)", file: file, line: line)
         XCTAssertGreaterThanOrEqual(button.frame.height, 44, file: file, line: line)
+    }
+
+    @MainActor
+    func testRenderedUnitDetoursAroundBuildingAndArrives() async throws {
+        let app = try await launch(navigationObstacle: true)
+        try await waitFor(app, "actual turret obstacle rendered") { $0.entity("input-obstacle")?.rendered == true }
+        try tapEntity("input-tank", in: app)
+        try await waitFor(app, "rendered routing Tank selected") { $0.selected == ["input-tank"] }
+        try worldCoordinate(1_580, 1_810, in: app).tap()
+        try await waitFor(app, "real Move crosses the obstacle's line") { $0.entity("input-tank")?.order == "move" }
+        app.buttons["Play"].tap()
+        var maximumDetour = 0.0
+        var observed = 0
+        var arrived = false
+        for _ in 0..<100 {
+            let state = try snapshot(app)
+            let tank = try XCTUnwrap(state.entity("input-tank"))
+            XCTAssertTrue(tank.rendered)
+            let point = state.projection.worldPosition(tank)
+            let dx = max(0, abs(point.x - 1_500) - 24)
+            let dy = max(0, abs(point.y - 1_810) - 24)
+            XCTAssertGreaterThanOrEqual(dx * dx + dy * dy, 14.5 * 14.5, "Actual hull overlaps the turret")
+            maximumDetour = max(maximumDetour, abs(point.y - 1_810))
+            observed += 1
+            if tank.order == "idle" {
+                XCTAssertEqual(point.x, 1_580, accuracy: 1)
+                XCTAssertEqual(point.y, 1_810, accuracy: 1)
+                arrived = true
+                break
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertTrue(arrived, "Tank must arrive at the originally tapped point")
+        XCTAssertGreaterThan(maximumDetour, 35, "The real model must visibly travel around the obstacle")
+        print("NAVIGATION_DETOUR samples=\(observed) maximumOffset=\(maximumDetour) arrival=1580,1810")
+        app.buttons["Pause"].tap()
+        try tapEntity("input-builder", in: app)
+        try await waitFor(app, "fresh Builder selected after actual detour") { $0.selected == ["input-builder"] }
+        try worldCoordinate(1_520, 1_890, in: app).tap()
+        try await waitFor(app, "fresh Move after actual detour") { $0.entity("input-builder")?.order == "move" }
     }
 
     @MainActor
