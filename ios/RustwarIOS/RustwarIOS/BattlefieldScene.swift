@@ -2905,16 +2905,19 @@ final class BattlefieldScene: SKScene {
                 CGPoint(x: 0, y: -half * 0.12)
             ], fill: teamColor(team), stroke: .white.withAlphaComponent(0.72), lineWidth: 1)
             marker.position = CGPoint(x: -half * 0.62, y: 0)
+            marker.zPosition = 1.1
             node.addChild(marker)
         } else {
             for y in [-half * 0.12, half * 0.12] {
-                node.addChild(rectNode(
+                let marker = rectNode(
                     CGRect(x: -half * 0.75, y: y - half * 0.045, width: half * 0.28, height: half * 0.09),
                     cornerRadius: 1,
                     fill: teamColor(team),
                     stroke: .white.withAlphaComponent(0.7),
                     lineWidth: 0.8
-                ))
+                )
+                marker.zPosition = 1.1
+                node.addChild(marker)
             }
         }
     }

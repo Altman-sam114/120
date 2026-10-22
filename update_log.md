@@ -1,3 +1,9 @@
+## v3.9.1 / Keep structure faction symbols above the weapon
+
+2026-10-23。C复判b4b1ff6f96a2cf8f0f880366546bfc8777e5cb57 / run39846005872 / attempt1 / job120059324840，GitHub success22m22s；准确artifact rustwar-ci-v1.2-main-b4b1ff6-run39846005872-attempt1（ID12455404184，digest sha256:d52a908ce37060f4007b770a45a28282173f2d46988f79e0339d5ba7644f5258）下载11M至/private/tmp/rustwar-c-review-39846005872/。身份/pipeline/integrity匹配，392Core、15UI（247.987s）、23reporter、双架构/五场景及JUnit11/0/1通过。五图已实际复看，gallery af8f825b6a5cc90e5e27add693cbe08681f26ad6ee8d4a98380495bcccb5b335的18种组合清楚、科技结构不同，无alpha/crop/遮挡问题；Home和Combat显示新模型，地形两图与已接受版本字节一致。
+
+最终建筑C暂不通过：新mount z.2/recoil z.05高于原marker z0，左向炮管可覆盖左侧阵营符号，Combat敌炮塔的符号不再清楚；gallery当前只呈上下朝向，未证明左向情况。本轮仅把原玩家/敌方建筑标记设为z1.1，保留位置/形状/颜色；在暂停structures初态加Hold Fire敌Builder1810/1515，让玩家Turret1860/1515经原索敌实际向左瞄准，无heading覆盖或命令注入。18建筑不变，无Core/数值/输入/存档/正常战场规则改变；保留全部392Core/15UI/23reporter/双架构五图/JUnit11-0-1，等新SHA云端复验。README/flow/test/提示词同步，无本地任何验证，.wp不动。CI性能、FX与寻路仍为独立草稿，总目标未完成。
+
 ## v3.9 / Original industrial building materials
 
 2026-10-23。单智能体串行A/B/C，v3.8.1最新精确artifact通过后同步main。BattlefieldScene的buildingBody约410行形状移交BattlefieldBuildingModels：原创混凝土/金属基座、command观察室、factory分段厂房/坡道/格栅/管线、extractor卡爪/采掘圈/辅助设备、turret分层轴承/炮壳/炮管、radar支架/网面天线。九种支持的type/tier×两队有限18key缓存，源图320px按实际像素裁切并反算原点/范围；正常实体签名缓存、实际投影ID与单位分层材质保持。保留building-turret-mount/recoil-mount、半尺寸1.045炮口和真实heading/recoil；Faction/HP/selection/construction/damage/upgrade/rally/fog仍逐帧真实派生。移除三项仅旧buildingBody使用的颜色，保留残片使用的armorDarkColor。无Core、数值、建筑脚印、生产、输入、存档或Web改动，无性能实测声明。

@@ -241,6 +241,10 @@ final class GameController {
         state.units = [UnitSnapshot(id: "structure-observer", type: .scout, team: .player,
                                    position: WorldPoint(1_500, 1_585), hitPoints: scout.hitPoints,
                                    maxHitPoints: scout.hitPoints, attackStance: .holdFire)]
+        let target = GameDefinitions.unit(.builder)
+        state.units.append(UnitSnapshot(id: "structure-left-aim-target", type: .builder, team: .enemy,
+                                        position: WorldPoint(1_810, 1_515), hitPoints: target.hitPoints,
+                                        maxHitPoints: target.hitPoints, attackStance: .holdFire))
         state.selectedEntityID = "structure-0-0"
         state.selectedEntityIDs = ["structure-0-0"]
         return state

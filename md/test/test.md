@@ -1,3 +1,7 @@
+## v3.9.1 / Left-facing weapon and faction symbols
+
+Cloud only. b4b1ff6/run39846005872 passed392Core/15UI/23reporter/dual builds/5scenes/JUnit11-0-1 and all18 gallery variants were viewed, but final building C requires a depth repair: weaponz.2+.05 covers originalz0 faction symbols in leftward poses. Keep all existing gates unchanged. The structure fixture adds only a Hold Fire enemy Builder1810/1515; require player Turret1860/1515 to actually aim left and its complete faction diamond to stay readable above the barrel, plus enemy stripes/other18variants/neighbor/minimap/HP and all previous four scenes unchanged. No forced heading, command injection, test skip or new screenshot. If leftward aim or symbols are absent in the actual image, do not claim coverage. No local tests/parse/typecheck/build/preview/diff --check.
+
 ## v3.9 / Five-scene building acceptance
 
 Cloud only: preserve392 Core,15 actual UI methods/assertions including real rendered anchors, dual-architecture builds, previous four launch/normalization/probe paths and JUnit11/0/1. Add only one necessary structure gallery on the same pinned cloud device, with18 actual snapshots (command1, factory1/2, extractor1/2/3, radar1/2, turret1 for both teams). Keep ios-structures.png, its metrics and ios-structures-scene.json; strict manifest scenario=structures/map=coast/launch argument/exact paths/all raw stage exits0. Retain20reporter tests and add missing structure coverage, failed launch masked by summary, and wrong scenario/stale path rejection (23total).

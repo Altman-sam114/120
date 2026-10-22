@@ -1,3 +1,7 @@
+## v3.9.1 / Building faction overlay depth
+
+The original building faction diamond/stripes now usez1.1 above the new turret mountz.2 and recoil childz.05. Shapes/colors/positions and Core state are unchanged. Source/Combat review of b4b1ff6/run39846005872 found leftward weapon masking despite all392Core/15UI/23reporter/builds/5scenes passing, so building C acceptance remains withheld. A Hold Fire enemy Builder1810/1515 is added only to the paused structure initial fixture; the player Turret1860/1515 should acquire that actual left-side target through existing visual targeting, covering the previously vertical-only gallery case. No forced angle or command mutation. Require new exact five-scene C review before moving on.
+
 ## v3.9 / Shared industrial structures
 
 BattlefieldScene.buildingBody delegates to MainActor BattlefieldBuildingModels, then adds the same faction marking. Material keys clamp presentation tiers to command1/extractor1-3/factory1-2/turret1/radar1-2, for9x2 bounded keys; GameState values are untouched. Original320px normalized render sources are cropped by exact integral pixel bounds; size/origin derive from the same crop. Each body retains its own named turret/recoil mounts while material data is shared. Existing entity signature includes actual upgradeLevel, so upgrade completion rebuilds the real model. Dynamic construction, selection/HP/damage/upgrade/rally and actual rendered-node projection remain in Scene. No Core/input/save/footprint/production changes.

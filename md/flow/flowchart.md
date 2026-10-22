@@ -1,3 +1,14 @@
+## v3.9.1 / 建筑符号位于炮管前层
+
+```mermaid
+flowchart LR
+    Target[仅检视场景左侧真实敌Builder] --> Aim[既有可见目标索敌 / 实际左向瞄准]
+    Aim --> Weapon[独立炮塔与后坐层]
+    Marker[原阵营符号 z1.1] --> Foreground[显示在炮管上方]
+    Weapon --> Foreground
+    Foreground --> C[最新五图复判 / 原全部门控]
+```
+
 ## v3.9 / 建筑材质与真实科技外形
 
 ```mermaid
