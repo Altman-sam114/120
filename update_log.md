@@ -1,3 +1,9 @@
+## v3.5.2 / Stable pinch sensitivity
+
+2026-10-23。C复判v3.5.1不通过：SHA5ab8eabc4548904f8ba1feaa850c7613244cecba，run39807884921 / attempt1 / job119925880394，artifact rustwar-ci-v1.2-main-5ab8eab-run39807884921-attempt1（ID12440272126，digest sha256:103598f411486cb604b28730a7def8c721f932630c150c73cb82897e08529ac0）已下载至 /private/tmp/rustwar-c-review-39807884921/（2.0M）。manifest身份匹配；Core371、reporter15、双架构/双画面通过，UI12/13、JUnit11/2/1。新trace证明捏合进入pinch并保持tank选择，但约7pt初始跨度被放大到2.2倍，随后Builder的y=-0.0599越出既有测试viewport。失败原因已从未缩放推进为过敏感，不能混淆或伪称通过。
+
+本轮固定每个pair的最小有效跨度32pt，以padded current/previous ratio发出缩放；宽指距保持原比例，结束清零补偿。新增三项纯回归并加强实际UI缩放上限<1.6x，仍要求原fixture工兵可选和新Move成功。374 Core/13 UI及完整云端结果必须重验；模型改动保持待提交。无本地测试/build/typecheck/diff --check。
+
 ## v3.5.1 / Relative pinch and camera history repair
 
 2026-10-22。v3.5 ec2d467ff672b27f516fac5452cfa6480847d14f 的 run39802097078 / attempt1 / job119905285964 已下载复判，C不通过。artifact rustwar-ci-v1.2-main-ec2d467-run39802097078-attempt1（ID12437856099，digest sha256:ee4157b61c498e0dab2b3f6a5196bef755d91a6a79b6aab980998941f58a553a），缓存 /private/tmp/rustwar-c-review-39802097078/ 为1.9M；身份匹配，Core368、reporter15、双架构和双画面通过，UI12/13、JUnit11/2/1。真实双指点选成功，唯一失败为捏合zoom仍1且选中被清空。

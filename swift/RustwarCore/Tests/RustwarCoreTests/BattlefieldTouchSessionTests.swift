@@ -208,7 +208,7 @@ func nativeTouchContextChangeRejectsOldTapAndAllowsFreshTouch(cameraChange: Bool
 @Test func nativeTouchCloseFingerPinchUsesRelativeSpacing() {
     var session = TouchSession()
     _ = feed(&session, [contact(1, 0, 0, .began), contact(2, 10, 0, .began)], 0)
-    #expect(feed(&session, [contact(1, -1.5, 0, .moved), contact(2, 11.5, 0, .moved)], 0.1).contains(.zoom(1.3)))
+    #expect(feed(&session, [contact(1, -1.5, 0, .moved), contact(2, 11.5, 0, .moved)], 0.1).contains(.zoom(1.09375)))
     #expect(session.phase == .pinch)
     #expect(selections(feed(&session, [contact(1, -1.5, 0, .ended), contact(2, 11.5, 0, .ended)], 0.2)).isEmpty)
 }
@@ -228,4 +228,31 @@ func nativeTouchContextChangeRejectsOldTapAndAllowsFreshTouch(cameraChange: Bool
     #expect(session.phase == .pair)
     #expect(session.hold(at: 0.23, context: touchContext)
         .contains(.selectionBox(WorldRect(minX: -1, minY: -8, maxX: 101, maxY: 8))))
+}
+
+@Test func nativeTouchClosePinchAccumulatesAgainstStableSpan() {
+    var session = TouchSession()
+    _ = feed(&session, [contact(1, 0, 0, .began), contact(2, 8, 0, .began)], 0)
+    #expect(feed(&session, [contact(1, -2, 0, .moved), contact(2, 10, 0, .moved)], 0.1)
+        .contains(.zoom(36.0 / 32)))
+    #expect(feed(&session, [contact(1, -4, 0, .moved), contact(2, 12, 0, .moved)], 0.2)
+        .contains(.zoom(40.0 / 36)))
+    #expect(session.phase == .pinch)
+}
+
+@Test func nativeTouchNearlyCoincidentPinchDoesNotLaunchCamera() {
+    var session = TouchSession()
+    _ = feed(&session, [contact(1, 0, 0, .began), contact(2, 4, 0, .began)], 0)
+    #expect(feed(&session, [contact(1, -4, 0, .moved), contact(2, 8, 0, .moved)], 0.1)
+        .contains(.zoom(1.25)))
+    #expect(selections(feed(&session, [contact(1, -4, 0, .ended), contact(2, 8, 0, .ended)], 0.2)).isEmpty)
+}
+
+@Test func nativeTouchStableSpanResetsBeforeNextWidePinch() {
+    var session = TouchSession()
+    _ = feed(&session, [contact(1, 0, 0, .began), contact(2, 4, 0, .began)], 0)
+    _ = feed(&session, [contact(1, -4, 0, .ended), contact(2, 8, 0, .ended)], 0.1)
+    _ = feed(&session, [contact(1, 0, 0, .began), contact(2, 100, 0, .began)], 0.2)
+    #expect(feed(&session, [contact(1, -20, 0, .moved), contact(2, 120, 0, .moved)], 0.3)
+        .contains(.zoom(1.4)))
 }

@@ -67,6 +67,7 @@ public struct BattlefieldTouchSession<ID: Hashable> {
     private var lastEventTime: TimeInterval = 0
     private var lastPanPoint: WorldPoint?
     private var lastPinchDistance = 0.0
+    private var pinchSpanPadding = 0.0
     private var pairBox: WorldRect?
     private var pairReleased = false
 
@@ -127,6 +128,7 @@ public struct BattlefieldTouchSession<ID: Hashable> {
             phase = .pair
             startedAt = time
             lastPinchDistance = pairDistance
+            pinchSpanPadding = max(0, 32 - lastPinchDistance)
             pairBox = currentPairBox
             actions = [.preview(nil)]
         }
@@ -226,7 +228,9 @@ public struct BattlefieldTouchSession<ID: Hashable> {
             if phase == .pinch {
                 let distance = pairDistance
                 if lastPinchDistance > 1, distance > 1 {
-                    actions.append(.zoom(distance / lastPinchDistance))
+                    // Close touch centers need a stable baseline: a few points
+                    // of separation must not multiply the camera zoom twice.
+                    actions.append(.zoom((distance + pinchSpanPadding) / (lastPinchDistance + pinchSpanPadding)))
                 }
                 lastPinchDistance = distance
             } else if intent == .selection, context.mode == .normal {
@@ -285,6 +289,7 @@ public struct BattlefieldTouchSession<ID: Hashable> {
         context = nil
         lastPanPoint = nil
         lastPinchDistance = 0
+        pinchSpanPadding = 0
         pairBox = nil
         pairReleased = false
         lastEventTime = 0

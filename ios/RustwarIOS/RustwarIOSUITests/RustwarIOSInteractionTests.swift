@@ -271,6 +271,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         print("PINCH_TOUCH_TRACE \(String(describing: battlefield(app).value))")
         try await waitFor(app, "real two-finger pinch changes camera") { $0.zoom > before.zoom * 1.1 }
         let after = try snapshot(app)
+        XCTAssertLessThan(after.zoom, before.zoom * 1.6, "A small pinch must not launch the camera")
         XCTAssertEqual(after.selected, ["input-tank"])
         XCTAssertEqual(after.entity("input-tank")?.order, "idle")
         try tapEntity("input-builder", in: app)

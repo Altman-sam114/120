@@ -1,3 +1,7 @@
+## v3.5.2 / Stable pinch span
+
+Each native pair stores max(0,32-initialDistance) as pinchSpanPadding. Incremental camera scaling uses padded current/previous spans so a tiny initial separation cannot amplify a few points into maximum zoom. Wide pairs keep padding0; reset clears padding. Relative pinch intent, release freeze, input/camera leases and pending commands remain. This repairs the sensitivity revealed by actual v3.5.1 trace (zoom2.2, selected tank preserved, subsequent Builder outside viewport), distinct from v3.5's no-zoom failure.
+
 ## v3.5.1 / Relative pinch repair
 
 The native reducer supplements the existing absolute classifier with an 8% spacing-change threshold bounded to 2...12pt and constrained against centroid travel, allowing small close-finger pinch without turning a parallel sweep into zoom. Pair release/epoch/pending/cancel rules stay. A bounded 24-entry native touch trace exists only in interaction-test accessibility snapshots; it reads actual events/actions and exposes no mutation path. Controller camera mutations clear tap/cycle history even without an active native session. v3.5 cloud UI12/13 is rejected; require newest-SHA 13/13.

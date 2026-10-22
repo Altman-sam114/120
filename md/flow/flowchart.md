@@ -1,3 +1,14 @@
+## v3.5.2 / 稳定缩放跨度
+
+```mermaid
+flowchart LR
+    Begin[原pair初始指距] --> Padding[不足32pt的固定补偿]
+    Move[当前和上一帧指距] --> Ratio[加同一补偿后求比例]
+    Padding --> Ratio
+    Ratio --> Zoom[现有camera缩放]
+    End[序列结束/重置] --> Clear[清零补偿]
+```
+
 ## v3.5.1 / 相对指距门控
 
 ```mermaid
