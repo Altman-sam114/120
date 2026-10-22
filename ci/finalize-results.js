@@ -5,7 +5,9 @@ const requiredFiles = [
   "build.log", "junit.xml", "ci-failure-summary.md", "repo-state.txt", "ci-reporting-tests.log",
   "toolchain-info.txt", "ios-simulator-info.txt", "ios-home.png", "ios-combat.png",
   "ios-screenshot-metrics.txt", "ios-combat-screenshot-metrics.txt",
-  "ios-ui-test-summary.json", "ios-ui-test-tree.json", "ios-ui-test-gate.json"
+  "ios-ui-test-summary.json", "ios-ui-test-tree.json", "ios-ui-test-gate.json",
+  "ios-terrain-scenes.json", "ios-islands.png", "ios-lava.png",
+  "ios-islands-screenshot-metrics.txt", "ios-lava-screenshot-metrics.txt"
 ];
 
 function assessPackage({ manifest, overall, junit, availableFiles, checksOutcome, reporterOutcome, identity }) {
@@ -16,6 +18,21 @@ function assessPackage({ manifest, overall, junit, availableFiles, checksOutcome
     if (!availableFiles.includes(file)) problems.push(`Missing or empty result file: ${file}.`);
   }
   if (!manifest) problems.push("Result manifest is missing or invalid.");
+  const terrain = manifest?.terrainVisualReport;
+  if (terrain?.outcome !== "success" || !Array.isArray(terrain?.scenes) || terrain.scenes.length !== 2) {
+    problems.push("Terrain visual coverage must contain both successful map scenes.");
+  }
+  for (const map of ["islands", "lava"]) {
+    const scenes = Array.isArray(terrain?.scenes) ? terrain.scenes.filter((scene) => scene?.map === map) : [];
+    const scene = scenes[0];
+    const stages = ["launchExit", "processExit", "screenshotExit", "orientationExit", "probeExit"];
+    if (scenes.length !== 1 || !scene || stages.some((key) => scene[key] !== 0) ||
+        scene.launchArgument !== `--rustwar-ci-terrain-${map}` ||
+        scene.screenshotPath !== `ci-results/ios-${map}.png` ||
+        scene.metricsPath !== `ci-results/ios-${map}-screenshot-metrics.txt`) {
+      problems.push(`Terrain visual evidence is missing, mismatched or failed: ${map}.`);
+    }
+  }
   for (const key of ["branch", "commitSha", "runId", "runAttempt"]) {
     if (!identity[key] || String(manifest?.[key]) !== String(identity[key])) {
       problems.push(`Manifest identity mismatch: ${key}.`);

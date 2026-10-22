@@ -6,6 +6,7 @@ import RustwarCore
 enum CloudVisualScenario: Equatable {
     case production
     case combat
+    case terrain
 }
 
 enum ProductionAvailability: Equatable {
@@ -177,6 +178,18 @@ final class GameController {
         } else if cloudVisualScenario == .production {
             self.engine = GameEngine(state: Self.productionVisualSmokeState(mapID: mapID), enemyAIEnabled: false)
             self.camera = CameraState(center: preset.camera.center, zoom: preset.camera.zoom)
+        } else if cloudVisualScenario == .terrain {
+            let center = mapID == .lava ? WorldPoint(1_950, 1_750) : WorldPoint(1_600, 1_400)
+            var state = GameState(mapID: mapID)
+            let definition = GameDefinitions.unit(.hover)
+            state.units.append(UnitSnapshot(
+                id: "terrain-observer", type: .hover, team: .player, position: center,
+                hitPoints: definition.hitPoints, maxHitPoints: definition.hitPoints, attackStance: .holdFire
+            ))
+            state.selectedEntityID = "terrain-observer"
+            state.selectedEntityIDs = ["terrain-observer"]
+            self.engine = GameEngine(state: state, enemyAIEnabled: false)
+            self.camera = CameraState(center: center, zoom: 1.05)
         } else {
             self.engine = GameEngine(mapID: mapID)
             self.camera = CameraState(center: preset.camera.center, zoom: preset.camera.zoom)

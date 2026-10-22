@@ -1,3 +1,13 @@
+## v3.8 / Terrain material ownership
+
+BattlefieldScene.drawTerrain delegates only its terrain layer to the new MainActor BattlefieldTerrainArt. Seven bounded original material images use deterministic periodic mottling, grain and material-specific details; grass/grass2 merge only in presentation. Directed tile edges trace six nongrass family regions with reverse-wound holes and bounded rounded corners. Water diagonal regions stay separate; dirt connects diagonals for continuous base tracks. Core TerrainGrid/traversal, world coordinates and actual render-to-touch projectors are unchanged.
+
+At map render revision, four opaque raster tiles bake the current map with8pt matching bleed, world-anchored material coordinates and shared global lighting. Tile sprites use the same Y-down to SpriteKit mapping as entities; filtering/mipmaps do not trigger rebaking. Storage is about48MB source pixels before mipmaps, plus seven cached256px materials; no map-history cache or per-frame raster. CI-only OSLog records monotonic bake elapsed and actual source bytes; these are not GPU residency, app peak memory or measured FPS.
+
+CloudVisualScenario.terrain constructs only under two new CLI flags, using normal Islands/Lava terrain with one selected nonfiring Hover observer at1600/1400 or1950/1750. capture-terrain-previews.js reuses the pinned installed Simulator and writes two PNGs, two metrics and a scene report with actual launch/process/capture/orientation/probe codes and wall durations. The existing visual gate now requires all four scenes. Manifest terrainVisualReport and package integrity require both exact map/argument/path identities and zero stage codes; five additional reporter regressions raise that count to20. Core392/UI15/dual architectures/JUnit11-0-1 remain required. No gameplay, save, HUD, input, fog or model ownership changes.
+
+Accepted input baseline4168830/run39833423198/attempt1 passed exact C artifact review:392Core/15UI/15reporter/builds/dual visuals/JUnit11-0-1. Native rendered-node vertical test and both PNG evidence were reviewed (Home byte-identical prior accepted model image). Terrain remains pending its own newest-SHA four-image C review; no local validation.
+
 ## v3.7.2 / Rendered coordinate and touch alignment
 
 World coordinates use Y down: terrain paths and spritePoint use negative Y in SpriteKit, whose view conversion maps back to UIKit Y down. CameraState.worldPoint now adds the vertical screen offset and pan subtracts finger travel from centerY, matching that actual rendered transform. Keyboard and Tactical Map already use Y down and retain their paths. Camera/save schema, zoom/clamps, native touch ownership and Core commands stay unchanged.

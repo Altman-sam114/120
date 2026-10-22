@@ -1,3 +1,19 @@
+## v3.8 / 地表表现与四图证据
+
+```mermaid
+flowchart TD
+    Grid[真实 TerrainGrid 只读] --> Family[七种表现材质 / 草族合并]
+    Family --> Contours[有向边区域与孔洞 / 圆角轮廓]
+    Family --> Material[有界原创周期材质缓存]
+    Contours --> Bake[地图revision烘焙四块底图 / 8pt bleed]
+    Material --> Bake
+    Bake --> Scene[原战场坐标与雾层 / 实际投影保持]
+    CI[同一云端Simulator] --> Four[生产 / 战斗 / Islands / Lava]
+    Four --> Raw[四PNG与metrics / 场景原始退出码]
+    Raw --> Gate[manifest与完整性门控 / 392Core / 15UI / 20reporter]
+    Gate --> C[精确最新SHA的C下载复看]
+```
+
 ## v3.7.2 / 画面与触点独立核对
 
 ```mermaid

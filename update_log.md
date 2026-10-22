@@ -1,3 +1,11 @@
+## v3.8 / Original terrain materials and rounded regions
+
+2026-10-23。单智能体串行A/B/C，v3.7.2精确结果包通过后同步main。原战场仍是饱和纯色与tile台阶，本轮以BattlefieldTerrainArt替换Scene内约530行地形专用路径/颜色辅助函数，保留原生实际投影和实体ID、输入、模型、Core地形/通行、战斗、生产、雾与存档。七类原创周期材质与六类非草区域轮廓统一世界坐标；草族仅表现合并、保留孔洞、水角点分离、泥路对角衔接，转角圆滑。地图revision才烘焙四块8pt bleed不透明底图，约48MB原始像素，mipmap另计；七材质有限缓存，无地图历史缓存、逐帧烘焙或新动画。CI参数下OSLog记录真实elapsed与source rowBytes*height，只作加载诊断，不冒充GPU/峰值内存/真机FPS。
+
+新文件注册Xcode source37。专用Islands1600/1400与Lava1950/1750非开火Hover观察场景只改变CI初态，覆盖横/纵底图拼接线；正常地图和战斗不改。capture-terrain-previews.js复用同一云端模拟器，记录launch/process/capture/orientation/probe退出码、耗时和两图metrics；manifest与finalizer强制两场景身份、参数、路径、零退出码及五个非空文件，新增五个reporter回归为20项。保留原生产/战斗图、392 Core、15实际UI、双架构和JUnit11/0/1。README/flow/test/版本提示词同步，.wp不动，无本地测试/build/parse/typecheck/preview/diff --check。等待本轮新SHA四图云端验收；建筑、特效、导航和整体品质仍需继续迭代。
+
+前轮v3.7.2 C通过：416883054562a7f52c5a65ae74d9ce738ce9817a，run39833423198 / attempt1 / job120015363411，GitHub success，job21m36s。artifact rustwar-ci-v1.2-main-4168830-run39833423198-attempt1（ID12451281603，digest sha256:50b96b9ab8a485aab7f51a1c9019cb76386318d1f30f27f3747b52c41fab9aab）已下载至 /private/tmp/rustwar-c-review-39833423198/2.0M，c-review.md已保存。身份/pipeline/integrity匹配，392 Core/15实际UI/15reporter/双架构双画面通过，JUnit11/0/1。原生投影新测试实际BuilderY0.7544909722790747->0.8842316587528068，cameraY1800->1756.6666666666665，无误下令且新点选Move通过；所有旧断言保持。Home与已复看的v3.6字节一致，Combat SHA256a6a84b3e5531667a8fce75952e3fd03489bf6fcf610a16550a0cf9de43048cd6已实际复看。此证据修补旧14项读点与输入公式共用的盲区，不外推真机手感或全部触摸时序。
+
 ## v3.7.2 / Native rendered touch alignment
 
 2026-10-23。v3.7.1完整结果验收后，在地形提交前检查Scene坐标，发现主战场纵向输入与渲染相反：spritePoint=(x,-y)、camera节点偏移+centerY经SKView映射后世界Y向下，但CameraState.worldPoint减screenY、pan加dy。旧interaction快照和测试目的地也共享该输入公式，14项真实事件通过不能独立证明点击对准所画实体。本轮优先修复这一操作根因，地形修改已保存临时草稿并从本轮相关已跟踪文件中移出；未回退用户修改，.wp不动。

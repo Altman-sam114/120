@@ -248,6 +248,7 @@ jobs:
           combat_simulator_screenshot_status=77
           combat_screenshot_orientation_status=77
           combat_screenshot_probe_status=77
+          terrain_visual_status=77
           app_path="${derived_data_path}/Build/Products/Debug-iphonesimulator/RustwarIOS.app"
           screenshot_path="ci-results/ios-home.png"
           screenshot_metrics_path="ci-results/ios-screenshot-metrics.txt"
@@ -326,6 +327,10 @@ jobs:
                 "$combat_screenshot_metrics_path" >> "$build_log" 2>&1
               combat_screenshot_probe_status=$?
             fi
+            if [[ "$simulator_install_status" -eq 0 ]]; then
+              node ci/capture-terrain-previews.js "$simulator_udid" "$IOS_BUNDLE_ID" ci-results >> "$build_log" 2>&1
+              terrain_visual_status=$?
+            fi
           fi
           echo "simulator install exit=$simulator_install_status" >> "$build_log"
           echo "simulator launch exit=$simulator_launch_status" >> "$build_log"
@@ -338,6 +343,7 @@ jobs:
           echo "combat simulator screenshot exit=$combat_simulator_screenshot_status" >> "$build_log"
           echo "combat screenshot landscape normalization exit=$combat_screenshot_orientation_status" >> "$build_log"
           echo "combat screenshot pixel probe exit=$combat_screenshot_probe_status" >> "$build_log"
+          echo "terrain scene capture/probes exit=$terrain_visual_status" >> "$build_log"
           echo >> "$build_log"
 
           {
@@ -361,6 +367,7 @@ jobs:
             echo "combat_screenshot_exit=${combat_simulator_screenshot_status}"
             echo "combat_orientation_normalize_exit=${combat_screenshot_orientation_status}"
             echo "combat_pixel_probe_exit=${combat_screenshot_probe_status}"
+            echo "terrain_visual_exit=${terrain_visual_status}"
           } > ci-results/ios-simulator-info.txt
 
           echo "== actual iOS interaction tests ==" >> "$build_log"
@@ -407,7 +414,7 @@ jobs:
           echo "UI tests mandatory gate exit=$ui_test_status" >> "$build_log"
           echo >> "$build_log"
 
-          if [[ "$simulator_create_status" -eq 0 && "$simulator_boot_status" -eq 0 && "$simulator_install_status" -eq 0 && "$simulator_launch_status" -eq 0 && "$simulator_process_status" -eq 0 && "$simulator_screenshot_status" -eq 0 && "$screenshot_orientation_status" -eq 0 && "$screenshot_probe_status" -eq 0 && "$combat_simulator_launch_status" -eq 0 && "$combat_simulator_process_status" -eq 0 && "$combat_simulator_screenshot_status" -eq 0 && "$combat_screenshot_orientation_status" -eq 0 && "$combat_screenshot_probe_status" -eq 0 ]]; then
+          if [[ "$simulator_create_status" -eq 0 && "$simulator_boot_status" -eq 0 && "$simulator_install_status" -eq 0 && "$simulator_launch_status" -eq 0 && "$simulator_process_status" -eq 0 && "$simulator_screenshot_status" -eq 0 && "$screenshot_orientation_status" -eq 0 && "$screenshot_probe_status" -eq 0 && "$combat_simulator_launch_status" -eq 0 && "$combat_simulator_process_status" -eq 0 && "$combat_simulator_screenshot_status" -eq 0 && "$combat_screenshot_orientation_status" -eq 0 && "$combat_screenshot_probe_status" -eq 0 && "$terrain_visual_status" -eq 0 ]]; then
             simulator_visual_status=0
           else
             simulator_visual_status=1
@@ -483,6 +490,9 @@ jobs:
 
           const uiReportPath = "ci-results/ios-ui-test-gate.json";
           const uiReport = fs.existsSync(uiReportPath) ? JSON.parse(fs.readFileSync(uiReportPath, "utf8")) : null;
+          const terrainReportPath = "ci-results/ios-terrain-scenes.json";
+          let terrainReport = null;
+          try { terrainReport = JSON.parse(fs.readFileSync(terrainReportPath, "utf8")); } catch {}
           const checks = [
             {
               name: "workflow YAML parse",
@@ -529,7 +539,7 @@ jobs:
             {
               name: "iOS Simulator launches and screenshots",
               ok: process.env.CHECK_SIMULATOR_VISUAL_STATUS === "0",
-              message: "Pinned iPhone 17 Pro production/combat launches, PNG captures, and nonblank pixel probes."
+              message: "Pinned iPhone 17 Pro production/combat/Islands/Lava launches, PNG captures, and nonblank pixel probes."
             },
             {
               name: "browser smoke regression",
@@ -592,6 +602,8 @@ jobs:
             resultBundlePath: null,
             uiTestOutcome: process.env.CHECK_UI_TEST_STATUS === "0" ? "success" : "failure",
             uiTestReport: uiReport,
+            terrainVisualReport: terrainReport,
+            terrainVisualReportPath: terrainReportPath,
             uiTestSummaryPath: fs.existsSync("ci-results/ios-ui-test-summary.json") ? "ci-results/ios-ui-test-summary.json" : null,
             uiTestTreePath: fs.existsSync("ci-results/ios-ui-test-tree.json") ? "ci-results/ios-ui-test-tree.json" : null,
             uiTestGatePath: uiReportPath,

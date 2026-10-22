@@ -11,11 +11,13 @@ struct RustwarIOSApp: App {
         let runsInteractionTests = arguments.contains(CloudInteractionFixture.launchArgument)
         let isProductionVisualSmoke = arguments.contains("--rustwar-ci-visual-smoke")
         let isCombatVisualSmoke = arguments.contains("--rustwar-ci-combat-visual-smoke")
-        let visualScenario: CloudVisualScenario? = isCombatVisualSmoke
-            ? .combat
-            : (isProductionVisualSmoke ? .production : nil)
+        let terrainMap: MapID? = arguments.contains("--rustwar-ci-terrain-islands")
+            ? .islands : (arguments.contains("--rustwar-ci-terrain-lava") ? .lava : nil)
+        let visualScenario: CloudVisualScenario? = terrainMap != nil
+            ? .terrain : (isCombatVisualSmoke ? .combat : (isProductionVisualSmoke ? .production : nil))
         _controller = State(
             initialValue: GameController(
+                mapID: terrainMap ?? .coast,
                 startsPaused: visualScenario != nil || runsInteractionTests,
                 initiallySelectedPlayerBuildingType: isProductionVisualSmoke ? .landFactory : nil,
                 cloudVisualScenario: visualScenario,
