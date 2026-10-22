@@ -1066,38 +1066,20 @@ final class BattlefieldScene: SKScene {
                 x: muzzle.x + normal.dx * lateralOffset,
                 y: muzzle.y + normal.dy * lateralOffset
             )
-            let flash = SKShapeNode(circleOfRadius: flashRadius)
+            let flash = BattlefieldEffectMaterials.sprite(.glow, width: flashRadius * 4,
+                                                          height: flashRadius * 4, color: .white, alpha: 0.93)
             flash.position = origin
-            flash.fillColor = color
-            flash.strokeColor = .white.withAlphaComponent(0.95)
-            flash.lineWidth = 1
             container.addChild(flash)
-
-            let flarePath = CGMutablePath()
-            let flareLength = flashRadius * 2.2
-            flarePath.move(to: CGPoint(x: origin.x - direction.dx * flareLength, y: origin.y - direction.dy * flareLength))
-            flarePath.addLine(to: CGPoint(x: origin.x + direction.dx * flareLength, y: origin.y + direction.dy * flareLength))
-            flarePath.move(to: CGPoint(x: origin.x - normal.dx * flashRadius, y: origin.y - normal.dy * flashRadius))
-            flarePath.addLine(to: CGPoint(x: origin.x + normal.dx * flashRadius, y: origin.y + normal.dy * flashRadius))
-            let flare = SKShapeNode(path: flarePath)
-            flare.strokeColor = color.withAlphaComponent(0.86)
-            flare.lineWidth = 1.4
-            flare.lineCap = .round
+            let flare = BattlefieldEffectMaterials.sprite(.flash, width: flashRadius * 6,
+                                                          height: flashRadius * 3, color: color, alpha: 0.85)
+            flare.position = origin
+            flare.zRotation = heading
             container.addChild(flare)
-            let plume = polygonNode([
-                CGPoint(
-                    x: origin.x - normal.dx * flashRadius * 0.72,
-                    y: origin.y - normal.dy * flashRadius * 0.72
-                ),
-                CGPoint(
-                    x: origin.x + direction.dx * flashRadius * 3.1,
-                    y: origin.y + direction.dy * flashRadius * 3.1
-                ),
-                CGPoint(
-                    x: origin.x + normal.dx * flashRadius * 0.72,
-                    y: origin.y + normal.dy * flashRadius * 0.72
-                )
-            ], fill: color.withAlphaComponent(0.74), stroke: .white.withAlphaComponent(0.82), lineWidth: 0.8)
+            let plume = BattlefieldEffectMaterials.sprite(.glow, width: flashRadius * 7,
+                                                          height: flashRadius * 3, color: color, alpha: 0.28)
+            plume.position = CGPoint(x: origin.x + direction.dx * flashRadius * 0.7,
+                                     y: origin.y + direction.dy * flashRadius * 0.7)
+            plume.zRotation = heading
             plume.zPosition = -0.5
             container.addChild(plume)
             let flashFade = SKAction.fadeOut(withDuration: accessibilityReduceMotion ? 0.12 : 0.1)
@@ -1371,10 +1353,8 @@ final class BattlefieldScene: SKScene {
 
     private func projectileNode(color: SKColor, radius: Double, trailLength: Double) -> SKNode {
         let projectile = SKNode()
-        let glow = SKShapeNode(circleOfRadius: radius * 2.1)
-        glow.fillColor = color.withAlphaComponent(0.22)
-        glow.strokeColor = .clear
-        glow.lineWidth = 0
+        let glow = BattlefieldEffectMaterials.sprite(.glow, width: radius * 6,
+                                                     height: radius * 6, color: color, alpha: 0.55)
         projectile.addChild(glow)
         if !accessibilityReduceMotion {
             glow.run(.repeatForever(.sequence([
@@ -1382,40 +1362,21 @@ final class BattlefieldScene: SKScene {
                 .scale(to: 0.92, duration: 0.14)
             ])))
         }
-
         if trailLength > 0 {
-            let vaporTrail = SKShapeNode(rect: CGRect(
-                x: -trailLength * 1.65 - radius,
-                y: -radius,
-                width: trailLength * 1.65,
-                height: radius * 2
-            ), cornerRadius: radius)
-            vaporTrail.fillColor = color.withAlphaComponent(0.16)
-            vaporTrail.strokeColor = .clear
-            vaporTrail.lineWidth = 0
-            projectile.addChild(vaporTrail)
-            let trail = SKShapeNode(rect: CGRect(
-                x: -trailLength - radius,
-                y: -radius * 0.55,
-                width: trailLength,
-                height: radius * 1.1
-            ), cornerRadius: radius * 0.5)
-            trail.fillColor = color.withAlphaComponent(0.58)
-            trail.strokeColor = .clear
-            trail.lineWidth = 0
+            let vapor = BattlefieldEffectMaterials.sprite(.trail, width: trailLength * 1.65 + radius * 2,
+                                                          height: radius * 4, color: color, alpha: 0.32)
+            vapor.position.x = -CGFloat(trailLength * 0.825 + radius * 0.5)
+            projectile.addChild(vapor)
+            let trail = BattlefieldEffectMaterials.sprite(.trail, width: trailLength + radius * 1.2,
+                                                          height: radius * 1.7, color: color, alpha: 0.82)
+            trail.position.x = -CGFloat(trailLength * 0.5 + radius * 0.4)
             projectile.addChild(trail)
         }
-
-        let core = SKShapeNode(circleOfRadius: radius)
-        core.fillColor = .white.withAlphaComponent(0.92)
-        core.strokeColor = color
-        core.lineWidth = 1.2
-        projectile.addChild(core)
-        let nose = SKShapeNode(ellipseOf: CGSize(width: radius * 2.8, height: radius * 1.05))
-        nose.position = CGPoint(x: radius * 0.7, y: 0)
-        nose.fillColor = .white
-        nose.strokeColor = .clear
-        nose.lineWidth = 0
+        projectile.addChild(BattlefieldEffectMaterials.sprite(.glow, width: radius * 2.8,
+                                                              height: radius * 2.8, color: .white))
+        let nose = BattlefieldEffectMaterials.sprite(.glow, width: radius * 3,
+                                                     height: radius * 1.2, color: .white, alpha: 0.95)
+        nose.position.x = CGFloat(radius * 0.7)
         projectile.addChild(nose)
         return projectile
     }
@@ -1435,32 +1396,15 @@ final class BattlefieldScene: SKScene {
         terminal.setScale(isFrozen ? 0.92 : accessibilityReduceMotion ? 1 : 0.46)
 
         let contactRadius = Swift.max(1.25, radius * 0.72)
-        let contact = SKShapeNode(circleOfRadius: contactRadius)
-        contact.fillColor = .white.withAlphaComponent(0.9)
-        contact.strokeColor = color.withAlphaComponent(0.88)
-        contact.lineWidth = Swift.max(0.65, radius * 0.34)
+        let contact = BattlefieldEffectMaterials.sprite(.glow, width: contactRadius * 4,
+                                                        height: contactRadius * 4, color: .white, alpha: 0.93)
         terminal.addChild(contact)
-
         let ringRadius = Swift.max(contactRadius * 3.1, radius * 3.2)
-        let ring = segmentedRingNode(
-            radius: ringRadius,
-            segmentCount: 4,
-            coverage: 0.58,
-            rotation: 0.18,
-            color: teamAccent.withAlphaComponent(0.82),
-            lineWidth: Swift.max(0.9, radius * 0.58)
-        )
-        ring.glowWidth = Swift.max(0.35, radius * 0.3)
+        let ring = BattlefieldEffectMaterials.sprite(.glow, width: ringRadius * 2.3,
+                                                     height: ringRadius * 2.3, color: color, alpha: 0.58)
         terminal.addChild(ring)
-
-        let sparks = radialSpokeNode(
-            spokeCount: 6,
-            innerRadius: ringRadius * 1.08,
-            outerRadius: ringRadius * 1.58,
-            rotation: 0.28,
-            color: color.withAlphaComponent(0.8),
-            lineWidth: Swift.max(0.65, radius * 0.4)
-        )
+        let sparks = BattlefieldEffectMaterials.sprite(.dust, width: ringRadius * 3.2,
+                                                       height: ringRadius * 2.4, color: teamAccent, alpha: 0.42)
         terminal.addChild(sparks)
         container.addChild(terminal)
 
@@ -1541,55 +1485,31 @@ final class BattlefieldScene: SKScene {
         container.position = spritePoint(for: position)
 
         let impactAccent = accent ?? SKColor.systemOrange
-        let groundBloom = SKShapeNode(ellipseOf: CGSize(
-            width: 24 * intensity,
-            height: 12 * intensity
-        ))
+        let groundBloom = BattlefieldEffectMaterials.sprite(.dust, width: 34 * intensity,
+                                                            height: 20 * intensity,
+                                                            color: SKColor(red: 0.48, green: 0.36, blue: 0.24, alpha: 1), alpha: 0.52)
         groundBloom.position.y = -CGFloat(2.5 * intensity)
-        groundBloom.fillColor = SKColor.systemOrange.withAlphaComponent(0.15)
-        groundBloom.strokeColor = impactAccent.withAlphaComponent(0.38)
-        groundBloom.lineWidth = 1
         groundBloom.zPosition = -3
         container.addChild(groundBloom)
-
-        let outerCorona = radialSpokeNode(
-            spokeCount: 8,
-            innerRadius: 7.2 * intensity,
-            outerRadius: 11.4 * intensity,
-            rotation: 0.18,
-            color: impactAccent.withAlphaComponent(0.82),
-            lineWidth: 1.15
-        )
+        let outerCorona = BattlefieldEffectMaterials.sprite(.glow, width: 29 * intensity,
+                                                            height: 24 * intensity, color: impactAccent, alpha: 0.27)
         outerCorona.zPosition = -1.4
         container.addChild(outerCorona)
-
-        let innerCorona = segmentedRingNode(
-            radius: 5.9 * intensity,
-            segmentCount: 5,
-            coverage: 0.54,
-            rotation: 0.42,
-            color: impactAccent.withAlphaComponent(0.84),
-            lineWidth: 1.05
-        )
+        let innerCorona = BattlefieldEffectMaterials.sprite(.glow, width: 17 * intensity,
+                                                            height: 15 * intensity, color: .systemOrange, alpha: 0.75)
         innerCorona.zPosition = -0.6
         container.addChild(innerCorona)
-
-        let contact = SKShapeNode(circleOfRadius: Swift.max(1.2, 1.45 * intensity))
-        contact.fillColor = .white.withAlphaComponent(0.88)
-        contact.strokeColor = impactAccent.withAlphaComponent(0.9)
-        contact.lineWidth = 0.9
+        let contact = BattlefieldEffectMaterials.sprite(.glow, width: Swift.max(4.8, 6 * intensity),
+                                                        height: Swift.max(4.8, 6 * intensity), color: .white, alpha: 0.96)
         container.addChild(contact)
-
-        let firePetals = offsetFirePetalNode(intensity: intensity)
+        let firePetals = BattlefieldEffectMaterials.sprite(.flash, width: 22 * intensity,
+                                                           height: 17 * intensity, color: .systemOrange, alpha: 0.80)
+        firePetals.zRotation = 0.42
         firePetals.zPosition = -1
         container.addChild(firePetals)
-
-        let ring = SKShapeNode(circleOfRadius: 8 * intensity)
-        ring.fillColor = .clear
-        ring.strokeColor = impactAccent.withAlphaComponent(0.9)
-        ring.lineWidth = 2
+        let ring = BattlefieldEffectMaterials.sprite(.ripple, width: 21 * intensity,
+                                                     height: 16 * intensity, color: impactAccent, alpha: 0.40)
         container.addChild(ring)
-
         addImpactSparks(intensity: intensity, color: impactAccent, to: container, isFrozen: isFrozen)
         addSmokePuffs(intensity: intensity * 0.72, count: 3, to: container, isFrozen: isFrozen)
         addImpactDebris(intensity: intensity, to: container, isFrozen: isFrozen)
@@ -1797,92 +1717,6 @@ final class BattlefieldScene: SKScene {
         return burst
     }
 
-    private func segmentedRingNode(
-        radius: Double,
-        segmentCount: Int,
-        coverage: Double,
-        rotation: Double,
-        color: SKColor,
-        lineWidth: Double
-    ) -> SKShapeNode {
-        let path = CGMutablePath()
-        let step = Double.pi * 2 / Double(segmentCount)
-        let arcLength = step * coverage
-        for index in 0..<segmentCount {
-            let startAngle = rotation + Double(index) * step
-            path.move(to: CGPoint(
-                x: CGFloat(cos(startAngle) * radius),
-                y: CGFloat(sin(startAngle) * radius)
-            ))
-            path.addArc(
-                center: .zero,
-                radius: radius,
-                startAngle: startAngle,
-                endAngle: startAngle + arcLength,
-                clockwise: false
-            )
-        }
-        let ring = SKShapeNode(path: path)
-        ring.fillColor = .clear
-        ring.strokeColor = color
-        ring.lineWidth = lineWidth
-        ring.lineCap = .round
-        return ring
-    }
-
-    private func radialSpokeNode(
-        spokeCount: Int,
-        innerRadius: Double,
-        outerRadius: Double,
-        rotation: Double,
-        color: SKColor,
-        lineWidth: Double
-    ) -> SKShapeNode {
-        let path = CGMutablePath()
-        for index in 0..<spokeCount {
-            let angle = rotation + Double(index) * (Double.pi * 2 / Double(spokeCount))
-            path.move(to: CGPoint(
-                x: CGFloat(cos(angle) * innerRadius),
-                y: CGFloat(sin(angle) * innerRadius)
-            ))
-            path.addLine(to: CGPoint(
-                x: CGFloat(cos(angle) * outerRadius),
-                y: CGFloat(sin(angle) * outerRadius)
-            ))
-        }
-        let spokes = SKShapeNode(path: path)
-        spokes.fillColor = .clear
-        spokes.strokeColor = color
-        spokes.lineWidth = lineWidth
-        spokes.lineCap = .round
-        return spokes
-    }
-
-    private func offsetFirePetalNode(intensity: Double) -> SKShapeNode {
-        let path = CGMutablePath()
-        let orbitRadius = 5.2 * intensity
-        for index in 0..<3 {
-            let angle = 0.48 + Double(index) * (Double.pi * 2 / 3)
-            let center = CGPoint(
-                x: CGFloat(cos(angle) * orbitRadius),
-                y: CGFloat(sin(angle) * orbitRadius)
-            )
-            let width = CGFloat((3.8 + Double(index) * 0.45) * intensity)
-            let height = CGFloat((5.8 - Double(index) * 0.35) * intensity)
-            path.addEllipse(in: CGRect(
-                x: center.x - width / 2,
-                y: center.y - height / 2,
-                width: width,
-                height: height
-            ))
-        }
-        let petals = SKShapeNode(path: path)
-        petals.fillColor = SKColor.systemOrange.withAlphaComponent(0.72)
-        petals.strokeColor = SKColor.systemYellow.withAlphaComponent(0.88)
-        petals.lineWidth = 1
-        return petals
-    }
-
     private func spawnDestructionEffect(
         at position: WorldPoint,
         intensity: Double,
@@ -1904,24 +1738,16 @@ final class BattlefieldScene: SKScene {
         let container = SKNode()
         container.position = spritePoint(for: position)
 
-        let outerFire = SKShapeNode(circleOfRadius: 11 * intensity)
-        outerFire.fillColor = SKColor.systemOrange.withAlphaComponent(0.72)
-        outerFire.strokeColor = accent.withAlphaComponent(0.9)
-        outerFire.lineWidth = 2
+        let outerFire = BattlefieldEffectMaterials.sprite(.flash, width: 40 * intensity,
+                                                           height: 31 * intensity, color: .systemOrange, alpha: 0.89)
+        outerFire.zRotation = 0.16
         container.addChild(outerFire)
-
-        let core = SKShapeNode(circleOfRadius: 6.5 * intensity)
-        core.fillColor = .white.withAlphaComponent(0.96)
-        core.strokeColor = SKColor.systemYellow
-        core.lineWidth = 1.4
+        let core = BattlefieldEffectMaterials.sprite(.glow, width: 22 * intensity,
+                                                      height: 20 * intensity, color: .white, alpha: 0.98)
         container.addChild(core)
-
-        let shockwave = SKShapeNode(circleOfRadius: 14 * intensity)
-        shockwave.fillColor = .clear
-        shockwave.strokeColor = SKColor.systemOrange.withAlphaComponent(0.82)
-        shockwave.lineWidth = 2.6
+        let shockwave = BattlefieldEffectMaterials.sprite(.ripple, width: 34 * intensity,
+                                                           height: 28 * intensity, color: accent, alpha: 0.56)
         container.addChild(shockwave)
-
         addImpactSparks(
             intensity: intensity * 1.45,
             color: accent,
@@ -2027,16 +1853,11 @@ final class BattlefieldScene: SKScene {
         for index in 0..<count {
             let angle = Double(index) * 2.1 + 0.7
             let offset = Double(index % 2) * 3.5 * intensity
-            let puff = SKShapeNode(circleOfRadius: (4.8 + Double(index) * 1.1) * intensity)
+            let diameter = (4.8 + Double(index) * 1.1) * intensity * 2.8
+            let puff = BattlefieldEffectMaterials.sprite(.smoke, width: diameter, height: diameter,
+                                                         color: SKColor(red: 0.16, green: 0.17, blue: 0.16, alpha: 1),
+                                                         alpha: isFrozen ? 0.72 : 0.5)
             puff.position = CGPoint(x: CGFloat(cos(angle) * offset), y: CGFloat(sin(angle) * offset))
-            puff.fillColor = SKColor(
-                red: 0.13,
-                green: 0.14,
-                blue: 0.14,
-                alpha: isFrozen ? 0.72 : 0.5
-            )
-            puff.strokeColor = SKColor(red: 0.32, green: 0.31, blue: 0.29, alpha: 0.34)
-            puff.lineWidth = 1
             puff.zPosition = isFrozen ? -0.25 : -2
             container.addChild(puff)
             if isFrozen {
@@ -2064,33 +1885,11 @@ final class BattlefieldScene: SKScene {
 
         let scorch = SKNode()
         scorch.position = spritePoint(for: position)
-        let outer = SKShapeNode(ellipseOf: CGSize(width: radius * 2, height: radius * 1.45))
-        outer.fillColor = SKColor(
-            red: 0.05,
-            green: 0.045,
-            blue: 0.04,
-            alpha: isFrozen ? 0.5 : 0.38
-        )
-        outer.strokeColor = SKColor(
-            red: 0.22,
-            green: 0.11,
-            blue: 0.045,
-            alpha: isFrozen ? 0.46 : 0.32
-        )
-        outer.lineWidth = 1.4
+        let outer = BattlefieldEffectMaterials.sprite(.scorch, width: radius * 2.5,
+                                                       height: radius * 1.8,
+                                                       color: SKColor(red: 0.07, green: 0.055, blue: 0.04, alpha: 1),
+                                                       alpha: isFrozen ? 0.61 : 0.48)
         scorch.addChild(outer)
-        let inner = SKShapeNode(circleOfRadius: radius * 0.42)
-        inner.fillColor = .black.withAlphaComponent(0.22)
-        inner.strokeColor = .clear
-        inner.lineWidth = 0
-        scorch.addChild(inner)
-
-        let rim = SKShapeNode(ellipseOf: CGSize(width: radius * 1.42, height: radius))
-        rim.fillColor = .clear
-        rim.strokeColor = SKColor.systemOrange.withAlphaComponent(isFrozen ? 0.28 : 0.15)
-        rim.lineWidth = 1
-        scorch.addChild(rim)
-
         let crackPath = CGMutablePath()
         for index in 0..<7 {
             let angle = 0.31 + Double(index) * (2 * Double.pi / 7)

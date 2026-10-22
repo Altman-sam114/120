@@ -1,3 +1,9 @@
+## v3.11 / Shared weapon material ownership
+
+BattlefieldEffectMaterials owns seven deterministic128px original white alpha masks, cached only by its bounded Kind enum. BattlefieldScene supplies actual event colors, sizes, anchors, heading and existing action lifetimes. Soft directional flashes, tapered projectile tails, land/terminal blooms, smoke/dust and scorch replace schematic shapes; three now-unused ring/petal helpers are removed. Water geometry, beam/dual/arc routes, actual cooldown/HP/death triggers, fog filtering, groundImpact/effect split,64 shared roots/32decals/oldest-first pruning and Reduce Motion/frozen behavior keep their owners. No Core/save/input/production/HUD/terrain/model change or unbounded particle source. Source39 is registered in the App target. Exact five-image cloud acceptance is pending; no device performance claim.
+
+Accepted CI60bcc67/run39857474318/attempt1/job120099326055:392Core/15actualUI/24reporter/dual builds/5scenes/JUnit11-0-1, exact artifact downloaded11M and all5images viewed by C. Generic build precedes device boot and compiled probe is shared;20m05s host duration establishes no overall speedup. Native touch projection/faction layering are retained in the FX round.
+
 ## v3.10 / Cloud execution scheduling and pixel probes
 
 Reporter success is a prerequisite for the expensive checks step; static/Core/project success is a prerequisite for generic dual-architecture App build. The unchanged Screenshot validator is compiled once with pinned xcrun swiftc -O into RUNNER_TEMP, then App/probe compilation success permits creation/boot of the one pinned cloud Simulator. Runtime destination remains that actual device; appBuildDestination explicitly records the generic build. The same executable checks Home/Combat and all three common capture calls through RUSTWAR_SCREENSHOT_PROBE. No validator source/threshold change, interpreted fallback, cache/executable upload or product-state mutation.

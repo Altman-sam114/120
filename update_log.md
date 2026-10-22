@@ -1,3 +1,9 @@
+## v3.11 / Soft original weapon materials
+
+2026-10-23。单智能体串行A/B/C，v3.10完整C通过后同步main。新增BattlefieldEffectMaterials七种确定性128px原创白色alpha材质：glow/smoke/flash/trail/dust/scorch/ripple，有限枚举缓存，Scene继续供应真实事件颜色、尺寸、朝向和原动作时间。替换炮口硬圆/十字/三角、胶囊弹尾、陆地/终点靶环辐条、描边烟圈与焦痕硬边，保留暖色接触与白热核心；删除三项已无调用的旧ring/petal辅助函数。Xcode注册source39。水面几何、实际火花残片、光束/双管/抛物线、射源/炮口/目标/延时、真实冷却HP死亡触发、雾层、groundImpact/effect分层、64shared roots/32decals/最老回收和Reduce Motion/暂停画面保持。无Core/输入/生产/存档/HUD/地形/模型规则变化，无本地任何验证或性能声明；README/flow/test/prompt同步，.wp不动，等新SHA云端五图与全门控。
+
+前轮CI C通过：60bcc672e8c80cd64b9e872ff62e610ef516630c/run39857474318/attempt1/job120099326055，GitHub success20m05s。准确artifact rustwar-ci-v1.2-main-60bcc67-run39857474318-attempt1（ID12460614622，digestsha256:0f483b58a254a313ab3701affa5bd222f04fd43d69e4ee84b45da79ee3885452）下载11M至/private/tmp/rustwar-c-review-39857474318/；身份/pipeline/integrity匹配，392Core、15UI（243.379s）、24reporter、双架构五场景/JUnit11-0-1通过。generic双架构build成功后才编译同源probe并boot唯一设备，compiler0与五次probe/metrics成功，真实checks退出状态生效。五图已实际复看；Home89b02dbd250ea1fea6ac2a1467a8d70c489880d62ab9d3856c310882c18d49d8、Islands4f77d89a6842bd4f164025e8d585a9f56e7638fe1e4b8034aed60230260b9855、Lavadce14338fc7bc47a886e871530aa91d0545150bb6d9b90793126a45b22d50a05、Gallerycb63a4676b4fab790055bdfc027f2e7c966def49668d9f8162317e2c0b0f92db与前轮一致；Combat2f64dc4e82a266ba982801beaee8c050348399335fee8c732d1be1e9e103bc15有少量实时表现差异，符号/HP/HUD正常。20m05s不证明整体提速，不把结构性改动当真机性能。寻路穿地形/建筑、地图自然度、完整原作能力与真机手感仍需后续，总目标未完成。
+
 ## v3.10 / Cloud probe reuse and build scheduling
 
 2026-10-23。单智能体串行A/B/C，8c6b7f9建筑完整C通过后同步main。已接受f9run39840973447真实时间戳显示boot6m04、App双架构4m15、UI15约262.782s，四次像素检查约56/23/13/5s；地形本体两次烘焙不足0.7s，不能把22m58全算在地形。失败798f894还先boot才发现确定性编译错误，并由最后gate才显示红色，checks步骤误为绿色。本轮只改CI，不改App/Core/画面/输入/生产/存档/Web。

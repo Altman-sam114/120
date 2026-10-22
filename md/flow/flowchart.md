@@ -1,3 +1,16 @@
+## v3.11 / 武器柔边材质
+
+```mermaid
+flowchart LR
+    Event[实际冷却 / HP / 死亡变化] --> Scene[既有可见性过滤与武器路径]
+    Scene --> Material[七类共享原创alpha材质]
+    Material --> Render[炮口 / 弹尾 / 陆地爆点 / 烟尘 / 焦痕]
+    Scene --> Rules[原光束 / 双管 / 抛物线 / 水面几何]
+    Render --> Life[原时间 / Reduce Motion / 64效果与32焦痕上限]
+    Rules --> Life
+    Life --> C[最新精确五图与全部操作门控复判]
+```
+
 ## v3.10 / 云端前置检查与复用探针
 
 ```mermaid
