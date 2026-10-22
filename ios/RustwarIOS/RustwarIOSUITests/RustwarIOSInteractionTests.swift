@@ -49,7 +49,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
 
     @MainActor
     private func launch(lowMetal: Bool = false, tech2: Bool = false, centeredUnit: Bool = false,
-                        stationaryDefense: Bool = false) async throws -> XCUIApplication {
+                        stationaryDefense: Bool = false, commandCenterVisible: Bool = false) async throws -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = XCUIApplication()
@@ -58,6 +58,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         if tech2 { app.launchArguments.append("--rustwar-ci-factory-tech2") }
         if centeredUnit { app.launchArguments.append("--rustwar-ci-centered-unit") }
         if stationaryDefense { app.launchArguments.append("--rustwar-ci-stationary-defense") }
+        if commandCenterVisible { app.launchArguments.append("--rustwar-ci-visible-command-center") }
         app.launch()
         XCTAssertTrue(battlefield(app).waitForExistence(timeout: 15))
         try await waitFor(app, "fixture and rendered anchors loaded") {
@@ -81,8 +82,9 @@ final class RustwarIOSInteractionTests: XCTestCase {
     }
 
     @MainActor
-    private func waitFor(_ app: XCUIApplication, _ message: String, predicate: (Snapshot) -> Bool) async throws {
-        for _ in 0..<80 {
+    private func waitFor(_ app: XCUIApplication, _ message: String, attempts: Int = 80,
+                         predicate: (Snapshot) -> Bool) async throws {
+        for _ in 0..<attempts {
             if let state = try? snapshot(app), predicate(state) { return }
             try await Task.sleep(for: .milliseconds(100))
         }
@@ -228,6 +230,51 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "production queue and charge") {
             $0.entity("input-factory")?.queue == 1 && $0.metal == metal - 90
         }
+    }
+
+    @MainActor
+    func testCommandCenterShowsAndQueuesBuilderThenFreshMoveWorks() async throws {
+        let app = try await launch(commandCenterVisible: true)
+        try await waitFor(app, "command center actually rendered") { $0.entity("input-command")?.rendered == true }
+        try tapEntity("input-command", in: app)
+        try await waitFor(app, "command center selected") { $0.selected == ["input-command"] }
+        let builderCard = app.buttons["produce-builder"]
+        assertFullyVisible(builderCard, in: app)
+        XCTAssertTrue(builderCard.label.contains("Builder"))
+        let before = try snapshot(app)
+        let oldQueue = try XCTUnwrap(before.entity("input-command")?.queue)
+        builderCard.tap()
+        try await waitFor(app, "real command-center action queues a Builder and spends 180") {
+            $0.entity("input-command")?.queue == oldQueue + 1 && abs($0.metal - (before.metal - 180)) < 0.01
+        }
+        let existingIDs = Set(before.units.map(\.id))
+        app.buttons["Play"].tap()
+        try await waitFor(app, "queued Builder completes and is actually drawn", attempts: 160) {
+            $0.entity("input-command")?.queue == oldQueue &&
+                $0.units.contains { !existingIDs.contains($0.id) && $0.rendered }
+        }
+        app.buttons["Pause"].tap()
+        let completed = try snapshot(app)
+        let produced = try XCTUnwrap(completed.units.first { !existingIDs.contains($0.id) })
+        XCTAssertTrue(produced.rendered)
+        try tapEntity(produced.id, in: app)
+        try await waitFor(app, "newly produced Builder selected through its rendered model") { $0.selected == [produced.id] }
+        try worldCoordinate(1_550, 1_890, in: app).tap()
+        try await waitFor(app, "newly produced Builder accepts a ground Move") { $0.entity(produced.id)?.order == "move" }
+        app.buttons["Play"].tap()
+        try await waitFor(app, "newly produced Builder reaches the actual tapped destination") {
+            $0.entity(produced.id)?.order == "idle"
+        }
+        app.buttons["Pause"].tap()
+        let arrived = try snapshot(app)
+        let position = arrived.projection.worldPosition(try XCTUnwrap(arrived.entity(produced.id)))
+        XCTAssertEqual(position.x, 1_550, accuracy: 1)
+        XCTAssertEqual(position.y, 1_890, accuracy: 1)
+        print("COMMAND_CENTER_BUILDER id=\(produced.id) queue=\(oldQueue + 1)->\(oldQueue) arrived=\(position.x),\(position.y)")
+        try tapEntity("input-builder", in: app)
+        try await waitFor(app, "fresh Builder selected after command-center production") { $0.selected == ["input-builder"] }
+        try worldCoordinate(1_510, 1_890, in: app).tap()
+        try await waitFor(app, "fresh Builder moves after command-center production") { $0.entity("input-builder")?.order == "move" }
     }
 
     @MainActor

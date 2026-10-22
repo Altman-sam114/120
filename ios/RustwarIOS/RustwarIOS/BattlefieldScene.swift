@@ -2036,13 +2036,19 @@ final class BattlefieldScene: SKScene {
                 isFrozen: true
             )
         }
+        // Keep separate water and land destruction samples in the paused fixture.
         spawnDestructionEffect(
             at: WorldPoint(1_960, 1_570),
             intensity: 1.18,
             accent: .systemOrange,
             isFrozen: true
         )
-        addScorchMark(at: WorldPoint(1_990, 1_525), radius: 15.5, isFrozen: true)
+        spawnDestructionEffect(
+            at: WorldPoint(1_790, 1_590),
+            intensity: 1.08,
+            accent: .systemOrange,
+            isFrozen: true
+        )
     }
 
     private func showCommandConfirmationIfNeeded(

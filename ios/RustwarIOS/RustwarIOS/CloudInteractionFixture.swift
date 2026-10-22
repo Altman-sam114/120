@@ -37,6 +37,10 @@ enum CloudInteractionFixture {
             building(.command, id: "input-command", at: WorldPoint(1_800, 1_980)),
             building(.command, id: "input-enemy-command", at: WorldPoint(2_600, 1_800), team: .enemy)
         ]
+        if ProcessInfo.processInfo.arguments.contains("--rustwar-ci-visible-command-center") {
+            state.buildings[1].position = WorldPoint(1_620, 1_900)
+            state.buildings[1].rally = WorldPoint(1_540, 1_840)
+        }
         if ProcessInfo.processInfo.arguments.contains("--rustwar-ci-factory-tech2") {
             state.buildings[0].upgradeLevel = 2
         }

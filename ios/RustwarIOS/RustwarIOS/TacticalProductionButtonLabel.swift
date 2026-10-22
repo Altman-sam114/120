@@ -72,7 +72,15 @@ struct TacticalProductionButtonLabel: View {
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
-                    if !availability.isAvailable {
+                    if case let .insufficientMetal(required, available) = availability {
+                        Text("-\(max(0, required - available))M")
+                            .font(.caption2.bold())
+                            .monospacedDigit()
+                            .foregroundStyle(TacticalHUDTheme.unavailableForeground)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .accessibilityHidden(true)
+                    } else if !availability.isAvailable {
                         Image(systemName: availability.systemImage)
                             .foregroundStyle(TacticalHUDTheme.unavailableForeground)
                             .accessibilityHidden(true)
@@ -148,7 +156,7 @@ struct TacticalProductionButtonLabel: View {
 
     private var denseDisplayName: String {
         switch unitType {
-        case .builder: "Build"
+        case .builder: "Builder"
         case .scout: "Scout"
         case .tank: "Light"
         case .heavyTank: "Heavy"

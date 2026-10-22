@@ -1,3 +1,13 @@
+## v3.12 / Production clarity and actual Builder completion
+
+2026-10-23。单智能体串行A/B/C，v3.11精确C通过后同步main。Dense生产卡Build改完整Builder，金属不足的锁替换为existing ProductionAvailability实际差额-NM，其他不可用图标、完整accessibility、成本/人口/时间/触控尺寸/快捷键与生产规则保持。新增初态专用flag使CC1620/1900和rally1540/1840可见且避开原factory，原15fixture不变；没有修复正常游戏direct-at-rally出生/出口，此问题留给导航轮。
+
+新增16th真实UI testCommandCenterShowsAndQueuesBuilderThenFreshMoveWorks：读已绘制CC锚点、整Builder卡首屏>=44pt、真实点击入队/扣180、Play正常8秒生产新已绘制ID，Pause选新模型/点1550-1890/Move/Play到达原点击位置/Pause，最后新点选原Builder并Move1510-1890。原15方法/断言保留；仅完工等待可160样本，默认80保持，无Core API/命令注入/假事件/缩短生产。JS名单和workflow说明15->16，392Core/24reporter/双架构五图/JUnit11-0-1保持。
+
+同张Combat将原水面1990/1525独立陆地焦痕替换为陆地1790/1590摧毁样例intensity1.08，保留原水面1960/1570摧毁和所有发射/命中；只改暂停fixture，不改正常事件/材质/时间/数量门控，也不加第六图。README/flow/test/提示词同步，无任何本地验证，.wp不动，等待新SHA全门控与五图C。
+
+前轮FX C通过：7c401a26951783b2908a984115d991a771004154/run39861143196/attempt1/job120111848593，GitHub success21m26s。准确artifact rustwar-ci-v1.2-main-7c401a2-run39861143196-attempt1（ID12463311021，digestsha256:2be91fede3f76ddac355cc89932440d09b948f6409564bb9c1a131099c92ad02）下载11M至/private/tmp/rustwar-c-review-39861143196/，身份/pipeline/integrity匹配；392Core、15UI（263.964s）、24reporter、双架构/五场景/compiler0/JUnit11-0-1通过。source39两架构实际编译，五图已看；Combatfa853c631881423fcf23b8a06c3d1bad85fd7479a6d1ffad94fcad85fe3cf1b7柔边炮口/渐细弹尾和原光束/双管/抛物线清楚，HP/阵营/模型/HUD未被光遮挡，无alpha矩形。其他四图字节同60c且再复看。陆地接触较克制，冻结摧毁在水面不能独立证明改过的陆地烟尘/摧毁；v3.12补证据。静态图不证明动态/Reduce Motion/真机手感/性能，寻路出口与完整原作仍未完成。
+
 ## v3.11 / Soft original weapon materials
 
 2026-10-23。单智能体串行A/B/C，v3.10完整C通过后同步main。新增BattlefieldEffectMaterials七种确定性128px原创白色alpha材质：glow/smoke/flash/trail/dust/scorch/ripple，有限枚举缓存，Scene继续供应真实事件颜色、尺寸、朝向和原动作时间。替换炮口硬圆/十字/三角、胶囊弹尾、陆地/终点靶环辐条、描边烟圈与焦痕硬边，保留暖色接触与白热核心；删除三项已无调用的旧ring/petal辅助函数。Xcode注册source39。水面几何、实际火花残片、光束/双管/抛物线、射源/炮口/目标/延时、真实冷却HP死亡触发、雾层、groundImpact/effect分层、64shared roots/32decals/最老回收和Reduce Motion/暂停画面保持。无Core/输入/生产/存档/HUD/地形/模型规则变化，无本地任何验证或性能声明；README/flow/test/prompt同步，.wp不动，等新SHA云端五图与全门控。

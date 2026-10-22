@@ -1,3 +1,19 @@
+## v3.12 / 指挥中心到新工兵真实操作
+
+```mermaid
+flowchart LR
+    State[现有生产资格 / 成本 / 可用金属] --> Card[Builder完整标题 / 实际缺额 / 原生产卡]
+    Card --> Tap[真实点建筑与生产按钮]
+    Tap --> Queue[队列增加 / 扣180金属]
+    Queue --> Play[Play / 原8秒生产完工]
+    Play --> Unit[新ID / 实际已绘制工兵]
+    Unit --> Move[点新模型 / 点落点 / Move / 到达]
+    Move --> Fresh[暂停 / 原工兵新点选与移动]
+    Fresh --> Gate[原15项 + 新闭环 = 16项实际UI]
+    Land[同一战斗图的陆地摧毁 / 保留水面样例] --> C[最新精确五图artifact复判]
+    Gate --> C
+```
+
 ## v3.11 / 武器柔边材质
 
 ```mermaid

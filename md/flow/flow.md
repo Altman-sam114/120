@@ -1,3 +1,13 @@
+## v3.12 / Production display and actual completion coverage
+
+Dense TacticalProductionButtonLabel uses full Builder title and derives an orange -NM metal shortfall from the existing ProductionAvailability without changing production state, cost/pop/time, disabled behavior or full accessibility. Other disabled reasons retain their existing icon. Only the new cloud interaction initial-state flag moves CC1620/1900 and its clear rally1540/1840; all previous15fixtures retain their positions.
+
+The16th actual UI case selects the rendered CC, requires the whole Builder card>=44pt without scrolling, taps the real action and checks queue/180metal spend. Actual Play completes the normal8second build and a new rendered ID; Pause/select that real model/Move1550-1890/Play/actual arrival/Pause are followed by a fresh original Builder select/Move1510-1890. Only production completion uses160wait samples, default80stays. Strict expected names and workflow reporting now require16. No command injection/Core/save/gesture change, no general spawn/egress fix implied.
+
+The frozen Combat fixture replaces only standalone land scorch1990/1525 over water with land destruction1790/1590 (coast tile40/36) intensity1.08; its own soft smoke/scorch/core must be viewed in cloud. Existing water destruction, shots and impact samples remain; no extra image/material/timing/budget or normal gameplay change.
+
+Accepted FX7c401a2/run39861143196/attempt1/job120111848593 artifactID12463311021 downloaded11M and all5PNG C-viewed:392Core/15UI/24reporter/dual builds/JUnit11-0-1. New soft muzzle/tapered trails and preserved models/HUD are visible; land contact is subtle and frozen water destruction did not prove land destruction. New production/land-evidence SHA remains pending cloud C; no top-tier/device-performance claim.
+
 ## v3.11 / Shared weapon material ownership
 
 BattlefieldEffectMaterials owns seven deterministic128px original white alpha masks, cached only by its bounded Kind enum. BattlefieldScene supplies actual event colors, sizes, anchors, heading and existing action lifetimes. Soft directional flashes, tapered projectile tails, land/terminal blooms, smoke/dust and scorch replace schematic shapes; three now-unused ring/petal helpers are removed. Water geometry, beam/dual/arc routes, actual cooldown/HP/death triggers, fog filtering, groundImpact/effect split,64 shared roots/32decals/oldest-first pruning and Reduce Motion/frozen behavior keep their owners. No Core/save/input/production/HUD/terrain/model change or unbounded particle source. Source39 is registered in the App target. Exact five-image cloud acceptance is pending; no device performance claim.
