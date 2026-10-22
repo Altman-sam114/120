@@ -1,3 +1,7 @@
+## v3.8.1 / Tiling API repair
+
+The v3.8 artifact failed App compilation, so no terrain image or actual UI executed. Both tiled-image draws now use CGContext.draw(_:in:byTiling:true), the Swift CoreGraphics API; the same world pattern rectangle and CTM preserve the v3.8 material plan. All terrain ownership/input/Core flow below stays; the new exact-SHA four-scene C review is still mandatory. Building draft remains separate.
+
 ## v3.8 / Terrain material ownership
 
 BattlefieldScene.drawTerrain delegates only its terrain layer to the new MainActor BattlefieldTerrainArt. Seven bounded original material images use deterministic periodic mottling, grain and material-specific details; grass/grass2 merge only in presentation. Directed tile edges trace six nongrass family regions with reverse-wound holes and bounded rounded corners. Water diagonal regions stay separate; dirt connects diagonals for continuous base tracks. Core TerrainGrid/traversal, world coordinates and actual render-to-touch projectors are unchanged.

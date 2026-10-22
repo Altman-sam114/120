@@ -1,3 +1,7 @@
+## v3.8.1 / Compile repair acceptance
+
+Cloud only. Rejected798f894/run39838941656/attempt1 had392Core/20reporter success, but App build65, UI0 execution and no four images (JUnit11/4/1). Correct both nonexistent drawTiledImage calls to CGContext.draw(_:in:byTiling:true), without changing evidence gates. New exact artifact must pass392Core,15actualUI,20reporter, dual builds, all four launches/PNG probes and JUnit11/0/1, and C must view all four images. No local parse/typecheck/build or test is authorized.
+
 ## v3.8 / Four-scene terrain acceptance
 
 Cloud only. Preserve392 Core, all15 actual UI method names/assertions with native rendered anchors, dual-architecture App builds, existing Home/Combat captures/probes, YAML/static checks and JUnit11/0/1. Add Islands/Lava launches on the same pinned cloud Simulator; the helper may not create a device. Keep two new necessary PNGs/two metrics/ios-terrain-scenes.json, raw launch/process/capture/orientation/probe exits and scene wall times in the existing artifact. Manifest terrainVisualReport must require exact distinct map/argument/path identities, all zero exits and all five nonempty files. Retain15 reporter tests and add five rejection cases: missing terrain coverage, failed probe hidden by summary, duplicate map, wrong argument and stale path (20total).

@@ -1,3 +1,9 @@
+## v3.8.1 / CoreGraphics tiling API correction
+
+2026-10-23。C拒绝798f89484eda6b34fab1ed15b3def109a1ff128a / run39838941656 / attempt1 / job120034542566。准确artifact rustwar-ci-v1.2-main-798f894-run39838941656-attempt1（ID12451928926，digest sha256:472f16d3106822c2886ecf630ce2484299fafb6b64a1fd488217f35ca14ad13c）下载至/private/tmp/rustwar-c-review-39838941656/352K，manifest身份匹配；Core392、reporter20及静态/YAML/list通过，App build65因BattlefieldTerrainArt.swift不存在CGContext.drawTiledImage而失败，UI77/0执行、四图缺失、JUnit11/4/1。未把任何子项通过当作整体验收。
+
+本轮只改两处绘制API为Apple文档draw(_:in:byTiling:true)，保留pattern rectangle/CTM、地图轮廓、缓存和所有门控；文档及修复提示词同步。参考https://developer.apple.com/documentation/coregraphics/cgcontext/draw(_:in:bytiling:)。无本地测试/编译/parse/preview/diff --check。等待新SHA392Core/15UI/20reporter/双架构四图/JUnit11-0-1，建筑草稿未提交，总目标未完成。
+
 ## v3.8 / Original terrain materials and rounded regions
 
 2026-10-23。单智能体串行A/B/C，v3.7.2精确结果包通过后同步main。原战场仍是饱和纯色与tile台阶，本轮以BattlefieldTerrainArt替换Scene内约530行地形专用路径/颜色辅助函数，保留原生实际投影和实体ID、输入、模型、Core地形/通行、战斗、生产、雾与存档。七类原创周期材质与六类非草区域轮廓统一世界坐标；草族仅表现合并、保留孔洞、水角点分离、泥路对角衔接，转角圆滑。地图revision才烘焙四块8pt bleed不透明底图，约48MB原始像素，mipmap另计；七材质有限缓存，无地图历史缓存、逐帧烘焙或新动画。CI参数下OSLog记录真实elapsed与source rowBytes*height，只作加载诊断，不冒充GPU/峰值内存/真机FPS。

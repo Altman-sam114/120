@@ -172,7 +172,7 @@ enum BattlefieldTerrainArt {
             context.setLineJoin(.round)
             context.setLineCap(.round)
             if let grass = material(for: .grass).cgImage {
-                context.drawTiledImage(in: CGRect(x: 0, y: 0, width: materialSide, height: materialSide), image: grass)
+                context.draw(grass, in: CGRect(x: 0, y: 0, width: materialSide, height: materialSide), byTiling: true)
             }
             for kind in families where kind != .grass {
                 guard let path = paths[kind], !path.isEmpty else { continue }
@@ -188,7 +188,7 @@ enum BattlefieldTerrainArt {
                 context.addPath(path)
                 context.clip()
                 if let material = material(for: kind).cgImage {
-                    context.drawTiledImage(in: CGRect(x: 0, y: 0, width: materialSide, height: materialSide), image: material)
+                    context.draw(material, in: CGRect(x: 0, y: 0, width: materialSide, height: materialSide), byTiling: true)
                 }
                 context.restoreGState()
                 if kind == .water || kind == .deep {
