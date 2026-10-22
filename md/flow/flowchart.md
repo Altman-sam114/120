@@ -1,3 +1,20 @@
+## v3.6 / 共享分层单位材质
+
+```mermaid
+flowchart LR
+    Snapshot[真实 UnitSnapshot] --> Key[type / team]
+    Key --> Cache{共享材质缓存}
+    Cache -->|miss| Bake[原创路径 + 金属渐变 -> 三层材质]
+    Bake --> Portrait[同套绘制 -> 生产缩略图缓存]
+    Cache -->|hit| Shared[共享 hull / turret / weapon]
+    Bake --> Shared
+    Shared --> Body[每实体缓存 body / 独立 mount]
+    Snapshot --> Motion[hull heading / turret traverse / recoil]
+    Motion --> Body
+    Body --> Overlay[既有阵营标记 / selection / HP / damage]
+    Overlay --> Fog[既有战斗效果与 fog]
+```
+
 ## v3.5.2 / 稳定缩放跨度
 
 ```mermaid

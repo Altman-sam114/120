@@ -1,8 +1,16 @@
+## v3.6 / Layered original vehicle art
+
+2026-10-22准备、2026-10-23继续。单智能体模型轮在v3.5.2 e0636d47cccde830315482d6940df9db7d0c8d07 / run39814285593结果包通过C验收后提交。本轮将BattlefieldScene超长unitBody分支移交BattlefieldUnitModels，以原创CoreGraphics几何和金属渐变生成hull/turret/weapon三层共享材质，8类型x2阵营有限缓存；每实体仍由既有签名缓存管理，命名mount与heading/recoil兼容。八兵种保留专属底盘/工具臂/悬浮舱/双炮管/驻锄/舰体差异和既有阵营几何标记，生产缩略图复用同套绘制。新文件注册Xcode工程。相机旧双击缓存清理已独立放入v3.5.1，本模型轮不再修改Core、输入、命令、生产、存档或Web。
+
+同步README、flow、test及v3.6提示词。无本地渲染、编译或测试。云端须保持全部Core、13 UI、reporter15、双架构/双画面及JUnit11/0/1，C实际复看透明、朝向、武器/后坐和HUD。原型画质仍需地形、特效、建筑、动态表现与真机性能的继续验证，不把共享纹理的结构性减少节点当成实测帧率结果。
+
 ## v3.5.2 / Stable pinch sensitivity
 
 2026-10-23。C复判v3.5.1不通过：SHA5ab8eabc4548904f8ba1feaa850c7613244cecba，run39807884921 / attempt1 / job119925880394，artifact rustwar-ci-v1.2-main-5ab8eab-run39807884921-attempt1（ID12440272126，digest sha256:103598f411486cb604b28730a7def8c721f932630c150c73cb82897e08529ac0）已下载至 /private/tmp/rustwar-c-review-39807884921/（2.0M）。manifest身份匹配；Core371、reporter15、双架构/双画面通过，UI12/13、JUnit11/2/1。新trace证明捏合进入pinch并保持tank选择，但约7pt初始跨度被放大到2.2倍，随后Builder的y=-0.0599越出既有测试viewport。失败原因已从未缩放推进为过敏感，不能混淆或伪称通过。
 
 本轮固定每个pair的最小有效跨度32pt，以padded current/previous ratio发出缩放；宽指距保持原比例，结束清零补偿。新增三项纯回归并加强实际UI缩放上限<1.6x，仍要求原fixture工兵可选和新Move成功。374 Core/13 UI及完整云端结果必须重验；模型改动保持待提交。无本地测试/build/typecheck/diff --check。
+
+v3.5.2 C通过：e0636d47cccde830315482d6940df9db7d0c8d07，run39814285593 / attempt1 / job119948558249，GitHub conclusion success。artifact rustwar-ci-v1.2-main-e0636d4-run39814285593-attempt1（ID12440939824，digest sha256:56d517578c3dafc57d4b77208e19cf93b7e194176cac095e69adc7aba888d912）已下载至 /private/tmp/rustwar-c-review-39814285593/（1.9M）。身份与pipeline/checks/reporter匹配成功，packageIntegrityProblems为空；374 Core、13/13 UI、15 reporter、双架构及双画面通过，JUnit11/0/1。实际pinch trace结束zoom1.351839661616868，保持原选择与idle，Builder仍在屏幕内且后续点选/Move通过。两张2622x1206截图已复看，资源和生产HUD无输入轮回退；这些截图尚不含v3.6模型。缓存c-review.md记录结论，模型轮可提交，真机手感与性能仍未证明。
 
 ## v3.5.1 / Relative pinch and camera history repair
 

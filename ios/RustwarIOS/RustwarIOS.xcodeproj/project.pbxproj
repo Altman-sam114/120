@@ -51,6 +51,7 @@
 		B00100000000000000000001 /* RustwarIOSInteractionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00200000000000000000001; };
 		A00100000000000000000034 /* TacticalProductionButtonLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000034 /* TacticalProductionButtonLabel.swift */; };
 		A00100000000000000000035 /* TacticalUnitPortrait.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000035 /* TacticalUnitPortrait.swift */; };
+		A00100000000000000000036 /* BattlefieldUnitModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000036 /* BattlefieldUnitModels.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -91,6 +92,7 @@
 		B00200000000000000000002 /* RustwarIOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RustwarIOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00200000000000000000034 /* TacticalProductionButtonLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalProductionButtonLabel.swift; sourceTree = "<group>"; };
 		A00200000000000000000035 /* TacticalUnitPortrait.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalUnitPortrait.swift; sourceTree = "<group>"; };
+		A00200000000000000000036 /* BattlefieldUnitModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlefieldUnitModels.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -135,6 +137,7 @@
 				A00200000000000000000020 /* TacticalBuildSectionView.swift */,
 				A00200000000000000000021 /* TacticalProductionSectionView.swift */,
 				A00200000000000000000035 /* TacticalUnitPortrait.swift */,
+				A00200000000000000000036 /* BattlefieldUnitModels.swift */,
 				A00200000000000000000034 /* TacticalProductionButtonLabel.swift */,
 				A00200000000000000000029 /* TacticalProductionManagementRail.swift */,
 				A00200000000000000000033 /* GameController+InteractionSnapshot.swift */,
@@ -272,6 +275,7 @@
 				A00100000000000000000020 /* TacticalBuildSectionView.swift in Sources */,
 				A00100000000000000000021 /* TacticalProductionSectionView.swift in Sources */,
 				A00100000000000000000035 /* TacticalUnitPortrait.swift in Sources */,
+				A00100000000000000000036 /* BattlefieldUnitModels.swift in Sources */,
 				A00100000000000000000034 /* TacticalProductionButtonLabel.swift in Sources */,
 				A00100000000000000000029 /* TacticalProductionManagementRail.swift in Sources */,
 				A00100000000000000000033 /* GameController+InteractionSnapshot.swift in Sources */,

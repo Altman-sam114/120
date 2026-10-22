@@ -1,6 +1,12 @@
+## v3.6 / Unit material library
+
+BattlefieldScene.unitBody delegates static vehicle construction to BattlefieldUnitModels and still adds the existing faction marking. The library bakes deterministic hull/turret/weapon textures only on a type/team cache miss (8x2 known keys, three layers per key). Each256x256 source canvas is cropped to its bounded part extents; normalized sprite size and origin offset come from the exact integral pixel crop, preserving world muzzle/mount alignment while reducing transparent padding. Unit instances have separate named weapon/recoil mounts with shared SKTexture data; the existing entity signature cache, heading/recoil updater and visibility pruning remain. TacticalUnitPortrait reuses the same drawing functions through a separate eight-image composite cache, oriented upward in the existing production card frame. No renderer data enters GameState or saves. Dynamic selection, health, damage, shadows, muzzle/projectile/impact and fog layers are unchanged. This replaces historical compound unit geometry and separate Canvas portrait descriptions; building geometry retains its own path. Performance is not yet measured.
+
 ## v3.5.2 / Stable pinch span
 
 Each native pair stores max(0,32-initialDistance) as pinchSpanPadding. Incremental camera scaling uses padded current/previous spans so a tiny initial separation cannot amplify a few points into maximum zoom. Wide pairs keep padding0; reset clears padding. Relative pinch intent, release freeze, input/camera leases and pending commands remain. This repairs the sensitivity revealed by actual v3.5.1 trace (zoom2.2, selected tank preserved, subsequent Builder outside viewport), distinct from v3.5's no-zoom failure.
+
+Accepted baseline: e0636d4 / run39814285593 / attempt1, exact artifact downloaded by C. Core374, actual UI13/13, reporter15, dual builds/visuals and JUnit11/0/1 passed. Native pinch trace ended at1.351839661616868 with selection preserved and subsequent Builder selection/Move successful. This evidence releases the separate v3.6 model submission; it does not prove physical-device performance or all gesture variants.
 
 ## v3.5.1 / Relative pinch repair
 

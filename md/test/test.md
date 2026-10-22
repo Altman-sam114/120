@@ -1,6 +1,14 @@
+## v3.6 / Layered vehicle visual acceptance
+
+Cloud only: compile BattlefieldUnitModels in arm64/x86_64, retain every Core and 13 actual UI method, reporter15, both launches/PNG probes and JUnit11/0/1. C must download exact latest main SHA/run/attempt artifact and view both PNGs. Check nonempty correctly oriented hull/turret/barrel, distinct eight vehicle silhouettes, subdued metallic gradients, readable team markings/selection/HP, same-source upward production thumbnails, readable factory costs/time and no alpha rectangle or clipped gun. Read code for three-layer shared textures generated only on bounded type/team cache misses, independent named mounts, an eight-image composite portrait cache, original geometry and no Core/save mutations. Static screenshots do not measure physical-device FPS, memory, dynamic steering/recoil or all zooms; no performance claim is authorized by a green build alone.
+
+Source acceptance also checks camera mutation clears tap/cycle history without requiring an active native sequence, preserving external camera behavior from the former SwiftUI route. All actual pan/fresh-tap, two-finger/fresh-tap and pinch/fresh-tap cases remain mandatory.
+
 ## v3.5.2 / Pinch sensitivity regression
 
 v3.5.1 run39807884921 / attempt1 has Core371, UI12/13, JUnit11/2/1 and is rejected. Trace proves zoom/preserved selection worked; raw7pt initial span saturated at2.2 and the subsequent Builder failed its existing viewport guard. The repair keeps that guard and the fixture positions, adds a real UI upper bound <1.6x, and adds three pure tests for accumulated close zoom, nearly coincident span, and reset before a wide pair. All374 expected Core,13 actual UI, reporter15, dual builds/visuals and JUnit11/0/1 are cloud-only. C must inspect the actual new trace, require moderate zoom and fresh Builder select/Move, and only then release model work. No local tests or softened assertions.
+
+C accepted e0636d4 / run39814285593 / attempt1 after downloading the exact artifact: 374 Core,13/13 UI,15 reporter, dual builds/visuals, JUnit11/0/1. Actual trace zoom1.351839661616868 preserves the tank selection; fresh Builder selection/Move and real two-finger selection pass. Both PNGs were viewed. Preserve this complete gate for subsequent model and combat rounds.
 
 ## v3.5.1 / Pinch cloud repair gate
 
