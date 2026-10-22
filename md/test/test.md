@@ -1,3 +1,11 @@
+## v3.5 / Native touch event verification
+
+All tests remain cloud-only. BattlefieldTouchSessionTests adds 18 test methods with parameterized pan/camera boundaries: single commit and reused identity, 12pt pan then return, explicit area, fast/static/staggered two-finger rectangle, frozen release, pinch without selection, third/replacement, cancel/stale/nonfinite samples, long press once, pending-target isolation, own camera renewal and external invalidation, pan-to-pair baseline and minimum narrow strip.
+
+Strict UI gate is **13**. Keep all prior 11 methods; add `testPinchZoomDoesNotIssueOrdersAndFreshTapWorks` and `testTwoFingerTapDoesNotIssueOrdersAndFreshTapWorks`. Use public XCTest pinch/twoFingerTap on the actual battlefield, not test mutation APIs. The pair test starts with Builder selected and the fixture tank at camera center, requires the two-finger gesture to select that tank, verifies unchanged camera and idle orders, then selects Builder and issues a real Move. Pinch requires actual zoom change, preserved selection, no orders, and fresh select/Move afterward.
+
+C checks newest main SHA/run/attempt, 15 reporter tests, all Core tests including new methods, 13/13 UI, dual-architecture builds, Home/Combat PNG and JUnit11/0/1. Inspect native lifecycle, no old competing battlefield gestures, all official Controller paths, accessibility ID/value, HUD/minimap hit separation and Reduce Motion. No local program execution. These tests do not prove arbitrary two-corner drags, VoiceOver across every mode, real-device timing, all display sizes or performance.
+
 ## v3.4.1 / Resource visibility and CI recovery
 
 Required UI tests: **11**, including `testStatusResourcesVisibleBeforeAndAfterFactoryFocus`. Before and after actual factory selection, the resource viewport must exceed 300pt and all four metric frames must have positive width and be entirely within it. The existing first-screen production tests remain mandatory. Cloud checks must also confirm the repaired EOF whitespace, YAML, 350 Core, dual builds, both PNG probes, 15 reporter tests and JUnit 11/0/1. No local verification is authorized.

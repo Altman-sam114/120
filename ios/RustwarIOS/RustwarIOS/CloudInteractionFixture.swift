@@ -26,6 +26,9 @@ enum CloudInteractionFixture {
             unit(.builder, id: "input-builder", at: WorldPoint(1_420, 1_885)),
             unit(.tank, id: "input-enemy", at: WorldPoint(1_580, 1_660), team: .enemy)
         ]
+        if ProcessInfo.processInfo.arguments.contains("--rustwar-ci-centered-unit") {
+            state.units[0].position = camera.center
+        }
         state.buildings = [
             building(.landFactory, id: "input-factory", at: WorldPoint(1_640, 1_790)),
             building(.command, id: "input-command", at: WorldPoint(1_800, 1_980)),

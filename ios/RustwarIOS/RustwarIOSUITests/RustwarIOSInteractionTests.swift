@@ -25,13 +25,14 @@ final class RustwarIOSInteractionTests: XCTestCase {
     }
 
     @MainActor
-    private func launch(lowMetal: Bool = false, tech2: Bool = false) async throws -> XCUIApplication {
+    private func launch(lowMetal: Bool = false, tech2: Bool = false, centeredUnit: Bool = false) async throws -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = XCUIApplication()
         app.launchArguments = ["--rustwar-ci-interaction-tests", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         if lowMetal { app.launchArguments.append("--rustwar-ci-low-metal") }
         if tech2 { app.launchArguments.append("--rustwar-ci-factory-tech2") }
+        if centeredUnit { app.launchArguments.append("--rustwar-ci-centered-unit") }
         app.launch()
         XCTAssertTrue(battlefield(app).waitForExistence(timeout: 15))
         try await waitFor(app, "fixture loaded") { $0.units.count == 4 }
@@ -258,5 +259,44 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "production panel does not trap selection") { $0.selected == ["input-tank"] }
         try worldCoordinate(1_540, 1_740, in: app).tap()
         try await waitFor(app, "fresh ground command after production") { $0.entity("input-tank")?.order == "attackMove" }
+    }
+
+    @MainActor
+    func testPinchZoomDoesNotIssueOrdersAndFreshTapWorks() async throws {
+        let app = try await launch()
+        try tapEntity("input-tank", in: app)
+        try await waitFor(app, "tank selected") { $0.selected == ["input-tank"] }
+        let before = try snapshot(app)
+        battlefield(app).pinch(withScale: 1.3, velocity: 1)
+        try await waitFor(app, "real two-finger pinch changes camera") { $0.zoom > before.zoom * 1.1 }
+        let after = try snapshot(app)
+        XCTAssertEqual(after.selected, ["input-tank"])
+        XCTAssertEqual(after.entity("input-tank")?.order, "idle")
+        try tapEntity("input-builder", in: app)
+        try await waitFor(app, "fresh tap after pinch") { $0.selected == ["input-builder"] }
+        try worldCoordinate(1_520, 1_890, in: app).tap()
+        try await waitFor(app, "fresh command after pinch") { $0.entity("input-builder")?.order == "move" }
+    }
+
+    @MainActor
+    func testTwoFingerTapDoesNotIssueOrdersAndFreshTapWorks() async throws {
+        let app = try await launch(centeredUnit: true)
+        try tapEntity("input-builder", in: app)
+        try await waitFor(app, "builder selected") { $0.selected == ["input-builder"] }
+        let before = try snapshot(app)
+        battlefield(app).twoFingerTap()
+        try await waitFor(app, "two-finger corners select the centered tank") {
+            $0.selected.contains("input-tank") && !$0.selected.contains("input-builder")
+        }
+        let after = try snapshot(app)
+        XCTAssertEqual(after.entity("input-tank")?.order, "idle")
+        XCTAssertEqual(after.entity("input-wing")?.order, "idle")
+        XCTAssertEqual(after.cameraX, before.cameraX)
+        XCTAssertEqual(after.cameraY, before.cameraY)
+        XCTAssertEqual(after.zoom, before.zoom)
+        try tapEntity("input-builder", in: app)
+        try await waitFor(app, "fresh tap after two-finger release") { $0.selected == ["input-builder"] }
+        try worldCoordinate(1_520, 1_890, in: app).tap()
+        try await waitFor(app, "fresh command after two-finger release") { $0.entity("input-builder")?.order == "move" }
     }
 }

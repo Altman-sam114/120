@@ -1,8 +1,18 @@
+## v3.5 / Native battlefield input refactor
+
+2026-10-22。单智能体 A/B/C，先在 GitHub Actions 结果延迟期间准备代码，v3.4.1 下载验收通过后才提交本轮。读取铁锈百科单位操作和 Corroding Games 官方产品说明，以人工要求的点选/双指选区/直接下令为主。云端上一轮另报 upload-artifact@v5 的 Node20 弃用警告，已读取官方 v6 action.yml 确认 node24，本轮升级为@v6，保留原 artifact 名称、内容与完整性 gate。
+
+主战场从约1200行相互竞争的 SwiftUI Drag/Spatial/Magnify/LongPress 回调重构为 SKView 原生事件适配器与纯 BattlefieldTouchSession。稳定 UITouch identity、一次提交、12pt不可逆拖动、双指相反角范围、16pt最小窄边、先后释放冻结、pinch互斥、第三指/取消/epoch/相机隔离由同一状态机负责；own pan/zoom显式续签camera revision。CAShapeLayer只显示屏幕框，正式选择和命令仍调用原GameController。未修改模拟、数值、存档、生产或小地图输入。
+
+新增18个纯状态机测试方法（含参数化边界）及真实XCUITest捏合/双指点按->新单指选择发令；双指测试只改变fixture里一台坦克的初始位置，不注入命令。UI gate提升13项，旧11项保持。README/flow/test/prompt同步；本地无测试/build/typecheck/diff --check。新实现待云端验收，不能据此宣称真机手感和完整原作parity。
+
 ## v3.4.1 / Resource strip and CI repair
 
 2026-10-22。Agent X 单智能体串行 A/B/C。最新 main b8a4f9570a6f9f5d30520b53df84225d3aded150 的 run 38349186838 / attempt 1 已用 Altman-sam114 登录下载核对：artifact rustwar-ci-v1.2-main-b8a4f95-run38349186838-attempt1（ID11790228550，digest sha256:2225cbc30fe9a584bc62378b0fa82a12faaa5f7d0f36b6ffe21ff144beb80294），缓存 /private/tmp/rustwar-c-review-38349186838/ 为1.8M。Core350、UI10/10、reporter15、双架构与双画面通过；唯一原始失败是 TacticalProductionButtonLabel.swift 末尾新增空行，执行完整性 gate 同时失败，JUnit11/2/1。C 不通过。
 
 截图另见速度菜单横向扩张吞掉四项资源。本轮约束菜单宽度和 controls intrinsic width，恢复资源条，增加四项资源在点工厂前后整项可见的真实 UI 测试；严格 UI gate 升至11项。删除已定位的 EOF 空行，不降低任何门控。同步 README、flow、test、提示词。所有验证只在云端，本机只读写与 Git；.wp 保持原样。等待最新提交云端结果，总目标未完成。
+
+v3.4.1 C 通过：commit4c46911115e95d09f0c9b07c8ea2109bf0e1e31a，run39796690179 / attempt1 / job119885544487，GitHub conclusion success。artifact rustwar-ci-v1.2-main-4c46911-run39796690179-attempt1（ID12435666025，digest sha256:49c0d642df322b639b712cf2baed8718b5ced8b02cda6fcc8be6a1c817027b65）下载到 /private/tmp/rustwar-c-review-39796690179/（1.9M），manifest身份与pipeline/checks/reporter完整成功，JUnit11/0/1、Core350、UI11/11、reporter15/15、双架构和双画面成功。Home SHA256 559b9e9ce763dc6d990e52df6545b5f4de215737f6926d20e569bc09b6d4e3a6，Combat 159f2a61dd31904b97799a0f647dfdbcacedf5edf0968bf418f29854e974e4c6；人工复看确认四项资源恢复且生产/战斗画面无本轮回退。唯一skip为既有Web browser regression。GitHub同时有Actions结果延迟和macOS容量提示，不伪装为代码失败。
 
 ## v3.4 / Production console refactor
 

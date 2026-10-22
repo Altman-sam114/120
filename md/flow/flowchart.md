@@ -1,3 +1,20 @@
+## v3.5 / 原生触点单一状态流
+
+```mermaid
+flowchart TD
+    UIKit[SKView touches began/moved/ended/cancelled] --> Session[纯 BattlefieldTouchSession]
+    Context[input epoch / mode / camera revision] --> Session
+    Session --> Single[单指 preview -> tap 或 12pt pan/area]
+    Session --> Pair[双指范围 或 pinch]
+    Pair --> Freeze[首指抬起冻结 -> 尾指抬起提交一次]
+    Session --> Cancel[第三指/取消/上下文变化 -> 等全部释放]
+    Single --> Actions[现有 GameController APIs]
+    Freeze --> Actions
+    Actions --> Core[现有选择与命令模拟]
+    Session --> Overlay[屏幕选择框 / 意图预览]
+    Tests[云端纯回归 + 13项真实操作] --> Session
+```
+
 ## v3.4.1 / 资源条尺寸边界
 
 ```mermaid
