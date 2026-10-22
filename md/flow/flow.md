@@ -1,3 +1,11 @@
+## v3.9 / Shared industrial structures
+
+BattlefieldScene.buildingBody delegates to MainActor BattlefieldBuildingModels, then adds the same faction marking. Material keys clamp presentation tiers to command1/extractor1-3/factory1-2/turret1/radar1-2, for9x2 bounded keys; GameState values are untouched. Original320px normalized render sources are cropped by exact integral pixel bounds; size/origin derive from the same crop. Each body retains its own named turret/recoil mounts while material data is shared. Existing entity signature includes actual upgradeLevel, so upgrade completion rebuilds the real model. Dynamic construction, selection/HP/damage/upgrade/rally and actual rendered-node projection remain in Scene. No Core/input/save/footprint/production changes.
+
+A cloud-only .structures scenario contains18 actual BuildingSnapshots in two rows, nine actual type/tier variants each team, a nonfiring visibility Scout, flat grass and paused simulation. Only this scenario adds actual type/team/tier labels. The common capture function is exported without executing its terrain main when imported; a separate structure CLI records its dedicated launch/process/capture/orientation/probe statuses. Three extra required result files and strict structureVisualReport identity enter the existing visual/integrity gate; three new rejection tests make23reporter. All prior392Core/15UI/four scenes plus one necessary gallery PNG and JUnit11-0-1 are mandatory.
+
+Terrain baseline f9f758a/run39840973447/attempt1 exact C passed:392/15/20, dual builds/four images/JUnit11-0-1. All four images viewed, source atlas bytes48,030,720 and two bake logs460.829292/637.679ms; no hardware FPS/memory claim. The broad quality goal, natural map structure, FX and real traversal remain incomplete. This building scope awaits its own exact latest-SHA five-image C review.
+
 ## v3.8.1 / Tiling API repair
 
 The v3.8 artifact failed App compilation, so no terrain image or actual UI executed. Both tiled-image draws now use CGContext.draw(_:in:byTiling:true), the Swift CoreGraphics API; the same world pattern rectangle and CTM preserve the v3.8 material plan. All terrain ownership/input/Core flow below stays; the new exact-SHA four-scene C review is still mandatory. Building draft remains separate.

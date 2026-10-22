@@ -13,8 +13,9 @@ struct RustwarIOSApp: App {
         let isCombatVisualSmoke = arguments.contains("--rustwar-ci-combat-visual-smoke")
         let terrainMap: MapID? = arguments.contains("--rustwar-ci-terrain-islands")
             ? .islands : (arguments.contains("--rustwar-ci-terrain-lava") ? .lava : nil)
-        let visualScenario: CloudVisualScenario? = terrainMap != nil
-            ? .terrain : (isCombatVisualSmoke ? .combat : (isProductionVisualSmoke ? .production : nil))
+        let isStructuresVisualSmoke = arguments.contains("--rustwar-ci-structures")
+        let visualScenario: CloudVisualScenario? = isStructuresVisualSmoke ? .structures : (terrainMap != nil
+            ? .terrain : (isCombatVisualSmoke ? .combat : (isProductionVisualSmoke ? .production : nil)))
         _controller = State(
             initialValue: GameController(
                 mapID: terrainMap ?? .coast,

@@ -7,6 +7,12 @@ function fixture() {
   return {
     manifest: {
       ...identity,
+      structureVisualReport: {
+        outcome: "success",
+        scenes: [{ scenario: "structures", map: "coast", launchArgument: "--rustwar-ci-structures",
+          screenshotPath: "ci-results/ios-structures.png", metricsPath: "ci-results/ios-structures-screenshot-metrics.txt",
+          launchExit: 0, processExit: 0, screenshotExit: 0, orientationExit: 0, probeExit: 0 }]
+      },
       terrainVisualReport: {
         outcome: "success",
         scenes: ["islands", "lava"].map((map) => ({
@@ -55,6 +61,22 @@ test("terrain launch arguments must match their maps", () => {
 test("terrain files must use the expected current-run paths", () => {
   const input = fixture();
   input.manifest.terrainVisualReport.scenes[0].screenshotPath = "old/ios-islands.png";
+  assert.equal(assessPackage(input).outcome, "failure");
+});
+test("missing structure coverage cannot pass", () => {
+  const input = fixture();
+  delete input.manifest.structureVisualReport;
+  assert.equal(assessPackage(input).outcome, "failure");
+});
+test("a failed structure launch cannot hide behind a green summary", () => {
+  const input = fixture();
+  input.manifest.structureVisualReport.scenes[0].launchExit = 1;
+  assert.equal(assessPackage(input).outcome, "failure");
+});
+test("structure coverage must have its own scenario and current paths", () => {
+  const input = fixture();
+  input.manifest.structureVisualReport.scenes[0].scenario = "islands";
+  input.manifest.structureVisualReport.scenes[0].screenshotPath = "old/ios-structures.png";
   assert.equal(assessPackage(input).outcome, "failure");
 });
 for (const field of Object.keys(identity)) {

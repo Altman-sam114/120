@@ -7,7 +7,8 @@ const requiredFiles = [
   "ios-screenshot-metrics.txt", "ios-combat-screenshot-metrics.txt",
   "ios-ui-test-summary.json", "ios-ui-test-tree.json", "ios-ui-test-gate.json",
   "ios-terrain-scenes.json", "ios-islands.png", "ios-lava.png",
-  "ios-islands-screenshot-metrics.txt", "ios-lava-screenshot-metrics.txt"
+  "ios-islands-screenshot-metrics.txt", "ios-lava-screenshot-metrics.txt",
+  "ios-structures.png", "ios-structures-screenshot-metrics.txt", "ios-structures-scene.json"
 ];
 
 function assessPackage({ manifest, overall, junit, availableFiles, checksOutcome, reporterOutcome, identity }) {
@@ -32,6 +33,16 @@ function assessPackage({ manifest, overall, junit, availableFiles, checksOutcome
         scene.metricsPath !== `ci-results/ios-${map}-screenshot-metrics.txt`) {
       problems.push(`Terrain visual evidence is missing, mismatched or failed: ${map}.`);
     }
+  }
+  const structures = manifest?.structureVisualReport;
+  const structure = structures?.scenes?.[0];
+  if (structures?.outcome !== "success" || !Array.isArray(structures?.scenes) || structures.scenes.length !== 1 ||
+      structure?.scenario !== "structures" || structure?.map !== "coast" ||
+      structure?.launchArgument !== "--rustwar-ci-structures" ||
+      structure?.screenshotPath !== "ci-results/ios-structures.png" ||
+      structure?.metricsPath !== "ci-results/ios-structures-screenshot-metrics.txt" ||
+      ["launchExit", "processExit", "screenshotExit", "orientationExit", "probeExit"].some((key) => structure?.[key] !== 0)) {
+    problems.push("Structure visual coverage is missing, mismatched or failed.");
   }
   for (const key of ["branch", "commitSha", "runId", "runAttempt"]) {
     if (!identity[key] || String(manifest?.[key]) !== String(identity[key])) {

@@ -1,3 +1,11 @@
+## v3.9 / Original industrial building materials
+
+2026-10-23。单智能体串行A/B/C，v3.8.1最新精确artifact通过后同步main。BattlefieldScene的buildingBody约410行形状移交BattlefieldBuildingModels：原创混凝土/金属基座、command观察室、factory分段厂房/坡道/格栅/管线、extractor卡爪/采掘圈/辅助设备、turret分层轴承/炮壳/炮管、radar支架/网面天线。九种支持的type/tier×两队有限18key缓存，源图320px按实际像素裁切并反算原点/范围；正常实体签名缓存、实际投影ID与单位分层材质保持。保留building-turret-mount/recoil-mount、半尺寸1.045炮口和真实heading/recoil；Faction/HP/selection/construction/damage/upgrade/rally/fog仍逐帧真实派生。移除三项仅旧buildingBody使用的颜色，保留残片使用的armorDarkColor。无Core、数值、建筑脚印、生产、输入、存档或Web改动，无性能实测声明。
+
+新source38注册Xcode。--rustwar-ci-structures仅构造暂停、平坦草地、两排九种真实建筑及可见性Scout；标签只在该场景按实际team/type/tier显示。现有capture-terrain-previews导出同一capture路径，新structure helper复用，地形主程序仅作为入口运行；新增一张必要PNG/metrics/report。manifest/finalizer强制独立scenario、coast、参数、路径、零阶段退出码和三份非空文件，三项报告拒绝回归使reporter20->23。保留原四图、392Core/15真实UI/双架构/JUnit11-0-1。README/flow/test/prompt同步；本机无测试/parse/typecheck/build/preview/diff --check，.wp不动。等待本轮最新SHA五图C验收，独立CI加速和FX材质仍为未提交草稿。
+
+前轮地形v3.8.1 C通过：f9f758aa2281ad158f78fbe3f1a0c9ac1c83b700，run39840973447 / attempt1 / job120041570188，GitHub success22m58s。artifact rustwar-ci-v1.2-main-f9f758a-run39840973447-attempt1（ID12453549818，digest sha256:b14ebb3cdfa54746da78556418a724bd134ff7574ce7b4071ba9d24ac8942885）下载8.2M至/private/tmp/rustwar-c-review-39840973447/，身份/pipeline/integrity匹配；392Core、15UI（262.782s）、20reporter、双架构四场景通过，JUnit11/0/1。四图实际复看，未见atlas拼接亮线/透明底，泥路对角连续，单位/HUD可读。Home SHA2565ea8d3bd0907ef03c3b8928f0eceb97e31aae288764afa3ee46451a9bbf5d3fb，Combat9883fb23c579a5cce60e128f72d3d36113c6890db3668a4c505be7e320654637，Islands4f77d89a6842bd4f164025e8d585a9f56e7638fe1e4b8034aed60230260b9855，Lavadce14338fc7bc47a886e871530aa91d0545150bb6d9b90793126a45b22d50a05。OSLog烘焙460.829292/637.679ms、sourcePixelBytes48,030,720；非GPU/峰值内存/FPS。规则网格地形、重复熔岩符号、几何特效、直线穿地形与建筑仍是已知缺口；静态四图未覆盖每一种孔洞/角点和全部缩放/字号/设备，总目标未完成。
+
 ## v3.8.1 / CoreGraphics tiling API correction
 
 2026-10-23。C拒绝798f89484eda6b34fab1ed15b3def109a1ff128a / run39838941656 / attempt1 / job120034542566。准确artifact rustwar-ci-v1.2-main-798f894-run39838941656-attempt1（ID12451928926，digest sha256:472f16d3106822c2886ecf630ce2484299fafb6b64a1fd488217f35ca14ad13c）下载至/private/tmp/rustwar-c-review-39838941656/352K，manifest身份匹配；Core392、reporter20及静态/YAML/list通过，App build65因BattlefieldTerrainArt.swift不存在CGContext.drawTiledImage而失败，UI77/0执行、四图缺失、JUnit11/4/1。未把任何子项通过当作整体验收。

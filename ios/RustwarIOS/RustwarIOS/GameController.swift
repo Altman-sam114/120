@@ -7,6 +7,7 @@ enum CloudVisualScenario: Equatable {
     case production
     case combat
     case terrain
+    case structures
 }
 
 enum ProductionAvailability: Equatable {
@@ -178,6 +179,9 @@ final class GameController {
         } else if cloudVisualScenario == .production {
             self.engine = GameEngine(state: Self.productionVisualSmokeState(mapID: mapID), enemyAIEnabled: false)
             self.camera = CameraState(center: preset.camera.center, zoom: preset.camera.zoom)
+        } else if cloudVisualScenario == .structures {
+            self.engine = GameEngine(state: Self.structureVisualSmokeState(mapID: mapID), enemyAIEnabled: false)
+            self.camera = CameraState(center: WorldPoint(1_500, 1_600), zoom: 0.6)
         } else if cloudVisualScenario == .terrain {
             let center = mapID == .lava ? WorldPoint(1_950, 1_750) : WorldPoint(1_600, 1_400)
             var state = GameState(mapID: mapID)
@@ -205,6 +209,41 @@ final class GameController {
            }) {
             engine.select(at: building.position, includeEnemies: false)
         }
+    }
+
+    private static func structureVisualSmokeState(mapID: MapID) -> GameState {
+        var state = GameState(mapID: mapID)
+        state.terrain = TerrainGrid(columns: state.terrain.columns, rows: state.terrain.rows,
+                                    tiles: Array(repeating: .grass, count: state.terrain.tiles.count))
+        state.resources = []
+        state.wrecks = []
+        state.buildings = []
+        state.controlGroups = [:]
+        let variants: [(BuildingType, Int)] = [(.command, 1), (.landFactory, 1), (.landFactory, 2),
+                                             (.extractor, 1), (.extractor, 2), (.extractor, 3),
+                                             (.radar, 1), (.radar, 2), (.turret, 1)]
+        for (row, team) in [Team.player, .enemy].enumerated() {
+            for (column, variant) in variants.enumerated() {
+                let position = WorldPoint(1_140 + Double(column) * 90, 1_515 + Double(row) * 140)
+                let initial = GameDefinitions.building(variant.0)
+                var building = BuildingSnapshot(
+                    id: "structure-\(row)-\(column)", type: variant.0, team: team, position: position,
+                    hitPoints: initial.hitPoints, maxHitPoints: initial.hitPoints, rally: position,
+                    upgradeLevel: variant.1
+                )
+                let actual = GameDefinitions.building(for: building)
+                building.hitPoints = actual.hitPoints
+                building.maxHitPoints = actual.hitPoints
+                state.buildings.append(building)
+            }
+        }
+        let scout = GameDefinitions.unit(.scout)
+        state.units = [UnitSnapshot(id: "structure-observer", type: .scout, team: .player,
+                                   position: WorldPoint(1_500, 1_585), hitPoints: scout.hitPoints,
+                                   maxHitPoints: scout.hitPoints, attackStance: .holdFire)]
+        state.selectedEntityID = "structure-0-0"
+        state.selectedEntityIDs = ["structure-0-0"]
+        return state
     }
 
     private static func productionVisualSmokeState(mapID: MapID) -> GameState {

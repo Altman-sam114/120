@@ -17,15 +17,16 @@ function run(command, args) {
   return { code: result.status ?? 1, stdout: result.stdout || "" };
 }
 
-async function capture(map) {
+async function capture(name, options = {}) {
   const started = Date.now();
   const scene = {
-    map, launchArgument: `--rustwar-ci-terrain-${map}`,
-    screenshotPath: path.join(outputDirectory, `ios-${map}.png`),
-    metricsPath: path.join(outputDirectory, `ios-${map}-screenshot-metrics.txt`),
+    map: options.map || name, scenario: name,
+    launchArgument: options.launchArgument || `--rustwar-ci-terrain-${name}`,
+    screenshotPath: path.join(outputDirectory, `ios-${name}.png`),
+    metricsPath: path.join(outputDirectory, `ios-${name}-screenshot-metrics.txt`),
     launchExit: 77, processExit: 77, screenshotExit: 77, orientationExit: 77, probeExit: 77
   };
-  console.log(`== ${map} terrain visual scene ==`);
+  console.log(`== ${name} visual scene ==`);
   run("xcrun", ["simctl", "terminate", udid, bundleID]);
   const launched = run("xcrun", ["simctl", "launch", udid, bundleID, scene.launchArgument]);
   scene.launchExit = launched.code;
@@ -63,7 +64,8 @@ async function main() {
   process.exitCode = report.outcome === "success" ? 0 : 1;
 }
 
-main().catch((error) => {
+module.exports = { capture };
+if (require.main === module) main().catch((error) => {
   report.error = error.message;
   fs.mkdirSync(outputDirectory, { recursive: true });
   fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);

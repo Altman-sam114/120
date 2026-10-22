@@ -1,3 +1,20 @@
+## v3.9 / 建筑材质与真实科技外形
+
+```mermaid
+flowchart LR
+    State[实际BuildingSnapshot] --> Key[type / team / 支持的tier]
+    Key --> Cache{18key材质缓存}
+    Cache -->|miss| Draw[原创工业结构 -> 裁切材质]
+    Draw --> Body[每实体body / 独立炮塔与后坐mount]
+    Cache -->|hit| Body
+    State --> Live[heading / recoil / HP / 施工 / 升级 / 选择]
+    Live --> Body
+    Body --> Scene[既有真实画面与投影 / fog]
+    Gallery[云端双方18种实际建筑] --> Scene
+    Scene --> Evidence[原四图 + 建筑检视图]
+    Evidence --> Gate[392Core / 15UI / 23reporter / 精确artifact C]
+```
+
 ## v3.8 / 地表表现与四图证据
 
 ```mermaid
