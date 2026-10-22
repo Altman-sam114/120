@@ -65,7 +65,7 @@ jobs:
 
       - name: Run checks and write result package
         id: checks
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.reporter-tests.outcome == 'success' }}
         timeout-minutes: 35
         shell: bash
         env:
@@ -191,11 +191,42 @@ jobs:
           echo "xcodebuild -list exit=$xcode_list_status" >> "$build_log"
           echo >> "$build_log"
 
+          echo "== xcodebuild iOS Simulator app ==" >> "$build_log"
+          derived_data_path="${RUNNER_TEMP}/RustwarDerivedData"
+          if [[ "$xcode_list_status" -eq 0 && "$swift_status" -eq 0 && "$diff_status" -eq 0 && "$node_status" -eq 0 && "$yaml_status" -eq 0 ]]; then
+            xcodebuild \
+              -project "$IOS_PROJECT" \
+              -scheme "$IOS_SCHEME" \
+              -destination "generic/platform=iOS Simulator" \
+              -derivedDataPath "$derived_data_path" \
+              ONLY_ACTIVE_ARCH=NO \
+              ARCHS="arm64 x86_64" \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGN_IDENTITY="" \
+              build >> "$build_log" 2>&1
+            xcode_build_status=$?
+          else
+            echo "Skipped: a required project/toolchain, Core or static prerequisite failed." >> "$build_log"
+            xcode_build_status=77
+          fi
+          echo "xcodebuild build exit=$xcode_build_status" >> "$build_log"
+          echo >> "$build_log"
+
+          echo "== compile shared screenshot pixel probe ==" >> "$build_log"
+          screenshot_probe_binary="${RUNNER_TEMP}/rustwar-screenshot-probe"
+          screenshot_probe_build_status=77
+          if [[ "$xcode_build_status" -eq 0 ]]; then
+            xcrun swiftc -O ci/validate-ios-screenshot.swift -o "$screenshot_probe_binary" >> "$build_log" 2>&1
+            screenshot_probe_build_status=$?
+          fi
+          echo "screenshot pixel probe compilation exit=$screenshot_probe_build_status" >> "$build_log"
+          export RUSTWAR_SCREENSHOT_PROBE="$screenshot_probe_binary"
+
           echo "== create and boot pinned iOS Simulator ==" >> "$build_log"
           simulator_udid=""
           simulator_create_status=77
           simulator_boot_status=77
-          if [[ "$xcode_list_status" -eq 0 ]]; then
+          if [[ "$xcode_build_status" -eq 0 && "$screenshot_probe_build_status" -eq 0 ]]; then
             simulator_udid="$(xcrun simctl create \
               "Rustwar CI ${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
               "$IOS_SIMULATOR_DEVICE_TYPE" \
@@ -213,27 +244,6 @@ jobs:
           fi
           echo "simulator create exit=$simulator_create_status" >> "$build_log"
           echo "simulator boot exit=$simulator_boot_status" >> "$build_log"
-          echo >> "$build_log"
-
-          echo "== xcodebuild iOS Simulator app ==" >> "$build_log"
-          derived_data_path="${RUNNER_TEMP}/RustwarDerivedData"
-          if [[ "$simulator_boot_status" -eq 0 ]]; then
-            xcodebuild \
-              -project "$IOS_PROJECT" \
-              -scheme "$IOS_SCHEME" \
-              -destination "platform=iOS Simulator,id=${simulator_udid}" \
-              -derivedDataPath "$derived_data_path" \
-              ONLY_ACTIVE_ARCH=NO \
-              ARCHS="arm64 x86_64" \
-              CODE_SIGNING_ALLOWED=NO \
-              CODE_SIGN_IDENTITY="" \
-              build >> "$build_log" 2>&1
-            xcode_build_status=$?
-          else
-            echo "Skipped: pinned iOS Simulator did not boot successfully." >> "$build_log"
-            xcode_build_status=77
-          fi
-          echo "xcodebuild build exit=$xcode_build_status" >> "$build_log"
           echo >> "$build_log"
 
           echo "== install, launch, and capture iOS app ==" >> "$build_log"
@@ -255,7 +265,7 @@ jobs:
           screenshot_metrics_path="ci-results/ios-screenshot-metrics.txt"
           combat_screenshot_path="ci-results/ios-combat.png"
           combat_screenshot_metrics_path="ci-results/ios-combat-screenshot-metrics.txt"
-          if [[ "$xcode_build_status" -eq 0 ]]; then
+          if [[ "$xcode_build_status" -eq 0 && "$simulator_boot_status" -eq 0 ]]; then
             xcrun simctl install "$simulator_udid" "$app_path" >> "$build_log" 2>&1
             simulator_install_status=$?
             if [[ "$simulator_install_status" -eq 0 ]]; then
@@ -286,7 +296,7 @@ jobs:
               screenshot_orientation_status=$?
             fi
             if [[ "$screenshot_orientation_status" -eq 0 ]]; then
-              xcrun swift ci/validate-ios-screenshot.swift \
+              "$screenshot_probe_binary" \
                 "$screenshot_path" \
                 "$screenshot_metrics_path" >> "$build_log" 2>&1
               screenshot_probe_status=$?
@@ -323,7 +333,7 @@ jobs:
               combat_screenshot_orientation_status=$?
             fi
             if [[ "$combat_screenshot_orientation_status" -eq 0 ]]; then
-              xcrun swift ci/validate-ios-screenshot.swift \
+              "$screenshot_probe_binary" \
                 "$combat_screenshot_path" \
                 "$combat_screenshot_metrics_path" >> "$build_log" 2>&1
               combat_screenshot_probe_status=$?
@@ -371,6 +381,7 @@ jobs:
             echo "combat_screenshot_exit=${combat_simulator_screenshot_status}"
             echo "combat_orientation_normalize_exit=${combat_screenshot_orientation_status}"
             echo "combat_pixel_probe_exit=${combat_screenshot_probe_status}"
+            echo "pixel_probe_compiler_exit=${screenshot_probe_build_status}"
             echo "terrain_visual_exit=${terrain_visual_status}"
             echo "structure_visual_exit=${structure_visual_status}"
           } > ci-results/ios-simulator-info.txt
@@ -419,7 +430,7 @@ jobs:
           echo "UI tests mandatory gate exit=$ui_test_status" >> "$build_log"
           echo >> "$build_log"
 
-          if [[ "$simulator_create_status" -eq 0 && "$simulator_boot_status" -eq 0 && "$simulator_install_status" -eq 0 && "$simulator_launch_status" -eq 0 && "$simulator_process_status" -eq 0 && "$simulator_screenshot_status" -eq 0 && "$screenshot_orientation_status" -eq 0 && "$screenshot_probe_status" -eq 0 && "$combat_simulator_launch_status" -eq 0 && "$combat_simulator_process_status" -eq 0 && "$combat_simulator_screenshot_status" -eq 0 && "$combat_screenshot_orientation_status" -eq 0 && "$combat_screenshot_probe_status" -eq 0 && "$terrain_visual_status" -eq 0 && "$structure_visual_status" -eq 0 ]]; then
+          if [[ "$simulator_create_status" -eq 0 && "$simulator_boot_status" -eq 0 && "$simulator_install_status" -eq 0 && "$simulator_launch_status" -eq 0 && "$simulator_process_status" -eq 0 && "$simulator_screenshot_status" -eq 0 && "$screenshot_orientation_status" -eq 0 && "$screenshot_probe_status" -eq 0 && "$combat_simulator_launch_status" -eq 0 && "$combat_simulator_process_status" -eq 0 && "$combat_simulator_screenshot_status" -eq 0 && "$combat_screenshot_orientation_status" -eq 0 && "$combat_screenshot_probe_status" -eq 0 && "$terrain_visual_status" -eq 0 && "$structure_visual_status" -eq 0 && "$screenshot_probe_build_status" -eq 0 ]]; then
             simulator_visual_status=0
           else
             simulator_visual_status=1
@@ -467,6 +478,7 @@ jobs:
           CHECK_SWIFT_STATUS="$swift_status" \
           CHECK_XCODE_LIST_STATUS="$xcode_list_status" \
           CHECK_XCODE_BUILD_STATUS="$xcode_build_status" \
+          CHECK_PIXEL_PROBE_COMPILER_STATUS="$screenshot_probe_build_status" \
           CHECK_SIMULATOR_VISUAL_STATUS="$simulator_visual_status" \
           CHECK_SIMULATOR_LAUNCH_STATUS="$([[ "$simulator_launch_status" -eq 0 && "$simulator_process_status" -eq 0 ]] && echo 0 || echo 1)" \
           CHECK_SIMULATOR_SCREENSHOT_STATUS="$simulator_screenshot_status" \
@@ -608,8 +620,11 @@ jobs:
             swiftVersion: process.env.SWIFT_VERSION,
             toolchainOutcome: process.env.CHECK_TOOLCHAIN_STATUS === "0" ? "success" : "failure",
             resultBundlePath: null,
+            appBuildDestination: "generic/platform=iOS Simulator",
             uiTestOutcome: process.env.CHECK_UI_TEST_STATUS === "0" ? "success" : "failure",
             uiTestReport: uiReport,
+            pixelProbeCompilerOutcome: process.env.CHECK_PIXEL_PROBE_COMPILER_STATUS === "0" ? "success" : "failure",
+            pixelProbeCompilerExit: Number(process.env.CHECK_PIXEL_PROBE_COMPILER_STATUS || 77),
             terrainVisualReport: terrainReport,
             terrainVisualReportPath: terrainReportPath,
             structureVisualReport: structureReport,
@@ -649,6 +664,8 @@ jobs:
           };
           fs.writeFileSync("ci-results/ci-artifact-manifest.json", `${JSON.stringify(manifest, null, 2)}\n`);
           NODE
+          report_write_status=$?
+          [[ "$report_write_status" -eq 0 && "$overall" == "success" ]]
 
       - name: Finalize authoritative result
         if: always()

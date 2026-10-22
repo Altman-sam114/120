@@ -42,7 +42,9 @@ async function capture(name, options = {}) {
     scene.orientationExit = run("sips", ["--rotate", "270", scene.screenshotPath]).code;
   }
   if (scene.orientationExit === 0) {
-    scene.probeExit = run("xcrun", ["swift", "ci/validate-ios-screenshot.swift", scene.screenshotPath, scene.metricsPath]).code;
+    const probe = process.env.RUSTWAR_SCREENSHOT_PROBE;
+    if (probe) scene.probeExit = run(probe, [scene.screenshotPath, scene.metricsPath]).code;
+    else console.error("The compiled screenshot probe path is required.");
   }
   scene.durationMilliseconds = Date.now() - started;
   console.log(JSON.stringify(scene));

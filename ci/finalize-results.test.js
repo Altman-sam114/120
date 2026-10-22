@@ -6,7 +6,7 @@ const identity = { branch: "main", commitSha: "abc123", runId: "42", runAttempt:
 function fixture() {
   return {
     manifest: {
-      ...identity,
+      ...identity, pixelProbeCompilerOutcome: "success", pixelProbeCompilerExit: 0,
       structureVisualReport: {
         outcome: "success",
         scenes: [{ scenario: "structures", map: "coast", launchArgument: "--rustwar-ci-structures",
@@ -37,6 +37,11 @@ for (const outcome of ["cancelled", "failure", "skipped", ""]) {
 }
 test("failed reporter self-tests cannot pass", () => {
   assert.equal(assessPackage({ ...fixture(), reporterOutcome: "failure" }).outcome, "failure");
+});
+test("pixel probe compilation failure cannot pass with green image summaries", () => {
+  const input = fixture();
+  input.manifest.pixelProbeCompilerExit = 1;
+  assert.equal(assessPackage(input).outcome, "failure");
 });
 test("missing terrain coverage cannot pass", () => {
   const input = fixture();

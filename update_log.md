@@ -1,3 +1,11 @@
+## v3.10 / Cloud probe reuse and build scheduling
+
+2026-10-23。单智能体串行A/B/C，8c6b7f9建筑完整C通过后同步main。已接受f9run39840973447真实时间戳显示boot6m04、App双架构4m15、UI15约262.782s，四次像素检查约56/23/13/5s；地形本体两次烘焙不足0.7s，不能把22m58全算在地形。失败798f894还先boot才发现确定性编译错误，并由最后gate才显示红色，checks步骤误为绿色。本轮只改CI，不改App/Core/画面/输入/生产/存档/Web。
+
+workflow要求reporter自测成功才进入昂贵检查；Core/static/project成功才执行generic iOS Simulator双架构build，App与像素检查程序编译成功才创建唯一固定云端设备。原ci/validate-ios-screenshot.swift源码/阈值不动，用pinned xcrun swiftc -O在RUNNER_TEMP编译一次，Home/Combat与共用capture的Islands/Lava/structures实际执行同一binary；无解释器fallback或binary/cache上传。manifest增加真实compiler exit/outcome和独立appBuildDestination，完整性门控及一项拒绝回归使reporter23->24。写完证据后checks步骤返回raw overall/Node writer真实成败，always finalizer/upload/teardown保留。35/45分钟、392Core/15UI/双架构五图/JUnit11-0-1和取消/身份/缺包门控保持。README/flow/test/prompt同步，无任何本地验证，.wp不动；新SHA仍待云端验收，无提速或真机性能声明。
+
+前轮建筑C通过：8c6b7f933cd281b1946847fb140213c5f707a0f8 / run39851845558 / attempt1 / job120079810165，GitHub success16m17s。准确artifact rustwar-ci-v1.2-main-8c6b7f9-run39851845558-attempt1（ID12458232364，digest sha256:0db185e783a9ead65de2544bf6d3ecb5f56a7bf4af9a7d47947180f63fc98cc0）下载11M至/private/tmp/rustwar-c-review-39851845558/，身份/pipeline/integrity匹配；392Core、15UI（208.282s）、23reporter、双架构/五场景/JUnit11-0-1通过，五图已实际复看。Gallery cb63a4676b4fab790055bdfc027f2e7c966def49668d9f8162317e2c0b0f92db显示实际左向炮塔和完整绿色菱形、全部18组合清楚；Combat57f2b77275e6b048988f17f6793e95aa719c42adda5f9983a43bcbae78bccf91敌方条纹恢复可读。Home/Islands/Lava与前轮字节一致且重看。此C解决b4建筑符号遮挡，不把16m17云端差异冒充模型性能提升。特效、直线穿地形/建筑、规则地图与完整原作能力仍需后续改进，总目标未完成。
+
 ## v3.9.1 / Keep structure faction symbols above the weapon
 
 2026-10-23。C复判b4b1ff6f96a2cf8f0f880366546bfc8777e5cb57 / run39846005872 / attempt1 / job120059324840，GitHub success22m22s；准确artifact rustwar-ci-v1.2-main-b4b1ff6-run39846005872-attempt1（ID12455404184，digest sha256:d52a908ce37060f4007b770a45a28282173f2d46988f79e0339d5ba7644f5258）下载11M至/private/tmp/rustwar-c-review-39846005872/。身份/pipeline/integrity匹配，392Core、15UI（247.987s）、23reporter、双架构/五场景及JUnit11/0/1通过。五图已实际复看，gallery af8f825b6a5cc90e5e27add693cbe08681f26ad6ee8d4a98380495bcccb5b335的18种组合清楚、科技结构不同，无alpha/crop/遮挡问题；Home和Combat显示新模型，地形两图与已接受版本字节一致。

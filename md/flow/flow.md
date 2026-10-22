@@ -1,3 +1,11 @@
+## v3.10 / Cloud execution scheduling and pixel probes
+
+Reporter success is a prerequisite for the expensive checks step; static/Core/project success is a prerequisite for generic dual-architecture App build. The unchanged Screenshot validator is compiled once with pinned xcrun swiftc -O into RUNNER_TEMP, then App/probe compilation success permits creation/boot of the one pinned cloud Simulator. Runtime destination remains that actual device; appBuildDestination explicitly records the generic build. The same executable checks Home/Combat and all three common capture calls through RUSTWAR_SCREENSHOT_PROBE. No validator source/threshold change, interpreted fallback, cache/executable upload or product-state mutation.
+
+Manifest pixelProbeCompilerOutcome/Exit reflects actual compilation; integrity rejects a failed/missing compiler status even if image summaries claim success. An additional rejection test raises reporter to24. After Node writes raw evidence, the checks Bash step returns actual overall/writer status; existing always finalizer/upload/teardown still publish failed diagnostics. Existing392Core/15actualUI/dual builds/5scenes/JUnit11-0-1 and identity/cancel/missing-data gates remain. This CI scope awaits exact new artifact and measured timing; no performance improvement claimed yet.
+
+Accepted building8c6b7f9/run39851845558/attempt1 C:392/15/23, all5images viewed. Gallery shows leftward actual target and unobscured faction diamond, Combat stripes restored, all18variants visible. This releases CI-only work, while hardware performance/feel, FX, map naturalness and actual traversal remain incomplete.
+
 ## v3.9.1 / Building faction overlay depth
 
 The original building faction diamond/stripes now usez1.1 above the new turret mountz.2 and recoil childz.05. Shapes/colors/positions and Core state are unchanged. Source/Combat review of b4b1ff6/run39846005872 found leftward weapon masking despite all392Core/15UI/23reporter/builds/5scenes passing, so building C acceptance remains withheld. A Hold Fire enemy Builder1810/1515 is added only to the paused structure initial fixture; the player Turret1860/1515 should acquire that actual left-side target through existing visual targeting, covering the previously vertical-only gallery case. No forced angle or command mutation. Require new exact five-scene C review before moving on.

@@ -19,6 +19,9 @@ function assessPackage({ manifest, overall, junit, availableFiles, checksOutcome
     if (!availableFiles.includes(file)) problems.push(`Missing or empty result file: ${file}.`);
   }
   if (!manifest) problems.push("Result manifest is missing or invalid.");
+  if (manifest?.pixelProbeCompilerOutcome !== "success" || manifest?.pixelProbeCompilerExit !== 0) {
+    problems.push("The current screenshot pixel probe did not compile successfully.");
+  }
   const terrain = manifest?.terrainVisualReport;
   if (terrain?.outcome !== "success" || !Array.isArray(terrain?.scenes) || terrain.scenes.length !== 2) {
     problems.push("Terrain visual coverage must contain both successful map scenes.");

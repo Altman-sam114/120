@@ -1,3 +1,22 @@
+## v3.10 / 云端前置检查与复用探针
+
+```mermaid
+flowchart TD
+    Reporter[24项报告自测] --> Prereq[工具链 / static / Core / project]
+    Prereq --> Build[generic Simulator双架构App编译]
+    Build --> Probe[同源Swift像素探针编译一次]
+    Probe --> Device[成功后创建并启动固定云端设备]
+    Device --> Images[五场景真实启动 / 截图 / 同一binary探针]
+    Images --> UI[15项实际UI操作]
+    UI --> Write[写raw manifest / JUnit / 日志]
+    Write --> Exit[checks返回真实状态]
+    Exit --> Always[always完整性核对 / 上传 / 清理]
+    Reporter -->|失败| Always
+    Prereq -->|失败| Write
+    Probe -->|失败| Write
+    Always --> C[最新精确SHA artifact C复判]
+```
+
 ## v3.9.1 / 建筑符号位于炮管前层
 
 ```mermaid
