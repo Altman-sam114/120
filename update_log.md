@@ -1,8 +1,16 @@
+## v3.7.2 / Native rendered touch alignment
+
+2026-10-23。v3.7.1完整结果验收后，在地形提交前检查Scene坐标，发现主战场纵向输入与渲染相反：spritePoint=(x,-y)、camera节点偏移+centerY经SKView映射后世界Y向下，但CameraState.worldPoint减screenY、pan加dy。旧interaction快照和测试目的地也共享该输入公式，14项真实事件通过不能独立证明点击对准所画实体。本轮优先修复这一操作根因，地形修改已保存临时草稿并从本轮相关已跟踪文件中移出；未回退用户修改，.wp不动。
+
+CameraState改为纵向screen offset相加、拖动centerY减dy，与小地图和键盘一致。BattlefieldScene新增只读真实SKNode/SKView投影；实体中心直接取已绘制节点（ID标记仅在交互fixture存在），rendered标志阻止测试点击未绘制实体，3点世界仿射基底用于测试落点和到达反算。原14方法与伤害/队列/新触控断言保持，pinch加查实际画面缩放，新增纵向跟手拖动+真实选兵发令方法，UI gate升15。无Core、数值、生产、存档或模型改动，缩放边界保持。本机无测试/build/parse/typecheck/preview/diff --check，等待新SHA392 Core/15 UI/reporter15/双架构双画面/JUnit11-0-1。整体质量目标未完成。
+
 ## v3.7.1 / Explicit attack regression isolation
 
 2026-10-23。C拒绝v3.7 commit4a656c69e8899b683ef1601472f5b8f4feca96a7，run39825804487 / attempt1 / job119988655557，artifact rustwar-ci-v1.2-main-4a656c6-run39825804487-attempt1（ID12446239353，digest sha256:eabab8de0ff608b048fb486332cba2e6d7c5299509680a3406aa0c53f8c0eb50）已下载至 /private/tmp/rustwar-c-review-39825804487/2.0M，身份匹配。392 Core仅attackCommandMovesIntoRangeAndDamagesEnemy一项失败，tank HP仍245；14/14实际UI（含Move伤害/原落点/Stop驻守）、reporter15、双架构/双画面通过，JUnit11/2/1，不能宣布通过。Home与v3.6字节一致；Combat SHA25647c7ac3bb63b6d59db4dce1ac5e9fc159b738a48027f72f96043135423c6437e已复看，无新增画面回退。
 
 该手动Attack测试把AI Off隐含为敌军不还击，现有侦察车进攻坦克群不再是单向伤害场景。本轮只明确它的敌方单位Hold Fire，保留位置、tick计数、接近/射程/HP断言和既有炮塔；不修改GameEngine、操作、数值或18个新增防御测试。同期文档将隔离旧靶场数量更新为五个。无本地检查或测试，等待新SHA392 Core/14 UI/reporter15/双构建双画面/JUnit11-0-1复验；地形仍为临时草稿，总目标未完成。
+
+v3.7.1 C通过：2c9c6d5641fcb26562b92f2ceead5864c96c355d，run39828500348 / attempt1 / job119998062210，GitHub success，job10m58s。artifact rustwar-ci-v1.2-main-2c9c6d5-run39828500348-attempt1（ID12448780793，digest sha256:3569f8793cc87c0d5c237560091ce1dbed8c2730d37ed1ce57e5e25dc692176c）已下载 /private/tmp/rustwar-c-review-39828500348/2.0M。身份和pipeline/checks/reporter匹配，integrityProblems为空；392 Core（含上轮唯一失败项）、14/14 UI、15 reporter、双架构/双画面通过，JUnit11/0/1。Home与已复看模型版字节一致，Combat SHA256b6540bfa3af8ceea556839951a8c8cb42103124a0427ea3c28ae345f4530c4f3已实际复看。随后发现读点公式的覆盖盲区，在该缓存c-review.md追加证据边界并优先启动v3.7.2，未把这14项当真机或画面命中证明。
 
 ## v3.7 / In-range defense and ordinary direct movement
 

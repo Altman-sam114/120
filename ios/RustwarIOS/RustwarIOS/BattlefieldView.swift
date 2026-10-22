@@ -92,7 +92,11 @@ private final class BattlefieldInputView: SKView {
 
     override var accessibilityValue: String? {
         get {
-            let text = controller.interactionTestSnapshot(viewportSize: bounds.size)
+            let text = controller.interactionTestSnapshot(
+                viewportSize: bounds.size,
+                entityPoint: { id in battlefieldScene.viewPoint(forEntityID: id, in: self) },
+                project: { point in battlefieldScene.viewPoint(for: point, in: self) }
+            )
             guard controller.runsInteractionTests,
                   var value = try? JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any] else { return text }
             value["touchTrace"] = inputTrace

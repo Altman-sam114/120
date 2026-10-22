@@ -7,8 +7,30 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let y: Double
         let order: String?
         let hp: Double?
+        let rendered: Bool
         let queue: Int?
         let upgrading: Bool?
+    }
+
+    private struct Projection: Decodable {
+        let originX: Double
+        let originY: Double
+        let xDX: Double
+        let xDY: Double
+        let yDX: Double
+        let yDY: Double
+
+        var determinant: Double { xDX * yDY - yDX * xDY }
+
+        func point(_ x: Double, _ y: Double) -> CGVector {
+            CGVector(dx: originX + x * xDX + y * yDX, dy: originY + x * xDY + y * yDY)
+        }
+
+        func worldPosition(_ entity: Entity) -> (x: Double, y: Double) {
+            let dx = entity.x - originX
+            let dy = entity.y - originY
+            return ((dx * yDY - dy * yDX) / determinant, (xDX * dy - xDY * dx) / determinant)
+        }
     }
 
     private struct Snapshot: Decodable {
@@ -20,6 +42,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let cameraY: Double
         let zoom: Double
         let pending: Bool
+        let projection: Projection
 
         func entity(_ id: String) -> Entity? { (units + buildings).first { $0.id == id } }
     }
@@ -37,7 +60,11 @@ final class RustwarIOSInteractionTests: XCTestCase {
         if stationaryDefense { app.launchArguments.append("--rustwar-ci-stationary-defense") }
         app.launch()
         XCTAssertTrue(battlefield(app).waitForExistence(timeout: 15))
-        try await waitFor(app, "fixture loaded") { $0.units.count == 4 }
+        try await waitFor(app, "fixture and rendered anchors loaded") {
+            $0.units.count == 4 && $0.entity("input-tank")?.rendered == true &&
+                $0.entity("input-builder")?.rendered == true && $0.entity("input-factory")?.rendered == true
+        }
+        XCTAssertGreaterThan(abs(try snapshot(app).projection.determinant), 0.000_000_000_001)
         XCTAssertGreaterThan(app.frame.width, app.frame.height)
         return app
     }
@@ -65,16 +92,15 @@ final class RustwarIOSInteractionTests: XCTestCase {
     @MainActor
     private func tapEntity(_ id: String, in app: XCUIApplication) throws {
         let entity = try XCTUnwrap(snapshot(app).entity(id))
+        XCTAssertTrue(entity.rendered, "A real tap must target an entity drawn by SpriteKit")
         XCTAssertTrue((0.05...0.95).contains(entity.x) && (0.05...0.95).contains(entity.y))
         battlefield(app).coordinate(withNormalizedOffset: CGVector(dx: entity.x, dy: entity.y)).tap()
     }
 
     @MainActor
     private func worldCoordinate(_ x: Double, _ y: Double, in app: XCUIApplication) throws -> XCUICoordinate {
-        let state = try snapshot(app)
         let field = battlefield(app)
-        let point = CGVector(dx: 0.5 + (x - state.cameraX) * state.zoom / Double(field.frame.width),
-                             dy: 0.5 - (y - state.cameraY) * state.zoom / Double(field.frame.height))
+        let point = try snapshot(app).projection.point(x, y)
         return field.coordinate(withNormalizedOffset: point)
     }
 
@@ -105,11 +131,9 @@ final class RustwarIOSInteractionTests: XCTestCase {
         }
         let after = try snapshot(app)
         let tank = try XCTUnwrap(after.entity("input-tank"))
-        let field = battlefield(app).frame
-        let worldX = after.cameraX + (tank.x - 0.5) * Double(field.width) / after.zoom
-        let worldY = after.cameraY - (tank.y - 0.5) * Double(field.height) / after.zoom
-        XCTAssertEqual(worldX, 1_540, accuracy: 1)
-        XCTAssertEqual(worldY, 1_740, accuracy: 1)
+        let position = after.projection.worldPosition(tank)
+        XCTAssertEqual(position.x, 1_540, accuracy: 1)
+        XCTAssertEqual(position.y, 1_740, accuracy: 1)
     }
 
     @MainActor
@@ -161,6 +185,33 @@ final class RustwarIOSInteractionTests: XCTestCase {
         XCTAssertEqual(try snapshot(app).entity("input-tank")?.order, "idle")
         try tapEntity("input-wing", in: app)
         try await waitFor(app, "fresh tap after pan") { $0.selected == ["input-wing"] }
+    }
+
+    @MainActor
+    func testRenderedSelectionAndVerticalPanFollowTheFinger() async throws {
+        let app = try await launch()
+        let initial = try snapshot(app)
+        let builder = try XCTUnwrap(initial.entity("input-builder"))
+        let tank = try XCTUnwrap(initial.entity("input-tank"))
+        XCTAssertGreaterThan(builder.y, tank.y + 0.15, "The real renderer places this Builder below the Tank")
+        try tapEntity("input-builder", in: app)
+        try await waitFor(app, "actual rendered Builder tap selects it") { $0.selected == ["input-builder"] }
+        let before = try snapshot(app)
+        let field = battlefield(app)
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.35))
+            .press(forDuration: 0.05, thenDragTo: field.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.48)))
+        try await waitFor(app, "downward drag moves the rendered battlefield with the finger") {
+            $0.cameraY < before.cameraY - 20 && ($0.entity("input-builder")?.y ?? 0) > builder.y + 0.08
+        }
+        let after = try snapshot(app)
+        print("RENDERED_VERTICAL_PAN builderY=\(builder.y)->\(after.entity("input-builder")?.y ?? -1) cameraY=\(before.cameraY)->\(after.cameraY)")
+        XCTAssertEqual(after.cameraX, before.cameraX, accuracy: 1)
+        XCTAssertEqual(after.entity("input-builder")?.order, "idle")
+        XCTAssertEqual(after.entity("input-tank")?.order, "idle")
+        try tapEntity("input-tank", in: app)
+        try await waitFor(app, "fresh rendered Tank tap after vertical pan") { $0.selected == ["input-tank"] }
+        try worldCoordinate(1_540, 1_740, in: app).tap()
+        try await waitFor(app, "real ground tap after vertical pan") { $0.entity("input-tank")?.order == "move" }
     }
 
     @MainActor
@@ -307,7 +358,9 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let before = try snapshot(app)
         battlefield(app).pinch(withScale: 1.3, velocity: 1)
         print("PINCH_TOUCH_TRACE \(String(describing: battlefield(app).value))")
-        try await waitFor(app, "real two-finger pinch changes camera") { $0.zoom > before.zoom * 1.1 }
+        try await waitFor(app, "real two-finger pinch changes camera and renderer") {
+            $0.zoom > before.zoom * 1.1 && abs($0.projection.xDX) > abs(before.projection.xDX) * 1.1
+        }
         let after = try snapshot(app)
         XCTAssertLessThan(after.zoom, before.zoom * 1.6, "A small pinch must not launch the camera")
         XCTAssertEqual(after.selected, ["input-tank"])

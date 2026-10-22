@@ -107,6 +107,16 @@ final class BattlefieldScene: SKScene {
         renderNow(visualDeltaTime: 0)
     }
 
+    func viewPoint(for point: WorldPoint, in view: SKView) -> CGPoint {
+        let scenePoint = worldNode.convert(spritePoint(for: point), to: self)
+        return view.convert(scenePoint, from: self)
+    }
+
+    func viewPoint(forEntityID id: String, in view: SKView) -> CGPoint? {
+        guard let node = entityNode.children.first(where: { $0.name == id }) else { return nil }
+        return view.convert(node.convert(.zero, to: self), from: self)
+    }
+
     private func renderNow(visualDeltaTime: TimeInterval) {
         guard let controller else {
             return
@@ -3022,6 +3032,7 @@ final class BattlefieldScene: SKScene {
         }
         let node = SKNode()
         node.position = spritePoint(for: building.position)
+        if controller?.runsInteractionTests == true { node.name = building.id }
         addBuildingShadow(size: definition.size, to: node)
         let bodySignature = "\(building.type.rawValue)|\(building.team.rawValue)|\(building.upgradeLevel)"
         let body: SKNode
@@ -3124,6 +3135,7 @@ final class BattlefieldScene: SKScene {
 
         let node = SKNode()
         node.position = spritePoint(for: unit.position)
+        if controller?.runsInteractionTests == true { node.name = unit.id }
         let hullHeading = unitHeadings[unit.id] ?? defaultHeading(for: unit.team)
         addUnitShadow(
             for: unit.type,

@@ -13,7 +13,7 @@ struct CameraState: Codable, Equatable {
             return
         }
         center.x -= Double(screenTranslation.width) / zoom
-        center.y += Double(screenTranslation.height) / zoom
+        center.y -= Double(screenTranslation.height) / zoom
         clampToMap(viewportSize: viewportSize)
     }
 
@@ -61,7 +61,7 @@ struct CameraState: Codable, Equatable {
         }
         return WorldPoint(
             center.x + Double(screenPoint.x - viewportSize.width / 2) / zoom,
-            center.y + Double(viewportSize.height / 2 - screenPoint.y) / zoom
+            center.y + Double(screenPoint.y - viewportSize.height / 2) / zoom
         )
     }
 

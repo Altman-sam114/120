@@ -1,3 +1,9 @@
+## v3.7.2 / Rendered coordinate and touch alignment
+
+World coordinates use Y down: terrain paths and spritePoint use negative Y in SpriteKit, whose view conversion maps back to UIKit Y down. CameraState.worldPoint now adds the vertical screen offset and pan subtracts finger travel from centerY, matching that actual rendered transform. Keyboard and Tactical Map already use Y down and retain their paths. Camera/save schema, zoom/clamps, native touch ownership and Core commands stay unchanged.
+
+Interaction diagnostics now receive read-only projectors from BattlefieldScene through actual SKNode-to-scene and SKView conversion. Entity anchors come from already-drawn nodes, whose ID tags exist only under the interaction fixture; a rendered flag prevents tests from tapping undrawn entities. Three affine basis samples derive separately from the world node, not CameraState. XCTest uses that basis for ground taps and inverse waypoint checks; the snapshot never advances or renders the engine. A fifteenth real UI case requires the fixture Builder to appear below Tank, actual rendered selection, downward image travel with downward drag, decreasing cameraY, no unintended orders and fresh real selection/Move. Existing14 cases retain their assertions; pinch also requires real render-scale growth. This supersedes old diagnostic-coordinate descriptions. The accepted2c9c6d5/run39828500348 Core392/UI14 baseline did not independently establish visual/input alignment.
+
 ## v3.7 / Passive defense and direct Move
 
 v3.7 cloud actual UI14 passed, but one legacy manual-Attack fixture failed, so overall C rejected run39825804487. v3.7.1 only makes that focused fixture's nonfiring enemy premise explicit through Hold Fire; engine/state flow below is unchanged. All392 Core tests and14 UI must pass together in the new exact artifact.

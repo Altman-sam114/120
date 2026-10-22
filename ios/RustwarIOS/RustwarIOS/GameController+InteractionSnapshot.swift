@@ -5,21 +5,38 @@ import RustwarCore
 extension GameController {
     /// Read-only diagnostics available only under the cloud interaction flag.
     /// XCTest reads this after real taps/drags; no expected result is stored here.
-    func interactionTestSnapshot(viewportSize: CGSize) -> String {
+    func interactionTestSnapshot(viewportSize: CGSize, entityPoint: (String) -> CGPoint?,
+                                 project: (WorldPoint) -> CGPoint) -> String {
         guard runsInteractionTests, viewportSize.width > 0, viewportSize.height > 0 else { return "" }
         let units: [[String: Any]] = engine.state.units.map { unit in
-            var item = interactionEntity(id: unit.id, position: unit.position, viewportSize: viewportSize)
+            let rendered = entityPoint(unit.id)
+            var item = interactionEntity(id: unit.id, screenPoint: rendered ?? project(unit.position),
+                                         rendered: rendered != nil, viewportSize: viewportSize)
             item["hp"] = unit.hitPoints
             item["order"] = interactionOrderName(unit.order)
             return item
         }
         let buildings: [[String: Any]] = engine.state.buildings.map { building in
-            var item = interactionEntity(id: building.id, position: building.position, viewportSize: viewportSize)
+            let rendered = entityPoint(building.id)
+            var item = interactionEntity(id: building.id, screenPoint: rendered ?? project(building.position),
+                                         rendered: rendered != nil, viewportSize: viewportSize)
             item["queue"] = building.productionQueue.count
             item["upgrading"] = building.upgradeProgress != nil
             item["level"] = building.upgradeLevel
             return item
         }
+        let origin = project(WorldPoint(0, 0))
+        let east = project(WorldPoint(100, 0))
+        let south = project(WorldPoint(0, 100))
+        // Read the renderer's real affine transform; never repeat the input equation.
+        let projection: [String: Double] = [
+            "originX": Double(origin.x / viewportSize.width),
+            "originY": Double(origin.y / viewportSize.height),
+            "xDX": Double((east.x - origin.x) / (viewportSize.width * 100)),
+            "xDY": Double((east.y - origin.y) / (viewportSize.height * 100)),
+            "yDX": Double((south.x - origin.x) / (viewportSize.width * 100)),
+            "yDY": Double((south.y - origin.y) / (viewportSize.height * 100))
+        ]
         let payload: [String: Any] = [
             "selected": dockSelectionIdentity,
             "units": units,
@@ -28,17 +45,20 @@ extension GameController {
             "cameraX": camera.center.x,
             "cameraY": camera.center.y,
             "zoom": camera.zoom,
-            "pending": isAwaitingTargetCommand
+            "pending": isAwaitingTargetCommand,
+            "projection": projection
         ]
         guard let data = try? JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys]),
               let text = String(data: data, encoding: .utf8) else { return "" }
         return text
     }
 
-    private func interactionEntity(id: String, position: WorldPoint, viewportSize: CGSize) -> [String: Any] {
+    private func interactionEntity(id: String, screenPoint: CGPoint, rendered: Bool,
+                                   viewportSize: CGSize) -> [String: Any] {
         ["id": id,
-         "x": 0.5 + (position.x - camera.center.x) * camera.zoom / Double(viewportSize.width),
-         "y": 0.5 - (position.y - camera.center.y) * camera.zoom / Double(viewportSize.height)]
+         "rendered": rendered,
+         "x": Double(screenPoint.x / viewportSize.width),
+         "y": Double(screenPoint.y / viewportSize.height)]
     }
 
     private func interactionOrderName(_ order: UnitOrder?) -> String {

@@ -1,3 +1,9 @@
+## v3.7.2 / Actual render-to-touch agreement
+
+Cloud only. Strict UI gate15: retain all14 previous names and assertions, add testRenderedSelectionAndVerticalPanFollowTheFinger. Tap coordinates must come from native SKNode/SKView projection of already-drawn entity nodes, and tapEntity must require rendered=true; never duplicate CameraState.worldPoint or its inverse. A separate read-only three-point world-node projection supports ground taps and inverse waypoint assertions. Require the fixture Builder actually below Tank, real Builder tap selection, image travel following a downward drag while cameraY decreases, no orders, and fresh actual Tank selection/Move. Pinch must change both camera zoom and native render basis. No snapshot mutation, forced render or command injection is allowed.
+
+Keep392 Core,reporter15, dual builds/dual PNG probes, YAML/static checks and JUnit11/0/1. C verifies actual raw method results and RENDERED_VERTICAL_PAN values from the newest exact artifact and reviews both PNGs. Prior2c9c6d5/run39828500348 passed392 Core/14 UI, but its diagnostic positions reused the input formula and therefore are not independent evidence of rendered touch alignment. No local testing/parse/typecheck/build/Preview/diff --check. Defer terrain submission until this stronger gate passes.
+
 ## v3.7.1 / Explicit attack fixture repair
 
 C rejected4a656c6 / run39825804487 / attempt1:14/14 real UI, reporter15, dual builds/visuals pass; Core391/392 and JUnit11/2/1 fail. Only attackCommandMovesIntoRangeAndDamagesEnemy retains an implicit nonfiring-enemy premise, so this manual-Attack fixture now explicitly uses Hold Fire enemy units. Keep positions, timers, approach/range/HP assertions, active turret and every passive/mutual defense regression. No gameplay changes or local tests. Require new-SHA all392 Core,14 UI,reporter15, dual visuals/builds and JUnit11/0/1 before releasing the terrain round.

@@ -1,3 +1,19 @@
+## v3.7.2 / 画面与触点独立核对
+
+```mermaid
+flowchart TD
+    World[真实世界坐标 Y向下] --> Scene[SpriteKit 世界节点与实体绘制]
+    Scene --> Convert[SKNode / SKView 实际投影]
+    Convert --> Snapshot[只读实体位置与仿射基底]
+    Snapshot --> UI[真实点选 / 落点 / 纵向拖动 / 画面缩放测试]
+    UI --> Touch[原生触点事件]
+    Touch --> Camera[CameraState 正确的 Y向下逆变换]
+    Camera --> Commands[既有 Controller / Core 命令]
+    Drag[手指向下拖动] --> Pan[centerY减小 画面随手向下]
+    Pan --> Scene
+    Commands --> World
+```
+
 ## v3.7 / 移动开火与驻守防御
 
 ```mermaid
