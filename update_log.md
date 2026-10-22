@@ -1,3 +1,9 @@
+## v3.7.1 / Explicit attack regression isolation
+
+2026-10-23。C拒绝v3.7 commit4a656c69e8899b683ef1601472f5b8f4feca96a7，run39825804487 / attempt1 / job119988655557，artifact rustwar-ci-v1.2-main-4a656c6-run39825804487-attempt1（ID12446239353，digest sha256:eabab8de0ff608b048fb486332cba2e6d7c5299509680a3406aa0c53f8c0eb50）已下载至 /private/tmp/rustwar-c-review-39825804487/2.0M，身份匹配。392 Core仅attackCommandMovesIntoRangeAndDamagesEnemy一项失败，tank HP仍245；14/14实际UI（含Move伤害/原落点/Stop驻守）、reporter15、双架构/双画面通过，JUnit11/2/1，不能宣布通过。Home与v3.6字节一致；Combat SHA25647c7ac3bb63b6d59db4dce1ac5e9fc159b738a48027f72f96043135423c6437e已复看，无新增画面回退。
+
+该手动Attack测试把AI Off隐含为敌军不还击，现有侦察车进攻坦克群不再是单向伤害场景。本轮只明确它的敌方单位Hold Fire，保留位置、tick计数、接近/射程/HP断言和既有炮塔；不修改GameEngine、操作、数值或18个新增防御测试。同期文档将隔离旧靶场数量更新为五个。无本地检查或测试，等待新SHA392 Core/14 UI/reporter15/双构建双画面/JUnit11-0-1复验；地形仍为临时草稿，总目标未完成。
+
 ## v3.7 / In-range defense and ordinary direct movement
 
 2026-10-23。单智能体串行A/B/C，v3.6完成C验收后同步main并开始本轮。原引擎跳过nil订单、Move只移动，普通点地却通过Attack-Move主动追击，未实现人工要求的沿路线射程内自动攻击。本轮在GameEngine为空闲与普通Move加入现有目标/伤害路径的被动开火；遵守Hold Fire、Builder排除、目标存活/阵营/射程/视野、冷却及死亡清理，不追击、不改订单、不新增存档字段。两队在AI Off时均可防御，显式Attack/A-Move/Patrol/Guard保持。

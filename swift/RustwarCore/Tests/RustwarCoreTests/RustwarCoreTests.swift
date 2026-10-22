@@ -7363,7 +7363,11 @@ import Testing
 }
 
 @Test func attackCommandMovesIntoRangeAndDamagesEnemy() throws {
-    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    var state = GameState(mapID: .coast)
+    for index in state.units.indices where state.units[index].team == .enemy {
+        state.units[index].attackStance = .holdFire
+    }
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
 
     let attackerTarget = engine.select(at: WorldPoint(1_010, 2_190), includeEnemies: false)
     let attacker = try #require(attackerTarget)
