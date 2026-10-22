@@ -204,3 +204,28 @@ func nativeTouchContextChangeRejectsOldTapAndAllowsFreshTouch(cameraChange: Bool
     #expect(selections(feed(&session, [contact(1, 0, 0, .ended), contact(2, 100, 0, .ended)], 0.1)) ==
         [WorldRect(minX: 0, minY: -8, maxX: 100, maxY: 8)])
 }
+
+@Test func nativeTouchCloseFingerPinchUsesRelativeSpacing() {
+    var session = TouchSession()
+    _ = feed(&session, [contact(1, 0, 0, .began), contact(2, 10, 0, .began)], 0)
+    #expect(feed(&session, [contact(1, -1.5, 0, .moved), contact(2, 11.5, 0, .moved)], 0.1).contains(.zoom(1.3)))
+    #expect(session.phase == .pinch)
+    #expect(selections(feed(&session, [contact(1, -1.5, 0, .ended), contact(2, 11.5, 0, .ended)], 0.2)).isEmpty)
+}
+
+@Test func nativeTouchCloseFingerSweepDoesNotZoom() {
+    var session = TouchSession()
+    _ = feed(&session, [contact(1, 0, 0, .began), contact(2, 10, 0, .began)], 0)
+    let actions = feed(&session, [contact(1, 20, 0, .moved), contact(2, 30, 0, .moved)], 0.1)
+    #expect(session.phase == .pair)
+    #expect(actions.contains(.selectionBox(WorldRect(minX: 0, minY: -8, maxX: 30, maxY: 8))))
+}
+
+@Test func nativeTouchWidePairToleratesSmallSpacingDrift() {
+    var session = TouchSession()
+    _ = feed(&session, [contact(1, 0, 0, .began), contact(2, 100, 0, .began)], 0)
+    _ = feed(&session, [contact(1, -1, 0, .moved), contact(2, 101, 0, .moved)], 0.1)
+    #expect(session.phase == .pair)
+    #expect(session.hold(at: 0.23, context: touchContext)
+        .contains(.selectionBox(WorldRect(minX: -1, minY: -8, maxX: 101, maxY: 8))))
+}

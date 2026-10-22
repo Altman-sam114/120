@@ -1,3 +1,15 @@
+## v3.5.1 / 相对指距门控
+
+```mermaid
+flowchart LR
+    Pair[原生双指位置] --> Absolute[原有绝对意图判定]
+    Pair --> Relative[相对指距8% / 2到12pt / 质心约束]
+    Absolute --> Pinch[pinch互斥状态]
+    Relative --> Pinch
+    Pinch --> Zoom[现有controller.zoom]
+    Pair --> Trace[仅云端fixture的24条只读诊断]
+```
+
 ## v3.5 / 原生触点单一状态流
 
 ```mermaid

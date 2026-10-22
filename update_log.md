@@ -1,3 +1,9 @@
+## v3.5.1 / Relative pinch and camera history repair
+
+2026-10-22。v3.5 ec2d467ff672b27f516fac5452cfa6480847d14f 的 run39802097078 / attempt1 / job119905285964 已下载复判，C不通过。artifact rustwar-ci-v1.2-main-ec2d467-run39802097078-attempt1（ID12437856099，digest sha256:ee4157b61c498e0dab2b3f6a5196bef755d91a6a79b6aab980998941f58a553a），缓存 /private/tmp/rustwar-c-review-39802097078/ 为1.9M；身份匹配，Core368、reporter15、双架构和双画面通过，UI12/13、JUnit11/2/1。真实双指点选成功，唯一失败为捏合zoom仍1且选中被清空。
+
+本轮在原生session补相对指距阈值（8%，2...12pt，质心约束），保留原classifier及扫选/释放/取消边界；新增三项纯回归。云端fixture只读snapshot增加最多24帧真实触点/状态/action诊断，测试保留原捏合断言并打印诊断；不注入命令。另把相机变化清理旧双击缓存放回GameController。只提交此修复，已准备模型改动继续等待。无本地测试/build/typecheck/diff --check；等待新SHA云端371 Core、13 UI及完整结果包验收。
+
 ## v3.5 / Native battlefield input refactor
 
 2026-10-22。单智能体 A/B/C，先在 GitHub Actions 结果延迟期间准备代码，v3.4.1 下载验收通过后才提交本轮。读取铁锈百科单位操作和 Corroding Games 官方产品说明，以人工要求的点选/双指选区/直接下令为主。云端上一轮另报 upload-artifact@v5 的 Node20 弃用警告，已读取官方 v6 action.yml 确认 node24，本轮升级为@v6，保留原 artifact 名称、内容与完整性 gate。

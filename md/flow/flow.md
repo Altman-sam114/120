@@ -1,3 +1,7 @@
+## v3.5.1 / Relative pinch repair
+
+The native reducer supplements the existing absolute classifier with an 8% spacing-change threshold bounded to 2...12pt and constrained against centroid travel, allowing small close-finger pinch without turning a parallel sweep into zoom. Pair release/epoch/pending/cancel rules stay. A bounded 24-entry native touch trace exists only in interaction-test accessibility snapshots; it reads actual events/actions and exposes no mutation path. Controller camera mutations clear tap/cycle history even without an active native session. v3.5 cloud UI12/13 is rejected; require newest-SHA 13/13.
+
 ## v3.5 / Native battlefield input ownership
 
 BattlefieldView now hosts a native BattlefieldInputView (SKView) through UIViewRepresentable. UIKit touchesBegan/Moved/Ended/Cancelled become identity-keyed screen samples for the pure RustwarCore BattlefieldTouchSession. This section supersedes historical battlefield SwiftUI gesture/lease/generation implementation descriptions; the old policies remain in Core for compatibility and their existing tests, but are no longer a second battlefield input owner. Tactical Map retains its existing SwiftUI route.

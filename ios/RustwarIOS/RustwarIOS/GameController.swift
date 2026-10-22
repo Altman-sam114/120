@@ -2203,6 +2203,7 @@ final class GameController {
         guard camera != previousCamera else {
             return
         }
+        clearLastBattlefieldTap()
         battlefieldCameraRevision &+= 1
     }
 

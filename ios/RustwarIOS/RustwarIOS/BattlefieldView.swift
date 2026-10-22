@@ -37,7 +37,8 @@ private struct BattlefieldSurface: UIViewRepresentable {
             scene.accessibilityReduceMotion = reduceMotion
         }
         view.synchronizeInputContext()
-        view.accessibilityValue = controller.interactionTestSnapshot(viewportSize: view.bounds.size)
+        let snapshot = view.accessibilityValue
+        view.accessibilityValue = snapshot
     }
 
     static func dismantleUIView(_ view: BattlefieldInputView, coordinator: ()) {
@@ -58,6 +59,7 @@ private final class BattlefieldInputView: SKView {
     private let selectionLayer = CAShapeLayer()
     private var holdTask: Task<Void, Never>?
     private var viewportSize = CGSize.zero
+    private var inputTrace: [String] = []
 
     init(controller: GameController, battlefieldScene: BattlefieldScene) {
         self.controller = controller
@@ -89,7 +91,14 @@ private final class BattlefieldInputView: SKView {
     }
 
     override var accessibilityValue: String? {
-        get { controller.interactionTestSnapshot(viewportSize: bounds.size) }
+        get {
+            let text = controller.interactionTestSnapshot(viewportSize: bounds.size)
+            guard controller.runsInteractionTests,
+                  var value = try? JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any] else { return text }
+            value["touchTrace"] = inputTrace
+            guard let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]) else { return text }
+            return String(data: data, encoding: .utf8)
+        }
         set { super.accessibilityValue = newValue }
     }
 
@@ -156,6 +165,12 @@ private final class BattlefieldInputView: SKView {
         }
         let actions = session.process(samples, at: event?.timestamp ?? ProcessInfo.processInfo.systemUptime,
                                       context: inputContext)
+        if controller.runsInteractionTests {
+            let points = samples.map { sample in
+                "\(sample.id):\(sample.phase)@\(String(format: "%.1f,%.1f", sample.point.x, sample.point.y))"
+            }.joined(separator: " ")
+            recordTrace("\(points) -> \(session.phase) \(actions)")
+        }
         if session.phase == .pan || session.phase == .area ||
             session.phase == .pair || session.phase == .pinch || session.phase == .blocked {
             controller.clearLastBattlefieldTap()
@@ -175,6 +190,7 @@ private final class BattlefieldInputView: SKView {
             do { try await Task.sleep(for: delay) } catch { return }
             guard let self, !Task.isCancelled else { return }
             let actions = self.session.hold(at: ProcessInfo.processInfo.systemUptime, context: self.inputContext)
+            self.recordTrace("hold -> \(self.session.phase) \(actions)")
             self.apply(actions)
         }
     }
@@ -219,6 +235,12 @@ private final class BattlefieldInputView: SKView {
 
     private func cgPoint(_ point: WorldPoint) -> CGPoint {
         CGPoint(x: point.x, y: point.y)
+    }
+
+    private func recordTrace(_ value: String) {
+        guard controller.runsInteractionTests else { return }
+        inputTrace.append(value)
+        if inputTrace.count > 24 { inputTrace.removeFirst(inputTrace.count - 24) }
     }
 }
 

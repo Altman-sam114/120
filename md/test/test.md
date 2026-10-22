@@ -1,3 +1,7 @@
+## v3.5.1 / Pinch cloud repair gate
+
+v3.5 run39802097078 / attempt1 was rejected: Core368 and UI12/13 passed, but pinch left zoom1 and cleared selection. Do not label it playable or use the passing two-finger subset as pinch evidence. v3.5.1 adds close-finger relative pinch, parallel-sweep and wide-jitter Core regressions (371 expected). Require every prior Core and all13 actual UI methods, no skips/failures, reporter15, dual builds/visual probes and JUnit11/0/1. `PINCH_TOUCH_TRACE` and the existing accessibility snapshot contain at most24 real native frames only under the fixture flag, with no injection. If failure persists, inspect actual phases/positions/actions and append a fix; do not weaken the test. All execution stays cloud-only. Source review checks camera mutation clears old tap history independent of active touch ownership.
+
 ## v3.5 / Native touch event verification
 
 All tests remain cloud-only. BattlefieldTouchSessionTests adds 18 test methods with parameterized pan/camera boundaries: single commit and reused identity, 12pt pan then return, explicit area, fast/static/staggered two-finger rectangle, frozen release, pinch without selection, third/replacement, cancel/stale/nonfinite samples, long press once, pending-target isolation, own camera renewal and external invalidation, pan-to-pair baseline and minimum narrow strip.

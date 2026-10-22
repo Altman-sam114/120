@@ -219,7 +219,7 @@ public struct BattlefieldTouchSession<ID: Hashable> {
                 elapsed: time - startedAt,
                 isTargetCommandPending: context.mode != .normal
             )
-            if phase == .pair, intent == .pinch {
+            if phase == .pair, intent == .pinch || isRelativePinch(first: first, second: second) {
                 phase = .pinch
                 actions.append(.selectionBox(nil))
             }
@@ -243,6 +243,19 @@ public struct BattlefieldTouchSession<ID: Hashable> {
             }
         }
         return actions
+    }
+
+    private func isRelativePinch(first: Contact, second: Contact) -> Bool {
+        let initialDistance = sqrt(first.start.distanceSquared(to: second.start))
+        let spacingChange = abs(pairDistance - initialDistance)
+        let centroidTravel = hypot(
+            (first.current.x - first.start.x + second.current.x - second.start.x) / 2,
+            (first.current.y - first.start.y + second.current.y - second.start.y) / 2
+        )
+        // Small, close-finger pinches may never reach the old absolute 12pt
+        // threshold. Relative spacing still distinguishes them from a sweep.
+        let threshold = max(2, min(12, initialDistance * 0.08))
+        return initialDistance > 1 && spacingChange >= threshold && spacingChange >= centroidTravel * 0.65
     }
 
     private var pairDistance: Double {
