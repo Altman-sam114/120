@@ -1,9 +1,17 @@
-## v3.6 / 分层装甲模型重构（待云端验收）
+## v3.7 / 点地移动与射程内开火（待云端验收）
+
+- 选单位后直接点空地，所有选中单位按原定目的地和方阵移动；作战单位会沿途攻击射程内敌人，保持路线。A-Move 仍可主动接近附近敌人。
+- 到达、空闲或按 Stop 后，作战单位可以原地防御；不会为追击离开驻守位置。Hold Fire 关闭自动开火，手动点敌人 Attack 保持可用，Builder 不自动攻击。
+- 点地预览、移动确认和提示统一为 Move；新增云端 Stop 原地防御操作，原点地测试同时检查真实伤害和到达原定位置，全部14项操作与Core回归等待最新提交云端验收。
+
+## v3.6 / 分层装甲模型重构（已通过）
 
 - 八类单位改用原创车体、炮塔和武器分层材质，增加金属明暗、装甲斜面、履带、格栅、舱盖与阵营涂装，保留各兵种轮廓差异。
 - 同类同阵营共享材质，炮塔独立瞄准、武器独立后坐；选中、血量、受损、炮口与雾层仍从真实战场状态派生。
 - 生产卡缩略图复用同套军械绘制，菜单与战场保持轮廓一致；原有成本、人口、时间和按钮触控尺寸保持。
-- 画面与运行结果等待最新提交的云端构建、13 项操作及双场景复看，尚不宣称真机性能提升。
+- 云端构建、13 项操作及双场景复看已通过，尚不宣称真机性能提升。
+
+commit `2652d5d`，run `39822312221` / attempt1 已由 C 下载核对：374 Core、13/13 UI、15 reporter、双架构与双画面通过，JUnit11/0/1。新模型与生产缩略图已复看；地形方块感、建筑和特效的精细度仍需继续改进。
 
 ## v3.5.2 / 近距离捏合灵敏度（已通过）
 
@@ -303,27 +311,27 @@ v2.50：原生 iOS 生产建筑 dock 首屏增加只读 Production focus summary
 
 - HUD：顶部 safe-area 状态栏持续显示资源、雷达、Pause/Play 和速度；右侧或底部 command dock 的紧凑固定 header 显示当前选择、命令状态和 Replace/Add，下方按上下文连续滚动操作。作战单位的 Move / Attack Move / Attack / Stop 位于首组，compact 横屏 primary tile 会消费一列/宽度感知策略，避免 Attack Move 错误省略；stance 与 target status 支持自然换行并保留完整 VoiceOver 语义。生产建筑不在 header 重复队列摘要，使生产入口更早进入横屏首屏。Tactical Map 始终位于独立战场区域；旋转或 Split View resize 会按容器宽高自动切换布局，不会改变当前选择、等待命令或编队。
 - 建筑操作：点 Command Center / Land Factory 时 Production 自动排到 dock 顶部；点可升级或正在升级的 Extractor / Radar Station 时 Build & Upgrade 自动排到顶部。切换选择会回到 dock 顶部；资源不足的升级仍显示费用并禁用，方便玩家直接理解下一步。
-- Tap：无等待命令时，点己方单位或建筑按 Replace / Add 选择；已有至少一个存活己方单位被选中时，点当前可见敌方直接 Attack，点未命中单位/建筑的战场位置直接 Attack Move，并保持原选择。主战场实体命中会按 zoom 保持至少 44pt 触控直径，但仍只选最近实体且不会穿过战争迷雾命中敌人。建筑-only 选择或没有己方单位选择时仍走普通选择；普通 tap 不会自动 Guard、Repair、Reclaim、Build 或 Rally。Move、Attack Move 和 Patrol 等显式模式下仍作为目的地，Guard / Repair / Reclaim / Build Extractor / Attack 等模式下仍作为对应目标点选。
+- Tap：无等待命令时，点己方单位或建筑按 Replace / Add 选择，点建筑会聚焦单建筑操作；已有存活己方单位被选中时，作战单位点当前可见敌方直接 Attack，点空地让整个己方单位选择执行 Move，保持原选择。作战单位可沿途在射程内开火，不会为自动追击改变目的地。主战场实体命中按 zoom 保持至少56pt触控直径，不会穿过战争迷雾命中敌人；重叠友军可慢速重复点按循环选择。建筑-only 或无单位选择时仍走普通选择。普通 tap 不自动 Guard、Repair、Reclaim、Build 或 Rally；显式模式继续使用对应目的地/目标语义。
 - Long press：无等待命令时执行上下文命令；长按敌方单位或建筑会 Attack，长按受损友方单位或建筑会让 Builder Repair，长按健康友方目标会 Guard，长按残骸会 Reclaim，长按空闲资源点会 Build Extractor，长按空地点会对生产建筑设置 Rally 或让己方单位 Move。
 - Selection mode：Replace / Add 分段控件决定主战场 tap、Select Area、Same Type 和双击附近同类的选择方式；Replace 会替换当前选择，Add 会追加命中的存活己方单位或建筑，空点或空框不会清空旧选择。
 - Idle Builders：选择全部空闲己方 Builder，并在主战场和战术小地图高亮多选集合；Move、Attack、Attack Move、Patrol、Guard、Repair、Reclaim、Build Extractor 和 Stop 会作用于所有可执行该命令的选中己方单位，其它生产或 Rally 命令仍沿用 primary selection 单实体语义。
 - Combat Units：选择全部己方非 Builder 战斗单位，并在主战场和战术小地图高亮多选集合；Move、Attack、Attack Move、Patrol、Guard 和 Stop 会作用于所有选中己方单位，其它生产或 Rally 命令仍沿用 primary selection 单实体语义。
 - Screen Combat：选择当前主战场视口内的己方非 Builder 作战单位；Replace 模式会替换当前选择，Add 模式会追加到当前选择，空屏幕不会清空旧选择。
 - Select Area：进入框选等待态；下一次在主战场拖拽会显示选择框，松手后优先选中框内己方单位；若框内没有己方单位，会改选与框选区域相交的己方建筑；Replace 模式下空框会清空选择，Add 模式下空框会保留旧选择；等待态可再次点按或用 Stop 取消。
-- 双指框选：无等待命令时，两指近似同向拖动会直接显示选择框并在松手后按 Replace / Add 选择；允许一指略早移动，另一指跟随至少约 5pt 即可进入判定。也可以两指按住屏幕约 0.22 秒基本不动，选择框会直接框在两指之间，抬指即选。两指明显张合 12pt 或反向移动继续缩放，不会同时框选。SpatialEventGesture 观察到第二个 active touch 后，会按当前 sequence 先标记多指候选，阻止尚未提交的单指 tap/长按抢先下令；第三指、系统取消或地图重置会放弃本次框选，双指结束也不会误触普通 tap 或长按命令。
+- 双指框选：无等待命令时，两只手指放在区域两端即可框选，也可近似同向拖动扫选；窄选区至少保留16pt窄边。第一指抬起就固定范围，第二指抬起只提交一次，按 Replace/Add 选择。明显张合进入捏合缩放，不会同时选兵或下令；第三指、系统取消、切图或命令/视口变化会放弃旧操作。原生触点状态机统一处理这些手势，保留单指点选、长按与12pt平移。
 - Same Type：选中己方单位时显示；点按后选择全图所有同类型己方单位，并在主战场和战术小地图高亮多选集合。
 - 双击己方单位：选择该单位附近半径内的存活己方同类型单位；等待 Move、Attack、Build、Rally 或 Select Area 等命令目标时不会触发双击选择。
 - Save 1-9 / Group 1-9：保存或召回 1-9 号控制编队；外接键盘可用 Control + 1-9 保存、1-9 召回；召回会过滤已死亡、缺失或非己方目标，并恢复为当前多选集合。
 - 外接键盘：WASD / 方向键移动视野，Space 回到己方 Command Center，P 暂停/恢复，R 重开当前地图，E 选择空闲 Builder，F 选择当前屏幕内作战单位，Control + A 选择全部战斗单位，Option + A 选择同类型单位，A 进入 Attack Move，G 进入 Patrol，H 进入 Guard，C 进入 Reclaim，S 停止或取消当前等待命令，Z / X / V 切换选中有武器己方单位为 Aggressive / Defensive / Hold Fire；Shift + 1-9 按当前 HUD 顺序生产单位，Shift + E / T / F / D 进入 Build Extractor / Turret / Factory / Radar，Shift + C / P / R 执行 Cancel Last / 打开 Repeat 目标菜单 / Rally。
 - 拖拽：主战场单指 travel 严格小于 12pt 时保留意图预览与抬指命令；达到或超过 12pt 后平移战场视角，并在同一触摸序列内持续抑制 tap/长按，即使手指回移也不会误下命令。Tactical Map 的相机拖动与长按最大移动统一为 18pt，轻拖不会落入原先 18–22pt 的点按灰区。
-- 地图重置中的触摸：若 reset 发生在 Spatial touch ID 登记前，context seed 之前的 context/Spatial 首帧会被取消围栏拦截；seed 和 active touch 证据到齐后才恢复普通 tap、pan 或双指手势，但 SwiftUI 没有统一 touch token，seed 后的迟到旧回调仍需真机/XCUITest 进一步区分。
-- 连续单指触摸：若 Spatial 已确认上一枚 accepted touch ended、owner 尚在等待 tap/context terminal，而这些并行回调迟到或缺失，下一枚使用未隔离新 ID 的 active touch 会先让旧 terminal owner 安全收口再建立新 sequence，不再被误判为 replacement；系统立即复用同一旧 ID、或第二指尚未被 Spatial 上报时仍无法绝对区分。
+- 地图重置中的触摸：原生触点绑定输入 epoch、命令模式和相机 revision。重置、读档、切图或外部相机变化会取消旧序列；旧手指释放不能向新地图或新命令提交操作。
+- 连续单指触摸：每次原生触点结束最多提交一次；拖动、双指框选和捏合之后的新点选/发令已有实际云端UI回归。任意真机触点时序与手感仍需进一步证据。
 - 捏合：缩放战场视角；正常结束或被第三指、系统取消、触点替换、切图/重置中断后都会清除该次累计倍率，下一次捏合从 1.0 基线继续。
-- Move：选中己方单位时显示；点按后进入移动落点模式，再 tap 战场下达移动命令；多选时所有选中己方单位会按稳定方阵获得围绕目标点的目的地。
+- Move：选中己方单位时显示；点按后进入移动落点模式，再 tap 战场下达移动命令；普通空地点按也使用该命令。多选单位按稳定方阵获得目的地，作战单位沿原路线移动并攻击射程内敌人，Builder 只移动。
 - Attack Move：选中己方单位时显示；点按后进入攻击移动目的地模式，再 tap 战场下达攻击移动命令；多选时所有选中己方单位会按稳定方阵获得围绕目标点的攻击移动目的地，单位会向各自目的地移动，并只在自身视野范围内获取敌方单位或建筑作为临时攻击目标。
 - Patrol：选中己方单位时显示；点按后进入巡逻端点模式，再 tap 战场下达巡逻命令；多选时所有选中己方单位会以各自当前位置为起点，并按稳定方阵获得围绕目标点的巡逻端点，在自身视野范围内临时攻击敌方单位或建筑后继续巡逻。
 - Guard：选中己方单位时显示；点按后进入护航目标模式，再 tap 友方单位或建筑下达护航命令；多选时所有选中己方单位会护航同一友方目标，并按稳定方阵获得围绕目标的护航偏移，在自身视野或被护航目标附近发现敌人时临时攻击，然后继续护航。
-- Aggressive / Defensive / Hold Fire：选中有武器己方单位时显示；会切换 Attack Move、Patrol 和 Guard 的自动索敌范围，Defensive 使用较短自动接敌距离，Hold Fire 禁止自动索敌但不阻止手动 Attack。
+- Aggressive / Defensive / Hold Fire：选中作战单位时显示；Aggressive / Defensive 都允许空闲、Stop 后和普通 Move 中的射程内开火；Attack Move、Patrol 和 Guard 中 Defensive 使用较短主动接敌距离。Hold Fire 禁止自动开火和自动索敌，但不阻止手动 Attack。
 - Repair：选中己方 Builder 时显示；点按后进入维修目标模式，再 tap 受损友方单位或建筑下达维修命令；多选 Builder 时所有选中己方 Builder 会维修同一受损友方目标，并在远距接近时分散到目标周边，若目标 Builder 自身也被选中则跳过自我维修；Builder 进入维修范围后每秒恢复 18 HP，不消耗金属，满血或目标消失后清除命令。
 - Reclaim：选中己方 Builder 时显示；点按后进入回收目标模式，再 tap 战场残骸下达回收命令；多选 Builder 时所有选中己方 Builder 会回收同一有效残骸，并在远距接近时分散到残骸周边。Builder 进入回收范围后会把剩余残骸金属持续转入己方金属，残骸耗尽、过期或消失后清除命令。
 - Build Extractor：选中己方 Builder 时显示；点按后进入资源点目标模式，再 tap 空闲资源点扣除 260 金属并创建一个未完成 Extractor；多选 Builder 时所有选中己方 Builder 会协同建造同一个新 Extractor，并在远距接近时分散到目标周边。Builder 进入建造范围后会推进建造，完成后该资源点开始增加收入。
@@ -335,7 +343,7 @@ v2.50：原生 iOS 生产建筑 dock 首屏增加只读 Production focus summary
 - Upgrade Radar：选中完成状态己方 Radar Station 且金属足够时显示；点按后消耗 780 金属并启动 22 秒 T2 升级，升级完成后 HP 上限提升到 520、真实视野提升到 390、雷达范围提升到 1360。升级进度会显示在建筑下方，HUD 雷达 VoiceOver 摘要会报告已升级雷达数量。
 - Cancel Upgrade：选中正在升级的完成状态己方 Radar Station、Extractor 或 Land Factory 时显示在对应建筑操作区；点按后取消当前升级进度，并按剩余进度返还金属。
 - Attack：选中己方单位时显示；点按后进入攻击目标模式，再 tap 当前玩家视野内的敌方单位或建筑下达攻击命令；多选时所有选中己方单位会攻击同一敌方目标。单位会靠近射程、造成伤害并移除被摧毁目标。
-- Stop：选中己方单位时显示；点按后清除所有选中己方单位当前移动、攻击移动、巡逻、护航、维修、回收、建造或攻击命令，并取消正在等待落点/目标/框选的 Move、Attack Move、Patrol、Guard、Repair、Reclaim、Build Extractor、Turret、Factory、Attack 或 Select Area 模式。
+- Stop：选中己方单位时显示；清除所选单位的移动、追击、巡逻、护航、维修、回收、建造或攻击命令，并取消等待目标模式。作战单位仍可原地攻击射程内敌人；如需停止开火，同时选择 Hold Fire。
 - Builder：选中完成状态己方 Command Center 时显示；点按后扣除金属并加入生产队列，完成后在该 Command Center 的集结点生成新的 Builder。
 - Scout / Light Tank / Hover Tank / Artillery / AA Tank：选中完成状态己方 Land Factory 时显示；点按后扣除金属并加入生产队列，完成后在该 Land Factory 的集结点生成单位。
 - Cancel Last：选中完成状态己方生产建筑时固定显示在队列之前；队列为空时 disabled，队列非空时可取消队尾生产项，并按未完成进度返还金属。

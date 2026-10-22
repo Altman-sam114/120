@@ -1188,12 +1188,14 @@ public struct GameEngine: Sendable {
                 continue
             }
             guard let order = state.units[unitIndex].order else {
+                updateOpportunisticFire(unitIndex: unitIndex, deltaTime: deltaTime)
                 continue
             }
 
             switch order {
             case let .move(destination):
                 updateMoveOrder(unitIndex: unitIndex, destination: destination, deltaTime: deltaTime)
+                updateOpportunisticFire(unitIndex: unitIndex, deltaTime: deltaTime)
             case let .attack(targetID):
                 updateAttackOrder(unitIndex: unitIndex, targetID: targetID, deltaTime: deltaTime)
             case let .attackMove(destination):
@@ -1217,6 +1219,28 @@ public struct GameEngine: Sendable {
             }
         }
         removeDestroyedEntities()
+    }
+
+    private mutating func updateOpportunisticFire(unitIndex: Int, deltaTime: Double) {
+        let unit = state.units[unitIndex]
+        guard unit.type.isCombatUnit else {
+            return
+        }
+        let definition = GameDefinitions.unit(unit.type)
+        state.units[unitIndex].weaponCooldown = max(0, unit.weaponCooldown - deltaTime)
+        guard unit.attackStance != .holdFire,
+              definition.damage > 0, definition.attackRange > 0, definition.reloadTime > 0,
+              state.units[unitIndex].weaponCooldown <= 0,
+              let target = nearestCombatTarget(
+                for: unit,
+                maximumDistance: min(definition.attackRange, definition.vision)
+              ) else {
+            return
+        }
+
+        // Ordinary movement keeps its destination; idle defense never starts a chase.
+        applyDamage(definition.damage, to: target.id)
+        state.units[unitIndex].weaponCooldown = definition.reloadTime
     }
 
     private mutating func updateMoveOrder(unitIndex: Int, destination: WorldPoint, deltaTime: Double) {

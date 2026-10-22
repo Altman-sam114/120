@@ -1,3 +1,20 @@
+## v3.7 / 移动开火与驻守防御
+
+```mermaid
+flowchart TD
+    Tap[选兵后点空地] --> Move[普通 Move / 原定方阵目的地]
+    Move --> Advance[沿原路线移动或到达]
+    Idle[空闲 / Stop 后无订单] --> Passive[同一射程内开火路径]
+    Advance --> Passive
+    Passive --> Cooldown[推进现有冷却]
+    Cooldown --> Check{作战单位 / 非 Hold Fire / 活敌在射程内}
+    Check -->|符合| Damage[既有伤害 / 后坐反馈 / 死亡清理]
+    Check -->|不符合| Keep[保留位置与订单]
+    Damage --> Keep
+    Explicit[显式 Attack / A-Move / Patrol / Guard] --> Existing[原有主动接敌路径 不重复开火]
+    Tests[云端18个新增Core方法 / 14项真实UI] --> Keep
+```
+
 ## v3.6 / 共享分层单位材质
 
 ```mermaid

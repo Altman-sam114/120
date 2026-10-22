@@ -448,7 +448,7 @@ final class GameController {
             return "Tap a visible enemy unit or building. The ring shows this unit's attack range."
         }
         if isAwaitingMoveTarget {
-            return "Tap a destination. Drag empty space to pan and pinch to zoom."
+            return "Tap a destination. Combat units fire in range while moving; Hold Fire prevents automatic shots."
         }
         if isAwaitingAttackMoveTarget {
             return "Tap a destination to move and automatically engage nearby enemies."
@@ -460,10 +460,7 @@ final class GameController {
             if selectedPlayerCombatUnits.isEmpty {
                 return "Tap empty ground to move • Quick Orders keeps Move and Stop visible."
             }
-            if shouldMoveIdleBuildersAlongsideQuickAttackMove {
-                return "Tap empty ground to move idle Builders and attack-move combat units • tap a visible enemy to attack. Quick Orders keeps Move visible."
-            }
-            return "Tap empty ground to attack-move • tap a visible enemy to attack. Quick Orders keeps Move and Attack Move visible."
+            return "Tap ground to move and fire in range • tap a visible enemy to attack. A-Move pursues nearby enemies; Hold Fire prevents automatic shots."
         }
         if hasPlayerSelectableSelection {
             return "Tap a unit or building; two-finger drag box-selects, drag pans, pinch zooms."
@@ -491,10 +488,10 @@ final class GameController {
             if selectedPlayerCombatUnits.isEmpty {
                 return "Tap ground to move."
             }
-            if shouldMoveIdleBuildersAlongsideQuickAttackMove {
-                return "Tap enemy to attack • ground moves Builders + A-Move."
+            if selectedPlayerCombatUnits.allSatisfy({ $0.attackStance == .holdFire }) {
+                return "Tap ground to move • Hold Fire • enemy to attack."
             }
-            return "Tap enemy to attack • ground for A-Move."
+            return "Tap ground to move + fire • enemy to attack."
         }
         if hasPlayerSelectableSelection {
             return "Tap to select • two-finger box-select."
@@ -1576,7 +1573,7 @@ final class GameController {
         }
         return BattlefieldTouchPreview(
             point: point,
-            intent: selectedPlayerCombatUnits.isEmpty ? .move : .attackMove
+            intent: .move
         )
     }
 
@@ -2456,30 +2453,10 @@ final class GameController {
             let result = engine.issueAttack(targetID: target.id)
             commandStatus = statusText(forAttack: result)
             reportCommandFeedback(for: result, confirmation: .attack, at: target.position)
-        } else if selectedPlayerCombatUnits.isEmpty {
+        } else {
             let result = engine.issueMove(to: point)
             commandStatus = statusText(for: result)
             reportCommandFeedback(for: result, confirmation: .move, at: point)
-        } else if shouldMoveIdleBuildersAlongsideQuickAttackMove {
-            let moveResult = engine.issueMove(to: point)
-            if moveResult == .issued {
-                let attackMoveResult = engine.issueAttackMove(to: point)
-                commandStatus = attackMoveResult == .issued
-                    ? "Attack-move \(selectedPlayerCombatUnits.count) combat units; move \(selectedPlayerBuilders.count) idle Builders"
-                    : statusText(forAttackMove: attackMoveResult)
-                reportCommandFeedback(
-                    for: attackMoveResult,
-                    confirmation: .attackMove,
-                    at: point
-                )
-            } else {
-                commandStatus = statusText(for: moveResult)
-                reportCommandFeedback(for: moveResult)
-            }
-        } else {
-            let result = engine.issueAttackMove(to: point)
-            commandStatus = statusText(forAttackMove: result)
-            reportCommandFeedback(for: result, confirmation: .attackMove, at: point)
         }
         renderRevision += 1
         return true
@@ -2503,12 +2480,6 @@ final class GameController {
             minimumHitRadius: minimumHitRadius,
             targetTeam: .enemy
         )
-    }
-
-    private var shouldMoveIdleBuildersAlongsideQuickAttackMove: Bool {
-        !selectedPlayerBuilders.isEmpty &&
-            !selectedPlayerCombatUnits.isEmpty &&
-            selectedPlayerBuilders.allSatisfy { $0.order == nil }
     }
 
     private func reportCommandFeedback(for result: ProductionCommandResult) {

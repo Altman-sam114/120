@@ -5872,7 +5872,8 @@ import Testing
             team: .enemy,
             position: WorldPoint(point.x + 140, point.y),
             hitPoints: scoutDefinition.hitPoints,
-            maxHitPoints: scoutDefinition.hitPoints
+            maxHitPoints: scoutDefinition.hitPoints,
+            attackStance: .holdFire
         )
     )
     state.selectedEntityID = builder.id
@@ -7434,6 +7435,10 @@ import Testing
     }
     state.selectedEntityID = first.id
     state.selectedEntityIDs = [first.id, second.id]
+    // Isolate explicit command cleanup from the separate reciprocal-fire tests.
+    for index in state.units.indices where state.units[index].team == .enemy {
+        state.units[index].attackStance = .holdFire
+    }
     var engine = GameEngine(state: state, enemyAIEnabled: false)
 
     #expect(engine.issueAttack(targetID: enemyScout.id) == .issued)
@@ -7454,7 +7459,11 @@ import Testing
 }
 
 @Test func attackCommandRemovesDestroyedTargetAndClearsOrder() throws {
-    var engine = GameEngine(mapID: .coast, enemyAIEnabled: false)
+    var state = GameState(mapID: .coast)
+    for index in state.units.indices where state.units[index].team == .enemy {
+        state.units[index].attackStance = .holdFire
+    }
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
 
     let attackerTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
     let attacker = try #require(attackerTarget)
@@ -9155,6 +9164,7 @@ import Testing
     let playerTarget = try #require(state.units.first { $0.team == .player && $0.type == .tank })
     let playerTargetIndex = try #require(state.units.firstIndex { $0.id == playerTarget.id })
     state.units[playerTargetIndex].position = WorldPoint(3_040, 1_080)
+    state.units[playerTargetIndex].attackStance = .holdFire
     let initialBuildingIDs = Set(state.buildings.map(\.id))
 
     var engine = GameEngine(state: state)

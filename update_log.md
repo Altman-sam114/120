@@ -1,8 +1,18 @@
+## v3.7 / In-range defense and ordinary direct movement
+
+2026-10-23。单智能体串行A/B/C，v3.6完成C验收后同步main并开始本轮。原引擎跳过nil订单、Move只移动，普通点地却通过Attack-Move主动追击，未实现人工要求的沿路线射程内自动攻击。本轮在GameEngine为空闲与普通Move加入现有目标/伤害路径的被动开火；遵守Hold Fire、Builder排除、目标存活/阵营/射程/视野、冷却及死亡清理，不追击、不改订单、不新增存档字段。两队在AI Off时均可防御，显式Attack/A-Move/Patrol/Guard保持。
+
+GameController点空地改为整个选择Move，清理旧混合Builder特殊分支，预览/确认/提示同步，保留可见敌方Attack和友方建筑聚焦。Quick Orders说明Move/Stop仍可射程内防御及Hold Fire。新增18个Core行为测试方法；四个既有施工/显式攻击清理测试把本来被假定为被动的靶子设为Hold Fire，保留原断言，并以新增对称/互相还击测试覆盖真实双方战斗。原真实点地测试改查Move、伤害和原定落点到达，新Stop原地防御真实操作把UI gate扩至14；fixture只改变敌人初始位置，无命令注入。
+
+参考本轮实际打开的Corroding Games开发者Steam帖说明移动默认可自动攻击（https://steamcommunity.com/app/647960/discussions/2/1697167355223933246/）；百科本轮直读403、百度结果页无法访问，未伪称读过。全部验证等待新SHA云端392 Core、14 UI、reporter15、双构建/双画面及JUnit11/0/1。本机无测试/build/parse/typecheck/Preview/diff --check，.wp未触碰。地形、建筑、特效、寻路与真机性能仍需继续改进，总目标未完成。
+
 ## v3.6 / Layered original vehicle art
 
 2026-10-22准备、2026-10-23继续。单智能体模型轮在v3.5.2 e0636d47cccde830315482d6940df9db7d0c8d07 / run39814285593结果包通过C验收后提交。本轮将BattlefieldScene超长unitBody分支移交BattlefieldUnitModels，以原创CoreGraphics几何和金属渐变生成hull/turret/weapon三层共享材质，8类型x2阵营有限缓存；每实体仍由既有签名缓存管理，命名mount与heading/recoil兼容。八兵种保留专属底盘/工具臂/悬浮舱/双炮管/驻锄/舰体差异和既有阵营几何标记，生产缩略图复用同套绘制。新文件注册Xcode工程。相机旧双击缓存清理已独立放入v3.5.1，本模型轮不再修改Core、输入、命令、生产、存档或Web。
 
 同步README、flow、test及v3.6提示词。无本地渲染、编译或测试。云端须保持全部Core、13 UI、reporter15、双架构/双画面及JUnit11/0/1，C实际复看透明、朝向、武器/后坐和HUD。原型画质仍需地形、特效、建筑、动态表现与真机性能的继续验证，不把共享纹理的结构性减少节点当成实测帧率结果。
+
+v3.6 C通过：2652d5d28c99446f148b071041c338bb14dfb630，run39822312221 / attempt1 / job119976486424，GitHub conclusion success，job17m16s。artifact rustwar-ci-v1.2-main-2652d5d-run39822312221-attempt1（ID12446620613，digest sha256:fb76b6606a769015c3ea40f9ea6196716c10416ffa8a9b2cdc4175e6f34200f5）已下载至 /private/tmp/rustwar-c-review-39822312221/（2.0M）。身份、pipeline/checks/reporter成功，integrityProblems为空；Core374、UI13/13、reporter15、双架构/双画面成功，JUnit11/0/1。两张2622x1206图已实际复看：Home SHA256722756d99d8d1916a136efffe225a81bfdf0acfa891e88dd8e76350ccc4a222e，Combat b256913300b7e5cb6f13e2513d6dbf074485edfa1469e097b79c4bd5d7dd2dc7；新分层载具与同源生产缩略图正常，无可见矩形alpha底或炮管裁切，HUD与操作无本轮回退。GitHub另有macOS ARM容量notice；不能把耗时单独当代码失败。地形方块感与几何特效仍明显，未宣称顶级画质或实测性能。
 
 ## v3.5.2 / Stable pinch sensitivity
 

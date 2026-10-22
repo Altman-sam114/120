@@ -25,7 +25,8 @@ final class RustwarIOSInteractionTests: XCTestCase {
     }
 
     @MainActor
-    private func launch(lowMetal: Bool = false, tech2: Bool = false, centeredUnit: Bool = false) async throws -> XCUIApplication {
+    private func launch(lowMetal: Bool = false, tech2: Bool = false, centeredUnit: Bool = false,
+                        stationaryDefense: Bool = false) async throws -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = XCUIApplication()
@@ -33,6 +34,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         if lowMetal { app.launchArguments.append("--rustwar-ci-low-metal") }
         if tech2 { app.launchArguments.append("--rustwar-ci-factory-tech2") }
         if centeredUnit { app.launchArguments.append("--rustwar-ci-centered-unit") }
+        if stationaryDefense { app.launchArguments.append("--rustwar-ci-stationary-defense") }
         app.launch()
         XCTAssertTrue(battlefield(app).waitForExistence(timeout: 15))
         try await waitFor(app, "fixture loaded") { $0.units.count == 4 }
@@ -92,12 +94,48 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try tapEntity("input-tank", in: app)
         try await waitFor(app, "tank selected") { $0.selected == ["input-tank"] }
         try worldCoordinate(1_540, 1_740, in: app).tap()
-        try await waitFor(app, "ground tap issues attack move") { $0.entity("input-tank")?.order == "attackMove" }
+        try await waitFor(app, "ground tap issues ordinary move") { $0.entity("input-tank")?.order == "move" }
         let health = try XCTUnwrap(snapshot(app).entity("input-enemy")?.hp)
         app.buttons["Play"].tap()
-        try await waitFor(app, "attack move damages enemy through simulation") {
+        try await waitFor(app, "ordinary move damages enemy through simulation") {
             ($0.entity("input-enemy")?.hp ?? 0) < health
         }
+        try await waitFor(app, "unit reaches the requested waypoint without chasing") {
+            $0.entity("input-tank")?.order == "idle"
+        }
+        let after = try snapshot(app)
+        let tank = try XCTUnwrap(after.entity("input-tank"))
+        let field = battlefield(app).frame
+        let worldX = after.cameraX + (tank.x - 0.5) * Double(field.width) / after.zoom
+        let worldY = after.cameraY - (tank.y - 0.5) * Double(field.height) / after.zoom
+        XCTAssertEqual(worldX, 1_540, accuracy: 1)
+        XCTAssertEqual(worldY, 1_740, accuracy: 1)
+    }
+
+    @MainActor
+    func testStopRetainsStationaryInRangeDefense() async throws {
+        let app = try await launch(stationaryDefense: true)
+        try tapEntity("input-tank", in: app)
+        try await waitFor(app, "defender selected") { $0.selected == ["input-tank"] }
+        try worldCoordinate(1_540, 1_740, in: app).tap()
+        try await waitFor(app, "move before stop") { $0.entity("input-tank")?.order == "move" }
+        let stop = app.buttons.matching(identifier: "Stop").firstMatch
+        XCTAssertTrue(stop.isHittable)
+        stop.tap()
+        try await waitFor(app, "stop clears movement") { $0.entity("input-tank")?.order == "idle" }
+        let before = try snapshot(app)
+        let defender = try XCTUnwrap(before.entity("input-tank"))
+        let health = try XCTUnwrap(before.entity("input-enemy")?.hp)
+        app.buttons["Play"].tap()
+        try await waitFor(app, "stopped defender fires through real simulation") {
+            ($0.entity("input-enemy")?.hp ?? 0) < health
+        }
+        let after = try snapshot(app)
+        let stationary = try XCTUnwrap(after.entity("input-tank"))
+        XCTAssertEqual(stationary.order, "idle")
+        XCTAssertEqual(stationary.x, defender.x, accuracy: 0.001)
+        XCTAssertEqual(stationary.y, defender.y, accuracy: 0.001)
+        XCTAssertEqual(after.selected, ["input-tank"])
     }
 
     @MainActor
@@ -207,7 +245,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "two tanks selected") { Set($0.selected) == Set(["input-tank", "input-wing"]) && !$0.pending }
         try worldCoordinate(1_540, 1_740, in: app).tap()
         try await waitFor(app, "fresh ground order after area selection") {
-            $0.entity("input-tank")?.order == "attackMove" && $0.entity("input-wing")?.order == "attackMove"
+            $0.entity("input-tank")?.order == "move" && $0.entity("input-wing")?.order == "move"
         }
     }
 
@@ -258,7 +296,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try tapEntity("input-tank", in: app)
         try await waitFor(app, "production panel does not trap selection") { $0.selected == ["input-tank"] }
         try worldCoordinate(1_540, 1_740, in: app).tap()
-        try await waitFor(app, "fresh ground command after production") { $0.entity("input-tank")?.order == "attackMove" }
+        try await waitFor(app, "fresh ground command after production") { $0.entity("input-tank")?.order == "move" }
     }
 
     @MainActor

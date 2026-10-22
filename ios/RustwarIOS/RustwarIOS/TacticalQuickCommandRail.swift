@@ -40,7 +40,7 @@ struct TacticalQuickCommandRail: View {
                         isAwaitingTarget: controller.isAwaitingMoveTarget,
                         systemImage: controller.isAwaitingMoveTarget ? "xmark.circle" : "arrow.up.right",
                         action: controller.toggleMoveCommand,
-                        hint: "Choose a destination on the battlefield."
+                        hint: "Choose a destination. Combat units fire in range while moving unless Hold Fire is set."
                     )
                 }
                 if controller.canIssueAttackMove || controller.isAwaitingAttackMoveTarget {
@@ -74,7 +74,7 @@ struct TacticalQuickCommandRail: View {
                         systemImage: "stop.fill",
                         action: controller.issueStopCommand,
                         shortcut: "s",
-                        hint: "Stops selected units and cancels the current target mode."
+                        hint: "Stops selected units and cancels the target mode. Units still defend in range unless Hold Fire is set."
                     )
                 }
             }
