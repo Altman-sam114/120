@@ -1,3 +1,11 @@
+## v3.14 / Selected force console
+
+2026-10-23。单智能体串行A/B/C；Altman-sam114/main已同步，.wp不动。选兵摘要改为实际UnitSnapshot派生的同源模型、名称、当前/最大HP与比例条；小队按UnitType稳定顺序最多八项显示数量。Controller仅只读投影，不新增存档状态或Core规则。短横屏提示改轻量单行/换行说明、status最小28pt，删除重复Quick Orders视觉标题，Select Area/Same Type改紧凑单行，所有按钮原action/shortcut/accessibility与至少44pt保持，辅助功能字号完整回退，生产header与卡片不改。
+
+第18项真实UI独立wounded初态122HP：点实际Tank要求122/245，六命令整卡首屏，真实框选两Tank要求367/490与type=2，再真实Move等待/取消/直接地面Move/Stop双单位；没有注入命令或改原17fixture/断言。严格名单18，426Core/24reporter/双架构五图/probe/JUnit11-0-1不降。本机不运行任何验证，等待新SHA全套C。百度操作参考已核对二级模组介绍vqs.com/down/222836.html的点选/双击同类/双点矩形说明，只作为交互参照，不复制资源或声称原作复现完成。
+
+前轮C通过：87d5399028192c37a32b8d131cea07e2c1522a49/run39876567869/attempt1/job120163492774，GitHubsuccess13m33s。准确artifact rustwar-ci-v1.2-main-87d5399-run39876567869-attempt1（ID12469640397，digestsha256:8b0dbde50a9d6dea791a63d2f27bd40788defff96a712d667046a8aa351d2307）下载11M至/private/tmp/rustwar-c-review-39876567869/，manifest/SHA/run/attempt/integrity匹配；426Core、17UI278.084s、24reporter、双架构/五场景/probecompiler0/JUnit11-0-1通过。NAVIGATION_DETOUR14samples/offset60/arrival1580-1810，COMMAND_CENTER_BUILDERunit-18/queue1->0/arrival1549.99823-1890。已逐图复看Home/Combat/Structures/Islands/Lava；生产与模型/FX/地表无本轮回退，导航/出厂时序C接受。单位间避让、地形自然度、真机手感/FPS与完整原作仍未完成。
+
 ## v3.13.1 / Birth timing and continuous production exit corridors
 
 2026-10-23。C拒绝e66c703805a9dbb9695c12d3cb6e2a5367fee42d/run39873781642/attempt1/job120154290797（failure3m07s）。准确artifact rustwar-ci-v1.2-main-e66c703-run39873781642-attempt1（ID12467960533，digestsha256:9bbd4c57fdbfa75f0ae98155f6f9c434d70b87747c74dfb9375085a0ad7555fe）下载120K至/private/tmp/rustwar-c-review-39873781642/，身份匹配；Core423已编译执行，421pass，两项旧测试4issues，31新导航/脱困/出厂方法均通过。24reporter/static/YAML/list通过；前置门控正确跳过App/probe/设备/UI（77/实际0），无五图，JUnit11/4/2，不宣布接受。

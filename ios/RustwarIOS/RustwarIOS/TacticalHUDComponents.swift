@@ -97,6 +97,7 @@ struct TacticalSectionHeader: View {
 struct TacticalCommandStatusView: View {
     let text: String
     let isAwaitingTarget: Bool
+    var usesCompactLayout = false
 
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
 
@@ -116,7 +117,7 @@ struct TacticalCommandStatusView: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 0) {
-                if isAwaitingTarget {
+                if isAwaitingTarget && !usesCompactLayout {
                     Text("TARGET MODE")
                         .font(.caption.bold())
                         .foregroundStyle(TacticalHUDTheme.awaitingStatusLabel)
@@ -137,7 +138,7 @@ struct TacticalCommandStatusView: View {
         .padding(.vertical, TacticalHUDTheme.denseSpacing)
         .frame(
             maxWidth: .infinity,
-            minHeight: TacticalHUDTheme.controlMinimumHeight,
+            minHeight: usesCompactLayout ? 28 : TacticalHUDTheme.controlMinimumHeight,
             alignment: .leading
         )
         .fixedSize(horizontal: false, vertical: true)

@@ -5,6 +5,7 @@ struct TacticalBattlefieldHintView: View {
     let detail: String
     let systemImage: String
     var compactDetail: String? = nil
+    var usesCompactLayout = false
 
     private var visibleDetail: String {
         compactDetail ?? detail
@@ -13,36 +14,38 @@ struct TacticalBattlefieldHintView: View {
     var body: some View {
         HStack(alignment: .center, spacing: TacticalHUDTheme.compactSpacing) {
             Image(systemName: systemImage)
-                .font(.body.weight(.semibold))
+                .font(usesCompactLayout ? .caption : .body.weight(.semibold))
                 .foregroundStyle(TacticalHUDTheme.accent)
-                .frame(width: 22)
+                .frame(width: usesCompactLayout ? 14 : 22)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 0) {
-                Text(title)
-                    .font(.caption.bold())
-                    .foregroundStyle(TacticalHUDTheme.primaryText)
-                    .lineLimit(nil)
-                    .fixedSize(horizontal: false, vertical: true)
+                if !usesCompactLayout {
+                    Text(title)
+                        .font(.caption.bold())
+                        .foregroundStyle(TacticalHUDTheme.primaryText)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 Text(visibleDetail)
-                    .font(.caption)
+                    .font(usesCompactLayout ? .caption2 : .caption)
                     .foregroundStyle(TacticalHUDTheme.secondaryText)
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.horizontal, TacticalHUDTheme.compactPadding)
-        .padding(.vertical, TacticalHUDTheme.denseSpacing)
-        .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight, alignment: .leading)
+        .padding(.horizontal, usesCompactLayout ? 0 : TacticalHUDTheme.compactPadding)
+        .padding(.vertical, usesCompactLayout ? 2 : TacticalHUDTheme.denseSpacing)
+        .frame(maxWidth: .infinity, minHeight: usesCompactLayout ? 0 : TacticalHUDTheme.controlMinimumHeight, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
         .layoutPriority(1)
         .background(
-            TacticalHUDTheme.selectionBackground,
+            usesCompactLayout ? Color.clear : TacticalHUDTheme.selectionBackground,
             in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
         )
         .overlay {
             RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
-                .stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1)
+                .stroke(usesCompactLayout ? Color.clear : TacticalHUDTheme.chromeStroke, lineWidth: 1)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)

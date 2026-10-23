@@ -26,6 +26,9 @@ enum CloudInteractionFixture {
             unit(.builder, id: "input-builder", at: WorldPoint(1_420, 1_885)),
             unit(.tank, id: "input-enemy", at: WorldPoint(1_580, 1_660), team: .enemy)
         ]
+        if ProcessInfo.processInfo.arguments.contains("--rustwar-ci-wounded-unit") {
+            state.units[0].hitPoints = 122
+        }
         if ProcessInfo.processInfo.arguments.contains("--rustwar-ci-centered-unit") {
             state.units[0].position = camera.center
         }

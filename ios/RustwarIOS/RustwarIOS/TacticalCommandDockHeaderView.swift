@@ -17,7 +17,8 @@ struct TacticalCommandDockHeaderView: View {
                     attackStanceSummary: controller.selectedAttackStanceCompactSummary,
                     attackStanceAccessibilitySummary: controller.selectedAttackStanceSummary,
                     radarUpgradeSummary: controller.selectedRadarUpgradeSummary,
-                    extractorUpgradeSummary: controller.selectedExtractorUpgradeSummary
+                    extractorUpgradeSummary: controller.selectedExtractorUpgradeSummary,
+                    units: controller.selectedUnitsForHUD
                 )
                 if controller.commandStatus == nil && controller.shouldShowBattlefieldInteractionHint {
                     TacticalBattlefieldHintView(
@@ -26,14 +27,16 @@ struct TacticalCommandDockHeaderView: View {
                         systemImage: controller.battlefieldInteractionHintSystemImage,
                         compactDetail: showsCompactHint
                             ? controller.battlefieldInteractionHintCompactDetail
-                            : nil
+                            : nil,
+                        usesCompactLayout: showsCompactHint
                     )
                 }
             }
             if let commandStatus = controller.commandStatus {
                 TacticalCommandStatusView(
                     text: commandStatus,
-                    isAwaitingTarget: controller.isAwaitingTargetCommand
+                    isAwaitingTarget: controller.isAwaitingTargetCommand,
+                    usesCompactLayout: showsCompactHint
                 )
             }
 

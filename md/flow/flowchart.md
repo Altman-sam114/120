@@ -1,3 +1,17 @@
+## v3.14 / 选兵控制台与首屏命令
+
+```mermaid
+flowchart LR
+    State[现有选择与存活单位] --> Read[Controller只读投影]
+    Read --> HUD[同源模型 / 名称 / 真实HP / 最多八类数量]
+    HUD --> Orders[紧凑说明与命令 / 至少44pt按钮]
+    Orders --> Input[原选中 / 等待目标 / 取消 / 直接点击 / Stop]
+    Input --> State
+    Orders --> Cloud[18真实UI / 426Core / 双架构五图 / 最新artifact C]
+```
+
+v3.13.1 已由C接受：87d5399/run39876567869/attempt1；426Core/17UI/24reporter/双架构五图/JUnit11-0-1，五图已复看。v3.14仍待云端，全部验证禁止本机。
+
 ## v3.13.1 / 出厂剩余时间
 
 ```mermaid

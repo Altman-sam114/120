@@ -206,12 +206,13 @@ struct TacticalCommandsSectionView: View {
         systemImage: String
     ) -> some View {
         if usesCompactSecondaryLabels {
-            VStack(spacing: TacticalHUDTheme.denseSpacing) {
+            HStack(spacing: TacticalHUDTheme.denseSpacing) {
                 Image(systemName: systemImage)
+                    .font(.caption)
                     .accessibilityHidden(true)
-                Text(compactTitle)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
+                Text(compactTitle.replacingOccurrences(of: "\n", with: " "))
+                    .font(.caption.bold())
+                    .lineLimit(1)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity)

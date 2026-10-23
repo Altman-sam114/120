@@ -12,25 +12,27 @@ struct TacticalQuickCommandRail: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
-            HStack(spacing: TacticalHUDTheme.compactSpacing) {
-                Label {
-                    Text("Quick Orders")
-                        .lineLimit(1)
-                        .fixedSize(horizontal: false, vertical: true)
-                } icon: {
-                    Image(systemName: "bolt.horizontal.circle")
-                        .accessibilityHidden(true)
+            if !usesCompactRow || dynamicTypeSize.isAccessibilitySize {
+                HStack(spacing: TacticalHUDTheme.compactSpacing) {
+                    Label {
+                        Text("Quick Orders")
+                            .lineLimit(1)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: {
+                        Image(systemName: "bolt.horizontal.circle")
+                            .accessibilityHidden(true)
+                    }
+                        .font(.caption.bold())
+                        .foregroundStyle(TacticalHUDTheme.metricLabel)
+                        .layoutPriority(1)
+                    Rectangle()
+                        .fill(TacticalHUDTheme.accent.opacity(0.55))
+                        .frame(height: 1)
                 }
-                    .font(.caption.bold())
-                    .foregroundStyle(TacticalHUDTheme.metricLabel)
-                    .layoutPriority(1)
-                Rectangle()
-                    .fill(TacticalHUDTheme.accent.opacity(0.55))
-                    .frame(height: 1)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Quick Orders")
+                .accessibilityAddTraits(.isHeader)
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Quick Orders")
-            .accessibilityAddTraits(.isHeader)
 
             TacticalCommandGrid(columns: columns, spacing: TacticalHUDTheme.denseSpacing) {
                 if controller.canIssueMove || controller.isAwaitingMoveTarget {

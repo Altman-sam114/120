@@ -50,7 +50,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
     @MainActor
     private func launch(lowMetal: Bool = false, tech2: Bool = false, centeredUnit: Bool = false,
                         stationaryDefense: Bool = false, commandCenterVisible: Bool = false,
-                        navigationObstacle: Bool = false) async throws -> XCUIApplication {
+                        navigationObstacle: Bool = false, woundedUnit: Bool = false) async throws -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = XCUIApplication()
@@ -61,6 +61,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         if stationaryDefense { app.launchArguments.append("--rustwar-ci-stationary-defense") }
         if commandCenterVisible { app.launchArguments.append("--rustwar-ci-visible-command-center") }
         if navigationObstacle { app.launchArguments.append("--rustwar-ci-navigation-obstacle") }
+        if woundedUnit { app.launchArguments.append("--rustwar-ci-wounded-unit") }
         app.launch()
         XCTAssertTrue(battlefield(app).waitForExistence(timeout: 15))
         try await waitFor(app, "fixture and rendered anchors loaded") {
@@ -116,6 +117,55 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let viewport = app.scrollViews["command-dock-scroll"].frame
         XCTAssertTrue(viewport.contains(button.frame), "Card clipped: \(button.frame), viewport \(viewport)", file: file, line: line)
         XCTAssertGreaterThanOrEqual(button.frame.height, 44, file: file, line: line)
+    }
+
+    @MainActor
+    func testSelectedForceHealthAndOrdersRemainVisible() async throws {
+        let app = try await launch(woundedUnit: true)
+        try tapEntity("input-tank", in: app)
+        try await waitFor(app, "real wounded Tank selected") { $0.selected == ["input-tank"] }
+        let health = app.descendants(matching: .any).matching(identifier: "selection-health").firstMatch
+        XCTAssertTrue(health.waitForExistence(timeout: 5))
+        XCTAssertEqual(health.value as? String, "122 of 245 hit points")
+        XCTAssertEqual(try snapshot(app).entity("input-tank")?.hp, 122)
+        for command in ["Move", "Attack Move", "Attack", "Stop", "command-select-area", "Select same type"] {
+            assertFullyVisible(app.buttons.matching(identifier: command).firstMatch, in: app)
+        }
+        app.buttons["command-select-area"].tap()
+        try await waitFor(app, "area mode before squad console") { $0.pending }
+        let start = try worldCoordinate(1_390, 1_840, in: app)
+        let end = try worldCoordinate(1_510, 1_780, in: app)
+        start.press(forDuration: 0.05, thenDragTo: end)
+        try await waitFor(app, "two Tanks selected for real squad summary") {
+            Set($0.selected) == Set(["input-tank", "input-wing"]) && !$0.pending
+        }
+        XCTAssertEqual(health.value as? String, "367 of 490 hit points")
+        let composition = app.descendants(matching: .any).matching(identifier: "selection-type-tank").firstMatch
+        XCTAssertTrue(composition.exists)
+        XCTAssertEqual(composition.value as? String, "2")
+        for command in ["Move", "Attack Move", "Attack", "Stop", "command-select-area", "Select same type"] {
+            assertFullyVisible(app.buttons.matching(identifier: command).firstMatch, in: app)
+        }
+        app.buttons.matching(identifier: "Move").firstMatch.tap()
+        try await waitFor(app, "real squad Move waits for target") { $0.pending }
+        let cancel = app.buttons["Cancel Move target"]
+        assertFullyVisible(cancel, in: app)
+        assertFullyVisible(app.buttons.matching(identifier: "Stop").firstMatch, in: app)
+        cancel.tap()
+        try await waitFor(app, "target cancellation keeps squad selected") {
+            !$0.pending && Set($0.selected) == Set(["input-tank", "input-wing"])
+        }
+        try worldCoordinate(1_540, 1_740, in: app).tap()
+        try await waitFor(app, "direct tap still moves the selected squad") {
+            $0.entity("input-tank")?.order == "move" && $0.entity("input-wing")?.order == "move"
+        }
+        let stop = app.buttons.matching(identifier: "Stop").firstMatch
+        assertFullyVisible(stop, in: app)
+        stop.tap()
+        try await waitFor(app, "real Stop clears both squad orders") {
+            $0.entity("input-tank")?.order == "idle" && $0.entity("input-wing")?.order == "idle"
+        }
+        print("SELECTED_FORCE_CONSOLE singleHP=122/245 squadHP=367/490 tanks=2 firstScreenOrders=6 cancelAndStop=passed")
     }
 
     @MainActor

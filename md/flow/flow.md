@@ -1,3 +1,11 @@
+## v3.14 / Selected force presentation
+
+GameController exposes selectedUnitsForHUD as a read-only projection of existing live selected-player UnitSnapshots. TacticalSelectionSummaryView derives the actual portrait/title, summed HP/maxHP, bounded ratio and stable UnitType composition (at most8entries). No duplicate game state, selection mutations or cache owner is introduced; portrait uses existing original material cache. Nonunit and producer paths retain their existing summaries. Accessibility exposes real HP and each type count; large type keeps full stance/guidance.
+
+Compact dock guidance/status is passive text with reduced chrome; primary actions remain in QuickCommandRail with >=44pt targets and unchanged semantics. Compact area/same-type labels use one row. The18th cloud UI case observes actual wounded/squad health, first-screen actions, Move waiting/cancel and direct ground Move/Stop through real taps; original17cases stay.426Core/24reporter/dual builds/five scenes remain. No local execution; new round awaits exact artifact C.
+
+Accepted87d5399028192c37a32b8d131cea07e2c1522a49/run39876567869/attempt1/job120163492774: artifactID12469640397 downloaded11M and all5images viewed. Identity/integrity/JUnit11-0-1,426Core/17UI/24reporter/builds/probes passed. Actual obstacle offset60/original arrival and Builder production/move passed; v3.13.1 is accepted, superseding its pending wording below. No crowd/hardware/original-parity claim.
+
 ## v3.13.1 / Birth tick accounting and exit corridors
 
 Production records previous progress, computes completion offset within the tick and supplies only remaining time to newborn unit order/weapon updates. A transient newbornAvailableTime map clears on every update/reset and never enters GameState. A paid item already complete but waiting for an exit may use the full newly available tick. Normal production durations/rates and legal-exit/Move/rally semantics remain. producerExit now checks continuous terrain/building corridor ignoring only the producer and checks living-unit clearance along the outward segment, rather than accepting a far clear endpoint beyond a neighboring structure.

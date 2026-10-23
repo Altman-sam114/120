@@ -443,6 +443,10 @@ final class GameController {
         engine.state.selectionSummary()
     }
 
+    var selectedUnitsForHUD: [UnitSnapshot] {
+        selectedPlayerUnits
+    }
+
     var shouldShowBattlefieldInteractionHint: Bool {
         selectedPlayerProducer == nil
     }
