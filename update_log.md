@@ -1,3 +1,11 @@
+## v3.15 / Terrain surface and shoreline refinement
+
+2026-10-23。单智能体串行A/B/C，v3.14准确C通过后同步main。仅BattlefieldTerrainArt表现层改动：周期材质256->512，颗粒/草叶/石粒/砂纹/水纹按面积四倍保持密度；降低陆地色差、增加最多8pt范围内柔边；water表现底层合并deep，deep继续独立深色覆盖，避免内边界出现假湿岸。外岸窄湿岸、裁切内浅水/稀疏泡沫替代明亮连续描线。旧定向轮廓/孔洞/对角dirt与全部逻辑地形不改。
+
+熔岩替换12个短W图案为每周期7个原创曲线网络，每条14段带3条5段分支，整个网络按保守256pt范围周期复制；玄武岩深槽、柔热光和细亮芯分层。无外部资源、粒子或逐帧生成，仍地图revision时烘焙四块opaque底图/8ptbleed/七类缓存。材质原始像素上限1.75->7MiB，底图48,030,720bytes不变；额外系统拷贝/mipmap/真机峰值未知，不宣称性能提升。保留426Core/18UI/24reporter/双架构五图/JUnit11-0-1，无本机验证；等待新SHA准确C，格状地图生成/轮廓自然度/车体运动/单位避让仍待继续。
+
+前轮C通过：0b9cf9c9d4230f1d0b49a7ebb2813b3304ef16bd/run39884440468/attempt1/job120189199853，GitHubsuccess16m56s。准确artifact rustwar-ci-v1.2-main-0b9cf9c-run39884440468-attempt1（ID12472477173，digestsha256:64461ed751c1594791fe025e1b0a14d9b1e3de094192f9879c099d78f4aaf2da）下载11M至/private/tmp/rustwar-c-review-39884440468/，身份/integrity匹配；426Core、18UI343.971s、24reporter、双架构/五场景/compiler0/JUnit11-0-1通过。SELECTED_FORCE_CONSOLE真实122/245->367/490/type2/六按钮整卡首屏/等待取消/Move/Stop通过，原17操作保持。已逐图复看Home/Combat/Structures/Islands/Lava：5单位1345/1345HP与各兵种1、小型Hover225/225HP、完整生产卡/18建筑组合/FX/地形可读；SelectArea/SameType首屏完整。新面板C接受，但全尺寸/VoiceOver/真机手感/FPS未由此证明，总目标继续。
+
 ## v3.14 / Selected force console
 
 2026-10-23。单智能体串行A/B/C；Altman-sam114/main已同步，.wp不动。选兵摘要改为实际UnitSnapshot派生的同源模型、名称、当前/最大HP与比例条；小队按UnitType稳定顺序最多八项显示数量。Controller仅只读投影，不新增存档状态或Core规则。短横屏提示改轻量单行/换行说明、status最小28pt，删除重复Quick Orders视觉标题，Select Area/Same Type改紧凑单行，所有按钮原action/shortcut/accessibility与至少44pt保持，辅助功能字号完整回退，生产header与卡片不改。

@@ -6,7 +6,7 @@ import RustwarCore
 /// Original terrain materials and rounded region contours, baked at map changes.
 @MainActor
 enum BattlefieldTerrainArt {
-    private static let materialSide: CGFloat = 256
+    private static let materialSide: CGFloat = 512
     private static let families: [TerrainKind] = [.grass, .dirt, .sand, .rock, .water, .deep, .lava]
     private static var materials: [TerrainKind: UIImage] = [:]
     private static let logger = Logger(subsystem: "com.rustwar.terrain", category: "atlas")
@@ -66,8 +66,11 @@ enum BattlefieldTerrainArt {
         var edges: [Int: [Int]] = [:]
         func add(_ start: Int, _ end: Int) { edges[start, default: []].append(end) }
         func matches(_ column: Int, _ row: Int) -> Bool {
-            column >= 0 && row >= 0 && column < terrain.columns && row < terrain.rows &&
-                family(terrain.terrain(column: column, row: row)) == kind
+            guard column >= 0, row >= 0, column < terrain.columns, row < terrain.rows else { return false }
+            let actual = family(terrain.terrain(column: column, row: row))
+            // Deep water overlays one continuous water base; its internal
+            // boundary must not acquire an artificial land bank.
+            return actual == kind || (kind == .water && actual == .deep)
         }
         for row in 0..<terrain.rows {
             for column in 0..<terrain.columns where matches(column, row) {
@@ -176,6 +179,7 @@ enum BattlefieldTerrainArt {
             }
             for kind in families where kind != .grass {
                 guard let path = paths[kind], !path.isEmpty else { continue }
+                drawMaterialMargin(kind, path: path, context: context)
                 context.saveGState()
                 context.setShadow(offset: CGSize(width: 0, height: kind == .rock ? 3 : 1),
                                   blur: kind == .rock ? 7 : 4,
@@ -190,13 +194,10 @@ enum BattlefieldTerrainArt {
                 if let material = material(for: kind).cgImage {
                     context.draw(material, in: CGRect(x: 0, y: 0, width: materialSide, height: materialSide), byTiling: true)
                 }
-                context.restoreGState()
                 if kind == .water || kind == .deep {
-                    context.addPath(path)
-                    context.setStrokeColor(UIColor(red: 0.48, green: 0.76, blue: 0.69, alpha: kind == .water ? 0.36 : 0.16).cgColor)
-                    context.setLineWidth(kind == .water ? 1.8 : 1)
-                    context.strokePath()
+                    drawWaterShelf(kind, path: path, context: context)
                 }
+                context.restoreGState()
             }
             let colors = [UIColor(red: 0.88, green: 0.86, blue: 0.68, alpha: 0.06).cgColor,
                           UIColor.clear.cgColor, UIColor.black.withAlphaComponent(0.10).cgColor] as CFArray
@@ -208,15 +209,44 @@ enum BattlefieldTerrainArt {
         }
     }
 
+    private static func drawMaterialMargin(_ kind: TerrainKind, path: CGPath, context: CGContext) {
+        context.saveGState()
+        switch kind {
+        case .water:
+            stroke(path, UIColor(red: 0.16, green: 0.21, blue: 0.17, alpha: 0.55), width: 10, context)
+            stroke(path, UIColor(red: 0.45, green: 0.43, blue: 0.29, alpha: 0.35), width: 5, context)
+        case .dirt, .sand, .rock:
+            context.setShadow(offset: .zero, blur: 3, color: baseColor(kind).withAlphaComponent(0.38).cgColor)
+            stroke(path, baseColor(kind).withAlphaComponent(0.28), width: 5, context)
+        default:
+            break
+        }
+        context.restoreGState()
+    }
+
+    /// Called inside the material clip, so the shelf never spills onto land.
+    private static func drawWaterShelf(_ kind: TerrainKind, path: CGPath, context: CGContext) {
+        context.saveGState()
+        if kind == .water {
+            stroke(path, UIColor(red: 0.09, green: 0.23, blue: 0.23, alpha: 0.32), width: 15, context)
+            stroke(path, UIColor(red: 0.36, green: 0.56, blue: 0.45, alpha: 0.22), width: 7, context)
+            context.setLineDash(phase: 0, lengths: [3, 7, 1, 5])
+            stroke(path, UIColor(red: 0.65, green: 0.78, blue: 0.65, alpha: 0.32), width: 1.1, context)
+        } else {
+            stroke(path, UIColor(red: 0.12, green: 0.34, blue: 0.39, alpha: 0.22), width: 12, context)
+        }
+        context.restoreGState()
+    }
+
     private static func baseColor(_ kind: TerrainKind) -> UIColor {
         switch kind {
-        case .grass, .grass2: UIColor(red: 0.31, green: 0.40, blue: 0.23, alpha: 1)
-        case .dirt: UIColor(red: 0.43, green: 0.36, blue: 0.27, alpha: 1)
-        case .sand: UIColor(red: 0.69, green: 0.63, blue: 0.44, alpha: 1)
-        case .rock: UIColor(red: 0.39, green: 0.42, blue: 0.38, alpha: 1)
+        case .grass, .grass2: UIColor(red: 0.29, green: 0.37, blue: 0.22, alpha: 1)
+        case .dirt: UIColor(red: 0.37, green: 0.35, blue: 0.26, alpha: 1)
+        case .sand: UIColor(red: 0.59, green: 0.55, blue: 0.40, alpha: 1)
+        case .rock: UIColor(red: 0.34, green: 0.37, blue: 0.33, alpha: 1)
         case .water: UIColor(red: 0.13, green: 0.37, blue: 0.43, alpha: 1)
         case .deep: UIColor(red: 0.075, green: 0.23, blue: 0.32, alpha: 1)
-        case .lava: UIColor(red: 0.23, green: 0.13, blue: 0.11, alpha: 1)
+        case .lava: UIColor(red: 0.16, green: 0.14, blue: 0.13, alpha: 1)
         }
     }
 
@@ -235,7 +265,7 @@ enum BattlefieldTerrainArt {
             var random = ArtRandom(state: seed)
             let light = radialGradient(UIColor(red: 0.82, green: 0.84, blue: 0.65, alpha: 0.14))
             let shade = radialGradient(UIColor(red: 0.06, green: 0.10, blue: 0.07, alpha: 0.20))
-            for index in 0..<26 {
+            for index in 0..<104 {
                 let center = CGPoint(x: random.range(0, materialSide), y: random.range(0, materialSide))
                 let radius = random.range(18, 72)
                 guard let gradient = index % 2 == 0 ? light : shade else { continue }
@@ -247,7 +277,7 @@ enum BattlefieldTerrainArt {
             }
             let darkGrain = CGMutablePath()
             let lightGrain = CGMutablePath()
-            for index in 0..<2_200 {
+            for index in 0..<8_800 {
                 let center = CGPoint(x: random.range(0, materialSide), y: random.range(0, materialSide))
                 let width = random.range(0.4, kind == .sand ? 1.2 : 2)
                 let height = random.range(0.4, 1.5)
@@ -286,7 +316,7 @@ enum BattlefieldTerrainArt {
         context.setLineCap(.round)
         switch kind {
         case .grass, .grass2:
-            for _ in 0..<140 {
+            for _ in 0..<560 {
                 let center = CGPoint(x: random.range(0, materialSide), y: random.range(0, materialSide))
                 let height = random.range(1.5, 4.5)
                 for point in periodicPositions(center, reach: 6) {
@@ -300,7 +330,7 @@ enum BattlefieldTerrainArt {
             }
             stroke(fine, UIColor(red: 0.69, green: 0.76, blue: 0.43, alpha: 0.24), width: 0.7, context)
         case .dirt, .rock:
-            for _ in 0..<42 {
+            for _ in 0..<168 {
                 let center = CGPoint(x: random.range(0, materialSide), y: random.range(0, materialSide))
                 let radius = random.range(0.8, kind == .rock ? 5 : 2.3)
                 for point in periodicPositions(center, reach: radius * 2) {
@@ -314,7 +344,7 @@ enum BattlefieldTerrainArt {
             fill(shade, UIColor.black.withAlphaComponent(0.17), context)
             stroke(fine, UIColor.white.withAlphaComponent(0.20), width: 0.8, context)
         case .sand:
-            for _ in 0..<54 {
+            for _ in 0..<216 {
                 let center = CGPoint(x: random.range(0, materialSide), y: random.range(0, materialSide))
                 let length = random.range(5, 17)
                 for point in periodicPositions(center, reach: 20) {
@@ -325,7 +355,7 @@ enum BattlefieldTerrainArt {
             }
             stroke(fine, UIColor(red: 0.91, green: 0.86, blue: 0.65, alpha: 0.18), width: 0.9, context)
         case .water, .deep:
-            for _ in 0..<44 {
+            for _ in 0..<176 {
                 let center = CGPoint(x: random.range(0, materialSide), y: random.range(0, materialSide))
                 let length = random.range(7, 30)
                 for point in periodicPositions(center, reach: 34) {
@@ -338,19 +368,67 @@ enum BattlefieldTerrainArt {
             stroke(fine, UIColor(red: 0.58, green: 0.83, blue: 0.79, alpha: kind == .water ? 0.20 : 0.12),
                    width: 0.8, context)
         case .lava:
-            for _ in 0..<12 {
-                let center = CGPoint(x: random.range(0, materialSide), y: random.range(0, materialSide))
-                let length = random.range(8, 28)
-                for point in periodicPositions(center, reach: 34) {
-                    fine.move(to: CGPoint(x: point.x - length / 2, y: point.y - 4))
-                    fine.addLine(to: CGPoint(x: point.x - length * 0.14, y: point.y + 2))
-                    fine.addLine(to: CGPoint(x: point.x + length * 0.1, y: point.y - 1))
-                    fine.addLine(to: CGPoint(x: point.x + length / 2, y: point.y + 5))
-                }
-            }
-            stroke(fine, UIColor(red: 0.85, green: 0.19, blue: 0.04, alpha: 0.60), width: 4.5, context)
-            stroke(fine, UIColor(red: 1, green: 0.49, blue: 0.11, alpha: 0.85), width: 1.3, context)
+            drawMoltenFissures(random: &random, context: context)
         }
+    }
+
+    private static func drawMoltenFissures(random: inout ArtRandom, context: CGContext) {
+        let veins = CGMutablePath()
+        let branches = CGMutablePath()
+        for _ in 0..<7 {
+            let center = CGPoint(x: random.range(0, materialSide), y: random.range(0, materialSide))
+            var direction = random.range(-.pi, .pi)
+            var points = [CGPoint.zero]
+            for _ in 0..<14 {
+                direction += random.range(-0.58, 0.58)
+                let length = random.range(5, 14)
+                let last = points[points.count - 1]
+                points.append(CGPoint(x: last.x + cos(direction) * length, y: last.y + sin(direction) * length))
+            }
+            var forks: [[CGPoint]] = []
+            for index in [4, 8, 11] {
+                var fork = [points[index]]
+                let preceding = points[index - 1]
+                var angle = atan2(points[index].y - preceding.y, points[index].x - preceding.x) +
+                    random.range(0.6, 1.25) * (random.value() < 0.5 ? -1 : 1)
+                for _ in 0..<5 {
+                    angle += random.range(-0.7, 0.7)
+                    let length = random.range(4, 10)
+                    let last = fork[fork.count - 1]
+                    fork.append(CGPoint(x: last.x + cos(angle) * length, y: last.y + sin(angle) * length))
+                }
+                forks.append(fork)
+            }
+            // The complete vein/fork stays within 250pt of its seed. Wrap the
+            // whole network, not individual segments, to preserve period edges.
+            for offset in periodicPositions(center, reach: 256) {
+                appendCurvedLine(points, offset: offset, to: veins)
+                for fork in forks { appendCurvedLine(fork, offset: offset, to: branches) }
+            }
+        }
+        stroke(veins, UIColor(red: 0.045, green: 0.035, blue: 0.03, alpha: 0.82), width: 8, context)
+        stroke(branches, UIColor.black.withAlphaComponent(0.48), width: 3.8, context)
+        context.saveGState()
+        context.setShadow(offset: .zero, blur: 5, color: UIColor(red: 1, green: 0.20, blue: 0.025, alpha: 0.50).cgColor)
+        stroke(veins, UIColor(red: 0.82, green: 0.16, blue: 0.025, alpha: 0.68), width: 4.5, context)
+        stroke(branches, UIColor(red: 0.90, green: 0.23, blue: 0.035, alpha: 0.65), width: 1.8, context)
+        context.restoreGState()
+        stroke(veins, UIColor(red: 1, green: 0.49, blue: 0.10, alpha: 0.84), width: 1.65, context)
+        stroke(branches, UIColor(red: 1, green: 0.54, blue: 0.14, alpha: 0.76), width: 0.6, context)
+        stroke(veins, UIColor(red: 1, green: 0.77, blue: 0.38, alpha: 0.70), width: 0.45, context)
+    }
+
+    private static func appendCurvedLine(_ points: [CGPoint], offset: CGPoint, to path: CGMutablePath) {
+        guard points.count >= 2 else { return }
+        func translated(_ point: CGPoint) -> CGPoint { CGPoint(x: point.x + offset.x, y: point.y + offset.y) }
+        path.move(to: translated(points[0]))
+        for index in 1..<points.count {
+            let previous = points[index - 1]
+            let current = points[index]
+            let midpoint = CGPoint(x: (previous.x + current.x) / 2, y: (previous.y + current.y) / 2)
+            path.addQuadCurve(to: translated(midpoint), control: translated(previous))
+        }
+        if let last = points.last { path.addLine(to: translated(last)) }
     }
 
     private static func fill(_ path: CGPath, _ color: UIColor, _ context: CGContext) {

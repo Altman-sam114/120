@@ -1,3 +1,17 @@
+## v3.15 / 地表材质细化
+
+```mermaid
+flowchart LR
+    Grid[原地形 / 通行规则保持] --> Paths[原区域孔洞 / water底层含deep]
+    Paths --> Margins[外侧湿岸 / 裁切内浅水 / 陆地柔边]
+    Material[七类512周期材质 / 弯曲熔岩分支] --> Bake[地图revision时四块opaque底图 / 8pt重叠]
+    Margins --> Bake
+    Bake --> Scene[原terrain层 / 单位与HUD保持]
+    Scene --> C[云端426Core / 18真实UI / 双架构五图 / 准确C]
+```
+
+v3.14已通过0b9cf9c/run39884440468/attempt1，五图已复看；v3.15待新SHA云端验收。原始材质最大7MiB，底图约48MB，真机峰值未知；不以材质改进声明地图生成或原作复现完成。
+
 ## v3.14 / 选兵控制台与首屏命令
 
 ```mermaid

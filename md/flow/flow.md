@@ -1,3 +1,11 @@
+## v3.15 / Terrain surface ownership
+
+BattlefieldTerrainArt retains map-revision-only four-tile opaque baking/8ptbleed/shared world origin and directed boundary tracing. Water presentation matches both water/deep tiles for one continuous base and outer bank; the separate deep path supplies its darker material/shelf without a false land bank. Navigation/TerrainGrid values/generation remain unchanged. Traversable margins use <=8pt colored feather; clipped inner water shelves replace continuous bright contours.
+
+Seven deterministic world-periodic source materials are512px, with fourfold grain/detail counts preserving density and subdued earth colors. Lava uses7original curved networks per period,14segments/3five-segment forks each, conservative256pt whole-network wrapping and dark-crust/soft-glow/fine-hot-core layers. No runtime particles/actions/new scene layer or per-frame bake. At most7MiB material source pixels versus1.75MiB before; four atlas source48,030,720bytes/mipmap tradeoff unchanged, actual peak memory unknown.426Core/18UI/24reporter/dual/five/compiler/JUnit11-0-1 stay; no local execution. Exact new C pending, and map composition remains visibly grid based.
+
+Accepted0b9cf9c9d4230f1d0b49a7ebb2813b3304ef16bd/run39884440468/attempt1/job120189199853, artifactID12472477173 downloaded11M/all5viewed:426Core/18UI/24reporter/dual builds/compiler/five/JUnit11-0-1 pass. Actual force health/count/6first-screen orders/cancel/Move/Stop passed; v3.14 accepted, superseding pending wording below. No device/all-sizes/original-parity claim.
+
 ## v3.14 / Selected force presentation
 
 GameController exposes selectedUnitsForHUD as a read-only projection of existing live selected-player UnitSnapshots. TacticalSelectionSummaryView derives the actual portrait/title, summed HP/maxHP, bounded ratio and stable UnitType composition (at most8entries). No duplicate game state, selection mutations or cache owner is introduced; portrait uses existing original material cache. Nonunit and producer paths retain their existing summaries. Accessibility exposes real HP and each type count; large type keeps full stance/guidance.
