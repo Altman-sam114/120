@@ -1,3 +1,16 @@
+## v3.13.1 / 出厂剩余时间
+
+```mermaid
+flowchart LR
+    Tick[本次生产tick] --> Finish[原进度到正常完成时刻]
+    Finish --> Exit[建筑到出口连续通道 / 外侧单位间距]
+    Exit --> Born[生成一个单位与原rally Move]
+    Finish --> Remainder[tick时长减完成偏移]
+    Remainder --> Budget[仅剩余时间可移动与更新武器]
+    Born --> Budget
+    Budget --> Clear[下次tick / reset清临时表 / 不进存档]
+```
+
 ## v3.13 / 通行、恢复与出厂
 
 ```mermaid

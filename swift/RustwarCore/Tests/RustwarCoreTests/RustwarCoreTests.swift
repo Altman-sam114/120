@@ -7467,9 +7467,13 @@ import Testing
     for index in state.units.indices where state.units[index].team == .enemy {
         state.units[index].attackStance = .holdFire
     }
+    // Death cleanup is independent of the cross-map route and its travel time.
+    let scout = try #require(state.units.first { $0.team == .enemy && $0.type == .scout })
+    let tankIndex = try #require(state.units.firstIndex { $0.team == .player && $0.type == .tank })
+    state.units[tankIndex].position = WorldPoint(scout.position.x - 70, scout.position.y)
     var engine = GameEngine(state: state, enemyAIEnabled: false)
 
-    let attackerTarget = engine.select(at: WorldPoint(1_030, 2_020), includeEnemies: false)
+    let attackerTarget = engine.select(entityID: state.units[tankIndex].id)
     let attacker = try #require(attackerTarget)
     let enemyScout = try #require(engine.state.units.first { $0.team == .enemy && $0.type == .scout })
 

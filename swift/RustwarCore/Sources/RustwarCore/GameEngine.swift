@@ -17,6 +17,7 @@ public struct GameEngine: Sendable {
     public private(set) var state: GameState
     public private(set) var enemyAIEnabled: Bool
     private var navigation: UnitNavigationState
+    private var newbornAvailableTime: [String: Double] = [:]
 
     public init(mapID: MapID = .coast, mode: GameMode = .skirmish, enemyAIEnabled: Bool = true) {
         self.state = GameState(mapID: mapID, mode: mode)
@@ -41,6 +42,7 @@ public struct GameEngine: Sendable {
         }
 
         let step = min(deltaTime, 1)
+        newbornAvailableTime.removeAll(keepingCapacity: true)
         state.elapsed += step
         for team in Team.allCases {
             state.metal[team, default: 0] += state.income(for: team) * step
@@ -119,6 +121,7 @@ public struct GameEngine: Sendable {
     public mutating func reset(mapID: MapID = .coast) {
         state = GameState(mapID: mapID)
         navigation = UnitNavigationState(terrain: state.terrain)
+        newbornAvailableTime.removeAll(keepingCapacity: true)
     }
 
     @discardableResult
@@ -1193,35 +1196,37 @@ public struct GameEngine: Sendable {
             guard state.units[unitIndex].hitPoints > 0 else {
                 continue
             }
+            let unitDeltaTime = min(deltaTime, newbornAvailableTime[state.units[unitIndex].id] ?? deltaTime)
+            guard unitDeltaTime > 1e-9 else { continue }
             guard let order = state.units[unitIndex].order else {
-                updateOpportunisticFire(unitIndex: unitIndex, deltaTime: deltaTime)
+                updateOpportunisticFire(unitIndex: unitIndex, deltaTime: unitDeltaTime)
                 continue
             }
 
             switch order {
             case let .move(destination):
-                updateMoveOrder(unitIndex: unitIndex, destination: destination, deltaTime: deltaTime)
-                updateOpportunisticFire(unitIndex: unitIndex, deltaTime: deltaTime)
+                updateMoveOrder(unitIndex: unitIndex, destination: destination, deltaTime: unitDeltaTime)
+                updateOpportunisticFire(unitIndex: unitIndex, deltaTime: unitDeltaTime)
             case let .attack(targetID):
-                updateAttackOrder(unitIndex: unitIndex, targetID: targetID, deltaTime: deltaTime)
+                updateAttackOrder(unitIndex: unitIndex, targetID: targetID, deltaTime: unitDeltaTime)
             case let .attackMove(destination):
-                updateAttackMoveOrder(unitIndex: unitIndex, destination: destination, deltaTime: deltaTime)
+                updateAttackMoveOrder(unitIndex: unitIndex, destination: destination, deltaTime: unitDeltaTime)
             case let .patrol(origin, destination, returning):
                 updatePatrolOrder(
                     unitIndex: unitIndex,
                     origin: origin,
                     destination: destination,
                     returning: returning,
-                    deltaTime: deltaTime
+                    deltaTime: unitDeltaTime
                 )
             case let .guardTarget(targetID, offset):
-                updateGuardOrder(unitIndex: unitIndex, targetID: targetID, offset: offset, deltaTime: deltaTime)
+                updateGuardOrder(unitIndex: unitIndex, targetID: targetID, offset: offset, deltaTime: unitDeltaTime)
             case let .build(targetID):
-                updateBuildOrder(unitIndex: unitIndex, targetID: targetID, deltaTime: deltaTime)
+                updateBuildOrder(unitIndex: unitIndex, targetID: targetID, deltaTime: unitDeltaTime)
             case let .repair(targetID):
-                updateRepairOrder(unitIndex: unitIndex, targetID: targetID, deltaTime: deltaTime)
+                updateRepairOrder(unitIndex: unitIndex, targetID: targetID, deltaTime: unitDeltaTime)
             case let .reclaim(wreckID):
-                updateReclaimOrder(unitIndex: unitIndex, wreckID: wreckID, deltaTime: deltaTime)
+                updateReclaimOrder(unitIndex: unitIndex, wreckID: wreckID, deltaTime: unitDeltaTime)
             }
         }
         removeDestroyedEntities()
@@ -1709,6 +1714,7 @@ public struct GameEngine: Sendable {
                 continue
             }
 
+            let previousProgress = state.buildings[buildingIndex].productionQueue[0].progress
             state.buildings[buildingIndex].productionQueue[0].progress += deltaTime
             guard state.buildings[buildingIndex].productionQueue[0].progress >= state.buildings[buildingIndex].productionQueue[0].buildTime else {
                 continue
@@ -1723,7 +1729,9 @@ public struct GameEngine: Sendable {
                 continue
             }
             state.buildings[buildingIndex].productionQueue.removeFirst()
-            spawnUnit(type: completedItem.unitType, team: building.team, position: exit, rally: building.rally)
+            let id = spawnUnit(type: completedItem.unitType, team: building.team, position: exit, rally: building.rally)
+            let completionOffset = max(0, completedItem.buildTime - previousProgress)
+            newbornAvailableTime[id] = max(0, deltaTime - completionOffset)
             enqueueRepeatedUnitIfReady(at: buildingIndex)
         }
     }
@@ -1809,11 +1817,12 @@ public struct GameEngine: Sendable {
         }
     }
 
-    private mutating func spawnUnit(type: UnitType, team: Team, position: WorldPoint, rally: WorldPoint) {
+    private mutating func spawnUnit(type: UnitType, team: Team, position: WorldPoint, rally: WorldPoint) -> String {
         let definition = GameDefinitions.unit(type)
+        let id = nextID(prefix: "unit")
         state.units.append(
             UnitSnapshot(
-                id: nextID(prefix: "unit"),
+                id: id,
                 type: type,
                 team: team,
                 position: position.clampedToMap(),
@@ -1822,6 +1831,7 @@ public struct GameEngine: Sendable {
                 order: .move(destination: rally.clampedToMap())
             )
         )
+        return id
     }
 
     @discardableResult

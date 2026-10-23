@@ -265,3 +265,66 @@ private func navigationBuilding(_ type: BuildingType = .landFactory, at position
     #expect(unit.position.distanceSquared(to: region.center) <= 125 * 125)
     #expect(runtime.routePlanCount == 1)
 }
+
+@Test func engineNewbornMovesOnlyForTimeRemainingAfterProductionCompletes() throws {
+    var state = navigationState()
+    state.units = []
+    var producer = navigationBuilding()
+    producer.productionQueue = [ProductionQueueItem(id: "paid", unitType: .scout, progress: 3.9, buildTime: 4)]
+    state.buildings = [producer]
+    state.metal[.player] = 910
+    let world = NavigationWorld(terrain: state.terrain, obstacles: [NavigationObstacle(producer)])
+    let exit = try #require(world.producerExit(for: producer, type: .scout, units: []))
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    engine.update(deltaTime: 0.5)
+    let born = try #require(engine.state.units.first)
+    let traveled = born.position.distanceSquared(to: exit).squareRoot()
+    #expect(abs(traveled - GameDefinitions.unit(.scout).speed * 0.4) < 1e-6)
+    #expect(born.order == .move(destination: producer.rally))
+    #expect(engine.state.metal[.player] == 910)
+}
+
+@Test func engineExplicitAttackDetoursWaterKillsTargetAndClearsOrder() throws {
+    var state = navigationState()
+    var tiles = state.terrain.tiles
+    for row in 0..<10 where row != 7 && row != 8 { tiles[row * 12 + 5] = .water }
+    state.terrain = TerrainGrid(columns: 12, rows: 10, tiles: tiles)
+    var target = navigationActor(.builder, id: "enemy", at: WorldPoint(418, 110))
+    target.team = .enemy
+    state.units.append(target)
+    var engine = GameEngine(state: state, enemyAIEnabled: false)
+    #expect(engine.issueAttack(targetID: target.id) == .issued)
+    var detour = 0.0
+    var damaged = false
+    for _ in 0..<200 {
+        engine.update(deltaTime: 0.1)
+        let unit = try #require(engine.state.units.first { $0.id == "actor" })
+        detour = max(detour, unit.position.y)
+        if unit.position.x >= 220 && unit.position.x <= 264 {
+            #expect(unit.position.y >= 323 - 1e-7 && unit.position.y <= 381 + 1e-7)
+        }
+        if let enemy = engine.state.units.first(where: { $0.id == target.id }) {
+            damaged = damaged || enemy.hitPoints < target.hitPoints
+        }
+    }
+    #expect(detour >= 323)
+    #expect(damaged)
+    #expect(!engine.state.units.contains { $0.id == target.id })
+    #expect(engine.state.units.first { $0.id == "actor" }?.order == nil)
+    #expect(engine.state.wrecks.count == 1)
+}
+
+@Test func producerExitCannotJumpBeyondANeighboringStructure() throws {
+    let state = navigationState()
+    let producer = navigationBuilding()
+    var neighbor = navigationBuilding(.turret, at: WorldPoint(300, 220))
+    neighbor = BuildingSnapshot(id: "neighbor", type: neighbor.type, team: neighbor.team,
+                                 position: neighbor.position, hitPoints: neighbor.hitPoints,
+                                 maxHitPoints: neighbor.maxHitPoints, rally: neighbor.rally)
+    let world = NavigationWorld(terrain: state.terrain,
+                                obstacles: [NavigationObstacle(producer), NavigationObstacle(neighbor)])
+    let exit = try #require(world.producerExit(for: producer, type: .scout, units: []))
+    let corridor = NavigationWorld(terrain: state.terrain, obstacles: [NavigationObstacle(neighbor)])
+    #expect(corridor.canTravel(from: producer.position, to: exit, type: .scout))
+    #expect(world.canOccupy(exit, type: .scout))
+}

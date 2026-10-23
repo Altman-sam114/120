@@ -136,6 +136,7 @@ struct NavigationWorld: Sendable {
     func producerExit(for building: BuildingSnapshot, type: UnitType, units: [UnitSnapshot]) -> WorldPoint? {
         let radius = GameDefinitions.unit(type).radius
         let halfSize = GameDefinitions.building(building.type).size / 2
+        let corridor = NavigationWorld(terrain: terrain, obstacles: obstacles.filter { $0.id != building.id })
         var best: WorldPoint?
         var bestScore = Double.infinity
         for ring in [0.0, GameConstants.tileSize * 0.5, GameConstants.tileSize] {
@@ -145,10 +146,20 @@ struct NavigationWorld: Sendable {
                 let dy = sin(angle)
                 let distance = halfSize / max(abs(dx), abs(dy)) + radius + 8 + ring
                 let point = WorldPoint(building.position.x + dx * distance, building.position.y + dy * distance)
-                guard canOccupy(point, type: type), units.allSatisfy({ unit in
+                let portalDistance = (halfSize + radius) / max(abs(dx), abs(dy))
+                let portal = WorldPoint(building.position.x + dx * portalDistance,
+                                        building.position.y + dy * portalDistance)
+                guard canOccupy(point, type: type), corridor.canTravel(from: building.position, to: point, type: type),
+                      units.allSatisfy({ unit in
                     guard unit.hitPoints > 0 else { return true }
                     let clearance = radius + GameDefinitions.unit(unit.type).radius + 4
-                    return point.distanceSquared(to: unit.position) >= clearance * clearance
+                    let sx = point.x - portal.x
+                    let sy = point.y - portal.y
+                    let lengthSquared = sx * sx + sy * sy
+                    let t = lengthSquared > 1e-10
+                        ? max(0, min(1, ((unit.position.x - portal.x) * sx + (unit.position.y - portal.y) * sy) / lengthSquared)) : 0
+                    let nearest = WorldPoint(portal.x + sx * t, portal.y + sy * t)
+                    return nearest.distanceSquared(to: unit.position) >= clearance * clearance
                 }) else { continue }
                 let score = point.distanceSquared(to: building.rally) + distance * 0.01
                 if score < bestScore { bestScore = score; best = point }

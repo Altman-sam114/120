@@ -1,3 +1,11 @@
+## v3.13.1 / Birth timing and continuous production exit corridors
+
+2026-10-23。C拒绝e66c703805a9dbb9695c12d3cb6e2a5367fee42d/run39873781642/attempt1/job120154290797（failure3m07s）。准确artifact rustwar-ci-v1.2-main-e66c703-run39873781642-attempt1（ID12467960533，digestsha256:9bbd4c57fdbfa75f0ae98155f6f9c434d70b87747c74dfb9375085a0ad7555fe）下载120K至/private/tmp/rustwar-c-review-39873781642/，身份匹配；Core423已编译执行，421pass，两项旧测试4issues，31新导航/脱困/出厂方法均通过。24reporter/static/YAML/list通过；前置门控正确跳过App/probe/设备/UI（77/实际0），无五图，JUnit11/4/2，不宣布接受。
+
+新Builder在完成生产当tick获得整帧移动而提前到rally，修正为记录previousProgress并计算完成偏移，只向新单位提供剩余时间；newbornAvailableTime临时表每tick/reset清空，不进GameState，已完成堵出口项目在出口可用tick可用整帧。保留原Builder出口/Move/最终rally断言；新增3.9/4进度+0.5tick仅移动0.4tick回归。producerExit补忽略自身建筑的整段地形/建筑通道和外侧活单位间距，新增邻近建筑不能跳出的回归。
+
+旧attackCommandRemovesDestroyedTargetAndClearsOrder的36秒跨Coast前提来自原穿水直线；保留36ticks及击杀/清订单断言，将该死亡清理fixture置于敌Scout70距离。新增真正绕水opening的手动Attack，检查绕行/合法跨越/真实HP下降/击杀/单残骸/订单清理，不只加时或删断言。新增3方法，423->426预期；17UI/24reporter/双架构五图/compiler/JUnit11-0-1不降。README/flow/test/版本提示词同步，无本地任何验证，.wp未动，等待新SHA完整云端C，总目标继续。
+
 ## v3.13 / Navigation, legal exits and continuous legacy recovery
 
 2026-10-23。单智能体串行A/B/C，确认远端main为b1并同步。NavigationGrid新增实际半径circle/连续capsule-rectangle碰撞、八邻居A*堆/无斜切/有限96x64网格校验、精确合法端点和可达近处。UnitNavigationState由GameEngine构造/reset，地形随engine固定、存活建筑脚印变化重建、按真实订单/类型/位置/目标/工作范围缓存，静态失败不逐帧A*、移动目标11pt/0.25s重算、Stop和失活清理。moveUnit接入所有原订单、跨waypoint消耗原速度预算，普通Move沿途开火与战斗/经济数值保持。Builder首选group点失败时尝试125/125/92范围的0.92安全工作圈，保存字段与原相机/手势/渲染不改。
