@@ -213,8 +213,8 @@ enum BattlefieldTerrainArt {
         context.saveGState()
         switch kind {
         case .water:
-            stroke(path, UIColor(red: 0.16, green: 0.21, blue: 0.17, alpha: 0.55), width: 10, context)
-            stroke(path, UIColor(red: 0.45, green: 0.43, blue: 0.29, alpha: 0.35), width: 5, context)
+            stroke(path, UIColor(red: 0.16, green: 0.21, blue: 0.17, alpha: 0.18), width: 3, context)
+            stroke(path, UIColor(red: 0.45, green: 0.43, blue: 0.29, alpha: 0.16), width: 1.5, context)
         case .dirt, .sand, .rock:
             context.setShadow(offset: .zero, blur: 3, color: baseColor(kind).withAlphaComponent(0.38).cgColor)
             stroke(path, baseColor(kind).withAlphaComponent(0.28), width: 5, context)
@@ -227,13 +227,14 @@ enum BattlefieldTerrainArt {
     /// Called inside the material clip, so the shelf never spills onto land.
     private static func drawWaterShelf(_ kind: TerrainKind, path: CGPath, context: CGContext) {
         context.saveGState()
+        context.saveGState()
+        context.setShadow(offset: .zero, blur: 4,
+                          color: UIColor(red: 0.06, green: 0.19, blue: 0.20, alpha: 0.22).cgColor)
+        stroke(path, UIColor(red: 0.16, green: 0.36, blue: 0.32, alpha: 0.10), width: 1.1, context)
+        context.restoreGState()
         if kind == .water {
-            stroke(path, UIColor(red: 0.09, green: 0.23, blue: 0.23, alpha: 0.32), width: 15, context)
-            stroke(path, UIColor(red: 0.36, green: 0.56, blue: 0.45, alpha: 0.22), width: 7, context)
             context.setLineDash(phase: 0, lengths: [3, 7, 1, 5])
-            stroke(path, UIColor(red: 0.65, green: 0.78, blue: 0.65, alpha: 0.32), width: 1.1, context)
-        } else {
-            stroke(path, UIColor(red: 0.12, green: 0.34, blue: 0.39, alpha: 0.22), width: 12, context)
+            stroke(path, UIColor(red: 0.65, green: 0.78, blue: 0.65, alpha: 0.14), width: 0.7, context)
         }
         context.restoreGState()
     }
@@ -375,13 +376,16 @@ enum BattlefieldTerrainArt {
     private static func drawMoltenFissures(random: inout ArtRandom, context: CGContext) {
         let veins = CGMutablePath()
         let branches = CGMutablePath()
+        let hotPatches = CGMutablePath()
+        context.setLineCap(.butt)
+        context.setLineJoin(.bevel)
         for _ in 0..<7 {
             let center = CGPoint(x: random.range(0, materialSide), y: random.range(0, materialSide))
             var direction = random.range(-.pi, .pi)
             var points = [CGPoint.zero]
             for _ in 0..<14 {
-                direction += random.range(-0.58, 0.58)
-                let length = random.range(5, 14)
+                direction += random.range(-1.05, 1.05)
+                let length = random.range(3, 14)
                 let last = points[points.count - 1]
                 points.append(CGPoint(x: last.x + cos(direction) * length, y: last.y + sin(direction) * length))
             }
@@ -399,36 +403,41 @@ enum BattlefieldTerrainArt {
                 }
                 forks.append(fork)
             }
+            let widths = (1..<points.count).map { _ in random.value() < 0.60 ? random.range(0.25, 1.1) : 0 }
             // The complete vein/fork stays within 250pt of its seed. Wrap the
             // whole network, not individual segments, to preserve period edges.
             for offset in periodicPositions(center, reach: 256) {
-                appendCurvedLine(points, offset: offset, to: veins)
-                for fork in forks { appendCurvedLine(fork, offset: offset, to: branches) }
+                appendFracturedLine(points, offset: offset, to: veins)
+                for fork in forks { appendFracturedLine(fork, offset: offset, to: branches) }
+                for index in 1..<points.count where widths[index - 1] > 0 {
+                    let start = points[index - 1]
+                    let end = points[index]
+                    let length = max(1, hypot(end.x - start.x, end.y - start.y))
+                    let nx = -(end.y - start.y) / length * widths[index - 1]
+                    let ny = (end.x - start.x) / length * widths[index - 1]
+                    hotPatches.move(to: CGPoint(x: start.x + nx + offset.x, y: start.y + ny + offset.y))
+                    hotPatches.addLine(to: CGPoint(x: end.x + nx * 0.35 + offset.x, y: end.y + ny * 0.35 + offset.y))
+                    hotPatches.addLine(to: CGPoint(x: end.x - nx * 0.35 + offset.x, y: end.y - ny * 0.35 + offset.y))
+                    hotPatches.addLine(to: CGPoint(x: start.x - nx + offset.x, y: start.y - ny + offset.y))
+                    hotPatches.closeSubpath()
+                }
             }
         }
-        stroke(veins, UIColor(red: 0.045, green: 0.035, blue: 0.03, alpha: 0.82), width: 8, context)
-        stroke(branches, UIColor.black.withAlphaComponent(0.48), width: 3.8, context)
+        stroke(veins, UIColor(red: 0.045, green: 0.035, blue: 0.03, alpha: 0.76), width: 3.3, context)
+        stroke(branches, UIColor.black.withAlphaComponent(0.42), width: 1.6, context)
         context.saveGState()
-        context.setShadow(offset: .zero, blur: 5, color: UIColor(red: 1, green: 0.20, blue: 0.025, alpha: 0.50).cgColor)
-        stroke(veins, UIColor(red: 0.82, green: 0.16, blue: 0.025, alpha: 0.68), width: 4.5, context)
-        stroke(branches, UIColor(red: 0.90, green: 0.23, blue: 0.035, alpha: 0.65), width: 1.8, context)
+        context.setShadow(offset: .zero, blur: 2, color: UIColor(red: 1, green: 0.20, blue: 0.025, alpha: 0.28).cgColor)
+        stroke(veins, UIColor(red: 0.78, green: 0.14, blue: 0.025, alpha: 0.62), width: 1.5, context)
+        stroke(branches, UIColor(red: 0.86, green: 0.21, blue: 0.035, alpha: 0.58), width: 0.65, context)
+        fill(hotPatches, UIColor(red: 1, green: 0.43, blue: 0.07, alpha: 0.82), context)
         context.restoreGState()
-        stroke(veins, UIColor(red: 1, green: 0.49, blue: 0.10, alpha: 0.84), width: 1.65, context)
-        stroke(branches, UIColor(red: 1, green: 0.54, blue: 0.14, alpha: 0.76), width: 0.6, context)
-        stroke(veins, UIColor(red: 1, green: 0.77, blue: 0.38, alpha: 0.70), width: 0.45, context)
     }
 
-    private static func appendCurvedLine(_ points: [CGPoint], offset: CGPoint, to path: CGMutablePath) {
+    private static func appendFracturedLine(_ points: [CGPoint], offset: CGPoint, to path: CGMutablePath) {
         guard points.count >= 2 else { return }
         func translated(_ point: CGPoint) -> CGPoint { CGPoint(x: point.x + offset.x, y: point.y + offset.y) }
         path.move(to: translated(points[0]))
-        for index in 1..<points.count {
-            let previous = points[index - 1]
-            let current = points[index]
-            let midpoint = CGPoint(x: (previous.x + current.x) / 2, y: (previous.y + current.y) / 2)
-            path.addQuadCurve(to: translated(midpoint), control: translated(previous))
-        }
-        if let last = points.last { path.addLine(to: translated(last)) }
+        for point in points.dropFirst() { path.addLine(to: translated(point)) }
     }
 
     private static func fill(_ path: CGPath, _ color: UIColor, _ context: CGContext) {

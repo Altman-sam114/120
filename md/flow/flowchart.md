@@ -1,3 +1,14 @@
+## v3.15.1 / 画面返修门控
+
+```mermaid
+flowchart LR
+    Auto[426Core / 18UI / 构建通过] --> View[准确artifact五图复看]
+    View --> Reject[粗熔岩管 / 重岸线 / C不接受]
+    Reject --> Repair[细不规则裂隙 / 局部热口 / 弱岸边阴影]
+    Repair --> Main[main追加v3.15.1 / 新云端全门控]
+    Main --> Review[新SHA五图C / 通过后才下一轮]
+```
+
 ## v3.15 / 地表材质细化
 
 ```mermaid

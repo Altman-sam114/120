@@ -1,3 +1,9 @@
+## v3.15.1 / Terrain art returned by visual C
+
+2026-10-23。C拒绝30228c5f4ca4db65f14d07c147723341860743f8/run39887420302/attempt1/job120198733594的画面，尽管GitHubsuccess16m34s。准确artifact rustwar-ci-v1.2-main-30228c5-run39887420302-attempt1（ID12474006396，digestsha256:ec106273440ab73befcf03ecba54ee4ccf7aebff5d7d90153d0b2cdac9eb1230）下载11M至/private/tmp/rustwar-c-review-39887420302/，身份/integrity/JUnit11-0-1匹配；426Core、18UI343.758s、24reporter、双架构/五场景/compiler0通过，五图已复看。实际atlasBake833.781875ms/source48,030,720bytes只是云端load诊断。新岸边内外深描线加强了方框感，粗而平滑的熔岩像霓虹管，故不是已接受地表版本。
+
+单智能体串行返修只改TerrainArt：外bank10/5pt降3/1.5pt并降alpha，裁切内15/7pt双描线改弱接触阴影与细淡断续泡沫；裂隙增大方向扰动改不规则折裂，主槽8->3.3pt/热带4.5->1.5pt，去连续亮芯，增加预先生成的随机局部可变宽热口，整网周期复制保持一致。七种512缓存/四块8pt重叠opaque底图/原规则保持，426Core/18UI/24reporter/双架构五图/JUnit11-0-1门控不降。无本机验证，等待新SHA准确C；相邻敌我点选优先级问题已定位，但按流程留待本轮通过后独立修复。
+
 ## v3.15 / Terrain surface and shoreline refinement
 
 2026-10-23。单智能体串行A/B/C，v3.14准确C通过后同步main。仅BattlefieldTerrainArt表现层改动：周期材质256->512，颗粒/草叶/石粒/砂纹/水纹按面积四倍保持密度；降低陆地色差、增加最多8pt范围内柔边；water表现底层合并deep，deep继续独立深色覆盖，避免内边界出现假湿岸。外岸窄湿岸、裁切内浅水/稀疏泡沫替代明亮连续描线。旧定向轮廓/孔洞/对角dirt与全部逻辑地形不改。

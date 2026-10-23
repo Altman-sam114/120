@@ -1,3 +1,9 @@
+## v3.15.1 / Subdued contact edges and fractured heat patches
+
+Visual C rejects30228c5/run39887420302/attempt1 despite426Core/18UI/24reporter/dual/five/JUnit11-0-1 passing; exact artifactID12474006396 downloaded11M and all5viewed. Thick nested shore outlines and smooth wide molten tubes do not meet the art target. Atlas833.781875ms/48,030,720source bytes is only cloud load evidence.
+
+TerrainArt keeps the same ownership/data/cache/bake boundaries but replaces heavy shore strokes with weak clipped contact shadow/sparse foam. Vein geometry becomes irregular angular fractures with narrower dark/heat strokes and variable-width intermittent hot patches. Random widths are sampled before the periodic-copy loop, so every wrapped copy is identical. No continuous bright rim, new particle/action/state or gameplay change. New exact five-image C is pending; v3.15 is not visually accepted.
+
 ## v3.15 / Terrain surface ownership
 
 BattlefieldTerrainArt retains map-revision-only four-tile opaque baking/8ptbleed/shared world origin and directed boundary tracing. Water presentation matches both water/deep tiles for one continuous base and outer bank; the separate deep path supplies its darker material/shelf without a false land bank. Navigation/TerrainGrid values/generation remain unchanged. Traversable margins use <=8pt colored feather; clipped inner water shelves replace continuous bright contours.
