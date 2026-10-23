@@ -79,12 +79,14 @@ public struct GameEngine: Sendable {
         at point: WorldPoint,
         includeEnemies: Bool = true,
         mutation: SelectionMutation = .replace,
-        minimumHitRadius: Double = 0
+        minimumHitRadius: Double = 0,
+        prefersPreciseHits: Bool = false
     ) -> SelectionTarget? {
         let target = state.selectionTargetVisibleToPlayer(
             at: point,
             includeEnemies: includeEnemies,
-            minimumHitRadius: minimumHitRadius
+            minimumHitRadius: minimumHitRadius,
+            prefersPreciseHits: prefersPreciseHits
         )
         applySelection(target.map { [$0.id] } ?? [], mutation: mutation)
         return target

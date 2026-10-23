@@ -135,13 +135,15 @@ public extension GameState {
         at point: WorldPoint,
         includeEnemies: Bool = true,
         minimumHitRadius: Double = 0,
-        targetTeam: Team? = nil
+        targetTeam: Team? = nil,
+        prefersPreciseHits: Bool = false
     ) -> SelectionTarget? {
         selectionTargetsVisibleToPlayer(
             at: point,
             includeEnemies: includeEnemies,
             minimumHitRadius: minimumHitRadius,
-            targetTeam: targetTeam
+            targetTeam: targetTeam,
+            prefersPreciseHits: prefersPreciseHits
         ).first
     }
 
@@ -149,14 +151,16 @@ public extension GameState {
         at point: WorldPoint,
         includeEnemies: Bool = true,
         minimumHitRadius: Double = 0,
-        targetTeam: Team? = nil
+        targetTeam: Team? = nil,
+        prefersPreciseHits: Bool = false
     ) -> [SelectionTarget] {
         rankedSelectionTargets(
             at: point,
             includeEnemies: includeEnemies,
             minimumHitRadius: minimumHitRadius,
             targetTeam: targetTeam,
-            playerVisibility: visibility(for: .player)
+            playerVisibility: visibility(for: .player),
+            prefersPreciseHits: prefersPreciseHits
         )
     }
 
@@ -165,10 +169,11 @@ public extension GameState {
         includeEnemies: Bool,
         minimumHitRadius: Double,
         targetTeam: Team?,
-        playerVisibility: VisibilitySnapshot?
+        playerVisibility: VisibilitySnapshot?,
+        prefersPreciseHits: Bool = false
     ) -> [SelectionTarget] {
         let effectiveMinimumHitRadius = minimumHitRadius.isFinite ? max(0, minimumHitRadius) : 0
-        var candidates: [(target: SelectionTarget, distance: Double, stableOrder: Int)] = []
+        var candidates: [(target: SelectionTarget, distance: Double, stableOrder: Int, precise: Bool)] = []
 
         for (index, unit) in units.enumerated() {
             guard targetTeam.map({ unit.team == $0 }) ?? (includeEnemies || unit.team == .player),
@@ -190,7 +195,8 @@ public extension GameState {
                     position: unit.position
                 ),
                 distance,
-                index
+                index,
+                distance < (definition.radius + 7) * (definition.radius + 7)
             ))
         }
 
@@ -214,11 +220,15 @@ public extension GameState {
                     position: building.position
                 ),
                 distance,
-                units.count + index
+                units.count + index,
+                distance < (definition.size / 2 + 4) * (definition.size / 2 + 4)
             ))
         }
 
         return candidates.sorted { lhs, rhs in
+            if prefersPreciseHits, lhs.precise != rhs.precise {
+                return lhs.precise
+            }
             if lhs.distance != rhs.distance {
                 return lhs.distance < rhs.distance
             }

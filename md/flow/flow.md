@@ -1,3 +1,11 @@
+## v3.16 / Shared native hit priority
+
+Visible GameState hit queries and Engine.selectVisibleToPlayer accept opt-in prefersPreciseHits (defaultfalse). Candidate metadata records whether the query falls inside the existing unit radius+7/building halfsize+4; opt-in ranking compares that before distance/stable entity order, preserving all candidates/team/fog filtering. No base radius/56pt halo/Codable/state field changes. Non-opt-in queries keep the original distance ordering.
+
+Native ordinary tap, touch preview and long-press context use this same Core policy. The duplicated unconditional enemy-first branches are removed. Engine still commits the selection and existing DirectTapCommand chooses Move/Attack from the resolved target; explicit pending Attack/Guard/Repair retain their team-filtered paths. Add/Replace/building focus/double tap/cycling/native input leases remain. Five new Core methods (expected431total) and19thactual UI exercise overlapping halos on nonoverlapping rendered models, manual enemy damage and fresh Builder Move.18priorUI/24reporter/dual/five/compiler/JUnit11-0-1 stay, no local execution; exact new C pending.
+
+Acceptedb2e580299d2f4cdb35f7ad0852392ae9c6aae9e1/run39890415635/attempt1/job120208547162, exactartifactID12475022419 downloaded11M/all5viewed:426Core/18UI/24reporter/dual/compiler/five/JUnit11-0-1 pass. Narrow fractured heat/no tubular glow and subtle contact/no double shore frame accepted. Atlas997.616~1466.577ms/48,030,720source bytes is load evidence only; v3.15.1 accepted, superseding pending wording below.
+
 ## v3.15.1 / Subdued contact edges and fractured heat patches
 
 Visual C rejects30228c5/run39887420302/attempt1 despite426Core/18UI/24reporter/dual/five/JUnit11-0-1 passing; exact artifactID12474006396 downloaded11M and all5viewed. Thick nested shore outlines and smooth wide molten tubes do not meet the art target. Atlas833.781875ms/48,030,720source bytes is only cloud load evidence.

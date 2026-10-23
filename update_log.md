@@ -1,3 +1,11 @@
+## v3.16 / Direct entity hits before expanded touch halos
+
+2026-10-23。单智能体串行A/B/C，v3.15.1准确C接受后同步main/Altman-sam114。定位原prioritizedEnemyTarget在已有作战单位选择时先找敌方扩大命中，导致相邻友军中心被当作攻击；preview/context同类分支重复。Core visible查询与Engine selectVisible增加默认false的prefersPreciseHits，只opt-in将原unit.radius+7/building.halfsize+4基础命中排在halo-only前，再按距离/原稳定序，原默认排序/筛选保持。Native普通tap/preview/context统一启用，删除敌人先行分支，仍经Engine选中/命令；显式Attack/Guard/Repair待目标保留原team筛选，存档/通行/战斗/生产/双指所有者/模型材质不改。
+
+新增SelectionHitPriorityTests5方法，预期426->431：友军命中及随后手动攻击、敌方基础命中胜更近友方halo、建筑边缘命中胜更近halo且默认兼容、全halo稳定序与team筛选、fog/Add。第19UI独立close-opponents初态zoom0.7/wing1480-1810/enemy1515-1810，35world距大于两单位半径和30；仅此flag将另一个Tank设HoldFire以隔离伤害。真实画面投影要求屏幕距23~28pt，点Tank->Wing须切换选择且无订单，再点enemy手动Attack/Play实际HP减少/Pause/新Builder Move。原18fixture/断言保持；门控19/24reporter/双架构五图/compiler/JUnit11-0-1不降。无本机验证，待新SHA准确C。车辆转向、战斗粒子与避让仍待继续。
+
+前轮C通过：b2e580299d2f4cdb35f7ad0852392ae9c6aae9e1/run39890415635/attempt1/job120208547162，GitHubsuccess22m20s。准确artifact rustwar-ci-v1.2-main-b2e5802-run39890415635-attempt1（ID12475022419，digestsha256:974d1f2f478c6495db32e9a5737375769e00fc7d63f9e9a2d5609b04109d7ace）下载11M至/private/tmp/rustwar-c-review-39890415635/，身份/integrity/JUnit11-0-1匹配；426Core、18UI357.162s、24reporter、双架构/五场景/compiler0通过。五图已复看：Lava细不规则热裂隙清楚、无连续粗亮管；Islands/Combat/Home的双层岸边框消除，纹理相位/底图接缝未见回退，Gallery18建筑与生产/选兵/模型/FX保持。返修C接受，v3.15首尝试仍是被拒绝画面。实际bake997.616~1466.577ms/source48,030,720bytes仅云端load诊断，不是FPS或峰值内存，总目标继续。
+
 ## v3.15.1 / Terrain art returned by visual C
 
 2026-10-23。C拒绝30228c5f4ca4db65f14d07c147723341860743f8/run39887420302/attempt1/job120198733594的画面，尽管GitHubsuccess16m34s。准确artifact rustwar-ci-v1.2-main-30228c5-run39887420302-attempt1（ID12474006396，digestsha256:ec106273440ab73befcf03ecba54ee4ccf7aebff5d7d90153d0b2cdac9eb1230）下载11M至/private/tmp/rustwar-c-review-39887420302/，身份/integrity/JUnit11-0-1匹配；426Core、18UI343.758s、24reporter、双架构/五场景/compiler0通过，五图已复看。实际atlasBake833.781875ms/source48,030,720bytes只是云端load诊断。新岸边内外深描线加强了方框感，粗而平滑的熔岩像霓虹管，故不是已接受地表版本。

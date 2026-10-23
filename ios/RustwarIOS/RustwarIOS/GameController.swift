@@ -1477,17 +1477,11 @@ final class GameController {
             return
         } else {
             let previousSelection = engine.state.selectedEntityIDs
-            if let prioritizedEnemyTarget = prioritizedEnemyTarget(
-                at: point,
-                minimumHitRadius: minimumHitRadius
-            ),
-               handleDirectTapCommand(at: point, target: prioritizedEnemyTarget) {
-                return
-            }
             let candidates = engine.state.selectionTargetsVisibleToPlayer(
                 at: point,
                 includeEnemies: true,
-                minimumHitRadius: minimumHitRadius
+                minimumHitRadius: minimumHitRadius,
+                prefersPreciseHits: true
             )
             let target = candidates.first
             if handleDirectTapCommand(at: point, target: target) {
@@ -1513,7 +1507,8 @@ final class GameController {
                 at: point,
                 includeEnemies: true,
                 mutation: battlefieldSelectionMutation(for: target),
-                minimumHitRadius: minimumHitRadius
+                minimumHitRadius: minimumHitRadius,
+                prefersPreciseHits: true
             )
             commandStatus = nil
             recordBattlefieldTap(target: target, candidates: candidates, screenPoint: screenPoint)
@@ -1610,17 +1605,11 @@ final class GameController {
             )
         }
 
-        if let prioritizedEnemyTarget = prioritizedEnemyTarget(
-            at: point,
-            minimumHitRadius: battlefieldTouchTargetWorldRadius
-        ) {
-            return BattlefieldTouchPreview(point: prioritizedEnemyTarget.position, intent: .attack)
-        }
-
         let target = engine.state.selectionTargetsVisibleToPlayer(
             at: point,
             includeEnemies: true,
-            minimumHitRadius: battlefieldTouchTargetWorldRadius
+            minimumHitRadius: battlefieldTouchTargetWorldRadius,
+            prefersPreciseHits: true
         ).first
         if let target {
             return BattlefieldTouchPreview(
@@ -2522,26 +2511,6 @@ final class GameController {
         return true
     }
 
-    private func prioritizedEnemyTarget(
-        at point: WorldPoint,
-        minimumHitRadius: Double
-    ) -> SelectionTarget? {
-        guard !selectedPlayerCombatUnits.isEmpty else {
-            return nil
-        }
-        return engine.state.selectionTargetVisibleToPlayer(
-            at: point,
-            includeEnemies: true,
-            minimumHitRadius: 0,
-            targetTeam: .enemy
-        ) ?? engine.state.selectionTargetVisibleToPlayer(
-            at: point,
-            includeEnemies: true,
-            minimumHitRadius: minimumHitRadius,
-            targetTeam: .enemy
-        )
-    }
-
     private func reportCommandFeedback(for result: ProductionCommandResult) {
         reportCommandFeedback(succeeded: result == .queued)
     }
@@ -2623,24 +2592,11 @@ final class GameController {
     }
 
     private func contextTarget(at point: WorldPoint, minimumHitRadius: Double) -> SelectionTarget? {
-        if let prioritizedEnemyTarget = prioritizedEnemyTarget(
-            at: point,
-            minimumHitRadius: minimumHitRadius
-        ) {
-            return prioritizedEnemyTarget
-        }
-        if let exactEnemy = engine.state.selectionTargetVisibleToPlayer(
-            at: point,
-            includeEnemies: true,
-            minimumHitRadius: 0,
-            targetTeam: .enemy
-        ) {
-            return exactEnemy
-        }
         return engine.state.selectionTargetVisibleToPlayer(
             at: point,
             includeEnemies: true,
-            minimumHitRadius: minimumHitRadius
+            minimumHitRadius: minimumHitRadius,
+            prefersPreciseHits: true
         )
     }
 

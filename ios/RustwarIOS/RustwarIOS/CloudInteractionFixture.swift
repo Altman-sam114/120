@@ -6,7 +6,10 @@ import RustwarCore
 /// enter through the production views; the fixture exposes no mutation API.
 enum CloudInteractionFixture {
     static let launchArgument = "--rustwar-ci-interaction-tests"
-    static let camera = CameraState(center: WorldPoint(1_500, 1_800), zoom: 1)
+    static var camera: CameraState {
+        CameraState(center: WorldPoint(1_500, 1_800),
+                    zoom: ProcessInfo.processInfo.arguments.contains("--rustwar-ci-close-opponents") ? 0.7 : 1)
+    }
 
     static func state(mapID: MapID, lowMetal: Bool) -> GameState {
         var state = GameState(mapID: mapID)
@@ -28,6 +31,10 @@ enum CloudInteractionFixture {
         ]
         if ProcessInfo.processInfo.arguments.contains("--rustwar-ci-wounded-unit") {
             state.units[0].hitPoints = 122
+        }
+        if ProcessInfo.processInfo.arguments.contains("--rustwar-ci-close-opponents") {
+            state.units[0].attackStance = .holdFire
+            state.units[3].position = WorldPoint(1_515, 1_810)
         }
         if ProcessInfo.processInfo.arguments.contains("--rustwar-ci-centered-unit") {
             state.units[0].position = camera.center

@@ -1,3 +1,13 @@
+## v3.16 / Close-opponent native selection gate
+
+Cloud only. Preserve426oldCore and add5SelectionHitPriorityTests methods (expected431total): preciseFriendlySelectionDoesNotBlockSubsequentManualAttack, preciseEnemyHitBeatsCloserFriendlyHalo, preciseBuildingEdgeBeatsCloserHaloWithoutChangingDefaultOrdering, haloOnlyHitsKeepStableTiesAndTeamFilters, preciseVisibleSelectionPreservesFogAndAddMutation. Original default ordering/team/fog/Add assertions remain, no removed tests or save schema changes.
+
+Strict UI gate19 retains all18prior names/fixtures/assertions and adds testFriendlyTapWinsOverAdjacentEnemyHalo. Isolated initial flag useszoom0.7, Wing1480/1810 and Enemy1515/1810; physical radius sum30<35world separation. Read actual renderer anchors and require23<screenDistance<28pt. Actual Tank tap -> Wing tap must select Wing with both idle/HPunchanged; enemy tap must keep Wing selected and issue Attack; Play must reduce enemyHP with other Tank HoldFire, then Pause/fresh Builder select/Move succeeds. Log ADJACENT_ENEMY_SELECTION only after assertions. No engine/input mutation API or duplicated touch projection equation. Explicit pending-target team filters stay; all18prior operations remain.
+
+Keep24reporter/dual architectures/compiled probe/all5actual scenes/JUnit11/0/1. C checks latest exactSHA/run/attempt/API/manifest/integrity/JUnit/raw431Core/methods/19UI traces and views all5PNGs for preserved terrain/HP/team/selection/model/FX/HUD/production/gallery. Pure hit-policy tests alone do not prove native touch. No local static/YAML/diff checks,Swift/Node/build/parse/typecheck/Simulator/Preview/browser.
+
+Acceptedb2e580299d2f4cdb35f7ad0852392ae9c6aae9e1/run39890415635/attempt1/job120208547162, exactartifactID12475022419 downloaded11M/all5viewed at/private/tmp/rustwar-c-review-39890415635/:426Core/18UI357.162s/24reporter/dual/five/compiler0/JUnit11-0-1 pass. Visual repair accepted for narrow molten fractures and removed heavy shore frame. Cloudbake997.616~1466.577ms/48,030,720bytes is not FPS or peak-memory proof.
+
 ## v3.15.1 / Visual repair must pass a new artifact
 
 30228c5/run39887420302/attempt1 passed426Core/18UI/24reporter/dual/five/compiler0/JUnit11-0-1 but C rejected all5image review for thick tubular lava and nested shore outlines. Exact artifactID12474006396 downloaded11M at/private/tmp/rustwar-c-review-39887420302/, identity/integrity checked. Do not mark this art accepted from automation alone. Actual cloud atlas833.781875ms/48,030,720source bytes is not device FPS/peak memory.

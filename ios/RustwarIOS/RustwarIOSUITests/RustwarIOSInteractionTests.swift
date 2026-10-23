@@ -50,7 +50,8 @@ final class RustwarIOSInteractionTests: XCTestCase {
     @MainActor
     private func launch(lowMetal: Bool = false, tech2: Bool = false, centeredUnit: Bool = false,
                         stationaryDefense: Bool = false, commandCenterVisible: Bool = false,
-                        navigationObstacle: Bool = false, woundedUnit: Bool = false) async throws -> XCUIApplication {
+                        navigationObstacle: Bool = false, woundedUnit: Bool = false,
+                        closeOpponents: Bool = false) async throws -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = XCUIApplication()
@@ -62,6 +63,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         if commandCenterVisible { app.launchArguments.append("--rustwar-ci-visible-command-center") }
         if navigationObstacle { app.launchArguments.append("--rustwar-ci-navigation-obstacle") }
         if woundedUnit { app.launchArguments.append("--rustwar-ci-wounded-unit") }
+        if closeOpponents { app.launchArguments.append("--rustwar-ci-close-opponents") }
         app.launch()
         XCTAssertTrue(battlefield(app).waitForExistence(timeout: 15))
         try await waitFor(app, "fixture and rendered anchors loaded") {
@@ -117,6 +119,45 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let viewport = app.scrollViews["command-dock-scroll"].frame
         XCTAssertTrue(viewport.contains(button.frame), "Card clipped: \(button.frame), viewport \(viewport)", file: file, line: line)
         XCTAssertGreaterThanOrEqual(button.frame.height, 44, file: file, line: line)
+    }
+
+    @MainActor
+    func testFriendlyTapWinsOverAdjacentEnemyHalo() async throws {
+        let app = try await launch(closeOpponents: true)
+        let initial = try snapshot(app)
+        let wing = try XCTUnwrap(initial.entity("input-wing"))
+        let enemy = try XCTUnwrap(initial.entity("input-enemy"))
+        XCTAssertTrue(wing.rendered && enemy.rendered)
+        let frame = battlefield(app).frame
+        let separation = hypot((wing.x - enemy.x) * Double(frame.width), (wing.y - enemy.y) * Double(frame.height))
+        XCTAssertGreaterThan(separation, 23, "Actual models must be distinct")
+        XCTAssertLessThan(separation, 28, "Enemy touch halo must cover the friendly center")
+        XCTAssertEqual(initial.zoom, 0.7, accuracy: 0.01)
+        try tapEntity("input-tank", in: app)
+        try await waitFor(app, "initial Tank selected before close target switch") { $0.selected == ["input-tank"] }
+        try tapEntity("input-wing", in: app)
+        try await waitFor(app, "friendly model wins over adjacent enemy halo") { $0.selected == ["input-wing"] }
+        let switched = try snapshot(app)
+        XCTAssertEqual(switched.entity("input-tank")?.order, "idle")
+        XCTAssertEqual(switched.entity("input-wing")?.order, "idle")
+        XCTAssertEqual(switched.entity("input-enemy")?.hp, enemy.hp)
+        try tapEntity("input-enemy", in: app)
+        try await waitFor(app, "actual enemy tap still issues manual Attack") {
+            $0.selected == ["input-wing"] && $0.entity("input-wing")?.order == "attack"
+        }
+        let health = try XCTUnwrap(enemy.hp)
+        app.buttons["Play"].tap()
+        try await waitFor(app, "manual Attack damages enemy while other units Hold Fire") {
+            ($0.entity("input-enemy")?.hp ?? 0) < health
+        }
+        app.buttons["Pause"].tap()
+        let damaged = try XCTUnwrap(snapshot(app).entity("input-enemy")?.hp)
+        XCTAssertLessThan(damaged, health)
+        try tapEntity("input-builder", in: app)
+        try await waitFor(app, "fresh Builder selection after close fighting") { $0.selected == ["input-builder"] }
+        try worldCoordinate(1_520, 1_890, in: app).tap()
+        try await waitFor(app, "fresh Builder Move after close fighting") { $0.entity("input-builder")?.order == "move" }
+        print("ADJACENT_ENEMY_SELECTION separation=\(separation) zoom=\(initial.zoom) enemyHP=\(health)->\(damaged) friendlySelect/manualAttack/freshBuilder=passed")
     }
 
     @MainActor

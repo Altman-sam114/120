@@ -1,3 +1,19 @@
+## v3.16 / 基础命中轮廓优先
+
+```mermaid
+flowchart TD
+    Point[普通点选 / 触点预览 / 长按] --> Visible[Core原可见候选 / 原触控半径]
+    Visible --> Rank[基础轮廓命中在前 / 再按距离与稳定序]
+    Rank --> Friendly[友方选中 / 上下文维修或保护]
+    Rank --> Enemy[敌方手动攻击]
+    Rank --> Ground[空地原Move]
+    Explicit[明确Attack待目标] --> Team[原敌方筛选 / 不改语义]
+    Friendly --> Gate[云端431Core / 19真实UI / 双架构五图 / 精确C]
+    Enemy --> Gate
+```
+
+v3.15.1已由C接受b2e5802/run39890415635/attempt1，五图已复看；v3.16待新SHA云端验证，无本机测试。
+
 ## v3.15.1 / 画面返修门控
 
 ```mermaid
