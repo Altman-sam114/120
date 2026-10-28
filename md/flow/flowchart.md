@@ -1,3 +1,17 @@
+## v3.17 / 生产反馈与准确云端操作证据
+
+```mermaid
+flowchart LR
+    Queue[原生产队列 / 原Controller与Core] --> Card[兵种真实数量 / 当前卡进度条]
+    Card --> Action[原入队 / 取消 / 升级 / 重复 / 集结]
+    Action --> Queue
+    Export[云端xcresult真实Test Case树] --> Scope[准确UI bundle与suite / 完整方法名]
+    Scope --> Passed[全部Passed / 无重复 / 与摘要数一致]
+    Passed --> Review[431Core / 20UI / 42reporter / 双架构五图 / 最新C]
+```
+
+v3.16准确run39894395525/attempt1已重新下载11M并复看五图通过；v3.17待新SHA完整云端验收。生产视图拆分但不镜像订单；完整中文和战斗动态仍待后续轮次，无本机验证。
+
 ## v3.16 / 基础命中轮廓优先
 
 ```mermaid

@@ -1,3 +1,11 @@
+## v3.17 / Immediate production card feedback and exact UI evidence
+
+2026-10-28。Agent X 单智能体串行 A/B/C，继续既有同目标 v3.17 未提交草稿；main/Altman-sam114 已同步，原 .wp 不触碰。确认最新 CI run39894395525 是 success，并非当前全面停摆；读取实际 tree 后定位 validate-ios-ui-results.js 使用 JSON 字符串 includes 的真实误报风险。报告改为仅遍历 testNodes/children 中实际 Test Case，限定 RustwarIOSUITests/RustwarIOSInteractionTests，核对完整名称、可选 identifier、Passed、无重复、真实树总数与摘要一致；缺失、失败、跳过、外来 suite、相似名或诊断提及不能代替成功执行。保留原24 finalizer 回归，新增18 exact-tree 回归，workflow 改为执行 ci/*.test.js。
+
+生产视图从约700行拆成独立 Card/FocusSummary/FactoryTech/Queue，全部注册 Xcode；每卡数量和当前进度只读现有 controller.productionQueueItems，无订单镜像、Core/数值/存档/手势或素材变化。卡面新增兵种队列数与2pt实际进度条；原六卡首屏、成本/人口/时间/缺额/至少44pt/升级/取消/重复/集结/快捷键保持。新增第20项真实UI：T2六卡首屏，Light×2/Scout×1实际入队扣450，Cancel依序退90/180并更新卡面，正常Play推进当前进度、Pause后新工兵点选Move。原19项全部保持。所有验证包括静态/YAML/Swift/Node均仅在云端；待本轮新SHA完整431Core/20UI/42reporter/双架构五图/JUnit11-0-1与准确C。完整中文界面、车辆运动、战斗动态与地图自然度仍待后续轮次，不宣称总目标完成。
+
+前轮C于本轮重新确认：30119b20bbc2010e6364df240003de87ce1022d7/run39894395525/attempt1，GitHub success。准确artifact rustwar-ci-v1.2-main-30119b2-run39894395525-attempt1（ID12477320183，digest sha256:0a83aa31f87babe3eaa97257e873d33848960f9ad4933c3dd8c899376f9c9e8c）使用Altman-sam114重新登录后下载至/private/tmp/rustwar-c-review-39894395525/，11M；API/manifest/pipeline/integrity/JUnit11-0-1匹配，431Core、19真实UI400.071s、24reporter/双架构/五场景均通过。真实ADJACENT_ENEMY_SELECTION距离24.5pt/zoom0.7/enemyHP245->181与新Builder通过，19个实际叶节点均Passed。五图已重新复看，生产/选兵/敌我标记/18建筑组合/地形/FX保持；大量英文、格状地图与静态战斗呈现仍不是顶级游戏或完整原作复现的证据。
+
 ## v3.16 / Direct entity hits before expanded touch halos
 
 2026-10-23。单智能体串行A/B/C，v3.15.1准确C接受后同步main/Altman-sam114。定位原prioritizedEnemyTarget在已有作战单位选择时先找敌方扩大命中，导致相邻友军中心被当作攻击；preview/context同类分支重复。Core visible查询与Engine selectVisible增加默认false的prefersPreciseHits，只opt-in将原unit.radius+7/building.halfsize+4基础命中排在halo-only前，再按距离/原稳定序，原默认排序/筛选保持。Native普通tap/preview/context统一启用，删除敌人先行分支，仍经Engine选中/命令；显式Attack/Guard/Repair待目标保留原team筛选，存档/通行/战斗/生产/双指所有者/模型材质不改。

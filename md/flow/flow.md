@@ -1,3 +1,11 @@
+## v3.17 / Production feedback ownership and exact UI result traversal
+
+TacticalProductionSectionView only composes Card, FocusSummary, FactoryTech, ManagementRail and Queue views. The four extracted source files are explicitly registered in Xcode. Card derives per-type queuedCount and first-item progress from the existing controller.productionQueueItems; the count badge and bounded2pt bar introduce no mutable UI mirror, engine mutation, save field or timer. All original actions/availability/economics/first-screen density/shortcuts remain owned by Controller/Core.
+
+The cloud UI reporter exports assessUIResults for Node regression tests and recursively visits only xcresult testNodes/children. A successful Test Case must be in RustwarIOSUITests UI bundle and RustwarIOSInteractionTests suite, use an exact canonical method name/consistent optional nodeIdentifier, and result Passed. Scoped actual leaves must match summary total/passed with zero failures/skips, duplicate/missing/malformed/foreign or unsuccessful nodes. No serialized substring search. workflow runs all ci/*.test.js (24old+18new expected);20thactual UI checks repeated production/counts/cancellation/refunds/current progress/freshMove, all19prior cases remain.431Core/dual builds/shared probe/five scenes/JUnit11-0-1 unchanged, no local execution. Latest exact new C pending.
+
+Accepted30119b20bbc2010e6364df240003de87ce1022d7/run39894395525/attempt1, exactartifactID12477320183 re-downloaded11M and all5images viewed on2026-10-28:431Core/19UI400.071s/24reporter/dual/five/compiler/JUnit11-0-1 pass.19actual leaves individuallyPassed;24.5pt adjacent-target selection/manualDamage245->181/freshBuilder passed. This supersedes v3.16 pending wording below, not v3.17 acceptance. Chinese UI/vehicle motion/battle quality/map composition remain unfinished.
+
 ## v3.16 / Shared native hit priority
 
 Visible GameState hit queries and Engine.selectVisibleToPlayer accept opt-in prefersPreciseHits (defaultfalse). Candidate metadata records whether the query falls inside the existing unit radius+7/building halfsize+4; opt-in ranking compares that before distance/stable entity order, preserving all candidates/team/fog filtering. No base radius/56pt halo/Codable/state field changes. Non-opt-in queries keep the original distance ordering.

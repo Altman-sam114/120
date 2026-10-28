@@ -55,6 +55,10 @@
 		A00100000000000000000037 /* BattlefieldTerrainArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000037 /* BattlefieldTerrainArt.swift */; };
 		A00100000000000000000038 /* BattlefieldBuildingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000038 /* BattlefieldBuildingModels.swift */; };
 		A00100000000000000000039 /* BattlefieldEffectMaterials.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000039 /* BattlefieldEffectMaterials.swift */; };
+		A00100000000000000000040 /* TacticalProductionFocusSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000040 /* TacticalProductionFocusSummaryView.swift */; };
+		A00100000000000000000041 /* TacticalFactoryTechView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000041 /* TacticalFactoryTechView.swift */; };
+		A00100000000000000000042 /* TacticalProductionQueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000042 /* TacticalProductionQueueView.swift */; };
+		A00100000000000000000043 /* TacticalProductionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000043 /* TacticalProductionCard.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -99,6 +103,10 @@
 		A00200000000000000000037 /* BattlefieldTerrainArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlefieldTerrainArt.swift; sourceTree = "<group>"; };
 		A00200000000000000000038 /* BattlefieldBuildingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlefieldBuildingModels.swift; sourceTree = "<group>"; };
 		A00200000000000000000039 /* BattlefieldEffectMaterials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlefieldEffectMaterials.swift; sourceTree = "<group>"; };
+		A00200000000000000000040 /* TacticalProductionFocusSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalProductionFocusSummaryView.swift; sourceTree = "<group>"; };
+		A00200000000000000000041 /* TacticalFactoryTechView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalFactoryTechView.swift; sourceTree = "<group>"; };
+		A00200000000000000000042 /* TacticalProductionQueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalProductionQueueView.swift; sourceTree = "<group>"; };
+		A00200000000000000000043 /* TacticalProductionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalProductionCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -142,6 +150,10 @@
 				A00200000000000000000019 /* TacticalCommandsSectionView.swift */,
 				A00200000000000000000020 /* TacticalBuildSectionView.swift */,
 				A00200000000000000000021 /* TacticalProductionSectionView.swift */,
+				A00200000000000000000043 /* TacticalProductionCard.swift */,
+				A00200000000000000000042 /* TacticalProductionQueueView.swift */,
+				A00200000000000000000041 /* TacticalFactoryTechView.swift */,
+				A00200000000000000000040 /* TacticalProductionFocusSummaryView.swift */,
 				A00200000000000000000035 /* TacticalUnitPortrait.swift */,
 				A00200000000000000000036 /* BattlefieldUnitModels.swift */,
 				A00200000000000000000037 /* BattlefieldTerrainArt.swift */,
@@ -283,6 +295,10 @@
 				A00100000000000000000019 /* TacticalCommandsSectionView.swift in Sources */,
 				A00100000000000000000020 /* TacticalBuildSectionView.swift in Sources */,
 				A00100000000000000000021 /* TacticalProductionSectionView.swift in Sources */,
+				A00100000000000000000043 /* TacticalProductionCard.swift in Sources */,
+				A00100000000000000000042 /* TacticalProductionQueueView.swift in Sources */,
+				A00100000000000000000041 /* TacticalFactoryTechView.swift in Sources */,
+				A00100000000000000000040 /* TacticalProductionFocusSummaryView.swift in Sources */,
 				A00100000000000000000035 /* TacticalUnitPortrait.swift in Sources */,
 				A00100000000000000000036 /* BattlefieldUnitModels.swift in Sources */,
 				A00100000000000000000037 /* BattlefieldTerrainArt.swift in Sources */,

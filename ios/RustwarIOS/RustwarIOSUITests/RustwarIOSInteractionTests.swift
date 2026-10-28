@@ -350,6 +350,58 @@ final class RustwarIOSInteractionTests: XCTestCase {
     }
 
     @MainActor
+    func testProductionCardsReflectQueueProgressAndCancellation() async throws {
+        let app = try await launch(tech2: true)
+        try tapEntity("input-factory", in: app)
+        try await waitFor(app, "factory selected for live card feedback") { $0.selected == ["input-factory"] }
+        let tank = app.buttons["produce-tank"]
+        let scout = app.buttons["produce-scout"]
+        let cancel = app.buttons["Cancel last queued production item"]
+        for type in ["scout", "tank", "hover", "artillery", "aaTank", "heavyTank"] {
+            assertFullyVisible(app.buttons["produce-\(type)"], in: app)
+        }
+        let metal = try snapshot(app).metal
+        tank.tap()
+        tank.tap()
+        scout.tap()
+        try await waitFor(app, "three real production actions and per-type card counts") {
+            $0.entity("input-factory")?.queue == 3 && abs($0.metal - (metal - 450)) < 0.01 &&
+                (tank.value as? String)?.contains("2 queued") == true &&
+                (scout.value as? String)?.contains("1 queued") == true
+        }
+        XCTAssertTrue((tank.value as? String)?.contains("building 0 percent") == true)
+        assertFullyVisible(cancel, in: app)
+        cancel.tap()
+        try await waitFor(app, "cancel last refunds Scout and clears only its card count") {
+            $0.entity("input-factory")?.queue == 2 && abs($0.metal - (metal - 360)) < 0.01 &&
+                (scout.value as? String)?.contains("0 queued") == true &&
+                (tank.value as? String)?.contains("2 queued") == true
+        }
+        cancel.tap()
+        try await waitFor(app, "cancel second Light Tank refunds and updates its live count") {
+            $0.entity("input-factory")?.queue == 1 && abs($0.metal - (metal - 180)) < 0.01 &&
+                (tank.value as? String)?.contains("1 queued") == true
+        }
+        app.buttons["Play"].tap()
+        try await waitFor(app, "normal production clock advances the current card") {
+            let value = tank.value as? String ?? ""
+            return $0.entity("input-factory")?.queue == 1 &&
+                value.range(of: "building [1-9][0-9]? percent", options: .regularExpression) != nil
+        }
+        app.buttons["Pause"].tap()
+        let progressValue = tank.value as? String ?? ""
+        XCTAssertNotNil(progressValue.range(of: "building [1-9][0-9]? percent", options: .regularExpression))
+        for type in ["scout", "tank", "hover", "artillery", "aaTank", "heavyTank"] {
+            assertFullyVisible(app.buttons["produce-\(type)"], in: app)
+        }
+        try tapEntity("input-builder", in: app)
+        try await waitFor(app, "fresh Builder selected after queue controls") { $0.selected == ["input-builder"] }
+        try worldCoordinate(1_520, 1_890, in: app).tap()
+        try await waitFor(app, "fresh Builder Move after production feedback") { $0.entity("input-builder")?.order == "move" }
+        print("PRODUCTION_CARD_FEEDBACK initial=Light2/Scout1 cancelled=Scout1/Light1 refunds=90/180 current=\(progressValue) firstScreenCards=6 freshBuilder=passed")
+    }
+
+    @MainActor
     func testFactoryTapShowsProductionAndQueuesUnit() async throws {
         let app = try await launch()
         try tapEntity("input-factory", in: app)

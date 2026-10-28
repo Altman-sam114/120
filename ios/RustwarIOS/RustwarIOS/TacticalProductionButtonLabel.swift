@@ -8,8 +8,30 @@ struct TacticalProductionButtonLabel: View {
     let availability: ProductionAvailability
     let usesCompactLayout: Bool
     let usesDenseCompactLayout: Bool
+    let queuedCount: Int
+    let currentProgress: Double?
 
     var body: some View {
+        labelContent
+            .overlay(alignment: .bottomLeading) {
+                if let currentProgress {
+                    GeometryReader { proxy in
+                        Capsule()
+                            .fill(TacticalHUDTheme.accent.opacity(0.18))
+                        Capsule()
+                            .fill(TacticalHUDTheme.accent)
+                            .frame(width: proxy.size.width * min(1, max(0, currentProgress)))
+                    }
+                    .frame(height: 2)
+                    .offset(y: 3)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var labelContent: some View {
         if usesDenseCompactLayout {
             denseCompactBody
         } else if usesCompactLayout {
@@ -95,6 +117,21 @@ struct TacticalProductionButtonLabel: View {
     private var productionIcon: some View {
         TacticalUnitPortrait(unitType: unitType)
             .frame(width: 28, height: 34)
+            .overlay(alignment: .topLeading) {
+                if queuedCount > 0 {
+                    Text(queuedCount.formatted())
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundStyle(TacticalHUDTheme.primaryText)
+                        .padding(.horizontal, 3)
+                        .padding(.vertical, 1)
+                        .background(TacticalHUDTheme.metricBackground, in: .rect(cornerRadius: 3))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 3)
+                                .stroke(TacticalHUDTheme.accent, lineWidth: 1)
+                        }
+                        .offset(x: -3, y: -2)
+                }
+            }
             .accessibilityHidden(true)
     }
 
