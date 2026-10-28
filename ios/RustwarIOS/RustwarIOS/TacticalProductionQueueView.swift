@@ -57,10 +57,8 @@ private struct TacticalCurrentProductionView: View {
     var body: some View {
         HStack(spacing: TacticalHUDTheme.compactSpacing) {
             ZStack(alignment: .topLeading) {
-                Image(systemName: item.unitType.productionSystemImage)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(TacticalHUDTheme.accent)
-                    .frame(width: 34, height: 34)
+                TacticalUnitPortrait(unitType: item.unitType)
+                    .frame(width: 40, height: 34)
                     .accessibilityHidden(true)
                 Text("1")
                     .font(.caption2.bold())
@@ -129,8 +127,8 @@ private struct TacticalQueuedProductionView: View {
                     .font(.caption.bold())
                     .monospacedDigit()
                     .foregroundStyle(TacticalHUDTheme.metricLabel)
-                Image(systemName: item.unitType.productionSystemImage)
-                    .foregroundStyle(TacticalHUDTheme.accent)
+                TacticalUnitPortrait(unitType: item.unitType)
+                    .frame(width: 28, height: 20)
                     .accessibilityHidden(true)
                 Spacer(minLength: 0)
                 Text("\(Int(item.buildTime))秒")

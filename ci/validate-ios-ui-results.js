@@ -23,7 +23,8 @@ const expected = [
   "testSelectedForceHealthAndOrdersRemainVisible",
   "testFriendlyTapWinsOverAdjacentEnemyHalo",
   "testProductionCardsReflectQueueProgressAndCancellation",
-  "testChineseHUDAndLayeredArtRemainPlayable"
+  "testChineseHUDAndLayeredArtRemainPlayable",
+  "testFourDigitSquadHealthStaysReadableWithFirstScreenOrders"
 ];
 
 function assessUIResults(summary, tree, exitCode) {

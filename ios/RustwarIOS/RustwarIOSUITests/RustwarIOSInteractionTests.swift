@@ -52,7 +52,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
     private func launch(lowMetal: Bool = false, tech2: Bool = false, centeredUnit: Bool = false,
                         stationaryDefense: Bool = false, commandCenterVisible: Bool = false,
                         navigationObstacle: Bool = false, woundedUnit: Bool = false,
-                        closeOpponents: Bool = false) async throws -> XCUIApplication {
+                        closeOpponents: Bool = false, heavySquad: Bool = false) async throws -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = XCUIApplication()
@@ -65,6 +65,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         if navigationObstacle { app.launchArguments.append("--rustwar-ci-navigation-obstacle") }
         if woundedUnit { app.launchArguments.append("--rustwar-ci-wounded-unit") }
         if closeOpponents { app.launchArguments.append("--rustwar-ci-close-opponents") }
+        if heavySquad { app.launchArguments.append("--rustwar-ci-heavy-squad") }
         app.launch()
         XCTAssertTrue(battlefield(app).waitForExistence(timeout: 15))
         try await waitFor(app, "fixture and rendered anchors loaded") {
@@ -120,6 +121,32 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let viewport = app.scrollViews["command-dock-scroll"].frame
         XCTAssertTrue(viewport.contains(button.frame), "Card clipped: \(button.frame), viewport \(viewport)", file: file, line: line)
         XCTAssertGreaterThanOrEqual(button.frame.height, 44, file: file, line: line)
+    }
+
+    @MainActor
+    func testFourDigitSquadHealthStaysReadableWithFirstScreenOrders() async throws {
+        let app = try await launch(heavySquad: true)
+        try tapEntity("input-tank", in: app)
+        app.buttons["command-select-area"].tap()
+        let start = try worldCoordinate(1_390, 1_840, in: app)
+        let end = try worldCoordinate(1_510, 1_780, in: app)
+        start.press(forDuration: 0.05, thenDragTo: end)
+        try await waitFor(app, "two real Heavy Tanks selected with four-digit squad health") {
+            Set($0.selected) == Set(["input-tank", "input-wing"]) && !$0.pending
+        }
+        let health = app.descendants(matching: .any).matching(identifier: "selection-health").firstMatch
+        XCTAssertTrue(health.exists)
+        XCTAssertEqual(health.value as? String, "当前生命 1040，上限 1040")
+        XCTAssertLessThanOrEqual(health.frame.height, 18, "Normal-size health must remain a single caption line")
+        XCTAssertGreaterThan(health.frame.width, 60, "Do not hide the numeric health to pass the height gate")
+        for command in ["移动", "进攻移动", "攻击", "停止", "command-select-area", "选择同类单位"] {
+            assertFullyVisible(app.buttons.matching(identifier: command).firstMatch, in: app)
+        }
+        try worldCoordinate(1_550, 1_740, in: app).tap()
+        try await waitFor(app, "readable squad HUD still issues real movement to both units") {
+            $0.entity("input-tank")?.order == "move" && $0.entity("input-wing")?.order == "move"
+        }
+        print("FOUR_DIGIT_HEALTH height=\(health.frame.height) value=1040/1040 firstScreenOrders=6 realSquadMove=passed")
     }
 
     @MainActor

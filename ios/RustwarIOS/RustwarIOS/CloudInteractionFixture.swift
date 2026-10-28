@@ -29,6 +29,12 @@ enum CloudInteractionFixture {
             unit(.builder, id: "input-builder", at: WorldPoint(1_420, 1_885)),
             unit(.tank, id: "input-enemy", at: WorldPoint(1_580, 1_660), team: .enemy)
         ]
+        if ProcessInfo.processInfo.arguments.contains("--rustwar-ci-heavy-squad") {
+            for index in 0...1 {
+                state.units[index] = unit(.heavyTank, id: state.units[index].id, at: state.units[index].position)
+                state.units[index].attackStance = .aggressive
+            }
+        }
         if ProcessInfo.processInfo.arguments.contains("--rustwar-ci-wounded-unit") {
             state.units[0].hitPoints = 122
         }

@@ -839,7 +839,7 @@ final class GameController {
             return nil
         }
         if stances.count == 1, let stance = stances.first {
-            return stance.tacticalLabel
+            return stance.tacticalShortLabel
         }
         return "混合"
     }

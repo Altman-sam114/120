@@ -47,6 +47,14 @@ extension MapID {
 }
 
 extension UnitAttackStance {
+    var tacticalShortLabel: String {
+        switch self {
+        case .aggressive: "接敌"
+        case .defensive: "防御"
+        case .holdFire: "停火"
+        }
+    }
+
     var tacticalLabel: String {
         switch self {
         case .aggressive: "主动接敌"

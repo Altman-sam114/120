@@ -49,16 +49,29 @@ struct TacticalSelectionSummaryView: View {
                         .accessibilityIdentifier("selection-force-title")
 
                     HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.denseSpacing) {
-                        Text("\(Int(health.rounded(.down))) / \(Int(maximum.rounded(.down))) 生命")
-                            .font(.caption2.monospacedDigit())
-                            .foregroundStyle(TacticalHUDTheme.secondaryText)
-                            .accessibilityIdentifier("selection-health")
-                            .accessibilityLabel("部队总生命值")
-                            .accessibilityValue("当前生命 \(Int(health.rounded(.down)))，上限 \(Int(maximum.rounded(.down)))")
+                        Label {
+                            Text("\(Int(health.rounded(.down))) / \(Int(maximum.rounded(.down)))")
+                                .monospacedDigit()
+                                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                                .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.9)
+                        } icon: {
+                            Image(systemName: "heart.fill")
+                                .font(.system(size: 8))
+                                .foregroundStyle(fraction < 0.35 ? TacticalHUDTheme.attention : TacticalHUDTheme.metricLabel)
+                        }
+                        .labelStyle(.titleAndIcon)
+                        .font(.caption2)
+                        .foregroundStyle(TacticalHUDTheme.secondaryText)
+                        .layoutPriority(1)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityIdentifier("selection-health")
+                        .accessibilityLabel("部队总生命值")
+                        .accessibilityValue("当前生命 \(Int(health.rounded(.down)))，上限 \(Int(maximum.rounded(.down)))")
                         if !dynamicTypeSize.isAccessibilitySize, let attackStanceSummary {
                             Spacer(minLength: 0)
                             Text(attackStanceSummary)
                                 .font(.caption2)
+                                .fixedSize(horizontal: true, vertical: false)
                                 .foregroundStyle(TacticalHUDTheme.secondaryText)
                                 .accessibilityLabel("交战姿态")
                                 .accessibilityValue(attackStanceAccessibilitySummary ?? attackStanceSummary)
