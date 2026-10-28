@@ -1,3 +1,13 @@
+## 2026-10-28 / 自主迭代、任务记忆与相关云端验证（流程维护）
+
+- 移除当前入口中的角色召唤、身份首行、接力提示词与主控循环，改由当前模型直接理解目标、规划、小步开发、自行复核云端证据并收口；不默认启动子智能体。
+- 新增根目录 work.md：记录当前目标/非目标、计划状态、范围、测试选择、决定、阻塞和下一步，压缩后先恢复再核对实际状态；任务完成清空活动内容，仓库只保留空闲骨架，不形成新的长期日志。
+- AGENTS、README、flow、flowchart 和 test 回归各自稳定职责；旧逐版说明完整保留为 README-history.md、md/flow/flow-history.md、md/flow/flowchart-history.md、md/test/test-history.md。旧提示词只归档，不批量删除或执行过时规则。
+- 参考 AITRANS 的自主决策与 baseline + direct + optional 思路，但不复制其分支或本地编译制度：本项目仍 main 直推、Altman-sam114、默认云端唯一编译/测试，连轻量语法/YAML/diff 检查也不在本机运行。
+- CI 新增范围选择和独立轻量结果包：docs/Web/CI-only 不无条件启动 Swift/Xcode/模拟器/真实 UI/截图；CI helper 按改动选择对应回归。原生源码/实际 capture/未知路径或显式 native 继续保留既有完整原生门控，未删除旧测试、断言或必要画面；原生执行链路改变需真实 native 运行。
+- 本轮仅流程/验证分流维护，不修改游戏、Swift/iOS 行为和素材，不替既有待验收版本给出通过结论；.wp 与未跟踪的 v3.18 提示词保持原样。
+- 验证：云端待执行。计划仅运行本轮文档链接/差异、workflow YAML、改动 CI helper 语法与直接回归，不运行本机检查或无关原生/浏览器测试。精确结果须以本轮 main SHA 的 profile、run/attempt 和实际结果包为准。
+
 ## v3.17.1 / Producer header and bounded cloud process inspection
 
 2026-10-28。C不通过a3609294897726f22043a83b21523bff66008ae4/run40618029764/attempt1/job122585013427，GitHubfailure24m14s。准确artifact rustwar-ci-v1.2-main-a360929-run40618029764-attempt1（ID12787081070，digestsha256:50276c32eaa7331eebbadaacf2d87cf34ac8f1550322c753e3c678eb907594b3）经Altman-sam114重新登录下载8.2M至/private/tmp/rustwar-c-review-40618029764/。身份匹配，431Core/42reporter/双架构通过；新UI在Cancel Last首屏断言失败，frame y300.1667+53>viewport330，原19项全通过。Structures launch0但xcrun进程检查ETIMEDOUT120s，processExit1/后续77，缺该图，不能证明App崩溃或完整画面通过。其余四图已复看，生产卡数量及Heavy实际46%条可见、原场景无明显回退。JUnit11/3/1、integrity明确失败。
@@ -281,9 +291,9 @@ B 删除该无效参数，保留默认单次执行、八项真实操作测试与
 - v1.77 起，iOS 主战场和战术小地图都会区分当前可见、已探索但当前不可见和从未探索 tile：已探索不可见区域使用浅雾，从未探索区域使用深雾；敌方单位/建筑显示和玩家实体目标命中仍只按当前可见过滤。雷达信号和雾内敌方残影仍未迁移。
 - v1.78 起，当前不可见但被雷达检测到的敌方单位/建筑会在主战场和战术小地图显示为青色信号点；雷达 contact 不写入当前可见 tile 或 explored 记忆，也不会让雾内敌方可被精确点选或攻击。v1.79 起，完成状态 Radar Station 提供雷达范围，Command Center 不再作为雷达来源；v1.80 起红方 AI 会自动建造 Radar Station；v1.81 起原生 core 提供雷达覆盖 snapshot，iOS 主战场、战术小地图、HUD 和 VoiceOver 会显示玩家雷达覆盖与情报摘要；雷达升级和雾内敌方残影仍未迁移。
 - 当前已实现内容以 `README.md` 为准，覆盖经济、建造、生产、战斗、AI、多模式、沙盒、统计和存档。
-- 当前文档体系已建立：`AGENTS.md`、`update_log.md`、`md/prompt/`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`。
-- 当前协作验证制度已升级为 `main` 直推 + GitHub Actions 轻量重验证 + 未加密 CI 结果包 + Agent C 下载复判；v1.0 起 CI 结果包记录 Web、Swift package 和 iOS build 检查；若仓库未配置 `origin`，必须如实报告云端验证阻塞。
-- v0.5 起文档体系支持未来 Agent X 主控循环：人工可用 `agentx:` 提供总目标，Agent X 拆轮并调度 Agent A -> Agent B -> Agent C，但每轮仍必须经过最新 `origin/main` artifact 的 Agent C 复判。
+- 当前文档入口为 `AGENTS.md`、`work.md`、`md/test/test.md`、`md/flow/flow.md`、`md/flow/flowchart.md`；`update_log.md` 保存历史，`md/prompt/` 仅作方案归档。
+- 当前制度为单模型自主规划开发、`main` 直推、按改动选择相关云端检查和自己下载复核未加密结果包；没有 origin/认证时如实报告阻塞，不运行本机验证。
+- 原角色接力和主控循环已经废止；下方旧版本中的角色名称仅为历史语境，不能恢复为当前要求。
 
 ## 历史记录
 

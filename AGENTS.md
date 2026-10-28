@@ -1,197 +1,83 @@
 # AGENTS.md
 
-本文是 Rustwar RTS Prototype 的入口记忆、项目总览、基本规则和多 Agent 迭代工作流。
+Rustwar 的长期项目事实、单模型自主迭代流程和硬规则。用户直接提出目标，由当前模型自行分析、规划、实现、云端验证和交付；不再使用角色召唤、身份前缀、提示词交接或调度循环。除非用户明确要求，不启动子智能体。
 
-## 0. 角色召唤与身份标识
+## 1. 项目事实与架构边界
 
-- 用户消息以 `agenta`、`a:` 或 `A:` 开头，表示召唤 Agent A。
-- 用户消息以 `agentb`、`b:` 或 `B:` 开头，表示召唤 Agent B。
-- 用户消息以 `agentc`、`c:` 或 `C:` 开头，表示召唤 Agent C。
-- 用户消息以 `agentx`、`x:` 或 `X:` 开头，表示召唤 Agent X。
-- 没有这些前缀时，按普通 Codex 任务处理；若任务需要 A/B/C/X 边界，先说明本轮按普通任务执行，或提醒人工指定角色。
-- Agent A 最终回复第一行必须写：`我是 Agent A。`
-- Agent B 最终回复第一行必须写：`我是 Agent B。`
-- Agent C 最终回复第一行必须写：`我是 Agent C。`
-- Agent X 最终回复第一行必须写：`我是 Agent X。`
+- 项目是 Web Canvas RTS 原型与原生 Swift/iOS 迁移主线，不是 Rust/Cargo 项目。
+- Web 入口为 `index.html`，`app.js` 负责配置表、集中状态、输入/命令、模拟、AI、渲染和持久化，`styles.css` 负责布局与样式。保持直接用浏览器打开可运行，不引入框架、包管理器、后端或网络依赖。
+- Web 对局事实集中在 `state`、`camera`、`input`、`selectedIds` 和 `controlGroups`。主循环依次 update、按需 refreshUI、render；渲染不能推进玩法。
+- `swift/RustwarCore/` 是共享 Swift 模型和规则的唯一原生核心；`ios/RustwarIOS/` 是 SwiftUI/SpriteKit App、HUD、渲染和触控。禁止用 WKWebView 冒充原生迁移。
+- 原生 View/Scene 读取 Controller/Core 投影，通过既有命令修改对局；不要制造第二套生产、选择、战斗或存档状态。
+- 保持已实现玩法、旧存档兼容、沙盒导入导出和迷雾/雷达信息边界；不做无关重构，不擅自替换用户资源。
 
-## 1. 必读文件
+## 2. 文档职责与读取顺序
 
-每次接手任务按顺序阅读：
+| 文档 | 唯一职责 |
+| --- | --- |
+| [README.md](README.md) | 玩家上手、功能、操作、运行入口 |
+| [AGENTS.md](AGENTS.md) | 长期流程、工程边界和硬规则 |
+| [work.md](work.md) | 当前任务计划、进度、恢复点和下一步；不累积历史 |
+| [md/flow/flow.md](md/flow/flow.md) / [flowchart.md](md/flow/flowchart.md) | 当前真实架构、状态流和执行图 |
+| [md/test/test.md](md/test/test.md) | 可复用测试选择制度、云端入口与证据要求 |
+| [update_log.md](update_log.md) | 版本历史、关键决策、验证结果、遗留问题 |
+| [md/prompt/](md/prompt/README.md) | 历史实现方案归档；不是每轮必经步骤 |
 
-1. `README.md`：用户视角的运行方式、已实现功能、操作说明和后续方向。
-2. `AGENTS.md`：本文件，项目入口规则和多 Agent 协作规范。
-3. `update_log.md`：版本记录、关键决策、完成事项和遗留问题。
-4. `md/flow/flow.md`：当前真实核心逻辑、状态流、执行流和架构边界。
-5. `md/flow/flowchart.md`：核心逻辑和 Agent 迭代流程图。
-6. `md/test/test.md`：测试分层、命令、触发条件和当前基线。
-7. 与本轮任务相关的源码、样式、页面和提示词文件。
+接手时先读本文件和 `work.md`，并查看 `git status --short --branch`、最近提交；随后按任务读取 README、相关 flow/test 和源码。只有需要追溯时再读 update_log 的相关条目、历史快照和旧提示词，不通读全部版本历史。
 
-## 2. 项目基本规则
+- 源码/工程配置 > 当前 flow/test > 更新日志 > 历史快照/提示词。用户本轮明确要求优先于旧文档约定。
+- 只有职责、架构、玩法、操作或验证策略变化时，才更新对应入口；不要每轮机械改写所有 Markdown。
+- 版本、commit/run、一次测试结论、临时指标写入 update_log；flow/test 不再逐版堆叠这些记录。
+- 历史快照保留旧语境，不执行其中已经废止的流程、本地命令或分支要求。
 
-- 当前项目由完整可玩的 Web Canvas RTS 原型和 v1.0 起新增的原生 Swift/iOS 迁移地基组成。
-- Web 原型入口是 `index.html`，核心逻辑在 `app.js`，必须保持直接用浏览器打开可运行。
-- 原生迁移路径集中在 `swift/RustwarCore/` 和 `ios/RustwarIOS/`，只在明确 Swift/iOS 任务中使用 SwiftPM、Xcode project、SwiftUI、SpriteKit 等 Apple 原生工具。
-- Web 侧默认不引入构建工具、前端框架、包管理器、后端服务或网络依赖。
-- 保持直接用浏览器打开 `index.html` 可运行。
-- 延续当前单文件游戏逻辑和配置表驱动风格；只在复杂度确实需要时小步拆分。
-- `README.md` 面向玩家，`AGENTS.md` 面向后续 Agent，`md/flow` 面向架构理解，`md/test` 面向验证，`update_log.md` 面向历史记录。
-- 开始前必须查看 `git status --short --branch`。不要覆盖、回滚或删除用户和其他 Agent 的改动。
+## 3. 自主迭代流程
 
-## 3. main 直推与云端验证规则
+1. 明确目标、非目标、当前实现、风险和可观察的完成标准。方案来自真实源码，不盲目照抄旧提示词；一般技术选择自行决定，仅对权限、成本、冲突归属或产品取舍提问。
+2. 先将任务拆成有依赖关系、可验收的小步骤写入 `work.md`。简单任务可缩短记录，但不能只依赖聊天记忆。
+3. 核对 GitHub 身份和工作区，在不会覆盖现有改动的前提下同步 `origin/main`。只修改本轮相关文件，记录本轮编辑范围。
+4. 小步实现，每完成一个步骤或改变方案就更新 `work.md`；自行检查实际 diff 和架构边界，不等待角色交接。
+5. 按 [测试规范](md/test/test.md) 选择 baseline + direct + optional：说明改动对应哪项测试及原因，未触及的模块不跑无关 CI。
+6. 只读核对 diff、分支和提交范围；提交本轮文件，push `origin/main`，在云端编译/测试。当前用户没有特别要求时，不执行任何本机验证。
+7. 自己跟进精确 SHA 的 run/attempt，下载必要结果包，核对身份、实际命令、JUnit、失败摘要与任务证据。失败则在 main 上追加针对性修复，不伪装通过、不回滚用户改动。
+8. 对照目标收口：把必要决策、证据和遗留事项写入 update_log，给出简明交付；目标和所选云端验证都满足后清空 `work.md` 的活动内容。
 
-- 默认只使用 `main` 作为上传、提交、推送和云端验证分支。
-- 本轮制度不使用 `smalldata_test`、`develop`、`codeb/...` 或 PR 合并流；如果仓库里已有其他分支，只记录现状，不纳入默认流程。
-- Agent B 每轮实现前必须同步最新 `origin/main`：`git fetch origin`、`git switch main`、`git pull --ff-only origin main`、`git status --short --branch`。
-- 若仓库未配置 `origin`、无法认证或无法访问远端，必须停止 push 和云端验收步骤，明确写出阻塞原因；不得伪装已经完成云端验证。
-- Agent B 完成后只跑本地轻量检查，提交本轮相关文件，并直接 `git push origin main` 触发 GitHub Actions。
-- Agent C 只验收 `origin/main` 最新 commit 对应的 Actions run、`commitSha`、run id、run attempt 和未加密结果包。
-- Agent C 必须用 `gh auth login` 后下载 artifact；默认缓存路径为 `/private/tmp/rustwar-c-review-<run_id>/`，不自动删除人工可能复看的结果包。
-- Agent C 发现问题时不得回滚式处理，默认退回 Agent B 在 `main` 上追加修复 commit，再 push 触发新 run。
-- 任何 Agent 在 `git push origin main` 或改变远端 `main` 前，都必须确认当前分支是 `main`、目标远端是 `origin/main`、提交范围只包含本轮相关文件。
-- `.github/workflows/ci-results.yml` 是 Agent C 验收用的未加密 CI 结果包 workflow，不复用任何带密码或私密分发产物。
-- GitHub push、CI run 定位和 artifact 验收只能使用 `Altman-sam114` 账号上下文；禁止使用其他 GitHub 账号伪装完成 push、CI 或 artifact 验收。
-- CI artifact 只上传必要文件：manifest、JUnit 或测试摘要、关键日志、失败摘要和必要结果包；禁止上传 DerivedData、完整 build cache、无关截图、视频、模型、历史 artifact 或重复压缩包。
-- Agent C 下载 artifact 前优先确认只下载 `origin/main` 最新 run 对应的必要结果包；下载缓存默认放在 `/private/tmp/rustwar-c-review-<run_id>/`，下载后应检查目录大小，例如 `du -sh /private/tmp/rustwar-c-review-<run_id>/`。
+同一阻塞连续三次、同因 CI 连续失败、连续两轮无有效改动、需要账号/密钥/付费/人工决策，或出现无法判断归属的冲突时，停止盲目重试，保留恢复点并说明具体阻塞。用户要求停止或改方向时立即响应。
 
-## 4. 核心架构边界
+## 4. work.md 任务记忆
 
-- `index.html` 只负责 DOM 骨架、Canvas、HUD、面板和按钮挂载点。
-- `styles.css` 只负责视觉布局和响应式面板样式。
-- `app.js` 负责游戏数据表、全局状态、输入处理、命令派发、模拟更新、AI、渲染、存档和沙盒导入导出。
-- `swift/RustwarCore/` 负责原生 iOS 迁移的共享 Swift 数据模型、初始状态、地形、经济 tick 和可测试小逻辑。
-- `ios/RustwarIOS/` 负责原生 SwiftUI/SpriteKit App 壳、HUD、战场渲染和触摸输入；禁止用 `WKWebView` 包装 Web 版。
-- 核心状态集中在 `state`、`camera`、`input`、`selectedIds` 和 `controlGroups`。
-- 主循环是 `requestAnimationFrame(loop)`，每帧执行 `update()`、按需 `refreshUI()`、再 `render()`。
-- 存档使用 `localStorage`；沙盒场景导入导出使用 JSON 文件，不依赖服务器。
+- 开始实施前写入：目标/非目标、验收标准、本轮文件范围、步骤与状态、测试选择和当前下一步。
+- 推进时及时补充关键决定、真实失败、必要 commit/run/attempt/artifact 定位；只写恢复工作需要的摘要，不复制大段日志或源码。
+- 压缩后、重启或接手时先读它，再核对实际 Git/文件/云端状态。记录不是事实替代品，不重复已完成步骤，不把计划中的测试写成通过。
+- 未完成、等待 CI 或有阻塞时保留目标、剩余事项和唯一明确的下一步，不提前清空，也不把待办挪成“已完成”。
+- 文件保留在仓库根目录；版本库只保留空闲骨架，活动笔记留在工作区，不混入实现提交，避免更新 run ID 又触发一轮无意义验证。
+- 完成后将历史结论收进 update_log，清掉本文件的任务、勾选项、失败和证据，只恢复以下骨架，不删除文件：
 
-## 5. 标准迭代工作流
+```md
+# 当前任务
 
-### 人工
+无进行中的任务。
+```
 
-人工提出目标，并可补充算法框架、禁止项、验收标准、性能要求、UI/交互要求和测试要求。
+## 5. Git 与远端规则
 
-### Agent X：主控调度与循环判断
+- 默认在 `main` 上实现、提交并直推 `origin/main`；不默认新建分支或 PR，不照搬参考项目的候选分支制度。
+- 开始和 push 前核对 `git status --short --branch`、分支、远端和 diff。同步使用 `git fetch origin` 与 `git pull --ff-only origin main`；如果不在 main 或现有改动会被影响，先核对归属，不能强切、stash、重置或覆盖来凑干净状态。
+- 只暂存本轮编辑的明确文件/片段；禁止 `git add .` 混入其他任务、旧提示词、用户资源和活动 work.md。
+- 不覆盖、回滚、删除用户和其他会话的改动。实施中发现非本轮的意外变更立即停止并询问；初始已识别的无关文件保持原样。
+- push、CI 定位和 artifact 下载只使用 `Altman-sam114`。先核对 `gh auth status` / `gh api user`；需要时登录或切换到该账号，不用其他账号冒充完成。
+- 缺少 origin、认证、网络或 Actions 权限时停止远端步骤，报告具体错误，不编造提交、run 或验收。
+- 不 force push，不擅自 amend，不使用 `git reset --hard` / `git checkout --`。正式版本提交与日志版本一致；流程维护可用任务名记录，不伪造游戏功能版本。
+- 删除文件/目录默认使用可恢复的 `trash <path>`；仅已获用户确认的临时文件/构建产物清理才用 rm。
 
-Agent X 是未来主控调度角色，不直接替代 Agent A、Agent B 或 Agent C。本轮文档只为未来 `agentx:` 循环做准备；没有人工明确召唤时，不自动启动 Agent X 循环。
+## 6. 云端唯一验证
 
-Agent X 必须：
+- 除非用户明确要求本机验证，所有编译、测试、语法检查、YAML 解析、diff 空白检查、Preview/Simulator/浏览器验证都只在云端执行。禁止以“轻量”“先试一下”“云端慢/失败”为由在本机补跑。
+- 本机允许读写源码、Git 状态/diff 审阅、commit、push、读取云端日志和下载结果；这些不是测试通过证据。
+- 唯一 workflow 为 [Rustwar CI Results](.github/workflows/ci-results.yml)，按本轮推送范围选择 docs/web/ci/native profile。纯文档不得拉起 Swift/Xcode/模拟器/UI/截图回归。
+- CI 配置或脚本改动先运行相关解析和直接回归；如果改动原生编译/启动/证据链路，必须显式选择 native profile 证明实际路径，不能只靠脚本自测。
+- 如果用户明确要求本机 iOS build/run/test，只能使用现有 UDID 以 `FAC4325D` 开头的唯一模拟器；不得创建或选择其他设备，找不到就报告阻塞。云端不受此本机 UDID 限制。
+- 只接受最新目标 commit 对应的实际结果；docs/ci profile 通过不等于原生玩法、画面或待验收版本通过。测试和未覆盖边界见 md/test/test.md。
 
-1. 接收人工总目标 X，先拆分为可验收的小轮次目标。
-2. 每一轮按 Agent A -> Agent B -> Agent C 顺序推进。
-3. 要求 Agent A 为当轮生成版本化提示词，并写清目标、非目标、验证、`main` push、CI artifact 和 Agent C 验收要求。
-4. 要求 Agent B 按提示词实现、轻量检查、提交并 push 到 `origin/main`。
-5. 要求 Agent C 只验收 `origin/main` 最新 commit 对应的 GitHub Actions artifact，并核对 manifest、JUnit、日志和失败摘要。
-6. 根据 Agent C 结论判断下一步：继续下一轮、退回 Agent B 修复、暂停等待人工确认，或宣布总目标完成。
-7. 维护轮次状态，记录当前轮目标、对应提示词、commit、run id、run attempt、artifact 名称、Agent C 结论和剩余目标。
-8. 最终回复除第一行身份标识外，必须写清总目标状态、最近一轮结论、继续/退回/暂停/完成的判断依据、关键 commit / run / artifact、已知风险和下一步。
+## 7. 交付要求
 
-Agent X 停止条件：
-
-- 总目标已完成，且最新一轮已经通过 Agent C artifact 验收。
-- 连续 3 轮遇到同一阻塞。
-- 连续 2 轮没有产生有效 diff。
-- CI 连续失败且原因相同。
-- 需要账号、权限、密钥、付费服务或人工决策。
-- 当前工作区存在无法判断归属的冲突。
-- 用户要求停止或改变方向。
-
-Agent X 禁止：
-
-- 无条件无限循环。
-- 跳过 Agent C 云端 artifact 验收。
-- 把旧 run、旧 artifact 或本地输出冒充最新云端结果。
-- 在总目标未完成或最新云端验收未通过时宣布完成。
-- 为了循环推进扩大无关改动范围。
-
-### Agent A：目标分析与提示词
-
-Agent A 默认不直接写代码，负责把人工目标转成可执行实现提示词。
-
-Agent A 必须：
-
-1. 阅读必读文件和相关源码。
-2. 明确目标、非目标、边界、依赖、风险和验收标准。
-3. 设计实现方案，说明要改哪些文件、状态流如何变化、哪些旧行为必须保持。
-4. 分配版本号。人工指定时按人工指定；未指定时从 `v0.1` 起按小版本递增，重大阶段可开 `v1.0`。
-5. 将给 Agent B 的提示词写入 `md/prompt/v0（简要标题）/v0.1（简要说明）.md` 这类路径。
-6. 提示词必须写清本轮本地轻量检查、`main` 直推、GitHub Actions 结果包、Agent C 下载复判要求。
-
-### Agent B：实现与测试
-
-Agent B 按 Agent A 提示词实现。
-
-Agent B 必须：
-
-1. 阅读对应提示词、必读文件和相关源码。
-2. 同步 `origin/main` 并确认当前分支是 `main`、工作区无无关改动；若无远端或认证失败，先报告阻塞。
-3. 小步实现，不做无关重构。
-4. 按 `md/test/test.md` 运行本地轻量检查；默认不在本机跑完整浏览器回归，除非人工明确要求。
-5. 更新必要文档，包括 README、测试规范、flow、update log 中受影响内容。
-6. 本地提交本轮相关文件，并直接 push 到 `origin/main` 触发 GitHub Actions。
-7. 输出改动、关键文件、本地检查、push 结果、云端 run 链接或阻塞原因、已知风险。
-
-### Agent C：验收、版本提交与核心逻辑更新
-
-Agent C 验收 Agent B 的结果，维护核心逻辑文档，并以 `origin/main` 最新 Actions 结果包为准。
-
-Agent C 必须：
-
-1. 阅读 Agent B 输出、实际 diff、测试结果和必读文件。
-2. 判断实现是否满足 Agent A 提示词和人工目标。
-3. 确认本地 `main` 与 `origin/main` 最新 commit 一致，并定位最新对应 Actions run。
-4. 用 `gh auth login` 后下载未加密 CI 结果包到 `/private/tmp/rustwar-c-review-<run_id>/`。
-5. 核对 `ci-artifact-manifest.json`、`junit.xml`、主日志和 `ci-failure-summary.md`，确认 `branch=main`、`commitSha`、run id、run attempt 与 `origin/main` 最新 commit 完全一致。
-6. 检查架构边界、测试覆盖、文档同步和未说明风险。
-7. 根据真实实现更新 `md/flow/flow.md` 和 `md/flow/flowchart.md`。
-8. 重要版本或历史事项写入 `update_log.md`。
-9. 若验收不通过，不得确认通过；必须输出不通过原因、问题清单、需要退回 Agent B 追加修复 commit 的事项和重新验收条件。
-10. 若 Agent C 需要补文档，必须在 `main` 上提交并 push，再等待新 run 通过后验收该最新 commit。
-11. 输出通过结论、版本号、提交摘要、关键文件、本地检查、云端 run、artifact 名称、提交哈希和本轮工作内容概括。
-
-## 6. 测试规则
-
-- 每次实现前先读 `md/test/test.md`。
-- 默认云端重验证，本机只跑轻量检查。
-- 当前固定轻量检查至少包含 `git diff --check`；修改 `app.js` 时必须加跑 `node --check app.js`。
-- 修改 `swift/RustwarCore/` 时必须尽量跑 `swift test --package-path swift/RustwarCore`；若本机 SwiftPM 或 Swift/SDK 工具链阻塞，必须写明真实错误，并至少尝试直接 Swift typecheck。
-- 修改 `ios/RustwarIOS/` 时必须尽量跑 `xcodebuild -list -project ios/RustwarIOS/RustwarIOS.xcodeproj` 和 iOS build；若本机没有完整 Xcode 或工具链不匹配，必须如实说明。
-- 修改 `.github/workflows/ci-results.yml` 时必须做 YAML 解析检查。
-- 文档-only 修改可不跑浏览器完整验证，但必须说明原因，并由 GitHub Actions 上传结果包供 Agent C 复判。
-- 只有人工明确要求“本机测试”“本地 build”“本地跑浏览器验证”时，才把本机完整验证作为默认路径。
-- 不得伪造测试结果，不得用“已验证”代替具体命令和结果。
-
-## 7. 文档规则
-
-- 新功能、玩法、操作、模式、单位、建筑、AI 行为变化必须更新 `README.md`。
-- Swift/iOS 迁移路径、原生 App 能力、构建方式或 CI 覆盖变化必须更新 `README.md`、`md/flow`、`md/test` 和 `update_log.md`。
-- 核心状态流、执行流、模块边界变化必须更新 `md/flow/flow.md` 和 `md/flow/flowchart.md`。
-- 测试命令、触发条件、基线变化必须更新 `md/test/test.md`。
-- 正式版本、重要任务、关键决策、遗留问题必须更新 `update_log.md`。
-- Agent A 的每轮实现提示词必须存入 `md/prompt/`，按版本目录管理。
-- 版本提交信息必须与 `update_log.md` 的版本号一致。
-
-## 8. 交付格式
-
-最终回复必须包含：
-
-- 修改或创建的文件。
-- 每个文件的作用或本轮核心改动。
-- 已运行的验证命令和结果。
-- 未运行的验证及原因。
-- 当前分支、提交信息、提交哈希；若已 push，写明 `origin/main` 状态。
-- 云端 run id、run attempt、artifact 名称、Agent C 是否下载并核对结果包；若未运行云端验证，写明阻塞原因。
-- 已知风险或建议下一步。
-
-## 9. 禁止项
-
-- 不要把项目误判为 Rust/Cargo 项目；`RustwarCore` 是 Swift package，不是 Rust crate。
-- 不要在未获明确要求时引入框架、构建链、远程依赖或后端。
-- 不要删除已实现玩法、存档兼容、沙盒能力或用户资源文件。
-- 不要用 `WKWebView` 或网页打包冒充原生 iOS 迁移成果。
-- 不要擅自扩大任务范围。
-- 不要创建 PR、等待 PR merge 或写成候选分支合并制度，除非人工后续明确改规则。
-- 不要把旧 artifact、旧截图或 checkout 自带报告冒充本轮云端结果。
-- 不要把 AITRANS 的漫画探针、GGUF、模型 Release、`smalldata_test` 等项目特例复制到本项目。
-- 不要绕过 `state` 和现有命令体系直接制造不可追踪状态。
-- 不要伪造测试、验收或浏览器运行结果。
-- 不要把空泛模板当成项目文档。
+最终用中文简明说明：改动及关键文件、实际验证命令与结果、未运行项与原因、当前分支/提交摘要/SHA/远端影响、所选 profile 与精确 run/attempt/artifact、是否下载核对、风险和下一步。没有运行或推送就明确写“未执行”，不要用“已验证”替代证据。

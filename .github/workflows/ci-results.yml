@@ -5,6 +5,14 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      validation_profile:
+        description: Auto-select by changed files, or explicitly verify native integration
+        type: choice
+        default: auto
+        options:
+          - auto
+          - native
 
 permissions:
   contents: read
@@ -16,8 +24,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  scope:
+    name: Select related validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      native: ${{ steps.scope.outputs.native }}
+      profile: ${{ steps.scope.outputs.profile }}
+      scope: ${{ steps.scope.outputs.scope }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Select scope from the complete push range
+        id: scope
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          REQUESTED_PROFILE: ${{ inputs.validation_profile || 'auto' }}
+        run: node ci/select-validation.js
+
+  scoped-results:
+    name: Related documentation, Web or CI checks
+    needs: scope
+    if: ${{ needs.scope.outputs.native == 'false' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Run only selected checks and write evidence
+        env:
+          VALIDATION_SCOPE: ${{ needs.scope.outputs.scope }}
+        run: node ci/run-scoped-checks.js
+      - name: Upload scoped result package
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ci-results
+          if-no-files-found: error
+
   ci-results:
     name: Build CI result package
+    needs: scope
+    if: ${{ needs.scope.outputs.native == 'true' }}
     runs-on: macos-26
     timeout-minutes: 45
     env:
@@ -33,6 +86,7 @@ jobs:
       IOS_SIMULATOR_DEVICE_TYPE: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
       IOS_SIMULATOR_RUNTIME: com.apple.CoreSimulator.SimRuntime.iOS-26-5
       SWIFT_PACKAGE_PATH: swift/RustwarCore
+      VALIDATION_SCOPE: ${{ needs.scope.outputs.scope }}
 
     steps:
       - name: Checkout
@@ -45,6 +99,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ci-results
+          printf '%s\n' "$VALIDATION_SCOPE" > ci-results/validation-scope.json
           short_sha="${GITHUB_SHA::7}"
           branch="${GITHUB_REF_NAME:-main}"
           branch_slug="$(printf '%s' "$branch" | tr '[:upper:]' '[:lower:]' | tr '/' '-' | tr -cd 'a-z0-9._-')"
@@ -591,7 +646,11 @@ jobs:
           ].join("\n");
           fs.writeFileSync("ci-results/junit.xml", junit);
 
+          const validationScope = JSON.parse(fs.readFileSync("ci-results/validation-scope.json", "utf8"));
           const manifest = {
+            validationProfile: "native",
+            diffBase: validationScope.base,
+            changedFiles: validationScope.changedFiles,
             version: process.env.CI_FLOW_VERSION,
             branch: process.env.GITHUB_REF_NAME || "main",
             commitSha: process.env.GITHUB_SHA,
