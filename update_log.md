@@ -1,3 +1,9 @@
+## v3.17.1 / Producer header and bounded cloud process inspection
+
+2026-10-28。C不通过a3609294897726f22043a83b21523bff66008ae4/run40618029764/attempt1/job122585013427，GitHubfailure24m14s。准确artifact rustwar-ci-v1.2-main-a360929-run40618029764-attempt1（ID12787081070，digestsha256:50276c32eaa7331eebbadaacf2d87cf34ac8f1550322c753e3c678eb907594b3）经Altman-sam114重新登录下载8.2M至/private/tmp/rustwar-c-review-40618029764/。身份匹配，431Core/42reporter/双架构通过；新UI在Cancel Last首屏断言失败，frame y300.1667+53>viewport330，原19项全通过。Structures launch0但xcrun进程检查ETIMEDOUT120s，processExit1/后续77，缺该图，不能证明App崩溃或完整画面通过。其余四图已复看，生产卡数量及Heavy实际46%条可见、原场景无明显回退。JUnit11/3/1、integrity明确失败。
+
+返修不降低断言：紧凑producer非待目标状态把真实commandStatus放在建筑名下的同一标题行，保留原状态accessibilityValue；Rally等待目标仍显示完整独立提示。CI通用capture对原device/原launchPID最多两次30s存活检查，只在ETIMEDOUT后等1s再尝试，不重启/跳过/换设备或复用图，scene记录全部processAttempts与最终真实processExit。新增6项纯报告回归。xcresult的Failure Message子节点合法，Failed case仍计入cases/unsuccessfulTests而非malformed/missing，增加1项实际结构回归。预期49reporter、原431Core/20UI/双架构/五图/JUnit11-0-1保持，全部验证仅云端，待新SHA准确C。先完成此返修，再中文UI/车辆战斗细化，总目标保持进行中。
+
 ## v3.17 / Immediate production card feedback and exact UI evidence
 
 2026-10-28。Agent X 单智能体串行 A/B/C，继续既有同目标 v3.17 未提交草稿；main/Altman-sam114 已同步，原 .wp 不触碰。确认最新 CI run39894395525 是 success，并非当前全面停摆；读取实际 tree 后定位 validate-ios-ui-results.js 使用 JSON 字符串 includes 的真实误报风险。报告改为仅遍历 testNodes/children 中实际 Test Case，限定 RustwarIOSUITests/RustwarIOSInteractionTests，核对完整名称、可选 identifier、Passed、无重复、真实树总数与摘要一致；缺失、失败、跳过、外来 suite、相似名或诊断提及不能代替成功执行。保留原24 finalizer 回归，新增18 exact-tree 回归，workflow 改为执行 ci/*.test.js。

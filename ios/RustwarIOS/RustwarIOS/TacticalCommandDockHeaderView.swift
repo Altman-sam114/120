@@ -32,7 +32,8 @@ struct TacticalCommandDockHeaderView: View {
                     )
                 }
             }
-            if let commandStatus = controller.commandStatus {
+            if let commandStatus = controller.commandStatus,
+               !showsCompactProducerContext || controller.isAwaitingTargetCommand {
                 TacticalCommandStatusView(
                     text: commandStatus,
                     isAwaitingTarget: controller.isAwaitingTargetCommand,
@@ -88,12 +89,21 @@ private struct TacticalCompactProducerHeaderView: View {
             Image(systemName: "gearshape.2.fill")
                 .foregroundStyle(TacticalHUDTheme.metricLabel)
                 .accessibilityHidden(true)
-            Text(controller.productionFocusBuildingName ?? "Production")
-                .font(.subheadline.bold())
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-                .foregroundStyle(TacticalHUDTheme.primaryText)
-                .layoutPriority(1)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(controller.productionFocusBuildingName ?? "Production")
+                    .font(.subheadline.bold())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                    .foregroundStyle(TacticalHUDTheme.primaryText)
+                if let status = controller.commandStatus, !controller.isAwaitingTargetCommand {
+                    Text(status)
+                        .font(.caption2)
+                        .foregroundStyle(TacticalHUDTheme.metricLabel)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+            }
+            .layoutPriority(1)
             Spacer(minLength: 0)
             VStack(alignment: .trailing, spacing: 0) {
                 Text(controller.productionFocusTechLabel)
@@ -113,7 +123,7 @@ private struct TacticalCompactProducerHeaderView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityAddTraits(.isHeader)
         .accessibilityLabel("Production \(controller.productionFocusBuildingName ?? "building")")
-        .accessibilityValue("\(controller.productionFocusTechLabel), \(controller.productionFocusProductionSpeedText)")
+        .accessibilityValue("\(controller.productionFocusTechLabel), \(controller.productionFocusProductionSpeedText). \(controller.commandStatus ?? "")")
         .accessibilityHint("Production controls are shown below.")
     }
 }

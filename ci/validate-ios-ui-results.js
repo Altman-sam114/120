@@ -49,8 +49,7 @@ function assessUIResults(summary, tree, exitCode) {
         report.foreignCases.push(entry);
       } else if (!/^test[A-Za-z0-9_]+$/.test(name) ||
           (node.nodeIdentifier != null && node.nodeIdentifier !== `${suite}/${name}()` &&
-            node.nodeIdentifier !== `${suite}/${name}`) ||
-          (Array.isArray(node.children) && node.children.length > 0)) {
+            node.nodeIdentifier !== `${suite}/${name}`)) {
         report.malformedCases.push(entry);
       } else {
         report.cases.push(entry);

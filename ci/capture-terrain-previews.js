@@ -9,12 +9,24 @@ const report = { outcome: "failure", scenes: [] };
 const reportPath = path.join(outputDirectory, "ios-terrain-scenes.json");
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-function run(command, args) {
-  const result = spawnSync(command, args, { encoding: "utf8", timeout: 120_000, maxBuffer: 16 * 1024 * 1024 });
+function run(command, args, options = {}) {
+  const result = spawnSync(command, args, { encoding: "utf8", timeout: options.timeout ?? 120_000, maxBuffer: 16 * 1024 * 1024 });
   if (result.stdout) process.stdout.write(result.stdout);
   if (result.stderr) process.stderr.write(result.stderr);
   if (result.error) console.error(result.error.message);
-  return { code: result.status ?? 1, stdout: result.stdout || "" };
+  return { code: result.status ?? 1, stdout: result.stdout || "", timedOut: result.error?.code === "ETIMEDOUT" };
+}
+
+async function inspectLaunchedProcess(device, pid, runCommand = run, pause = wait) {
+  const attempts = [];
+  if (!device || !/^[1-9][0-9]*$/.test(pid ?? "")) return { exitCode: 1, attempts };
+  for (let index = 0; index < 2; index += 1) {
+    const result = runCommand("xcrun", ["simctl", "spawn", device, "launchctl", "print", `pid/${pid}`], { timeout: 30_000 });
+    attempts.push({ exitCode: result.code, timedOut: result.timedOut === true });
+    // Retry an inspection transport timeout, never a missing/crashed process.
+    if (!result.timedOut || index === 1) return { exitCode: result.code, attempts };
+    await pause(1_000);
+  }
 }
 
 async function capture(name, options = {}) {
@@ -33,7 +45,9 @@ async function capture(name, options = {}) {
   if (scene.launchExit === 0) {
     const pid = launched.stdout.trim().match(/: (\d+)$/)?.[1];
     await wait(5_000);
-    scene.processExit = pid ? run("xcrun", ["simctl", "spawn", udid, "launchctl", "print", `pid/${pid}`]).code : 1;
+    const inspection = await inspectLaunchedProcess(udid, pid);
+    scene.processExit = inspection.exitCode;
+    scene.processAttempts = inspection.attempts;
   }
   if (scene.processExit === 0) {
     scene.screenshotExit = run("xcrun", ["simctl", "io", udid, "screenshot", "--type=png", scene.screenshotPath]).code;
@@ -66,7 +80,7 @@ async function main() {
   process.exitCode = report.outcome === "success" ? 0 : 1;
 }
 
-module.exports = { capture };
+module.exports = { capture, inspectLaunchedProcess };
 if (require.main === module) main().catch((error) => {
   report.error = error.message;
   fs.mkdirSync(outputDirectory, { recursive: true });

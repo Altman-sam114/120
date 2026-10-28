@@ -1,3 +1,18 @@
+## v3.17.1 / 入队布局与进程检查返修
+
+```mermaid
+flowchart LR
+    Queue[入队或取消的原状态反馈] --> Header[普通反馈并入建筑标题行]
+    Target[等待Rally等目标] --> Full[保留完整待目标提示]
+    Launch[同一云端设备 / 已启动PID] --> Probe[30秒进程检查]
+    Probe -->|仅传输超时| Retry[原PID再查一次 / 记录两次状态]
+    Retry --> Final[真实最终退出码 / 原截图探针]
+    Header --> C[431Core / 20真实UI / 49reporter / 双架构五图 / 新C]
+    Final --> C
+```
+
+v3.17 run40618029764已下载复判不通过：Cancel首屏裁切且Structures检查超时缺图。原断言与五图要求不降，本机无验证。
+
 ## v3.17 / 生产反馈与准确云端操作证据
 
 ```mermaid

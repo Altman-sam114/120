@@ -1,3 +1,9 @@
+## v3.17.1 / Feedback layout and bounded inspection repair
+
+C rejectsa360929/run40618029764/attempt1:431Core/42reporter/builds pass,19of20actualUI and only4visualscenes. Queue status expanded compact header and clipped Cancel at353.17>330pt. Structures launch0 but original120s launchctl inspection timed out; crash is unproven. Exact artifactID12787081070 downloaded8.2M, all4available images viewed, identity/failingintegrity/JUnit11-3-1 confirmed.
+
+Compact producer's ordinary commandStatus now shares the existing name/tech header row and its accessibilityValue; target-wait status retains the original separate full status owner. No new game state or action changes. Common cloud capture calls inspectLaunchedProcess for the exact launchPID/device, at most2x30s, retrying only ETIMEDOUT after1s, with raw processAttempts and real finalprocessExit; no relaunch/fallback image.6newmockedprocess regressions plus1actualxcresult FailureMessage-schema regression make49reporter expected. Failed case children are diagnostics, not absent tests; result must stillPassed to pass.431Core/20realUI/dual/five/JUnit11-0-1 unchanged; exact new C pending.
+
 ## v3.17 / Production feedback ownership and exact UI result traversal
 
 TacticalProductionSectionView only composes Card, FocusSummary, FactoryTech, ManagementRail and Queue views. The four extracted source files are explicitly registered in Xcode. Card derives per-type queuedCount and first-item progress from the existing controller.productionQueueItems; the count badge and bounded2pt bar introduce no mutable UI mirror, engine mutation, save field or timer. All original actions/availability/economics/first-screen density/shortcuts remain owned by Controller/Core.

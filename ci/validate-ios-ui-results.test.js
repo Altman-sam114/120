@@ -97,3 +97,13 @@ test("unexpected failure metadata cannot hide behind green summary counts", () =
   input.summary.testFailures.push({ message: "failed assertion" });
   assert.equal(outcome(input), "failure");
 });
+test("actual failed cases with Failure Message children remain identifiable failures", () => {
+  const input = fixture();
+  input.cases[0].result = "Failed";
+  input.cases[0].children = [{ nodeType: "Failure Message", name: "Card clipped" }];
+  const report = assessUIResults(input.summary, input.tree, 65);
+  assert.equal(report.outcome, "failure");
+  assert.deepEqual(report.missingTests, []);
+  assert.deepEqual(report.malformedCases, []);
+  assert.deepEqual(report.unsuccessfulTests, [{ name: expected[0], result: "Failed" }]);
+});
