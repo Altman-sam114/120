@@ -6,7 +6,8 @@
 - 参考 AITRANS 的自主决策与 baseline + direct + optional 思路，但不复制其分支或本地编译制度：本项目仍 main 直推、Altman-sam114、默认云端唯一编译/测试，连轻量语法/YAML/diff 检查也不在本机运行。
 - CI 新增范围选择和独立轻量结果包：docs/Web/CI-only 不无条件启动 Swift/Xcode/模拟器/真实 UI/截图；CI helper 按改动选择对应回归。原生源码/实际 capture/未知路径或显式 native 继续保留既有完整原生门控，未删除旧测试、断言或必要画面；原生执行链路改变需真实 native 运行。
 - 本轮仅流程/验证分流维护，不修改游戏、Swift/iOS 行为和素材，不替既有待验收版本给出通过结论；.wp 与未跟踪的 v3.18 提示词保持原样。
-- 验证：云端待执行。计划仅运行本轮文档链接/差异、workflow YAML、改动 CI helper 语法与直接回归，不运行本机检查或无关原生/浏览器测试。精确结果须以本轮 main SHA 的 profile、run/attempt 和实际结果包为准。
+- 云端证据：实现提交 d737b086ffd3d9ccdfb60ca451f3e5a0f83d15aa，run 40689630702 / attempt 1，profile=ci，GitHub success。Altman-sam114 下载并核对 artifact rustwar-ci-v1.2-main-d737b08-run40689630702-attempt1（ID 12815679897，压缩 3809 bytes，digest sha256:d22478e764c8200d0fcccb9d4fece15c26e2f97ed7f9b91fd1567cef697e2f18），缓存 /private/tmp/rustwar-review-40689630702/attempt-1/，目录 32K。API/manifest/scope/提交信息身份一致；云端 git diff --check、Markdown 文件链接、Ruby YAML、四个改动 helper 的 node --check、两份相关测试共 13 项全部通过，JUnit 8/0/0。原生 job skipped，Swift/App/模拟器/UI/截图/浏览器均未选中，本机没有运行任何验证；此结果不代表既有待验收原生版本通过。
+- 收口仅追加本条历史证据，不改代码；其提交应自动选择 docs profile，只运行相关文档 baseline，实际最新结果以该 SHA 对应的云端包为准。
 
 ## v3.17.1 / Producer header and bounded cloud process inspection
 
