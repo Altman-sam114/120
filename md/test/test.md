@@ -51,6 +51,7 @@ gh workflow run ci-results.yml --ref main -f validation_profile=native
 - 手动运行没有 push.before 时，auto 比较目标 commit 与父提交；需要整条原生链路就显式选 native，不借 auto 的较小范围冒充完整验证。
 - 现有 native job 固定 Xcode 26.5 / iOS Simulator SDK 26.5：先跑报告 helper 自测、工具链/静态/Core/project gate，再双架构 App build；编译成功才创建并启动固定云端 iPhone，复用已编译的像素探针，执行真实 UI 与 production/combat/structures/Islands/Lava 画面链路。任一前置失败保留真实失败和未执行项。
 - native 的具体测试名单、断言与结果计数以当前源码、validator 和实际结果为准，不在制度文档锁死逐版数字。不得把旧历史的八项/双图要求覆盖现有实际门控。
+- native 的 reporter gate 同时检查本次变更文档的本地文件链接；生成兵模的直接回归解码仓库实际 PNG 和锚点，检查真实透明通道、有效像素、裁剪留边和炮管分割，而非仅检查资源文件名是否出现。
 - 修改分流/profile/证据脚本时运行对应云端回归；修改 workflow 时云端做 YAML 解析并确认实际 job 选择符合计划。文档 job 的绿灯不证明 native job 能构建。
 
 ## 4. 结果包与自行复核

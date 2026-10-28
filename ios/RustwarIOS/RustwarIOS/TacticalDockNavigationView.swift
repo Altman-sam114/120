@@ -30,7 +30,7 @@ struct TacticalDockNavigationView: View {
                 .frame(height: 1)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Command panel navigation")
+        .accessibilityLabel("指挥面板导航")
     }
 
     private var destinations: some View {
@@ -39,7 +39,7 @@ struct TacticalDockNavigationView: View {
             Button(action: { navigate(destination) }) {
                 if dynamicTypeSize > .large {
                     Label(
-                        isFactory ? "Production and upgrades" : destination.accessibilityTitle,
+                        isFactory ? "生产与升级" : destination.accessibilityTitle,
                         systemImage: isFactory ? "gearshape.2.fill" : destination.systemImage
                     )
                     .font(.body)
@@ -51,7 +51,7 @@ struct TacticalDockNavigationView: View {
                         Image(systemName: isFactory ? "gearshape.2.fill" : destination.systemImage)
                             .font(.body)
                             .accessibilityHidden(true)
-                        Text(isFactory ? "Factory" : destination.title)
+                        Text(isFactory ? "工厂" : destination.title)
                             .font(.caption2.bold())
                             .lineLimit(1)
                     }
@@ -61,8 +61,8 @@ struct TacticalDockNavigationView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(TacticalHUDTheme.primaryText)
-            .accessibilityLabel(isFactory ? "Production and upgrades" : destination.accessibilityTitle)
-            .accessibilityHint("Scrolls the command panel directly to this section.")
+            .accessibilityLabel(isFactory ? "生产与升级" : destination.accessibilityTitle)
+            .accessibilityHint("直接定位至对应的操作区。")
             .accessibilityIdentifier("dock-navigation-\(destination)")
         }
     }

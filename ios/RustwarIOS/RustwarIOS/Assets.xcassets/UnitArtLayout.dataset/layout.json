@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "referenceSize": [
+    1776,
+    888
+  ],
+  "units": {
+    "builder": {
+      "hull": [
+        43,
+        134,
+        391,
+        270
+      ],
+      "hullPivot": [
+        282,
+        263
+      ],
+      "mount": [
+        44,
+        166,
+        397,
+        231
+      ],
+      "mountPivot": [
+        157,
+        282
+      ],
+      "hullLength": 2.05,
+      "weaponCutX": 218
+    },
+    "scout": {
+      "hull": [
+        466,
+        135,
+        351,
+        264
+      ],
+      "hullPivot": [
+        666,
+        260
+      ],
+      "mount": [
+        493,
+        180,
+        351,
+        200
+      ],
+      "mountPivot": [
+        626,
+        285
+      ],
+      "hullLength": 2.0,
+      "weaponCutX": 704
+    },
+    "tank": {
+      "hull": [
+        862,
+        140,
+        376,
+        265
+      ],
+      "hullPivot": [
+        1074,
+        264
+      ],
+      "mount": [
+        888,
+        152,
+        426,
+        246
+      ],
+      "mountPivot": [
+        1019,
+        285
+      ],
+      "hullLength": 2.15,
+      "weaponCutX": 1127
+    },
+    "heavyTank": {
+      "hull": [
+        1282,
+        116,
+        461,
+        312
+      ],
+      "hullPivot": [
+        1543,
+        269
+      ],
+      "mount": [
+        1324,
+        154,
+        432,
+        259
+      ],
+      "mountPivot": [
+        1459,
+        286
+      ],
+      "hullLength": 2.25,
+      "weaponCutX": 1555
+    },
+    "hover": {
+      "hull": [
+        40,
+        489,
+        391,
+        316
+      ],
+      "hullPivot": [
+        242,
+        644
+      ],
+      "mount": [
+        46,
+        539,
+        395,
+        229
+      ],
+      "mountPivot": [
+        169,
+        653
+      ],
+      "hullLength": 2.15,
+      "weaponCutX": 330
+    },
+    "aaTank": {
+      "hull": [
+        453,
+        508,
+        356,
+        282
+      ],
+      "hullPivot": [
+        645,
+        652
+      ],
+      "mount": [
+        471,
+        520,
+        376,
+        262
+      ],
+      "mountPivot": [
+        598,
+        653
+      ],
+      "hullLength": 2.12,
+      "weaponCutX": 675
+    },
+    "artillery": {
+      "hull": [
+        817,
+        521,
+        468,
+        271
+      ],
+      "hullPivot": [
+        1124,
+        651
+      ],
+      "mount": [
+        881,
+        498,
+        507,
+        272
+      ],
+      "mountPivot": [
+        1019,
+        653
+      ],
+      "hullLength": 2.2,
+      "weaponCutX": 1104
+    },
+    "gunboat": {
+      "hull": [
+        1290,
+        534,
+        468,
+        232
+      ],
+      "hullPivot": [
+        1498,
+        655
+      ],
+      "mount": [
+        1390,
+        521,
+        368,
+        239
+      ],
+      "mountPivot": [
+        1490,
+        653
+      ],
+      "hullLength": 2.3,
+      "weaponCutX": 1605
+    }
+  }
+}

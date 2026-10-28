@@ -41,6 +41,7 @@ enum BattlefieldUnitModels {
     private static var portraits: [String: UIImage] = [:]
 
     static func portrait(for type: UnitType) -> UIImage {
+        if let image = GeneratedUnitArt.portrait(for: type) { return image }
         if let image = portraits[type.rawValue] { return image }
         let paint = Paint(team: .player)
         let image = renderImage(extent: 1.55) { context in
@@ -54,6 +55,10 @@ enum BattlefieldUnitModels {
 
     static func body(for unit: UnitSnapshot, radius: Double,
                      weaponRotation: CGFloat, recoilDistance: Double) -> SKNode {
+        if let body = GeneratedUnitArt.body(for: unit, radius: radius,
+                                            weaponRotation: weaponRotation, recoilDistance: recoilDistance) {
+            return body
+        }
         let key = "\(unit.type.rawValue)|\(unit.team.rawValue)"
         let parts: Parts
         if let cached = cache[key] {

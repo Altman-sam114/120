@@ -165,7 +165,7 @@ struct TacticalMapView: View {
                 )
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Tactical map")
+        .accessibilityLabel("战术小地图")
         .accessibilityValue(controller.tacticalMapAccessibilityValue)
         .accessibilityHint(controller.tacticalMapAccessibilityHint)
         .accessibilityAddTraits(.isButton)
@@ -175,13 +175,13 @@ struct TacticalMapView: View {
         .accessibilityAction(
             named: Text(
                 controller.isAwaitingTargetCommand
-                    ? "Cancel command"
-                    : "Focus Command Center"
+                    ? "取消命令"
+                    : "返回指挥中心"
             )
         ) {
             performPrimaryAccessibilityAction()
         }
-        .accessibilityAction(named: Text("Reset Camera")) {
+        .accessibilityAction(named: Text("视野复位")) {
             controller.resetCamera()
         }
     }

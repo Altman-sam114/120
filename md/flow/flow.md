@@ -46,6 +46,7 @@ SwiftUI / 原生触点 / 键盘 / Tactical Map
 - 普通点选、触点预览和长按上下文共享可见候选与基础轮廓优先策略；扩大触控 halo 不可抢过真实模型命中。显式 Attack 等待态继续使用对应队伍和目标资格过滤。
 - 点友军选择，已有单位选择时点空地执行普通 Move，点可见敌方执行合法 Attack。Move 不为自动追击改变目的地；射程内开火、Stop 驻守、Hold Fire 和手动 Attack 由 Core 控制。
 - Builder 仅执行允许的移动/建造/维修/回收等命令，不因混选被改写为作战订单；控制编队和多选都过滤死亡、缺失或非己方实体。
+- 取消选择经 Controller 取消待选目标、清理旧触点 epoch，再调用 Engine.clearSelection；只清选择，不改单位订单、编队、经济或生产。
 - 目标等待态、选择框和命令确认属于交互投影，不另存一套订单；无效目标不能悄悄提交或清掉正确的新状态。
 
 ## 4. 模拟、导航、生产与持久化
@@ -61,6 +62,7 @@ SwiftUI / 原生触点 / 键盘 / Tactical Map
 
 - BattlefieldScene 读取真实快照；单位/建筑的 body 与签名缓存按可见实体复用/回收，重新挂接前脱离旧父节点。地图重置清缓存，类型/队伍/科技改变时重建。
 - BattlefieldUnitModels、BattlefieldBuildingModels、BattlefieldEffectMaterials 和 BattlefieldTerrainArt 分别拥有共享材质/几何，HUD 缩略图复用相同模型。炮塔朝向与后坐是表现状态，不改 Core 命中或伤害。
+- GeneratedUnitArt 优先加载随 App 打包的两张原创透明图集；UnitArtLayout 为裁剪、炮塔轴与炮管分割的唯一美术坐标源。底盘/炮塔/炮管保留独立转向和后坐，炮口距离复用图集坐标；八类有限缓存，加载失败才使用原有几何后备，不在线下载素材。TacticalLocalization 只做中文投影，不改 Codable 标识或 Core 规则。
 - 地形表现按地图 revision 烘焙有重叠边、共享世界相位的底图，不逐帧重建，不改变 TerrainGrid 通行。资源、实体、特效、雾和雷达保持分层。
 - 当前可见、已探索、雷达 contact 分离。敌方真实外形、精确命中、目标线和精确瞄准必须受当前视野约束；雷达只显示信号，不提升真实视野。
 - 武器与受损/死亡特效从真实冷却、HP 和实体变化派生，受数量/寿命上限、可见性和 Reduce Motion 约束，暂停/重置/切图正确清理；不能靠特效推进伤害。

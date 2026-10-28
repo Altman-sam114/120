@@ -41,30 +41,34 @@ struct TacticalStatusBarView: View {
         ScrollView(.horizontal) {
             HStack(spacing: usesInlineMetrics ? TacticalHUDTheme.compactSpacing : TacticalHUDTheme.sectionSpacing) {
                 TacticalMetricView(
-                    label: "Metal",
+                    label: "金属",
                     value: controller.playerEconomy.metal.formatted(.number.precision(.fractionLength(0))),
                     systemImage: "hexagon.fill",
-                    isInline: usesInlineMetrics
+                    isInline: usesInlineMetrics,
+                    metricID: "metal"
                 )
                 TacticalMetricView(
-                    label: "Income",
+                    label: "收入",
                     value: "+\(controller.playerEconomy.income.formatted(.number.precision(.fractionLength(1))))",
                     systemImage: "arrow.up.right",
-                    isInline: usesInlineMetrics
+                    isInline: usesInlineMetrics,
+                    metricID: "income"
                 )
                 TacticalMetricView(
-                    label: "Pop",
+                    label: "人口",
                     value: "\(controller.playerEconomy.supplyUsed)/\(controller.playerEconomy.supplyCap)",
                     systemImage: "person.3.fill",
-                    isInline: usesInlineMetrics
+                    isInline: usesInlineMetrics,
+                    metricID: "pop"
                 )
                 TacticalMetricView(
-                    label: "Radar",
+                    label: "雷达",
                     value: "\(controller.playerRadarStationCount)/\(controller.playerRadarContactCount)",
                     systemImage: "dot.radiowaves.left.and.right",
-                    spokenLabel: "Radar intelligence",
+                    spokenLabel: "雷达情报",
                     spokenValue: controller.radarIntelAccessibilitySummary,
-                    isInline: usesInlineMetrics
+                    isInline: usesInlineMetrics,
+                    metricID: "radar"
                 )
             }
             .padding(.vertical, 1)
@@ -90,7 +94,8 @@ struct TacticalStatusBarView: View {
             .controlSize(.regular)
             .frame(minWidth: 88, minHeight: TacticalHUDTheme.controlMinimumHeight)
             .keyboardShortcut(commandKey("p"), modifiers: [])
-            .accessibilityInputLabels(["Pause", "Play"])
+            .accessibilityInputLabels(["暂停", "继续"])
+            .accessibilityIdentifier("pause-play")
 
             if layoutRole != .regularTrailing {
                 speedPicker(style: .menu)
@@ -110,13 +115,13 @@ struct TacticalStatusBarView: View {
 
     @ViewBuilder
     private func speedPicker(style: SpeedPickerStyle) -> some View {
-        let picker = Picker("Speed", selection: $controller.simulationSpeed) {
+        let picker = Picker("速度", selection: $controller.simulationSpeed) {
             ForEach(GameController.simulationSpeedOptions, id: \.self) { speed in
                 Text(GameController.simulationSpeedLabel(for: speed)).tag(speed)
             }
         }
         .controlSize(.regular)
-        .accessibilityLabel("Simulation speed")
+        .accessibilityLabel("模拟速度")
         .lineLimit(1)
 
         switch style {

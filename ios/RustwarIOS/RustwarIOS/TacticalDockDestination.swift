@@ -8,19 +8,19 @@ enum TacticalDockDestination: CaseIterable, Hashable {
 
     var title: String {
         switch self {
-        case .orders: "Orders"
-        case .selection: "Select"
-        case .groups: "Groups"
-        case .session: "Game"
+        case .orders: "指令"
+        case .selection: "选择"
+        case .groups: "编队"
+        case .session: "对局"
         }
     }
 
     var accessibilityTitle: String {
         switch self {
-        case .orders: "Selected entity actions"
-        case .selection: "Selection tools"
-        case .groups: "Control groups"
-        case .session: "Game settings"
+        case .orders: "当前目标操作"
+        case .selection: "选兵工具"
+        case .groups: "控制编队"
+        case .session: "对局设置"
         }
     }
 

@@ -8,10 +8,10 @@ struct TacticalProductionFocusSummaryView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var nowSummary: String {
-        guard let item = controller.productionQueueItems.first else { return "Idle" }
+        guard let item = controller.productionQueueItems.first else { return "待命" }
         let percent = Int((item.progressFraction * 100).rounded())
         let seconds = max(0, Int((item.buildTime - item.progress).rounded(.up)))
-        return "\(GameDefinitions.unit(item.unitType).name) \(percent)% • \(seconds)s left"
+        return "\(GameDefinitions.unit(item.unitType).tacticalName) \(percent)% · 余 \(seconds) 秒"
     }
 
     var body: some View {
@@ -29,7 +29,7 @@ struct TacticalProductionFocusSummaryView: View {
                 .stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Production focus")
+        .accessibilityLabel("生产概览")
         .accessibilityValue(summaryAccessibilityValue)
     }
 
@@ -47,20 +47,20 @@ struct TacticalProductionFocusSummaryView: View {
 
     private var compactFocusStrip: some View {
         HStack(alignment: .top, spacing: TacticalHUDTheme.denseSpacing) {
-            compactFocusItem("NOW", compactNowSummary)
-            compactFocusItem("QUEUE", "\(controller.productionQueueItems.count)")
-            compactFocusItem("UPGRADE", compactUpgradeSummary)
+            compactFocusItem("当前", compactNowSummary)
+            compactFocusItem("队列", "\(controller.productionQueueItems.count)")
+            compactFocusItem("升级", compactUpgradeSummary)
         }
     }
 
     private var fullFocusRows: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-            focusRow("NOW", nowSummary)
+            focusRow("当前", nowSummary)
             focusRow(
-                "QUEUE",
+                "队列",
                 "\(controller.productionQueueItems.count) • \(controller.productionFocusQueueShortSummary)"
             )
-            focusRow("UPGRADE", controller.productionFocusUpgradeSummary)
+            focusRow("升级", controller.productionFocusUpgradeSummary)
         }
     }
 
@@ -81,16 +81,16 @@ struct TacticalProductionFocusSummaryView: View {
     }
 
     private var compactNowSummary: String {
-        guard let item = controller.productionQueueItems.first else { return "Idle" }
+        guard let item = controller.productionQueueItems.first else { return "待命" }
         let percent = Int((item.progressFraction * 100).rounded())
         let seconds = max(0, Int((item.buildTime - item.progress).rounded(.up)))
-        return "\(percent)% · \(seconds)s"
+        return "\(percent)% · \(seconds)秒"
     }
 
     private var compactUpgradeSummary: String {
         switch controller.productionFocusUpgradeSummary {
-        case "Max tech": "MAX"
-        case "No upgrade": "—"
+        case "最高科技": "已满级"
+        case "无升级": "—"
         default: controller.productionFocusUpgradeSummary
         }
     }
@@ -106,7 +106,7 @@ struct TacticalProductionFocusSummaryView: View {
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.compactSpacing) {
                     Image(systemName: "building.2.fill").accessibilityHidden(true)
-                    Text(controller.productionFocusBuildingName ?? "Production")
+                    Text(controller.productionFocusBuildingName ?? "单位生产")
                         .font(.subheadline.bold())
                         .fixedSize(horizontal: true, vertical: false)
                     Spacer(minLength: 0)
@@ -123,7 +123,7 @@ struct TacticalProductionFocusSummaryView: View {
     private var identityTitle: some View {
         HStack(spacing: TacticalHUDTheme.compactSpacing) {
             Image(systemName: "building.2.fill").accessibilityHidden(true)
-            Text(controller.productionFocusBuildingName ?? "Production")
+            Text(controller.productionFocusBuildingName ?? "单位生产")
                 .font(.subheadline.bold())
         }
     }
@@ -134,7 +134,7 @@ struct TacticalProductionFocusSummaryView: View {
                 .font(.caption.bold())
                 .padding(.horizontal, TacticalHUDTheme.denseSpacing)
                 .background(TacticalHUDTheme.metricBackground, in: Capsule())
-            Text(controller.productionFocusProductionSpeedText.replacing(" production", with: ""))
+            Text(controller.productionFocusProductionSpeedText.replacing(" 产能", with: ""))
                 .font(.caption)
                 .monospacedDigit()
         }
@@ -154,6 +154,6 @@ struct TacticalProductionFocusSummaryView: View {
     }
 
     private var summaryAccessibilityValue: String {
-        "\(controller.productionFocusBuildingName ?? "Production"), \(controller.productionFocusTechLabel), \(controller.productionFocusProductionSpeedText). Now \(nowSummary). Queue \(controller.productionQueueItems.count), followed by \(controller.productionFocusQueueSummary). Build \(controller.productionFocusBuildSummary). Upgrade \(controller.productionFocusUpgradeSummary)."
+        "\(controller.productionFocusBuildingName ?? "单位生产")，\(controller.productionFocusTechLabel)，\(controller.productionFocusProductionSpeedText)。当前：\(nowSummary)。队列 \(controller.productionQueueItems.count) 项，后续：\(controller.productionFocusQueueSummary)。可生产：\(controller.productionFocusBuildSummary)。升级：\(controller.productionFocusUpgradeSummary)。"
     }
 }

@@ -9,37 +9,37 @@ struct TacticalSessionSectionView: View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             TacticalSectionHeader(section: .session)
             TacticalCommandGrid(columns: columns) {
-                Button("Base", systemImage: "house.fill", action: controller.focusPlayerCommandCenter)
+                Button("基地", systemImage: "house.fill", action: controller.focusPlayerCommandCenter)
                     .tacticalControl()
                     .keyboardShortcut(.space, modifiers: [])
-                    .accessibilityLabel("Focus Command Center")
-                    .accessibilityHint("Centers the battlefield camera on the player Command Center.")
+                    .accessibilityLabel("返回指挥中心")
+                    .accessibilityHint("将视野移回我方指挥中心。")
 
-                Button("Reset", systemImage: "scope", action: controller.resetCamera)
+                Button("视野复位", systemImage: "scope", action: controller.resetCamera)
                     .tacticalControl()
 
-                Picker("Map", selection: $controller.currentMapID) {
+                Picker("地图", selection: $controller.currentMapID) {
                     ForEach(MapID.allCases) { mapID in
-                        Text(MapPreset.preset(for: mapID).label).tag(mapID)
+                        Text(mapID.tacticalName).tag(mapID)
                     }
                 }
                 .pickerStyle(.menu)
                 .controlSize(.regular)
                 .tacticalMenuPicker()
-                .accessibilityLabel("Map")
+                .accessibilityLabel("地图")
 
-                Button("Restart", systemImage: "arrow.clockwise", action: controller.restartBattle)
+                Button("重新开始", systemImage: "arrow.clockwise", action: controller.restartBattle)
                     .tacticalControl()
                     .keyboardShortcut(commandKey("r"), modifiers: [])
 
-                Button("Save", systemImage: "square.and.arrow.down", action: controller.saveGame)
+                Button("保存", systemImage: "square.and.arrow.down", action: controller.saveGame)
                     .tacticalControl()
-                    .accessibilityLabel("Save game")
+                    .accessibilityLabel("保存对局")
 
-                Button("Load", systemImage: "square.and.arrow.up", action: controller.loadGame)
+                Button("读取", systemImage: "square.and.arrow.up", action: controller.loadGame)
                     .tacticalControl()
                     .disabled(!controller.canLoadGame)
-                    .accessibilityLabel("Load game")
+                    .accessibilityLabel("读取存档")
 
                 Button(
                     controller.enemyAIButtonTitle,
@@ -47,7 +47,7 @@ struct TacticalSessionSectionView: View {
                     action: controller.toggleEnemyAI
                 )
                 .tacticalControl()
-                .accessibilityLabel("Enemy AI")
+                .accessibilityLabel("敌方 AI")
                 .accessibilityValue(controller.enemyAIAccessibilityValue)
             }
         }

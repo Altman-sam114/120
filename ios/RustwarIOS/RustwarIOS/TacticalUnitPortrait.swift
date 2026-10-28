@@ -8,7 +8,6 @@ struct TacticalUnitPortrait: View {
         Image(uiImage: BattlefieldUnitModels.portrait(for: unitType))
             .resizable()
             .scaledToFit()
-            .rotationEffect(.degrees(-90))
             .accessibilityHidden(true)
     }
 }

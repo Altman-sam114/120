@@ -42,6 +42,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let cameraY: Double
         let zoom: Double
         let pending: Bool
+        let unitArtTypes: Int
         let projection: Projection
 
         func entity(_ id: String) -> Entity? { (units + buildings).first { $0.id == id } }
@@ -55,7 +56,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = XCUIApplication()
-        app.launchArguments = ["--rustwar-ci-interaction-tests", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchArguments = ["--rustwar-ci-interaction-tests", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         if lowMetal { app.launchArguments.append("--rustwar-ci-low-metal") }
         if tech2 { app.launchArguments.append("--rustwar-ci-factory-tech2") }
         if centeredUnit { app.launchArguments.append("--rustwar-ci-centered-unit") }
@@ -122,6 +123,47 @@ final class RustwarIOSInteractionTests: XCTestCase {
     }
 
     @MainActor
+    func testChineseHUDAndLayeredArtRemainPlayable() async throws {
+        let app = try await launch()
+        XCTAssertEqual(try snapshot(app).unitArtTypes, 8, "Every bundled layered model must decode; fallback art cannot satisfy this gate")
+        XCTAssertEqual(app.buttons["pause-play"].label, "继续")
+        let metal = app.descendants(matching: .any).matching(identifier: "status-metric-metal").firstMatch
+        XCTAssertEqual(metal.label, "金属")
+
+        try tapEntity("input-tank", in: app)
+        let before = try snapshot(app)
+        app.buttons.matching(identifier: "移动").firstMatch.tap()
+        try await waitFor(app, "Chinese Move opens the real target mode") { $0.pending }
+        let clear = app.buttons["selection-clear"]
+        assertFullyVisible(clear, in: app)
+        XCTAssertEqual(clear.label, "取消选择")
+        clear.tap()
+        try await waitFor(app, "clear cancels targeting without issuing an order") {
+            $0.selected.isEmpty && !$0.pending && $0.entity("input-tank")?.order == "idle"
+        }
+        XCTAssertEqual(try snapshot(app).metal, before.metal)
+
+        try tapEntity("input-tank", in: app)
+        try worldCoordinate(1_550, 1_740, in: app).tap()
+        try await waitFor(app, "fresh direct ground tap still issues ordinary Move") {
+            $0.entity("input-tank")?.order == "move"
+        }
+        app.buttons["selection-clear"].tap()
+        try await waitFor(app, "deselecting must not stop a moving unit") {
+            $0.selected.isEmpty && $0.entity("input-tank")?.order == "move"
+        }
+        try tapEntity("input-factory", in: app)
+        let card = app.buttons["produce-tank"]
+        assertFullyVisible(card, in: app)
+        XCTAssertTrue(card.label.contains("轻型坦克"))
+        card.tap()
+        try await waitFor(app, "Chinese unit card queues a real paid production order") {
+            $0.entity("input-factory")?.queue == 1 && $0.metal < before.metal
+        }
+        print("CHINESE_LAYERED_ART types=8 realClear/targetCancel/orderPreserved/freshMove/paidProduction=passed")
+    }
+
+    @MainActor
     func testFriendlyTapWinsOverAdjacentEnemyHalo() async throws {
         let app = try await launch(closeOpponents: true)
         let initial = try snapshot(app)
@@ -146,11 +188,11 @@ final class RustwarIOSInteractionTests: XCTestCase {
             $0.selected == ["input-wing"] && $0.entity("input-wing")?.order == "attack"
         }
         let health = try XCTUnwrap(enemy.hp)
-        app.buttons["Play"].tap()
+        app.buttons["继续"].tap()
         try await waitFor(app, "manual Attack damages enemy while other units Hold Fire") {
             ($0.entity("input-enemy")?.hp ?? 0) < health
         }
-        app.buttons["Pause"].tap()
+        app.buttons["暂停"].tap()
         let damaged = try XCTUnwrap(snapshot(app).entity("input-enemy")?.hp)
         XCTAssertLessThan(damaged, health)
         try tapEntity("input-builder", in: app)
@@ -167,9 +209,9 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "real wounded Tank selected") { $0.selected == ["input-tank"] }
         let health = app.descendants(matching: .any).matching(identifier: "selection-health").firstMatch
         XCTAssertTrue(health.waitForExistence(timeout: 5))
-        XCTAssertEqual(health.value as? String, "122 of 245 hit points")
+        XCTAssertEqual(health.value as? String, "当前生命 122，上限 245")
         XCTAssertEqual(try snapshot(app).entity("input-tank")?.hp, 122)
-        for command in ["Move", "Attack Move", "Attack", "Stop", "command-select-area", "Select same type"] {
+        for command in ["移动", "进攻移动", "攻击", "停止", "command-select-area", "选择同类单位"] {
             assertFullyVisible(app.buttons.matching(identifier: command).firstMatch, in: app)
         }
         app.buttons["command-select-area"].tap()
@@ -180,18 +222,18 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "two Tanks selected for real squad summary") {
             Set($0.selected) == Set(["input-tank", "input-wing"]) && !$0.pending
         }
-        XCTAssertEqual(health.value as? String, "367 of 490 hit points")
+        XCTAssertEqual(health.value as? String, "当前生命 367，上限 490")
         let composition = app.descendants(matching: .any).matching(identifier: "selection-type-tank").firstMatch
         XCTAssertTrue(composition.exists)
         XCTAssertEqual(composition.value as? String, "2")
-        for command in ["Move", "Attack Move", "Attack", "Stop", "command-select-area", "Select same type"] {
+        for command in ["移动", "进攻移动", "攻击", "停止", "command-select-area", "选择同类单位"] {
             assertFullyVisible(app.buttons.matching(identifier: command).firstMatch, in: app)
         }
-        app.buttons.matching(identifier: "Move").firstMatch.tap()
+        app.buttons.matching(identifier: "移动").firstMatch.tap()
         try await waitFor(app, "real squad Move waits for target") { $0.pending }
-        let cancel = app.buttons["Cancel Move target"]
+        let cancel = app.buttons["取消移动目标"]
         assertFullyVisible(cancel, in: app)
-        assertFullyVisible(app.buttons.matching(identifier: "Stop").firstMatch, in: app)
+        assertFullyVisible(app.buttons.matching(identifier: "停止").firstMatch, in: app)
         cancel.tap()
         try await waitFor(app, "target cancellation keeps squad selected") {
             !$0.pending && Set($0.selected) == Set(["input-tank", "input-wing"])
@@ -200,7 +242,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "direct tap still moves the selected squad") {
             $0.entity("input-tank")?.order == "move" && $0.entity("input-wing")?.order == "move"
         }
-        let stop = app.buttons.matching(identifier: "Stop").firstMatch
+        let stop = app.buttons.matching(identifier: "停止").firstMatch
         assertFullyVisible(stop, in: app)
         stop.tap()
         try await waitFor(app, "real Stop clears both squad orders") {
@@ -217,7 +259,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "rendered routing Tank selected") { $0.selected == ["input-tank"] }
         try worldCoordinate(1_580, 1_810, in: app).tap()
         try await waitFor(app, "real Move crosses the obstacle's line") { $0.entity("input-tank")?.order == "move" }
-        app.buttons["Play"].tap()
+        app.buttons["继续"].tap()
         var maximumDetour = 0.0
         var observed = 0
         var arrived = false
@@ -242,7 +284,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         XCTAssertTrue(arrived, "Tank must arrive at the originally tapped point")
         XCTAssertGreaterThan(maximumDetour, 35, "The real model must visibly travel around the obstacle")
         print("NAVIGATION_DETOUR samples=\(observed) maximumOffset=\(maximumDetour) arrival=1580,1810")
-        app.buttons["Pause"].tap()
+        app.buttons["暂停"].tap()
         try tapEntity("input-builder", in: app)
         try await waitFor(app, "fresh Builder selected after actual detour") { $0.selected == ["input-builder"] }
         try worldCoordinate(1_520, 1_890, in: app).tap()
@@ -257,7 +299,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try worldCoordinate(1_540, 1_740, in: app).tap()
         try await waitFor(app, "ground tap issues ordinary move") { $0.entity("input-tank")?.order == "move" }
         let health = try XCTUnwrap(snapshot(app).entity("input-enemy")?.hp)
-        app.buttons["Play"].tap()
+        app.buttons["继续"].tap()
         try await waitFor(app, "ordinary move damages enemy through simulation") {
             ($0.entity("input-enemy")?.hp ?? 0) < health
         }
@@ -278,14 +320,14 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "defender selected") { $0.selected == ["input-tank"] }
         try worldCoordinate(1_540, 1_740, in: app).tap()
         try await waitFor(app, "move before stop") { $0.entity("input-tank")?.order == "move" }
-        let stop = app.buttons.matching(identifier: "Stop").firstMatch
+        let stop = app.buttons.matching(identifier: "停止").firstMatch
         XCTAssertTrue(stop.isHittable)
         stop.tap()
         try await waitFor(app, "stop clears movement") { $0.entity("input-tank")?.order == "idle" }
         let before = try snapshot(app)
         let defender = try XCTUnwrap(before.entity("input-tank"))
         let health = try XCTUnwrap(before.entity("input-enemy")?.hp)
-        app.buttons["Play"].tap()
+        app.buttons["继续"].tap()
         try await waitFor(app, "stopped defender fires through real simulation") {
             ($0.entity("input-enemy")?.hp ?? 0) < health
         }
@@ -356,7 +398,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "factory selected for live card feedback") { $0.selected == ["input-factory"] }
         let tank = app.buttons["produce-tank"]
         let scout = app.buttons["produce-scout"]
-        let cancel = app.buttons["Cancel last queued production item"]
+        let cancel = app.buttons["撤销队尾生产订单"]
         for type in ["scout", "tank", "hover", "artillery", "aaTank", "heavyTank"] {
             assertFullyVisible(app.buttons["produce-\(type)"], in: app)
         }
@@ -366,31 +408,31 @@ final class RustwarIOSInteractionTests: XCTestCase {
         scout.tap()
         try await waitFor(app, "three real production actions and per-type card counts") {
             $0.entity("input-factory")?.queue == 3 && abs($0.metal - (metal - 450)) < 0.01 &&
-                (tank.value as? String)?.contains("2 queued") == true &&
-                (scout.value as? String)?.contains("1 queued") == true
+                (tank.value as? String)?.contains("排队 2 辆") == true &&
+                (scout.value as? String)?.contains("排队 1 辆") == true
         }
-        XCTAssertTrue((tank.value as? String)?.contains("building 0 percent") == true)
+        XCTAssertTrue((tank.value as? String)?.contains("生产进度 0%") == true)
         assertFullyVisible(cancel, in: app)
         cancel.tap()
         try await waitFor(app, "cancel last refunds Scout and clears only its card count") {
             $0.entity("input-factory")?.queue == 2 && abs($0.metal - (metal - 360)) < 0.01 &&
-                (scout.value as? String)?.contains("0 queued") == true &&
-                (tank.value as? String)?.contains("2 queued") == true
+                (scout.value as? String)?.contains("排队 0 辆") == true &&
+                (tank.value as? String)?.contains("排队 2 辆") == true
         }
         cancel.tap()
         try await waitFor(app, "cancel second Light Tank refunds and updates its live count") {
             $0.entity("input-factory")?.queue == 1 && abs($0.metal - (metal - 180)) < 0.01 &&
-                (tank.value as? String)?.contains("1 queued") == true
+                (tank.value as? String)?.contains("排队 1 辆") == true
         }
-        app.buttons["Play"].tap()
+        app.buttons["继续"].tap()
         try await waitFor(app, "normal production clock advances the current card") {
             let value = tank.value as? String ?? ""
             return $0.entity("input-factory")?.queue == 1 &&
-                value.range(of: "building [1-9][0-9]? percent", options: .regularExpression) != nil
+                value.range(of: "生产进度 [1-9][0-9]?%", options: .regularExpression) != nil
         }
-        app.buttons["Pause"].tap()
+        app.buttons["暂停"].tap()
         let progressValue = tank.value as? String ?? ""
-        XCTAssertNotNil(progressValue.range(of: "building [1-9][0-9]? percent", options: .regularExpression))
+        XCTAssertNotNil(progressValue.range(of: "生产进度 [1-9][0-9]?%", options: .regularExpression))
         for type in ["scout", "tank", "hover", "artillery", "aaTank", "heavyTank"] {
             assertFullyVisible(app.buttons["produce-\(type)"], in: app)
         }
@@ -425,7 +467,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "command center selected") { $0.selected == ["input-command"] }
         let builderCard = app.buttons["produce-builder"]
         assertFullyVisible(builderCard, in: app)
-        XCTAssertTrue(builderCard.label.contains("Builder"))
+        XCTAssertTrue(builderCard.label.contains("工程车"))
         let before = try snapshot(app)
         let oldQueue = try XCTUnwrap(before.entity("input-command")?.queue)
         builderCard.tap()
@@ -433,12 +475,12 @@ final class RustwarIOSInteractionTests: XCTestCase {
             $0.entity("input-command")?.queue == oldQueue + 1 && abs($0.metal - (before.metal - 180)) < 0.01
         }
         let existingIDs = Set(before.units.map(\.id))
-        app.buttons["Play"].tap()
+        app.buttons["继续"].tap()
         try await waitFor(app, "queued Builder completes and is actually drawn", attempts: 160) {
             $0.entity("input-command")?.queue == oldQueue &&
                 $0.units.contains { !existingIDs.contains($0.id) && $0.rendered }
         }
-        app.buttons["Pause"].tap()
+        app.buttons["暂停"].tap()
         let completed = try snapshot(app)
         let produced = try XCTUnwrap(completed.units.first { !existingIDs.contains($0.id) })
         XCTAssertTrue(produced.rendered)
@@ -446,11 +488,11 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "newly produced Builder selected through its rendered model") { $0.selected == [produced.id] }
         try worldCoordinate(1_550, 1_890, in: app).tap()
         try await waitFor(app, "newly produced Builder accepts a ground Move") { $0.entity(produced.id)?.order == "move" }
-        app.buttons["Play"].tap()
+        app.buttons["继续"].tap()
         try await waitFor(app, "newly produced Builder reaches the actual tapped destination") {
             $0.entity(produced.id)?.order == "idle"
         }
-        app.buttons["Pause"].tap()
+        app.buttons["暂停"].tap()
         let arrived = try snapshot(app)
         let position = arrived.projection.worldPosition(try XCTUnwrap(arrived.entity(produced.id)))
         XCTAssertEqual(position.x, 1_550, accuracy: 1)
@@ -467,7 +509,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let app = try await launch()
         try tapEntity("input-factory", in: app)
         try await waitFor(app, "factory selected") { $0.selected == ["input-factory"] }
-        let upgrade = app.buttons["Upgrade land factory to tech level 2"]
+        let upgrade = app.buttons["将陆军工厂升级至 T2"]
         XCTAssertTrue(upgrade.waitForExistence(timeout: 5))
         XCTAssertTrue(upgrade.isEnabled)
         upgrade.tap()
@@ -496,23 +538,23 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try tapEntity("input-tank", in: app)
         try await waitFor(app, "tank selected") { $0.selected == ["input-tank"] }
         app.buttons["dock-navigation-groups"].tap()
-        let save = app.buttons["Save control group 1"]
+        let save = app.buttons["保存编队 1"]
         XCTAssertTrue(save.isHittable)
         save.tap()
-        XCTAssertTrue(app.buttons["Recall control group 1"].isEnabled)
+        XCTAssertTrue(app.buttons["召回编队 1"].isEnabled)
         app.buttons["dock-navigation-selection"].tap()
-        let builders = app.buttons["Select idle Builders"]
+        let builders = app.buttons["选择空闲工程车"]
         XCTAssertTrue(builders.isHittable)
         builders.tap()
         try await waitFor(app, "selection tools action") { $0.selected == ["input-builder"] }
         app.buttons["dock-navigation-session"].tap()
-        XCTAssertTrue(app.buttons["Save game"].isHittable)
+        XCTAssertTrue(app.buttons["保存对局"].isHittable)
         try tapEntity("input-factory", in: app)
         try await waitFor(app, "new factory selection") { $0.selected == ["input-factory"] }
-        XCTAssertTrue(app.buttons["Upgrade land factory to tech level 2"].isHittable)
+        XCTAssertTrue(app.buttons["将陆军工厂升级至 T2"].isHittable)
         app.buttons["dock-navigation-groups"].tap()
         app.buttons["dock-navigation-orders"].tap()
-        XCTAssertTrue(app.buttons["Upgrade land factory to tech level 2"].isHittable)
+        XCTAssertTrue(app.buttons["将陆军工厂升级至 T2"].isHittable)
     }
 
     @MainActor
@@ -540,7 +582,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         for unit in ["scout", "tank", "hover", "artillery", "aaTank"] {
             assertFullyVisible(app.buttons["produce-\(unit)"], in: app)
         }
-        assertFullyVisible(app.buttons["Upgrade land factory to tech level 2"], in: app)
+        assertFullyVisible(app.buttons["将陆军工厂升级至 T2"], in: app)
     }
 
     @MainActor
@@ -560,7 +602,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
                 XCTAssertGreaterThan(element.frame.width, 20)
                 XCTAssertTrue(viewport.contains(element.frame), "Resource hidden: \(metric)")
             }
-            XCTAssertTrue(app.buttons["Play"].isHittable)
+            XCTAssertTrue(app.buttons["继续"].isHittable)
         }
     }
 

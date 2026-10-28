@@ -25,13 +25,13 @@ struct TacticalProductionCard: View {
 
     private var accessibilityLabel: String {
         let seconds = buildTime.formatted(.number.precision(.fractionLength(0...1)))
-        return "Produce \(definition.name), \(Int(definition.metalCost)) metal, \(definition.supply) population, \(seconds) seconds"
+        return "生产\(definition.tacticalName)，\(Int(definition.metalCost)) 金属，\(definition.supply) 人口，\(seconds) 秒"
     }
 
     private var accessibilityValue: String {
-        var value = "\(availability.accessibilityValue), \(queuedCount) queued"
+        var value = "\(availability.accessibilityValue)，排队 \(queuedCount) 辆"
         if let currentProgress {
-            value += ", building \(Int((currentProgress * 100).rounded())) percent"
+            value += "，生产进度 \(Int((currentProgress * 100).rounded()))%"
         }
         return value
     }

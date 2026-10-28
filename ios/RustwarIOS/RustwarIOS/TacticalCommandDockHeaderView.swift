@@ -12,14 +12,30 @@ struct TacticalCommandDockHeaderView: View {
             if showsCompactProducerContext {
                 TacticalCompactProducerHeaderView(controller: controller)
             } else {
-                TacticalSelectionSummaryView(
-                    selectedSummary: controller.selectedSummary,
-                    attackStanceSummary: controller.selectedAttackStanceCompactSummary,
-                    attackStanceAccessibilitySummary: controller.selectedAttackStanceSummary,
-                    radarUpgradeSummary: controller.selectedRadarUpgradeSummary,
-                    extractorUpgradeSummary: controller.selectedExtractorUpgradeSummary,
-                    units: controller.selectedUnitsForHUD
-                )
+                HStack(alignment: .top, spacing: TacticalHUDTheme.denseSpacing) {
+                    TacticalSelectionSummaryView(
+                        selectedSummary: controller.selectedSummary,
+                        attackStanceSummary: controller.selectedAttackStanceCompactSummary,
+                        attackStanceAccessibilitySummary: controller.selectedAttackStanceSummary,
+                        radarUpgradeSummary: controller.selectedRadarUpgradeSummary,
+                        extractorUpgradeSummary: controller.selectedExtractorUpgradeSummary,
+                        units: controller.selectedUnitsForHUD
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    if !controller.dockSelectionIdentity.isEmpty {
+                        Button(action: controller.clearSelection) {
+                            Image(systemName: "xmark")
+                                .font(.caption.weight(.semibold))
+                                .frame(width: 44, height: 44)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(TacticalHUDTheme.secondaryText)
+                        .accessibilityLabel("取消选择")
+                        .accessibilityHint("取消目标模式并清空选择，不改变部队正在执行的命令。")
+                        .accessibilityIdentifier("selection-clear")
+                    }
+                }
                 if controller.commandStatus == nil && controller.shouldShowBattlefieldInteractionHint {
                     TacticalBattlefieldHintView(
                         title: controller.battlefieldInteractionHintTitle,
@@ -81,7 +97,7 @@ private struct TacticalCompactProducerHeaderView: View {
     @Bindable var controller: GameController
 
     private var productionSpeedText: String {
-        controller.productionFocusProductionSpeedText.replacing(" production", with: "")
+        controller.productionFocusProductionSpeedText.replacing(" 产能", with: "")
     }
 
     var body: some View {
@@ -90,7 +106,7 @@ private struct TacticalCompactProducerHeaderView: View {
                 .foregroundStyle(TacticalHUDTheme.metricLabel)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
-                Text(controller.productionFocusBuildingName ?? "Production")
+                Text(controller.productionFocusBuildingName ?? "单位生产")
                     .font(.subheadline.bold())
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
@@ -122,9 +138,9 @@ private struct TacticalCompactProducerHeaderView: View {
         .background(TacticalHUDTheme.panelBackground)
         .accessibilityElement(children: .ignore)
         .accessibilityAddTraits(.isHeader)
-        .accessibilityLabel("Production \(controller.productionFocusBuildingName ?? "building")")
+        .accessibilityLabel("生产建筑：\(controller.productionFocusBuildingName ?? "建筑")")
         .accessibilityValue("\(controller.productionFocusTechLabel), \(controller.productionFocusProductionSpeedText). \(controller.commandStatus ?? "")")
-        .accessibilityHint("Production controls are shown below.")
+        .accessibilityHint("下方可直接生产单位。")
     }
 }
 
@@ -132,16 +148,16 @@ struct TacticalSelectionModePicker: View {
     @Bindable var controller: GameController
 
     var body: some View {
-        Picker("Selection mode", selection: $controller.selectionMutation) {
-            Text("Replace").tag(SelectionMutation.replace)
-            Text("Add").tag(SelectionMutation.add)
+        Picker("选择模式", selection: $controller.selectionMutation) {
+            Text("替换").tag(SelectionMutation.replace)
+            Text("追加").tag(SelectionMutation.add)
         }
         .pickerStyle(.segmented)
         .controlSize(.regular)
         .frame(maxWidth: .infinity)
         .tacticalSegmentedPicker()
-        .accessibilityLabel("Selection mode")
+        .accessibilityLabel("选择模式")
         .accessibilityValue(controller.selectionMutationAccessibilityValue)
-        .accessibilityHint("Choose whether battlefield selection replaces or adds to the current selection.")
+        .accessibilityHint("替换会重新选兵；追加会保留已有选择并加入新单位。")
     }
 }

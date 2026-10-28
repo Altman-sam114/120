@@ -63,9 +63,9 @@ struct TacticalCommandsSectionView: View {
                         )
                         .tacticalControl()
                         .tacticalCommandAccessibility(
-                            command: "Move",
+                            command: "移动",
                             isAwaitingTarget: controller.isAwaitingMoveTarget,
-                            idleHint: "Choose a destination on the battlefield."
+                            idleHint: "点击战场上的目的地。"
                         )
                     }
                     if controller.canIssueAttackMove || controller.isAwaitingAttackMoveTarget {
@@ -77,9 +77,9 @@ struct TacticalCommandsSectionView: View {
                         .tacticalControl()
                         .keyboardShortcut(commandKey("a"), modifiers: [])
                         .tacticalCommandAccessibility(
-                            command: "Attack Move",
+                            command: "进攻移动",
                             isAwaitingTarget: controller.isAwaitingAttackMoveTarget,
-                            idleHint: "Choose a destination to move and automatically engage nearby enemies."
+                            idleHint: "点击目的地，部队将前进并主动迎击附近敌军。"
                         )
                     }
                     if controller.canIssueAttack || controller.isAwaitingAttackTarget {
@@ -90,13 +90,13 @@ struct TacticalCommandsSectionView: View {
                         )
                         .tacticalControl()
                         .tacticalCommandAccessibility(
-                            command: "Attack",
+                            command: "攻击",
                             isAwaitingTarget: controller.isAwaitingAttackTarget,
-                            idleHint: "Choose a visible enemy unit or building."
+                            idleHint: "点击当前可见的敌军单位或建筑。"
                         )
                     }
                     if showsStop {
-                        Button("Stop", systemImage: "stop.fill", action: controller.issueStopCommand)
+                        Button("停止", systemImage: "stop.fill", action: controller.issueStopCommand)
                             .tacticalControl()
                             .keyboardShortcut(commandKey("s"), modifiers: [])
                     }
@@ -108,32 +108,32 @@ struct TacticalCommandsSectionView: View {
                     Button(action: controller.toggleAreaSelectionCommand) {
                         secondaryCommandLabel(
                             title: controller.areaSelectionCommandButtonTitle,
-                            compactTitle: controller.isAwaitingAreaSelection ? "Cancel" : "Select\nArea",
+                            compactTitle: controller.isAwaitingAreaSelection ? "取消" : "框选",
                             systemImage: controller.isAwaitingAreaSelection ? "xmark.circle" : "rectangle.dashed"
                         )
                     }
                     .tacticalControl()
                     .accessibilityIdentifier("command-select-area")
                     .tacticalCommandAccessibility(
-                        command: "Select Area",
+                        command: "框选",
                         isAwaitingTarget: controller.isAwaitingAreaSelection,
-                        pendingLabel: "Cancel area selection",
-                        pendingValue: "Waiting for an area selection",
-                        idleHint: "Drag on the battlefield to select player units in an area."
+                        pendingLabel: "取消区域框选",
+                        pendingValue: "等待框选区域",
+                        idleHint: "在战场拖出选框，选择范围内的我方单位。"
                     )
                 }
                 if controller.canSelectSameTypeUnits {
                     Button(action: controller.selectSameTypeUnits) {
                         secondaryCommandLabel(
                             title: controller.sameTypeUnitsButtonTitle,
-                            compactTitle: "Same\nType",
+                            compactTitle: "同类",
                             systemImage: "square.on.square"
                         )
                     }
                     .tacticalControl()
                     .keyboardShortcut(commandKey("a"), modifiers: .option)
-                    .accessibilityLabel("Select same type")
-                    .accessibilityHint("Selects all player units matching the current selected unit type.")
+                    .accessibilityLabel("选择同类单位")
+                    .accessibilityHint("选择全图同类型的我方单位。")
                 }
                 if controller.canIssuePatrol || controller.isAwaitingPatrolTarget {
                     Button(
@@ -144,9 +144,9 @@ struct TacticalCommandsSectionView: View {
                     .tacticalControl()
                     .keyboardShortcut(commandKey("g"), modifiers: [])
                     .tacticalCommandAccessibility(
-                        command: "Patrol",
+                        command: "巡逻",
                         isAwaitingTarget: controller.isAwaitingPatrolTarget,
-                        idleHint: "Choose a patrol destination on the battlefield."
+                        idleHint: "点击巡逻路线的另一端。"
                     )
                 }
                 if controller.canIssueGuard || controller.isAwaitingGuardTarget {
@@ -158,9 +158,9 @@ struct TacticalCommandsSectionView: View {
                     .tacticalControl()
                     .keyboardShortcut(commandKey("h"), modifiers: [])
                     .tacticalCommandAccessibility(
-                        command: "Guard",
+                        command: "护卫",
                         isAwaitingTarget: controller.isAwaitingGuardTarget,
-                        idleHint: "Choose a friendly unit or building to guard."
+                        idleHint: "点击需要护卫的我方单位或建筑。"
                     )
                 }
                 if controller.canSetAttackStance {
@@ -176,9 +176,9 @@ struct TacticalCommandsSectionView: View {
                     )
                     .tacticalControl()
                     .tacticalCommandAccessibility(
-                        command: "Repair",
+                        command: "维修",
                         isAwaitingTarget: controller.isAwaitingRepairTarget,
-                        idleHint: "Choose a damaged friendly unit or building to repair."
+                        idleHint: "点击需要维修的受损友军或建筑。"
                     )
                 }
                 if controller.canIssueReclaim || controller.isAwaitingReclaimTarget {
@@ -190,9 +190,9 @@ struct TacticalCommandsSectionView: View {
                     .tacticalControl()
                     .keyboardShortcut(commandKey("c"), modifiers: [])
                     .tacticalCommandAccessibility(
-                        command: "Reclaim",
+                        command: "回收",
                         isAwaitingTarget: controller.isAwaitingReclaimTarget,
-                        idleHint: "Choose a battlefield wreck to reclaim."
+                        idleHint: "点击需要回收的战场残骸。"
                     )
                 }
             }
@@ -229,15 +229,15 @@ struct TacticalCommandsSectionView: View {
     ) -> some View {
         let isActive = controller.isAttackStanceActive(stance)
         return Button(
-            stance.label,
+            stance.tacticalLabel,
             systemImage: isActive ? "checkmark.circle.fill" : systemImage,
             action: { controller.setAttackStance(stance) }
         )
         .tacticalControl(isActive: isActive)
         .keyboardShortcut(commandKey(key), modifiers: [])
-        .accessibilityLabel("\(stance.label) attack stance")
-        .accessibilityValue(isActive ? "Active" : "Inactive")
-        .accessibilityHint("Sets selected combat units to \(stance.label) stance.")
+        .accessibilityLabel("\(stance.tacticalLabel)姿态")
+        .accessibilityValue(isActive ? "已启用" : "未启用")
+        .accessibilityHint("将选中部队切换为\(stance.tacticalLabel)。")
     }
 
     private func commandKey(_ value: String) -> KeyEquivalent {
@@ -256,17 +256,17 @@ private struct TacticalCommandAccessibilityModifier: ViewModifier {
         content
             .accessibilityLabel(
                 isAwaitingTarget
-                    ? (pendingLabel ?? "Cancel \(command) target")
+                    ? (pendingLabel ?? "取消\(command)目标")
                     : command
             )
             .accessibilityValue(
                 isAwaitingTarget
-                    ? (pendingValue ?? "Waiting for \(command) target")
+                    ? (pendingValue ?? "请选择\(command)目标")
                     : ""
             )
             .accessibilityHint(
                 isAwaitingTarget
-                    ? "Cancels \(command) target selection."
+                    ? "取消\(command)目标选择。"
                     : idleHint
             )
     }

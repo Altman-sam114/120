@@ -50,6 +50,6 @@ struct TacticalBattlefieldHintView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)
         .accessibilityValue(detail)
-        .accessibilityHint("Battlefield touch controls")
+        .accessibilityHint("战场触控说明")
     }
 }

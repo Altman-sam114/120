@@ -24,7 +24,7 @@ struct TacticalGroupsSectionView: View {
                 .frame(width: 22, height: TacticalHUDTheme.controlMinimumHeight)
 
             Button(
-                "Save control group \(slot)",
+                "保存编队 \(slot)",
                 systemImage: "tray.and.arrow.down",
                 action: { controller.storeControlGroup(slot) }
             )
@@ -32,10 +32,10 @@ struct TacticalGroupsSectionView: View {
             .tacticalIconControl()
             .keyboardShortcut(controlGroupKey(for: slot), modifiers: .control)
             .disabled(!controller.canStoreControlGroup)
-            .accessibilityHint("Stores the current player selection in control group \(slot).")
+            .accessibilityHint("将当前选择保存到编队 \(slot)。")
 
             Button(
-                "Recall control group \(slot)",
+                "召回编队 \(slot)",
                 systemImage: "tray.and.arrow.up",
                 action: { controller.recallControlGroup(slot) }
             )
@@ -44,7 +44,7 @@ struct TacticalGroupsSectionView: View {
             .keyboardShortcut(controlGroupKey(for: slot), modifiers: [])
             .disabled(!controller.canRecallControlGroup(slot))
             .accessibilityValue(controller.controlGroupAccessibilityValue(for: slot))
-            .accessibilityHint("Selects the saved player units or buildings in control group \(slot).")
+            .accessibilityHint("选中编队 \(slot) 中存活的我方目标。")
         }
         .frame(
             maxWidth: .infinity,

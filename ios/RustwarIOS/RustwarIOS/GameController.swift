@@ -23,13 +23,13 @@ enum ProductionAvailability: Equatable {
     var shortLabel: String {
         switch self {
         case .available:
-            return "READY"
+            return "可生产"
         case .unavailable:
-            return "UNAVAILABLE"
+            return "暂不可用"
         case let .insufficientMetal(required, _):
-            return "NEED \(required)M"
+            return "缺 \(required) 金属"
         case let .insufficientSupply(used, cap, _):
-            return "POP \(used)/\(cap)"
+            return "人口 \(used)/\(cap)"
         }
     }
 
@@ -45,26 +45,26 @@ enum ProductionAvailability: Equatable {
     var accessibilityValue: String {
         switch self {
         case .available:
-            return "Available"
+            return "可用"
         case .unavailable:
-            return "Unavailable"
+            return "暂不可用"
         case let .insufficientMetal(required, available):
-            return "Unavailable. Needs \(required) metal; \(available) metal available."
+            return "资源不足。需要 \(required) 金属，当前 \(available) 金属。"
         case let .insufficientSupply(used, cap, required):
-            return "Unavailable. Population \(used) of \(cap); needs \(required) more population."
+            return "人口不足。当前 \(used)/\(cap)，还需 \(required) 人口。"
         }
     }
 
     var accessibilityHint: String {
         switch self {
         case .available:
-            return "Queues one unit for production."
+            return "点击一次，将一辆单位加入生产队列。"
         case .unavailable:
-            return "This production option is currently unavailable."
+            return "当前暂时无法生产该单位。"
         case .insufficientMetal:
-            return "Gather more metal before queuing this unit."
+            return "需要采集更多金属才能生产。"
         case .insufficientSupply:
-            return "Increase population capacity or wait for queued units to finish."
+            return "请增加人口上限，或等待队列中的单位完成。"
         }
     }
 }
@@ -104,7 +104,7 @@ final class GameController {
             }
             invalidateBattlefieldInput()
             clearLastBattlefieldTap()
-            commandStatus = selectionMutation == .add ? "Add selection mode" : "Replace selection mode"
+            commandStatus = selectionMutation == .add ? "已切换为追加选择" : "已切换为替换选择"
             reportSelectionFeedback()
             renderRevision += 1
         }
@@ -114,7 +114,7 @@ final class GameController {
             guard currentMapID != oldValue else {
                 return
             }
-            resetBattle(on: currentMapID, status: "Loaded \(mapLabel(for: currentMapID))")
+            resetBattle(on: currentMapID, status: "已载入 \(mapLabel(for: currentMapID))")
         }
     }
     var isAwaitingMoveTarget = false
@@ -416,11 +416,11 @@ final class GameController {
     }
 
     var radarIntelAccessibilitySummary: String {
-        "\(playerRadarStationCount) active \(pluralized("radar station", count: playerRadarStationCount)), \(upgradedPlayerRadarStationCount) upgraded, \(playerRadarContactCount) radar \(pluralized("contact", count: playerRadarContactCount))"
+        "\(playerRadarStationCount) 座雷达站，\(upgradedPlayerRadarStationCount) 座已升级，\(playerRadarContactCount) 个雷达信号"
     }
 
     var pauseButtonTitle: String {
-        isPaused ? "Play" : "Pause"
+        isPaused ? "继续" : "暂停"
     }
 
     var pauseButtonSystemImage: String {
@@ -428,7 +428,7 @@ final class GameController {
     }
 
     var enemyAIButtonTitle: String {
-        engine.enemyAIEnabled ? "Enemy AI On" : "Enemy AI Off"
+        engine.enemyAIEnabled ? "敌方 AI：开" : "敌方 AI：关"
     }
 
     var enemyAIButtonSystemImage: String {
@@ -436,15 +436,25 @@ final class GameController {
     }
 
     var enemyAIAccessibilityValue: String {
-        engine.enemyAIEnabled ? "On" : "Off"
+        engine.enemyAIEnabled ? "开启" : "关闭"
     }
 
     var selectedSummary: String {
-        engine.state.selectionSummary()
+        TacticalLocalization.selectionSummary(in: engine.state)
     }
 
     var selectedUnitsForHUD: [UnitSnapshot] {
         selectedPlayerUnits
+    }
+
+    func clearSelection() {
+        clearPendingTargetCommands()
+        clearLastBattlefieldTap()
+        invalidateBattlefieldInput()
+        engine.clearSelection()
+        commandStatus = nil
+        reportSelectionFeedback()
+        renderRevision += 1
     }
 
     var shouldShowBattlefieldInteractionHint: Bool {
@@ -453,29 +463,29 @@ final class GameController {
 
     var battlefieldInteractionHintTitle: String {
         if isAwaitingAreaSelection {
-            return "Area selection"
+            return "区域框选"
         }
         if isAwaitingAttackTarget {
-            return "Attack target"
+            return "选择攻击目标"
         }
         if isAwaitingMoveTarget {
-            return "Move target"
+            return "选择移动位置"
         }
         if isAwaitingAttackMoveTarget {
-            return "Attack-move target"
+            return "选择进攻位置"
         }
         if selectedPlayerProducer != nil {
-            return "Factory selected"
+            return "生产建筑已就绪"
         }
         if !selectedPlayerUnits.isEmpty {
             return selectedPlayerUnits.count == 1
-                ? "Quick orders"
-                : "Quick orders • \(selectedPlayerUnits.count) units"
+                ? "直接下令"
+                : "已选中 \(selectedPlayerUnits.count) 辆 · 直接下令"
         }
         if hasPlayerSelectableSelection {
-            return "Selection ready"
+            return "已选中目标"
         }
-        return "Battlefield controls"
+        return "战场指挥"
     }
 
     var battlefieldInteractionHintSystemImage: String {
@@ -502,61 +512,61 @@ final class GameController {
 
     var battlefieldInteractionHintDetail: String {
         if isAwaitingAreaSelection {
-            return "Drag a rectangle on the battlefield to select units."
+            return "在战场上拖出矩形，松手完成框选。"
         }
         if isAwaitingAttackTarget {
-            return "Tap a visible enemy unit or building. The ring shows this unit's attack range."
+            return "点击可见敌军或建筑。圆环表示当前单位的攻击范围。"
         }
         if isAwaitingMoveTarget {
-            return "Tap a destination. Combat units fire in range while moving; Hold Fire prevents automatic shots."
+            return "点击目的地即可移动，途中自动攻击射程内敌军；禁止开火姿态除外。"
         }
         if isAwaitingAttackMoveTarget {
-            return "Tap a destination to move and automatically engage nearby enemies."
+            return "点击目的地，部队会前进并主动迎击附近敌军。"
         }
         if selectedPlayerProducer != nil {
-            return "Tap a unit card to queue it; Build & Upgrade stays below."
+            return "点击兵种卡片开始生产，下方可升级或设置集结点。"
         }
         if !selectedPlayerUnits.isEmpty {
             if selectedPlayerCombatUnits.isEmpty {
-                return "Tap empty ground to move • Quick Orders keeps Move and Stop visible."
+                return "点空地移动；使用下方按钮可取消或停止。"
             }
-            return "Tap ground to move and fire in range • tap a visible enemy to attack. A-Move pursues nearby enemies; Hold Fire prevents automatic shots."
+            return "点空地移动并自动还击，点敌军集中攻击。进攻移动会主动追击；禁止开火可保持隐蔽。"
         }
         if hasPlayerSelectableSelection {
-            return "Tap a unit or building; two-finger drag box-selects, drag pans, pinch zooms."
+            return "点友军选择，双指框选，单指拖动视野，捏合缩放。"
         }
-        return "Tap a unit or building to select; drag pans, pinch zooms, and two fingers box-select."
+        return "点选单位或建筑；双指框选，拖动平移，捏合缩放。"
     }
 
     var battlefieldInteractionHintCompactDetail: String {
         if isAwaitingAreaSelection {
-            return "Drag to box-select units."
+            return "拖出选框，松手选兵。"
         }
         if isAwaitingAttackTarget {
-            return "Tap an enemy target."
+            return "点击可见敌军。"
         }
         if isAwaitingMoveTarget {
-            return "Tap a destination."
+            return "点击战场上的目的地。"
         }
         if isAwaitingAttackMoveTarget {
-            return "Tap a destination to move and engage."
+            return "点击目的地，边前进边接敌。"
         }
         if selectedPlayerProducer != nil {
-            return "Tap a unit card to queue it."
+            return "点击兵种卡片即可生产。"
         }
         if !selectedPlayerUnits.isEmpty {
             if selectedPlayerCombatUnits.isEmpty {
-                return "Tap ground to move."
+                return "点空地即可移动。"
             }
             if selectedPlayerCombatUnits.allSatisfy({ $0.attackStance == .holdFire }) {
-                return "Tap ground to move • Hold Fire • enemy to attack."
+                return "点地移动 · 当前禁止自动开火。"
             }
-            return "Tap ground to move + fire • enemy to attack."
+            return "点地移动并还击 · 点敌军攻击。"
         }
         if hasPlayerSelectableSelection {
-            return "Tap to select • two-finger box-select."
+            return "点选友军 · 双指框选。"
         }
-        return "Tap to select • two-finger box-select • pinch zoom."
+        return "点选友军 · 双指框选 · 捏合缩放。"
     }
 
     var dockSelectionIdentity: [String] {
@@ -567,7 +577,7 @@ final class GameController {
     }
 
     var selectionMutationAccessibilityValue: String {
-        selectionMutation == .add ? "Add to current selection" : "Replace current selection"
+        selectionMutation == .add ? "追加当前选择" : "替换当前选择"
     }
 
     var productionOptions: [UnitType] {
@@ -625,7 +635,7 @@ final class GameController {
     }
 
     var productionFocusBuildingName: String? {
-        selectedPlayerProducer.map { GameDefinitions.building($0.type).name }
+        selectedPlayerProducer.map { GameDefinitions.building($0.type).tacticalName }
     }
 
     var productionFocusProducerID: String? {
@@ -634,36 +644,36 @@ final class GameController {
 
     var productionFocusTechLabel: String {
         guard let producer = selectedPlayerProducer else {
-            return "Tech"
+            return "科技"
         }
         let definition = GameDefinitions.building(producer.type)
         return !definition.upgrades.isEmpty
             ? "T\(producer.upgradeLevel)"
-            : "Core"
+            : "基础"
     }
 
     var productionFocusProductionSpeedText: String {
         guard let producer = selectedPlayerProducer else {
-            return "1x production"
+            return "1× 产能"
         }
         let multiplier = GameDefinitions.productionSpeedMultiplier(for: producer)
         let value = multiplier.formatted(.number.precision(.fractionLength(0...2)))
-        return "\(value)x production"
+        return "\(value)× 产能"
     }
 
     var productionFocusBuildSummary: String {
-        productionOptions.map { GameDefinitions.unit($0).name }.joined(separator: ", ")
+        productionOptions.map { GameDefinitions.unit($0).tacticalName }.joined(separator: ", ")
     }
 
     var productionFocusQueueSummary: String {
-        let names = productionQueueItems.dropFirst().map { GameDefinitions.unit($0.unitType).name }
-        guard !names.isEmpty else { return "none" }
+        let names = productionQueueItems.dropFirst().map { GameDefinitions.unit($0.unitType).tacticalName }
+        guard !names.isEmpty else { return "无" }
         return names.joined(separator: ", ")
     }
 
     var productionFocusQueueShortSummary: String {
         let names = productionQueueItems.dropFirst().prefix(2).map { productionFocusShortName(for: $0.unitType) }
-        guard !names.isEmpty else { return "none" }
+        guard !names.isEmpty else { return "无" }
         let remainingCount = max(0, productionQueueItems.count - 1 - names.count)
         let suffix = remainingCount > 0 ? " +\(remainingCount)" : ""
         return names.joined(separator: " · ") + suffix
@@ -672,37 +682,37 @@ final class GameController {
     private func productionFocusShortName(for unitType: UnitType) -> String {
         switch unitType {
         case .builder:
-            "Builder"
+            "工程车"
         case .scout:
-            "Scout"
+            "侦察车"
         case .tank:
-            "Light"
+            "轻坦"
         case .heavyTank:
-            "Heavy"
+            "重坦"
         case .hover:
-            "Hover"
+            "悬浮"
         case .aaTank:
-            "AA"
+            "防空"
         case .artillery:
-            "Arty"
+            "火炮"
         case .gunboat:
-            "Boat"
+            "炮艇"
         }
     }
 
     var productionFocusUpgradeSummary: String {
         guard let producer = selectedPlayerProducer else {
-            return "Unavailable"
+            return "暂不可用"
         }
         if let progress = producer.upgradeProgress {
-            return "Upgrading \(Int((progress * 100).rounded()))%"
+            return "升级中 \(Int((progress * 100).rounded()))%"
         }
         if let nextUpgrade = GameDefinitions.nextUpgrade(for: producer) {
-            return "T\(nextUpgrade.level) ready"
+            return "可升级 T\(nextUpgrade.level)"
         }
         return !GameDefinitions.building(producer.type).upgrades.isEmpty
-            ? "Max tech"
-            : "No upgrade"
+            ? "最高科技"
+            : "无升级"
     }
 
     var canCancelProduction: Bool {
@@ -719,16 +729,16 @@ final class GameController {
 
     var repeatProductionShortTitle: String {
         guard let unitType = repeatProductionUnit else {
-            return "Off"
+            return "关闭"
         }
         return productionFocusShortName(for: unitType)
     }
 
     var repeatProductionButtonTitle: String {
         guard let unitType = repeatProductionUnit else {
-            return "Repeat Off"
+            return "循环已关"
         }
-        return "Repeat \(GameDefinitions.unit(unitType).name)"
+        return "循环：\(GameDefinitions.unit(unitType).tacticalName)"
     }
 
     var repeatProductionSystemImage: String {
@@ -737,9 +747,9 @@ final class GameController {
 
     var repeatProductionAccessibilityValue: String {
         guard let unitType = repeatProductionUnit else {
-            return "Off"
+            return "关闭"
         }
-        return "Repeating \(GameDefinitions.unit(unitType).name)"
+        return "正在循环生产\(GameDefinitions.unit(unitType).tacticalName)"
     }
 
     var canLoadGame: Bool {
@@ -779,29 +789,29 @@ final class GameController {
 
     var idleBuildersButtonTitle: String {
         let count = engine.state.units.count(where: { $0.team == .player && $0.type == .builder && $0.order == nil })
-        return "Idle Builders (\(count))"
+        return "空闲工程车（\(count)）"
     }
 
     var combatUnitsButtonTitle: String {
         let count = engine.state.units.count(where: { $0.team == .player && $0.type.isCombatUnit })
-        return "Combat Units (\(count))"
+        return "全部作战单位（\(count)）"
     }
 
     var screenCombatUnitsButtonTitle: String {
         guard let rect = visibleBattlefieldWorldRect else {
-            return "Screen Combat (0)"
+            return "屏幕内作战单位（0）"
         }
         let count = engine.state.playerCombatUnitSelectionTargets(in: rect).count
-        return "Screen Combat (\(count))"
+        return "屏幕内作战单位（\(count)）"
     }
 
     var sameTypeUnitsButtonTitle: String {
         guard let unit = sameTypeSelectionSourceUnit else {
-            return "Same Type"
+            return "同类"
         }
         let definition = GameDefinitions.unit(unit.type)
         let count = engine.state.units.count(where: { $0.team == .player && $0.hitPoints > 0 && $0.type == unit.type })
-        return "Same \(definition.name) (\(count))"
+        return "同类：\(definition.tacticalName)（\(count)）"
     }
 
     var canIssueAttack: Bool {
@@ -818,9 +828,9 @@ final class GameController {
             return nil
         }
         if stances.count == 1, let stance = stances.first {
-            return "Stance \(stance.label)"
+            return "交战：\(stance.tacticalLabel)"
         }
-        return "Stance Mixed"
+        return "混合交战姿态"
     }
 
     var selectedAttackStanceCompactSummary: String? {
@@ -829,9 +839,9 @@ final class GameController {
             return nil
         }
         if stances.count == 1, let stance = stances.first {
-            return stance.shortLabel
+            return stance.tacticalLabel
         }
-        return "Mixed"
+        return "混合"
     }
 
     var canIssueAttackMove: Bool {
@@ -922,11 +932,11 @@ final class GameController {
 
     var selectedFactoryProductionSpeedText: String {
         guard let factory = selectedCompletedPlayerFactory else {
-            return "1x production"
+            return "1× 产能"
         }
         let multiplier = GameDefinitions.productionSpeedMultiplier(for: factory)
         let value = multiplier.formatted(.number.precision(.fractionLength(0...2)))
-        return "\(value)x production"
+        return "\(value)× 产能"
     }
 
     var selectedFactoryUpgradeProgress: Double? {
@@ -957,9 +967,9 @@ final class GameController {
     var upgradeFactoryButtonTitle: String {
         guard let factory = selectedCompletedPlayerFactory,
               let upgrade = GameDefinitions.nextUpgrade(for: factory) else {
-            return "Upgrade Factory"
+            return "升级工厂"
         }
-        return "Upgrade T\(upgrade.level) - \(Int(upgrade.metalCost)) Metal"
+        return "升级 T\(upgrade.level) · \(Int(upgrade.metalCost)) 金属"
     }
 
     var factoryUpgradeBenefitText: String? {
@@ -969,7 +979,7 @@ final class GameController {
         }
         let speed = (upgrade.productionSpeedMultiplier ?? 1)
             .formatted(.number.precision(.fractionLength(0...2)))
-        return "\(speed)x production | \(Int(upgrade.hitPoints)) HP"
+        return "产能 \(speed)× · 装甲 \(Int(upgrade.hitPoints))"
     }
 
     var selectedRadarUpgradeSummary: String? {
@@ -977,15 +987,15 @@ final class GameController {
             return nil
         }
         if let progress = radar.upgradeProgress {
-            return "Radar upgrade \(Int((progress * 100).rounded()))%"
+            return "雷达升级 \(Int((progress * 100).rounded()))%"
         }
         if radar.upgradeLevel >= 2 {
-            return "Radar Level 2"
+            return "雷达 T2"
         }
         guard let upgrade = GameDefinitions.nextUpgrade(for: radar) else {
             return nil
         }
-        return "Radar upgrade \(Int(upgrade.metalCost)) metal"
+        return "雷达升级 · \(Int(upgrade.metalCost)) 金属"
     }
 
     var selectedExtractorUpgradeSummary: String? {
@@ -993,15 +1003,15 @@ final class GameController {
             return nil
         }
         if let progress = extractor.upgradeProgress {
-            return "Extractor upgrade \(Int((progress * 100).rounded()))%"
+            return "提取器升级 \(Int((progress * 100).rounded()))%"
         }
         if extractor.upgradeLevel > 1 {
-            return "Extractor Level \(extractor.upgradeLevel)"
+            return "提取器 T\(extractor.upgradeLevel)"
         }
         guard let upgrade = GameDefinitions.nextUpgrade(for: extractor) else {
             return nil
         }
-        return "Extractor upgrade \(Int(upgrade.metalCost)) metal"
+        return "提取器升级 · \(Int(upgrade.metalCost)) 金属"
     }
 
     var canIssueStop: Bool {
@@ -1013,71 +1023,71 @@ final class GameController {
     }
 
     var moveCommandButtonTitle: String {
-        isAwaitingMoveTarget ? "Cancel" : "Move"
+        isAwaitingMoveTarget ? "取消" : "移动"
     }
 
     var areaSelectionCommandButtonTitle: String {
-        isAwaitingAreaSelection ? "Cancel" : "Select Area"
+        isAwaitingAreaSelection ? "取消" : "框选"
     }
 
     var attackCommandButtonTitle: String {
-        isAwaitingAttackTarget ? "Cancel" : "Attack"
+        isAwaitingAttackTarget ? "取消" : "攻击"
     }
 
     var attackMoveCommandButtonTitle: String {
-        isAwaitingAttackMoveTarget ? "Cancel" : "Attack Move"
+        isAwaitingAttackMoveTarget ? "取消" : "进攻移动"
     }
 
     var patrolCommandButtonTitle: String {
-        isAwaitingPatrolTarget ? "Cancel" : "Patrol"
+        isAwaitingPatrolTarget ? "取消" : "巡逻"
     }
 
     var guardCommandButtonTitle: String {
-        isAwaitingGuardTarget ? "Cancel" : "Guard"
+        isAwaitingGuardTarget ? "取消" : "护卫"
     }
 
     var repairCommandButtonTitle: String {
-        isAwaitingRepairTarget ? "Cancel" : "Repair"
+        isAwaitingRepairTarget ? "取消" : "维修"
     }
 
     var reclaimCommandButtonTitle: String {
-        isAwaitingReclaimTarget ? "Cancel" : "Reclaim"
+        isAwaitingReclaimTarget ? "取消" : "回收"
     }
 
     var buildExtractorCommandButtonTitle: String {
-        isAwaitingBuildExtractorTarget ? "Cancel" : "Extractor"
+        isAwaitingBuildExtractorTarget ? "取消" : "提取器"
     }
 
     var buildTurretCommandButtonTitle: String {
-        isAwaitingBuildTurretTarget ? "Cancel" : "Turret"
+        isAwaitingBuildTurretTarget ? "取消" : "炮塔"
     }
 
     var buildFactoryCommandButtonTitle: String {
-        isAwaitingBuildFactoryTarget ? "Cancel" : "Factory"
+        isAwaitingBuildFactoryTarget ? "取消" : "工厂"
     }
 
     var buildRadarCommandButtonTitle: String {
-        isAwaitingBuildRadarTarget ? "Cancel" : "Radar"
+        isAwaitingBuildRadarTarget ? "取消" : "雷达"
     }
 
     var upgradeRadarButtonTitle: String {
         guard let radar = selectedCompletedPlayerRadar,
               let upgrade = GameDefinitions.nextUpgrade(for: radar) else {
-            return "Upgrade Radar"
+            return "升级雷达"
         }
-        return "Upgrade Radar \(Int(upgrade.metalCost))"
+        return "升级雷达 · \(Int(upgrade.metalCost))"
     }
 
     var upgradeExtractorButtonTitle: String {
         guard let extractor = selectedCompletedPlayerExtractor,
               let upgrade = GameDefinitions.nextUpgrade(for: extractor) else {
-            return "Upgrade Extractor"
+            return "升级提取器"
         }
-        return "Upgrade Extractor \(Int(upgrade.metalCost))"
+        return "升级提取器 · \(Int(upgrade.metalCost))"
     }
 
     var rallyCommandButtonTitle: String {
-        isAwaitingRallyTarget ? "Cancel" : "Rally"
+        isAwaitingRallyTarget ? "取消" : "集结点"
     }
 
     var isAwaitingTargetCommand: Bool {
@@ -1152,43 +1162,43 @@ final class GameController {
 
     var tacticalMapPendingCommandLabel: String? {
         if isAwaitingMoveTarget {
-            return "Move"
+            return "移动"
         }
         if isAwaitingAttackMoveTarget {
-            return "Attack Move"
+            return "进攻移动"
         }
         if isAwaitingPatrolTarget {
-            return "Patrol"
+            return "巡逻"
         }
         if isAwaitingRallyTarget {
-            return "Rally"
+            return "集结点"
         }
         if isAwaitingReclaimTarget {
-            return "Reclaim"
+            return "回收"
         }
         if isAwaitingBuildExtractorTarget {
-            return "Extractor"
+            return "提取器"
         }
         if isAwaitingBuildTurretTarget {
-            return "Turret"
+            return "炮塔"
         }
         if isAwaitingBuildFactoryTarget {
-            return "Factory"
+            return "工厂"
         }
         if isAwaitingBuildRadarTarget {
-            return "Radar"
+            return "雷达"
         }
         if isAwaitingAttackTarget {
-            return "Attack"
+            return "攻击"
         }
         if isAwaitingGuardTarget {
-            return "Guard"
+            return "护卫"
         }
         if isAwaitingRepairTarget {
-            return "Repair"
+            return "维修"
         }
         if isAwaitingAreaSelection {
-            return "Select Area"
+            return "框选"
         }
         return nil
     }
@@ -1281,53 +1291,53 @@ final class GameController {
 
     var tacticalMapAccessibilityHint: String {
         if isAwaitingMoveTarget {
-            return "Tap the tactical map to issue the move destination. Activate the map or use Cancel to leave target mode."
+            return "点击小地图设置移动目的地；点取消可退出目标模式。"
         }
         if isAwaitingAttackMoveTarget {
-            return "Tap the tactical map to issue the attack move destination. Activate the map or use Cancel to leave target mode."
+            return "点击小地图设置进攻目的地；点取消可退出目标模式。"
         }
         if isAwaitingPatrolTarget {
-            return "Tap the tactical map to set the patrol endpoint. Activate the map or use Cancel to leave target mode."
+            return "点击小地图设置巡逻端点；点取消可退出目标模式。"
         }
         if isAwaitingRallyTarget {
-            return "Tap the tactical map to set the producer rally point. Activate the map or use Cancel to leave target mode."
+            return "点击小地图设置生产建筑集结点；点取消可退出目标模式。"
         }
         if isAwaitingReclaimTarget {
-            return "Tap a wreck marker on the tactical map to issue reclaim. Activate the map or use Cancel to leave target mode."
+            return "点击小地图上的残骸进行回收；点取消可退出目标模式。"
         }
         if isAwaitingBuildExtractorTarget {
-            return "Tap an unclaimed resource marker on the tactical map to build an extractor. Activate the map or use Cancel to leave target mode."
+            return "点击小地图上的空闲资源点建造提取器；点取消可退出目标模式。"
         }
         if isAwaitingBuildTurretTarget {
-            return "Tap the tactical map to choose a clear land position for a turret. Activate the map or use Cancel to leave target mode."
+            return "点击小地图上的空旷陆地建造炮塔；点取消可退出目标模式。"
         }
         if isAwaitingBuildFactoryTarget {
-            return "Tap the tactical map to choose a clear land position for a factory. Activate the map or use Cancel to leave target mode."
+            return "点击小地图上的空旷陆地建造工厂；点取消可退出目标模式。"
         }
         if isAwaitingBuildRadarTarget {
-            return "Tap the tactical map to choose a clear land position for a radar station. Activate the map or use Cancel to leave target mode."
+            return "点击小地图上的空旷陆地建造雷达站；点取消可退出目标模式。"
         }
         if isAwaitingAttackTarget {
-            return "Tap an enemy unit or building marker on the tactical map to issue attack. Activate the map or use Cancel to leave target mode."
+            return "点击小地图上可见的敌军单位或建筑进行攻击；点取消可退出目标模式。"
         }
         if isAwaitingGuardTarget {
-            return "Tap a friendly unit or building marker on the tactical map to issue guard. Activate the map or use Cancel to leave target mode."
+            return "点击小地图上的友军单位或建筑进行护卫；点取消可退出目标模式。"
         }
         if isAwaitingRepairTarget {
-            return "Tap a damaged friendly unit or building marker on the tactical map to issue repair. Activate the map or use Cancel to leave target mode."
+            return "点击小地图上的受损友军或建筑进行维修；点取消可退出目标模式。"
         }
         if isAwaitingAreaSelection {
-            return "Drag on the battlefield to select player units in an area. Activate the map or use Cancel to leave area selection."
+            return "在主战场拖出选框选择我方单位；点取消可退出框选。"
         }
-        return "Tap or drag the tactical map to move the battlefield camera. Activate the map to focus the player Command Center."
+        return "点击或拖动小地图移动视野；激活地图可返回我方指挥中心。"
     }
 
     var tacticalMapAccessibilityValue: String {
         let radarSummary = radarIntelAccessibilitySummary
         if let label = tacticalMapPendingCommandLabel {
-            return "Pending \(label). \(radarSummary)"
+            return "等待\(label)目标。\(radarSummary)"
         }
-        return "Camera center mode. \(radarSummary)"
+        return "视野定位模式。\(radarSummary)"
     }
 
     func advance(deltaTime: TimeInterval) {
@@ -1347,7 +1357,7 @@ final class GameController {
     func togglePause() {
         isPaused.toggle()
         if !isAwaitingTargetCommand {
-            commandStatus = isPaused ? "Paused" : "Running"
+            commandStatus = isPaused ? "已暂停" : "战斗进行中"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -1355,26 +1365,26 @@ final class GameController {
 
     func toggleEnemyAI() {
         engine.setEnemyAIEnabled(!engine.enemyAIEnabled)
-        commandStatus = engine.enemyAIEnabled ? "Enemy AI enabled" : "Enemy AI disabled"
+        commandStatus = engine.enemyAIEnabled ? "敌方 AI 已开启" : "敌方 AI 已关闭"
         reportSelectionFeedback()
         renderRevision += 1
     }
 
     func restartBattle() {
-        resetBattle(on: currentMapID, status: "Restarted \(mapLabel(for: currentMapID))")
+        resetBattle(on: currentMapID, status: "已重开 \(mapLabel(for: currentMapID))")
         reportCommandSuccessFeedback()
     }
 
     func selectIdleBuilders() {
         let selectedIDs = engine.selectIdlePlayerBuilders()
-        commandStatus = selectedIDs.isEmpty ? "No idle Builders" : "\(selectedIDs.count) idle Builders selected"
+        commandStatus = selectedIDs.isEmpty ? "没有空闲工程车" : "已选择 \(selectedIDs.count) 辆空闲工程车"
         reportSelectionFeedback(hasSelection: !selectedIDs.isEmpty)
         renderRevision += 1
     }
 
     func selectCombatUnits() {
         let selectedIDs = engine.selectPlayerCombatUnits()
-        commandStatus = selectedIDs.isEmpty ? "No combat units" : "\(selectedIDs.count) combat units selected"
+        commandStatus = selectedIDs.isEmpty ? "没有可选作战单位" : "已选择 \(selectedIDs.count) 辆作战单位"
         reportSelectionFeedback(hasSelection: !selectedIDs.isEmpty)
         renderRevision += 1
     }
@@ -1382,7 +1392,7 @@ final class GameController {
     func selectScreenCombatUnits() {
         clearPendingTargetCommands()
         guard let rect = visibleBattlefieldWorldRect else {
-            commandStatus = "Battlefield view unavailable"
+            commandStatus = "战场视野暂不可用"
             reportWarningFeedback()
             renderRevision += 1
             return
@@ -1390,23 +1400,23 @@ final class GameController {
         let matchedCount = engine.state.playerCombatUnitSelectionTargets(in: rect).count
         let selectedIDs = engine.selectPlayerCombatUnits(in: rect, mutation: selectionMutation)
         if selectionMutation == .add {
-            commandStatus = matchedCount == 0 ? "No screen combat units added" : "\(selectedIDs.count) combat units selected total"
+            commandStatus = matchedCount == 0 ? "屏幕内没有可追加的作战单位" : "共选择 \(selectedIDs.count) 辆作战单位"
         } else {
-            commandStatus = selectedIDs.isEmpty ? "No screen combat units" : "\(selectedIDs.count) screen combat units selected"
+            commandStatus = selectedIDs.isEmpty ? "屏幕内没有作战单位" : "已选择屏幕内 \(selectedIDs.count) 辆作战单位"
         }
         reportSelectionFeedback(hasSelection: matchedCount > 0)
         renderRevision += 1
     }
 
     func selectSameTypeUnits() {
-        let sourceName = sameTypeSelectionSourceUnit.map { GameDefinitions.unit($0.type).name }
+        let sourceName = sameTypeSelectionSourceUnit.map { GameDefinitions.unit($0.type).tacticalName }
         clearPendingTargetCommands()
         let selectedIDs = engine.selectPlayerUnitsMatchingPrimarySelection(mutation: selectionMutation)
         if let sourceName, !selectedIDs.isEmpty {
-            let action = selectionMutation == .add ? "selected total" : "selected"
-            commandStatus = "\(selectedIDs.count) \(sourceName) \(action)"
+            let action = selectionMutation == .add ? "共选中" : "已选中"
+            commandStatus = "\(action) \(selectedIDs.count) 辆\(sourceName)"
         } else {
-            commandStatus = "No same-type units"
+            commandStatus = "没有可选的同类单位"
         }
         reportSelectionFeedback(hasSelection: sourceName != nil && !selectedIDs.isEmpty)
         renderRevision += 1
@@ -1414,12 +1424,12 @@ final class GameController {
 
     func controlGroupSummary(for slot: Int) -> String {
         let count = engine.state.controlGroups[slot]?.count ?? 0
-        return count > 0 ? "Group \(slot) (\(count))" : "Group \(slot)"
+        return count > 0 ? "编队 \(slot)（\(count)）" : "编队 \(slot)"
     }
 
     func controlGroupAccessibilityValue(for slot: Int) -> String {
         let count = engine.state.controlGroups[slot]?.count ?? 0
-        return count > 0 ? "\(count) saved" : "Empty"
+        return count > 0 ? "已保存 \(count) 个目标" : "空"
     }
 
     func canRecallControlGroup(_ slot: Int) -> Bool {
@@ -1429,7 +1439,7 @@ final class GameController {
     func storeControlGroup(_ slot: Int) {
         clearPendingTargetCommands()
         let storedIDs = engine.storeControlGroup(slot)
-        commandStatus = storedIDs.isEmpty ? "Group \(slot) cleared" : "Group \(slot) saved (\(storedIDs.count))"
+        commandStatus = storedIDs.isEmpty ? "已清空编队 \(slot)" : "已保存编队 \(slot)（\(storedIDs.count) 个目标）"
         reportCommandSuccessFeedback()
         renderRevision += 1
     }
@@ -1437,7 +1447,7 @@ final class GameController {
     func recallControlGroup(_ slot: Int) {
         clearPendingTargetCommands()
         let recalledIDs = engine.recallControlGroup(slot)
-        commandStatus = recalledIDs.isEmpty ? "Group \(slot) empty" : "Group \(slot) recalled (\(recalledIDs.count))"
+        commandStatus = recalledIDs.isEmpty ? "编队 \(slot) 为空" : "已召回编队 \(slot)（\(recalledIDs.count) 个目标）"
         reportSelectionFeedback(hasSelection: !recalledIDs.isEmpty)
         renderRevision += 1
     }
@@ -1452,7 +1462,7 @@ final class GameController {
     func handleBattlefieldTap(screenPoint: CGPoint, viewportSize: CGSize) {
         if isAwaitingAreaSelection {
             clearLastBattlefieldTap()
-            commandStatus = "Drag area to select units"
+            commandStatus = "在战场拖出选框以选择单位"
             reportWarningFeedback()
             renderRevision += 1
             return
@@ -1682,7 +1692,7 @@ final class GameController {
     func handleBattlefieldContextCommand(screenPoint: CGPoint, viewportSize: CGSize) {
         clearLastBattlefieldTap()
         guard !isAwaitingTargetCommand else {
-            commandStatus = "Finish current command first"
+            commandStatus = "请先完成或取消当前命令"
             reportWarningFeedback()
             renderRevision += 1
             return
@@ -1695,7 +1705,7 @@ final class GameController {
 
     func handleTacticalMapTap(at point: WorldPoint, minimumHitRadius: Double = 0) {
         if isAwaitingAreaSelection {
-            commandStatus = "Drag on battlefield to select units"
+            commandStatus = "在战场拖出选框以选择单位"
             reportWarningFeedback()
             renderRevision += 1
             return
@@ -1716,7 +1726,7 @@ final class GameController {
     func handleTacticalMapContextCommand(at point: WorldPoint) {
         clearLastBattlefieldTap()
         guard !isAwaitingTargetCommand else {
-            commandStatus = "Finish current command first"
+            commandStatus = "请先完成或取消当前命令"
             reportWarningFeedback()
             renderRevision += 1
             return
@@ -1733,7 +1743,7 @@ final class GameController {
         } else if canIssueMove {
             clearPendingTargetCommands()
             isAwaitingMoveTarget = true
-            commandStatus = selectedPlayerUnits.count > 1 ? "Move target for \(selectedPlayerUnits.count) units" : "Move target"
+            commandStatus = selectedPlayerUnits.count > 1 ? "为 \(selectedPlayerUnits.count) 辆单位选择移动位置" : "选择移动位置"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -1746,7 +1756,7 @@ final class GameController {
         } else if canIssueAreaSelection {
             clearPendingTargetCommands()
             isAwaitingAreaSelection = true
-            commandStatus = "Drag area to select units"
+            commandStatus = "在战场拖出选框以选择单位"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -1760,8 +1770,8 @@ final class GameController {
             clearPendingTargetCommands()
             isAwaitingAttackTarget = true
             commandStatus = selectedPlayerCombatUnits.count > 1
-                ? "Attack target for \(selectedPlayerCombatUnits.count) combat units"
-                : "Attack target"
+                ? "为 \(selectedPlayerCombatUnits.count) 辆作战单位选择攻击目标"
+                : "选择攻击目标"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -1770,7 +1780,7 @@ final class GameController {
     func setAttackStance(_ stance: UnitAttackStance) {
         clearPendingTargetCommands()
         let changedIDs = engine.setAttackStance(stance)
-        commandStatus = changedIDs.isEmpty ? "No combat units selected" : "\(stance.label) stance set"
+        commandStatus = changedIDs.isEmpty ? "请先选择作战单位" : "已切换为\(stance.tacticalLabel)"
         reportCommandFeedback(succeeded: !changedIDs.isEmpty)
         renderRevision += 1
     }
@@ -1791,8 +1801,8 @@ final class GameController {
             clearPendingTargetCommands()
             isAwaitingAttackMoveTarget = true
             commandStatus = selectedPlayerCombatUnits.count > 1
-                ? "Attack-move target for \(selectedPlayerCombatUnits.count) combat units"
-                : "Attack-move target"
+                ? "为 \(selectedPlayerCombatUnits.count) 辆作战单位选择进攻位置"
+                : "选择进攻位置"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -1805,7 +1815,7 @@ final class GameController {
         } else if canIssuePatrol {
             clearPendingTargetCommands()
             isAwaitingPatrolTarget = true
-            commandStatus = selectedPlayerUnits.count > 1 ? "Patrol target for \(selectedPlayerUnits.count) units" : "Patrol target"
+            commandStatus = selectedPlayerUnits.count > 1 ? "为 \(selectedPlayerUnits.count) 辆单位选择巡逻位置" : "选择巡逻位置"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -1818,7 +1828,7 @@ final class GameController {
         } else if canIssueGuard {
             clearPendingTargetCommands()
             isAwaitingGuardTarget = true
-            commandStatus = selectedPlayerUnits.count > 1 ? "Guard target for \(selectedPlayerUnits.count) units" : "Guard target"
+            commandStatus = selectedPlayerUnits.count > 1 ? "为 \(selectedPlayerUnits.count) 辆单位选择护卫目标" : "选择护卫目标"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -1831,7 +1841,7 @@ final class GameController {
         } else if canIssueRepair {
             clearPendingTargetCommands()
             isAwaitingRepairTarget = true
-            commandStatus = selectedPlayerBuilders.count > 1 ? "Repair target for \(selectedPlayerBuilders.count) builders" : "Repair target"
+            commandStatus = selectedPlayerBuilders.count > 1 ? "为 \(selectedPlayerBuilders.count) 辆工程车选择维修目标" : "选择维修目标"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -1844,7 +1854,7 @@ final class GameController {
         } else if canIssueReclaim {
             clearPendingTargetCommands()
             isAwaitingReclaimTarget = true
-            commandStatus = selectedPlayerBuilders.count > 1 ? "Reclaim target for \(selectedPlayerBuilders.count) builders" : "Reclaim target"
+            commandStatus = selectedPlayerBuilders.count > 1 ? "为 \(selectedPlayerBuilders.count) 辆工程车选择残骸" : "选择回收残骸"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -1857,7 +1867,7 @@ final class GameController {
         } else if canIssueBuildExtractor {
             clearPendingTargetCommands()
             isAwaitingBuildExtractorTarget = true
-            commandStatus = selectedPlayerBuilders.count > 1 ? "Extractor resource for \(selectedPlayerBuilders.count) builders" : "Extractor resource"
+            commandStatus = selectedPlayerBuilders.count > 1 ? "为 \(selectedPlayerBuilders.count) 辆工程车选择资源点" : "选择资源点"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -1870,7 +1880,7 @@ final class GameController {
         } else if canIssueBuildTurret {
             clearPendingTargetCommands()
             isAwaitingBuildTurretTarget = true
-            commandStatus = selectedPlayerBuilders.count > 1 ? "Turret position for \(selectedPlayerBuilders.count) builders" : "Turret position"
+            commandStatus = selectedPlayerBuilders.count > 1 ? "为 \(selectedPlayerBuilders.count) 辆工程车选择炮塔位置" : "选择炮塔位置"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -1883,7 +1893,7 @@ final class GameController {
         } else if canIssueBuildFactory {
             clearPendingTargetCommands()
             isAwaitingBuildFactoryTarget = true
-            commandStatus = selectedPlayerBuilders.count > 1 ? "Factory position for \(selectedPlayerBuilders.count) builders" : "Factory position"
+            commandStatus = selectedPlayerBuilders.count > 1 ? "为 \(selectedPlayerBuilders.count) 辆工程车选择工厂位置" : "选择工厂位置"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -1896,7 +1906,7 @@ final class GameController {
         } else if canIssueBuildRadar {
             clearPendingTargetCommands()
             isAwaitingBuildRadarTarget = true
-            commandStatus = selectedPlayerBuilders.count > 1 ? "Radar position for \(selectedPlayerBuilders.count) builders" : "Radar position"
+            commandStatus = selectedPlayerBuilders.count > 1 ? "为 \(selectedPlayerBuilders.count) 辆工程车选择雷达位置" : "选择雷达位置"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -1953,7 +1963,7 @@ final class GameController {
         } else if canIssueRally {
             clearPendingTargetCommands()
             isAwaitingRallyTarget = true
-            commandStatus = "Rally target"
+            commandStatus = "选择集结点"
         }
         reportSelectionFeedback()
         renderRevision += 1
@@ -2008,7 +2018,7 @@ final class GameController {
     ) {
         if let expectedProducerID,
            selectedPlayerProducer?.id != expectedProducerID {
-            commandStatus = "Producer changed"
+            commandStatus = "生产建筑已切换"
             reportWarningFeedback()
             renderRevision += 1
             return
@@ -2033,10 +2043,10 @@ final class GameController {
         do {
             let data = try JSONEncoder().encode(payload)
             UserDefaults.standard.set(data, forKey: Self.saveKey)
-            commandStatus = "Game saved"
+            commandStatus = "对局已保存"
             reportCommandSuccessFeedback()
         } catch {
-            commandStatus = "Save failed"
+            commandStatus = "保存失败"
             reportWarningFeedback()
         }
         renderRevision += 1
@@ -2044,7 +2054,7 @@ final class GameController {
 
     func loadGame() {
         guard let data = UserDefaults.standard.data(forKey: Self.saveKey) else {
-            commandStatus = "No saved game"
+            commandStatus = "没有可读取的存档"
             reportWarningFeedback()
             renderRevision += 1
             return
@@ -2053,7 +2063,7 @@ final class GameController {
         do {
             let payload = try JSONDecoder().decode(SavePayload.self, from: data)
             guard payload.version == Self.currentSaveVersion else {
-                commandStatus = "Save version unsupported"
+                commandStatus = "不支持此存档版本"
                 reportWarningFeedback()
                 renderRevision += 1
                 return
@@ -2067,11 +2077,11 @@ final class GameController {
             isPaused = payload.isPaused
             simulationSpeed = Self.validatedSimulationSpeed(payload.simulationSpeed, fallback: simulationSpeed)
             clearPendingTargetCommands()
-            commandStatus = "Game loaded"
+            commandStatus = "对局已恢复"
             reportCommandSuccessFeedback()
             mapRenderRevision += 1
         } catch {
-            commandStatus = "Load failed"
+            commandStatus = "读取失败"
             reportWarningFeedback()
         }
         renderRevision += 1
@@ -2128,7 +2138,7 @@ final class GameController {
             $0.team == .player && $0.type == .command && $0.hitPoints > 0
         }) else {
             if !isAwaitingTargetCommand {
-                commandStatus = "Command Center unavailable"
+                commandStatus = "指挥中心不可用"
                 reportWarningFeedback()
                 renderRevision += 1
             }
@@ -2137,7 +2147,7 @@ final class GameController {
         let shouldReportStatus = !isAwaitingTargetCommand
         centerCamera(on: commandCenter.position)
         if shouldReportStatus {
-            commandStatus = "Command Center focused"
+            commandStatus = "视野已返回指挥中心"
             reportSelectionFeedback()
         }
     }
@@ -2147,7 +2157,7 @@ final class GameController {
         camera.center(on: point, viewportSize: battlefieldViewportSize)
         noteBattlefieldCameraMutation(from: previousCamera)
         if !isAwaitingTargetCommand {
-            commandStatus = "Camera centered"
+            commandStatus = "视野已复位"
         }
         renderRevision += 1
     }
@@ -2206,9 +2216,9 @@ final class GameController {
         }
         let targetLabel = Self.areaSelectionTargetLabel(for: matchedTargets)
         if selectionMutation == .add {
-            commandStatus = matchedTargets.isEmpty ? "No entities added" : "\(selectedIDs.count) \(targetLabel) selected total"
+            commandStatus = matchedTargets.isEmpty ? "没有可追加的目标" : "共选中 \(selectedIDs.count) 个\(targetLabel)"
         } else {
-            commandStatus = selectedIDs.isEmpty ? "No entities in area" : "\(selectedIDs.count) \(targetLabel) selected"
+            commandStatus = selectedIDs.isEmpty ? "选框内没有我方目标" : "已选中 \(selectedIDs.count) 个\(targetLabel)"
         }
         reportSelectionFeedback(hasSelection: !matchedTargets.isEmpty)
         renderRevision += 1
@@ -2227,7 +2237,7 @@ final class GameController {
     }
 
     private func mapLabel(for mapID: MapID) -> String {
-        MapPreset.preset(for: mapID).label
+        mapID.tacticalName
     }
 
     private static func validatedSimulationSpeed(_ speed: Double, fallback: Double) -> Double {
@@ -2236,9 +2246,9 @@ final class GameController {
 
     private static func areaSelectionTargetLabel(for targets: [SelectionTarget]) -> String {
         if targets.allSatisfy({ $0.kind == .building }) {
-            return targets.count == 1 ? "building" : "buildings"
+            return "建筑"
         }
-        return targets.count == 1 ? "unit" : "units"
+        return "单位"
     }
 
     private func invalidateBattlefieldInput() {
@@ -2293,18 +2303,18 @@ final class GameController {
         }
 
         let sourceName = engine.state.units.first { $0.id == target.id }
-            .map { GameDefinitions.unit($0.type).name } ?? "units"
+            .map { GameDefinitions.unit($0.type).tacticalName } ?? "units"
         let selectedIDs = engine.selectPlayerUnitsMatching(
             unitID: target.id,
             within: Self.nearbySameTypeSelectionRadius,
             mutation: selectionMutation
         )
         if selectedIDs.isEmpty {
-            commandStatus = "No nearby \(sourceName)"
+            commandStatus = "附近没有\(sourceName)"
         } else if selectionMutation == .add {
-            commandStatus = "\(selectedIDs.count) \(sourceName) selected total"
+            commandStatus = "共选中 \(selectedIDs.count) 辆\(sourceName)"
         } else {
-            commandStatus = "\(selectedIDs.count) nearby \(sourceName) selected"
+            commandStatus = "已选择附近 \(selectedIDs.count) 辆\(sourceName)"
         }
         reportSelectionFeedback(hasSelection: !selectedIDs.isEmpty)
         recordBattlefieldTap(
@@ -2356,10 +2366,10 @@ final class GameController {
         if tapMutation == .add {
             let wasAdded = Set(previousSelection) != Set(engine.state.selectedEntityIDs)
             commandStatus = wasAdded
-                ? "\(nextTarget.displayName) added \(nextIndex + 1)/\(candidateIDs.count)"
-                : "\(nextTarget.displayName) already selected \(nextIndex + 1)/\(candidateIDs.count)"
+                ? "已追加\(TacticalLocalization.entityName(nextTarget.displayName)) \(nextIndex + 1)/\(candidateIDs.count)"
+                : "已选中\(TacticalLocalization.entityName(nextTarget.displayName)) \(nextIndex + 1)/\(candidateIDs.count)"
         } else {
-            commandStatus = "\(nextTarget.displayName) \(nextIndex + 1)/\(candidateIDs.count)"
+            commandStatus = "\(TacticalLocalization.entityName(nextTarget.displayName)) \(nextIndex + 1)/\(candidateIDs.count)"
         }
         recordBattlefieldTap(
             target: target,
@@ -2668,7 +2678,7 @@ final class GameController {
             let result = engine.issueBuildTurret(at: point)
             isAwaitingBuildTurretTarget = shouldKeepTargetMode(after: result)
             commandStatus = pendingTargetStatus(
-                command: "Turret",
+                command: "炮塔",
                 status: statusText(forBuildTurret: result, position: clampedMapPoint(point)),
                 isAwaiting: isAwaitingBuildTurretTarget
             )
@@ -2677,7 +2687,7 @@ final class GameController {
             let result = engine.issueBuildLandFactory(at: point)
             isAwaitingBuildFactoryTarget = shouldKeepTargetMode(after: result)
             commandStatus = pendingTargetStatus(
-                command: "Factory",
+                command: "工厂",
                 status: statusText(forBuildFactory: result, position: clampedMapPoint(point)),
                 isAwaiting: isAwaitingBuildFactoryTarget
             )
@@ -2686,7 +2696,7 @@ final class GameController {
             let result = engine.issueBuildRadar(at: point)
             isAwaitingBuildRadarTarget = shouldKeepTargetMode(after: result)
             commandStatus = pendingTargetStatus(
-                command: "Radar",
+                command: "雷达",
                 status: statusText(forBuildRadar: result, position: clampedMapPoint(point)),
                 isAwaiting: isAwaitingBuildRadarTarget
             )
@@ -2718,7 +2728,7 @@ final class GameController {
             }
             isAwaitingReclaimTarget = shouldKeepTargetMode(after: result)
             commandStatus = pendingTargetStatus(
-                command: "Reclaim",
+                command: "回收",
                 status: statusText(forReclaim: result, wreckID: wreckID),
                 isAwaiting: isAwaitingReclaimTarget
             )
@@ -2739,7 +2749,7 @@ final class GameController {
             }
             isAwaitingBuildExtractorTarget = shouldKeepTargetMode(after: result)
             commandStatus = pendingTargetStatus(
-                command: "Extractor",
+                command: "提取器",
                 status: statusText(forBuildExtractor: result, nodeID: nodeID),
                 isAwaiting: isAwaitingBuildExtractorTarget
             )
@@ -2767,7 +2777,7 @@ final class GameController {
             }
             isAwaitingGuardTarget = shouldKeepTargetMode(after: result)
             commandStatus = pendingTargetStatus(
-                command: "Guard",
+                command: "护卫",
                 status: statusText(forGuard: result),
                 isAwaiting: isAwaitingGuardTarget
             )
@@ -2790,7 +2800,7 @@ final class GameController {
             }
             isAwaitingRepairTarget = shouldKeepTargetMode(after: result)
             commandStatus = pendingTargetStatus(
-                command: "Repair",
+                command: "维修",
                 status: statusText(forRepair: result, targetID: targetID),
                 isAwaiting: isAwaitingRepairTarget
             )
@@ -2810,7 +2820,7 @@ final class GameController {
             }
             isAwaitingAttackTarget = shouldKeepTargetMode(after: result)
             commandStatus = pendingTargetStatus(
-                command: "Attack",
+                command: "攻击",
                 status: statusText(forAttack: result),
                 isAwaiting: isAwaitingAttackTarget
             )
@@ -2840,7 +2850,7 @@ final class GameController {
         guard isAwaiting, let status, !status.isEmpty else {
             return status
         }
-        return "\(command) target: \(status)"
+        return "\(command)目标：\(status)"
     }
 
     private var selectedPlayerUnit: UnitSnapshot? {
@@ -2984,35 +2994,35 @@ final class GameController {
         switch result {
         case .issued:
             let count = selectedPlayerUnits.count
-            return count > 1 ? "Move order issued to \(count) units" : "Move order issued"
+            return count > 1 ? "已向 \(count) 辆单位下达移动命令" : "移动命令已下达"
         case .noSelection:
-            return "No unit selected"
+            return "请先选择单位"
         case .selectedEntityCannotMove:
-            return "Player unit required"
+            return "需要我方可移动单位"
         case .selectedEntityCannotAttack:
-            return "Player attacker required"
+            return "需要我方作战单位"
         case .selectedEntityCannotStop:
-            return "Player unit required"
+            return "需要我方可移动单位"
         case .selectedEntityCannotBuild:
-            return "Builder required"
+            return "需要工程车"
         case .selectedEntityCannotRepair:
-            return "Builder required"
+            return "需要工程车"
         case .selectedEntityCannotReclaim:
-            return "Builder required"
+            return "需要工程车"
         case .invalidAttackTarget:
-            return "Enemy target required"
+            return "请选择可见敌方目标"
         case .invalidGuardTarget:
-            return "Friendly target required"
+            return "请选择我方单位或建筑"
         case .invalidBuildTarget:
-            return "Resource node required"
+            return "请选择资源点"
         case .invalidRepairTarget:
-            return "Damaged friendly target required"
+            return "请选择受损的我方目标"
         case .invalidReclaimTarget:
-            return "Wreck target required"
+            return "请选择战场残骸"
         case .insufficientMetal:
-            return "Need more metal"
+            return "金属不足"
         case .occupiedResourceNode:
-            return "Resource node occupied"
+            return "资源点已被占用"
         }
     }
 
@@ -3020,15 +3030,15 @@ final class GameController {
         switch result {
         case .issued:
             let count = selectedPlayerCombatUnits.count
-            return count > 1 ? "Attack order issued to \(count) units" : "Attack order issued"
+            return count > 1 ? "已向 \(count) 辆单位下达攻击命令" : "攻击命令已下达"
         case .noSelection:
-            return "No unit selected"
+            return "请先选择单位"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
-            return "Player attacker required"
+            return "需要我方作战单位"
         case .invalidAttackTarget:
-            return "Enemy target required"
+            return "请选择可见敌方目标"
         case .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
-            return "Enemy target required"
+            return "请选择可见敌方目标"
         }
     }
 
@@ -3036,15 +3046,15 @@ final class GameController {
         switch result {
         case .issued:
             let count = selectedPlayerCombatUnits.count
-            return count > 1 ? "Attack-move order issued to \(count) units" : "Attack-move order issued"
+            return count > 1 ? "已向 \(count) 辆单位下达进攻移动命令" : "进攻移动命令已下达"
         case .noSelection:
-            return "No unit selected"
+            return "请先选择单位"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
-            return "Player unit required"
+            return "需要我方可移动单位"
         case .invalidAttackTarget:
-            return "No target required"
+            return "此指令无需目标"
         case .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
-            return "No target required"
+            return "此指令无需目标"
         }
     }
 
@@ -3052,15 +3062,15 @@ final class GameController {
         switch result {
         case .issued:
             let count = selectedPlayerUnits.count
-            return count > 1 ? "Patrol route set for \(count) units" : "Patrol route set"
+            return count > 1 ? "已为 \(count) 辆单位设置巡逻路线" : "巡逻路线已设置"
         case .noSelection:
-            return "No unit selected"
+            return "请先选择单位"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
-            return "Player unit required"
+            return "需要我方可移动单位"
         case .invalidAttackTarget:
-            return "No target required"
+            return "此指令无需目标"
         case .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
-            return "No target required"
+            return "此指令无需目标"
         }
     }
 
@@ -3068,15 +3078,15 @@ final class GameController {
         switch result {
         case .issued:
             let count = selectedPlayerUnits.count
-            return count > 1 ? "Guard order issued to \(count) units" : "Guard order issued"
+            return count > 1 ? "已向 \(count) 辆单位下达护卫命令" : "护卫命令已下达"
         case .noSelection:
-            return "No unit selected"
+            return "请先选择单位"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
-            return "Player unit required"
+            return "需要我方可移动单位"
         case .invalidAttackTarget:
-            return "Friendly target required"
+            return "请选择我方单位或建筑"
         case .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
-            return "Friendly target required"
+            return "请选择我方单位或建筑"
         }
     }
 
@@ -3084,13 +3094,13 @@ final class GameController {
         switch result {
         case .issued:
             let count = repairOrderIssuedCount(targetID: targetID)
-            return count > 1 ? "Repair order issued to \(count) builders" : "Repair order issued"
+            return count > 1 ? "已派出 \(count) 辆工程车维修" : "维修命令已下达"
         case .noSelection:
-            return "No builder selected"
+            return "请先选择工程车"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
-            return "Builder required"
+            return "需要工程车"
         case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
-            return "Damaged friendly target required"
+            return "请选择受损的我方目标"
         }
     }
 
@@ -3110,13 +3120,13 @@ final class GameController {
         switch result {
         case .issued:
             let count = reclaimOrderIssuedCount(wreckID: wreckID)
-            return count > 1 ? "Reclaim order issued to \(count) builders" : "Reclaim order issued"
+            return count > 1 ? "已派出 \(count) 辆工程车回收" : "回收命令已下达"
         case .noSelection:
-            return "No builder selected"
+            return "请先选择工程车"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
-            return "Builder required"
+            return "需要工程车"
         case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
-            return "Wreck target required"
+            return "请选择战场残骸"
         }
     }
 
@@ -3136,17 +3146,17 @@ final class GameController {
         switch result {
         case .issued:
             let count = buildExtractorOrderIssuedCount(nodeID: nodeID)
-            return count > 1 ? "Extractor build started by \(count) builders" : "Extractor build started"
+            return count > 1 ? "\(count) 辆工程车开始建造提取器" : "提取器建造已开始"
         case .noSelection:
-            return "No builder selected"
+            return "请先选择工程车"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
-            return "Builder required"
+            return "需要工程车"
         case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget:
-            return "Resource node required"
+            return "请选择资源点"
         case .insufficientMetal:
-            return "Need more metal"
+            return "金属不足"
         case .occupiedResourceNode:
-            return "Resource node occupied"
+            return "资源点已被占用"
         }
     }
 
@@ -3167,15 +3177,15 @@ final class GameController {
         switch result {
         case .issued:
             let count = pointBuildOrderIssuedCount(type: .turret, position: position)
-            return count > 1 ? "Turret build started by \(count) builders" : "Turret build started"
+            return count > 1 ? "\(count) 辆工程车开始建造炮塔" : "炮塔建造已开始"
         case .noSelection:
-            return "No builder selected"
+            return "请先选择工程车"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
-            return "Builder required"
+            return "需要工程车"
         case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .occupiedResourceNode:
-            return "Clear land required"
+            return "请选择空旷的可通行陆地"
         case .insufficientMetal:
-            return "Need more metal"
+            return "金属不足"
         }
     }
 
@@ -3200,15 +3210,15 @@ final class GameController {
         switch result {
         case .issued:
             let count = pointBuildOrderIssuedCount(type: .landFactory, position: position)
-            return count > 1 ? "Factory build started by \(count) builders" : "Factory build started"
+            return count > 1 ? "\(count) 辆工程车开始建造工厂" : "工厂建造已开始"
         case .noSelection:
-            return "No builder selected"
+            return "请先选择工程车"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
-            return "Builder required"
+            return "需要工程车"
         case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .occupiedResourceNode:
-            return "Clear land required"
+            return "请选择空旷的可通行陆地"
         case .insufficientMetal:
-            return "Need more metal"
+            return "金属不足"
         }
     }
 
@@ -3216,32 +3226,32 @@ final class GameController {
         switch result {
         case .issued:
             let count = pointBuildOrderIssuedCount(type: .radar, position: position)
-            return count > 1 ? "Radar build started by \(count) builders" : "Radar build started"
+            return count > 1 ? "\(count) 辆工程车开始建造雷达站" : "雷达站建造已开始"
         case .noSelection:
-            return "No builder selected"
+            return "请先选择工程车"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
-            return "Builder required"
+            return "需要工程车"
         case .invalidAttackTarget, .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .occupiedResourceNode:
-            return "Clear land required"
+            return "请选择空旷的可通行陆地"
         case .insufficientMetal:
-            return "Need more metal"
+            return "金属不足"
         }
     }
 
     private func statusText(for result: BuildingUpgradeResult) -> String? {
         switch result {
         case .queued:
-            return "Radar upgrade started"
+            return "雷达升级已开始"
         case .noSelection:
-            return "No radar selected"
+            return "请先选择雷达站"
         case .selectedBuildingCannotUpgrade:
-            return "Radar Station required"
+            return "需要我方雷达站"
         case .upgradeAlreadyQueued:
-            return "Radar upgrade already queued"
+            return "雷达正在升级"
         case .fullyUpgraded:
-            return "Radar already upgraded"
+            return "雷达已达最高等级"
         case .insufficientMetal:
-            return "Need more metal"
+            return "金属不足"
         }
     }
 
@@ -3249,30 +3259,30 @@ final class GameController {
         switch result {
         case let .cancelled(refundedMetal):
             let refund = refundedMetal.formatted(.number.precision(.fractionLength(0...1)))
-            return "Radar upgrade cancelled (+\(refund) metal)"
+            return "雷达升级已取消，返还 \(refund) 金属"
         case .noSelection:
-            return "No radar selected"
+            return "请先选择雷达站"
         case .selectedBuildingCannotCancelUpgrade:
-            return "Radar Station required"
+            return "需要我方雷达站"
         case .noUpgradeQueued:
-            return "No radar upgrade queued"
+            return "没有进行中的雷达升级"
         }
     }
 
     private func statusText(forExtractorUpgrade result: BuildingUpgradeResult) -> String? {
         switch result {
         case .queued:
-            return "Extractor upgrade started"
+            return "提取器升级已开始"
         case .noSelection:
-            return "No extractor selected"
+            return "请先选择提取器"
         case .selectedBuildingCannotUpgrade:
-            return "Extractor required"
+            return "需要我方资源提取器"
         case .upgradeAlreadyQueued:
-            return "Extractor upgrade already queued"
+            return "提取器正在升级"
         case .fullyUpgraded:
-            return "Extractor already upgraded"
+            return "提取器已达最高等级"
         case .insufficientMetal:
-            return "Need more metal"
+            return "金属不足"
         }
     }
 
@@ -3280,30 +3290,30 @@ final class GameController {
         switch result {
         case let .cancelled(refundedMetal):
             let refund = refundedMetal.formatted(.number.precision(.fractionLength(0...1)))
-            return "Extractor upgrade cancelled (+\(refund) metal)"
+            return "提取器升级已取消，返还 \(refund) 金属"
         case .noSelection:
-            return "No extractor selected"
+            return "请先选择提取器"
         case .selectedBuildingCannotCancelUpgrade:
-            return "Extractor required"
+            return "需要我方资源提取器"
         case .noUpgradeQueued:
-            return "No extractor upgrade queued"
+            return "没有进行中的提取器升级"
         }
     }
 
     private func statusText(forFactoryUpgrade result: BuildingUpgradeResult) -> String? {
         switch result {
         case .queued:
-            return "Factory T2 upgrade started"
+            return "工厂 T2 升级已开始"
         case .noSelection:
-            return "No factory selected"
+            return "请先选择工厂"
         case .selectedBuildingCannotUpgrade:
-            return "Land Factory required"
+            return "需要我方陆军工厂"
         case .upgradeAlreadyQueued:
-            return "Factory upgrade already queued"
+            return "工厂正在升级"
         case .fullyUpgraded:
-            return "Factory already at max tech"
+            return "工厂已达最高科技"
         case .insufficientMetal:
-            return "Need more metal"
+            return "金属不足"
         }
     }
 
@@ -3311,13 +3321,13 @@ final class GameController {
         switch result {
         case let .cancelled(refundedMetal):
             let refund = refundedMetal.formatted(.number.precision(.fractionLength(0...1)))
-            return "Factory upgrade cancelled (+\(refund) metal)"
+            return "工厂升级已取消，返还 \(refund) 金属"
         case .noSelection:
-            return "No factory selected"
+            return "请先选择工厂"
         case .selectedBuildingCannotCancelUpgrade:
-            return "Land Factory required"
+            return "需要我方陆军工厂"
         case .noUpgradeQueued:
-            return "No factory upgrade queued"
+            return "没有进行中的工厂升级"
         }
     }
 
@@ -3325,44 +3335,44 @@ final class GameController {
         switch result {
         case .issued:
             let count = selectedPlayerUnits.count
-            return count > 1 ? "Stopped \(count) units" : "Stop order cleared"
+            return count > 1 ? "已停止 \(count) 辆单位" : "部队已停止"
         case .noSelection:
-            return "No unit selected"
+            return "请先选择单位"
         case .selectedEntityCannotMove, .selectedEntityCannotAttack, .selectedEntityCannotStop, .selectedEntityCannotBuild, .selectedEntityCannotRepair, .selectedEntityCannotReclaim:
-            return "Player unit required"
+            return "需要我方可移动单位"
         case .invalidAttackTarget:
-            return "No active target"
+            return "没有有效目标"
         case .invalidGuardTarget, .invalidBuildTarget, .invalidRepairTarget, .invalidReclaimTarget, .insufficientMetal, .occupiedResourceNode:
-            return "No active target"
+            return "没有有效目标"
         }
     }
 
     private func statusText(forRally result: RallyCommandResult) -> String? {
         switch result {
         case .issued:
-            return "Rally point set"
+            return "已设置集结点"
         case .noSelection:
-            return "No producer selected"
+            return "请先选择生产建筑"
         case .selectedBuildingCannotSetRally:
-            return "Producer required"
+            return "需要生产建筑"
         }
     }
 
     private func statusText(for result: ProductionCommandResult, unitType: UnitType) -> String? {
-        let unitName = GameDefinitions.unit(unitType).name
+        let unitName = GameDefinitions.unit(unitType).tacticalName
         switch result {
         case .queued:
-            return "\(unitName) queued"
+            return "\(unitName)已加入队列"
         case .noSelection:
-            return "No producer selected"
+            return "请先选择生产建筑"
         case .selectedBuildingCannotProduce:
-            return "Producer required"
+            return "需要生产建筑"
         case .unsupportedUnit:
-            return "Unsupported unit"
+            return "该建筑不能生产此兵种"
         case .insufficientMetal:
-            return "Need more metal"
+            return "金属不足"
         case .insufficientSupply:
-            return "Need more pop"
+            return "人口不足"
         }
     }
 
@@ -3370,13 +3380,13 @@ final class GameController {
         switch result {
         case let .cancelled(refundedMetal):
             let refund = refundedMetal.formatted(.number.precision(.fractionLength(0...1)))
-            return "Production cancelled (+\(refund) metal)"
+            return "生产已取消，返还 \(refund) 金属"
         case .noSelection:
-            return "No producer selected"
+            return "请先选择生产建筑"
         case .selectedBuildingCannotCancelProduction:
-            return "Producer required"
+            return "需要生产建筑"
         case .emptyQueue:
-            return "No production queued"
+            return "生产队列为空"
         }
     }
 
@@ -3384,15 +3394,15 @@ final class GameController {
         switch result {
         case let .updated(repeatUnitType):
             guard let repeatUnitType else {
-                return "Repeat production off"
+                return "循环生产已关闭"
             }
-            return "Repeat: \(GameDefinitions.unit(repeatUnitType).name)"
+            return "循环生产：\(GameDefinitions.unit(repeatUnitType).tacticalName)"
         case .noSelection:
-            return "No producer selected"
+            return "请先选择生产建筑"
         case .selectedBuildingCannotRepeatProduction:
-            return "Producer required"
+            return "需要生产建筑"
         case .unsupportedUnit:
-            return "Unsupported unit"
+            return "该建筑不能生产此兵种"
         }
     }
 }

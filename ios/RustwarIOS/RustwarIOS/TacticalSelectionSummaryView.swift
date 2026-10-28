@@ -41,7 +41,7 @@ struct TacticalSelectionSummaryView: View {
                         }
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(units.count == 1 ? GameDefinitions.unit(units[0].type).name : "\(units.count) units selected")
+                    Text(units.count == 1 ? GameDefinitions.unit(units[0].type).tacticalName : "已选择 \(units.count) 辆单位")
                         .font(.subheadline.bold())
                         .foregroundStyle(TacticalHUDTheme.primaryText)
                         .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
@@ -49,18 +49,18 @@ struct TacticalSelectionSummaryView: View {
                         .accessibilityIdentifier("selection-force-title")
 
                     HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.denseSpacing) {
-                        Text("\(Int(health.rounded(.down))) / \(Int(maximum.rounded(.down))) HP")
+                        Text("\(Int(health.rounded(.down))) / \(Int(maximum.rounded(.down))) 生命")
                             .font(.caption2.monospacedDigit())
                             .foregroundStyle(TacticalHUDTheme.secondaryText)
                             .accessibilityIdentifier("selection-health")
-                            .accessibilityLabel("Selected force health")
-                            .accessibilityValue("\(Int(health.rounded(.down))) of \(Int(maximum.rounded(.down))) hit points")
+                            .accessibilityLabel("部队总生命值")
+                            .accessibilityValue("当前生命 \(Int(health.rounded(.down)))，上限 \(Int(maximum.rounded(.down)))")
                         if !dynamicTypeSize.isAccessibilitySize, let attackStanceSummary {
                             Spacer(minLength: 0)
                             Text(attackStanceSummary)
                                 .font(.caption2)
                                 .foregroundStyle(TacticalHUDTheme.secondaryText)
-                                .accessibilityLabel("Attack stance")
+                                .accessibilityLabel("交战姿态")
                                 .accessibilityValue(attackStanceAccessibilitySummary ?? attackStanceSummary)
                         }
                     }
@@ -92,7 +92,7 @@ struct TacticalSelectionSummaryView: View {
                                     .foregroundStyle(TacticalHUDTheme.primaryText)
                             }
                             .accessibilityElement(children: .ignore)
-                            .accessibilityLabel("Selected \(GameDefinitions.unit(entry.type).name)")
+                            .accessibilityLabel("已选择\(GameDefinitions.unit(entry.type).tacticalName)")
                             .accessibilityValue("\(entry.count)")
                             .accessibilityIdentifier("selection-type-\(entry.type.rawValue)")
                         }
@@ -146,7 +146,7 @@ struct TacticalSelectionSummaryView: View {
             .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 5 : 4)
             .background(TacticalHUDTheme.metricBackground, in: Capsule())
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Selected")
+            .accessibilityLabel("当前选择")
             .accessibilityValue(selectedSummary)
 
             if let radarUpgradeSummary {
@@ -169,7 +169,7 @@ struct TacticalSelectionSummaryView: View {
     }
 
     private var selectionLabel: some View {
-        Label("Selection", systemImage: "viewfinder.circle")
+        Label("部队选择", systemImage: "viewfinder.circle")
             .font(.caption.bold())
             .foregroundStyle(TacticalHUDTheme.metricLabel)
     }
@@ -184,8 +184,8 @@ struct TacticalSelectionSummaryView: View {
             .lineLimit(nil)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Attack stance")
+            .accessibilityLabel("交战姿态")
             .accessibilityValue(accessibilitySummary ?? summary)
-            .accessibilityHint("Current stance for selected combat units.")
+            .accessibilityHint("当前选中部队的自动交战策略。")
     }
 }

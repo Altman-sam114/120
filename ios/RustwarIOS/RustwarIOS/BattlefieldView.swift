@@ -71,8 +71,8 @@ private final class BattlefieldInputView: SKView {
         preferredFramesPerSecond = 60
         isAccessibilityElement = true
         accessibilityIdentifier = "battlefield"
-        accessibilityLabel = "Rustwar battlefield"
-        accessibilityHint = "Tap a unit, then tap a destination. Two fingers select an area. Drag to pan; pinch to zoom."
+        accessibilityLabel = "铁锈战场"
+        accessibilityHint = "点击友军选中，再点地面移动。双指框选，单指拖动视野，捏合缩放。"
         battlefieldScene.controller = controller
         battlefieldScene.scaleMode = .resizeFill
         battlefieldScene.isUserInteractionEnabled = false

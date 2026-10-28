@@ -15,7 +15,7 @@ struct TacticalQuickCommandRail: View {
             if !usesCompactRow || dynamicTypeSize.isAccessibilitySize {
                 HStack(spacing: TacticalHUDTheme.compactSpacing) {
                     Label {
-                        Text("Quick Orders")
+                        Text("快捷指令")
                             .lineLimit(1)
                             .fixedSize(horizontal: false, vertical: true)
                     } icon: {
@@ -30,53 +30,53 @@ struct TacticalQuickCommandRail: View {
                         .frame(height: 1)
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Quick Orders")
+                .accessibilityLabel("快捷指令")
                 .accessibilityAddTraits(.isHeader)
             }
 
             TacticalCommandGrid(columns: columns, spacing: TacticalHUDTheme.denseSpacing) {
                 if controller.canIssueMove || controller.isAwaitingMoveTarget {
                     quickButton(
-                        command: "Move",
+                        command: "移动",
                         displayTitle: controller.moveCommandButtonTitle,
                         isAwaitingTarget: controller.isAwaitingMoveTarget,
                         systemImage: controller.isAwaitingMoveTarget ? "xmark.circle" : "arrow.up.right",
                         action: controller.toggleMoveCommand,
-                        hint: "Choose a destination. Combat units fire in range while moving unless Hold Fire is set."
+                        hint: "点击目的地移动。部队会攻击射程内的敌军，禁止开火姿态除外。"
                     )
                 }
                 if controller.canIssueAttackMove || controller.isAwaitingAttackMoveTarget {
                     quickButton(
-                        command: "Attack Move",
+                        command: "进攻移动",
                         displayTitle: controller.isAwaitingAttackMoveTarget
                             ? controller.attackMoveCommandButtonTitle
-                            : "A-Move",
+                            : "进攻",
                         isAwaitingTarget: controller.isAwaitingAttackMoveTarget,
                         systemImage: controller.isAwaitingAttackMoveTarget ? "xmark.circle" : "arrow.up.right.circle",
                         action: controller.toggleAttackMoveCommand,
                         shortcut: "a",
-                        hint: "Choose a destination to move and automatically engage nearby enemies."
+                        hint: "点击目的地，部队将前进并主动迎击附近敌军。"
                     )
                 }
                 if controller.canIssueAttack || controller.isAwaitingAttackTarget {
                     quickButton(
-                        command: "Attack",
+                        command: "攻击",
                         displayTitle: controller.attackCommandButtonTitle,
                         isAwaitingTarget: controller.isAwaitingAttackTarget,
                         systemImage: controller.isAwaitingAttackTarget ? "xmark.circle" : "scope",
                         action: controller.toggleAttackCommand,
-                        hint: "Choose a visible enemy unit or building."
+                        hint: "点击当前可见的敌军单位或建筑。"
                     )
                 }
                 if controller.canIssueStop || controller.isAwaitingTargetCommand {
                     quickButton(
-                        command: "Stop",
-                        displayTitle: "Stop",
+                        command: "停止",
+                        displayTitle: "停止",
                         isAwaitingTarget: false,
                         systemImage: "stop.fill",
                         action: controller.issueStopCommand,
                         shortcut: "s",
-                        hint: "Stops selected units and cancels the target mode. Units still defend in range unless Hold Fire is set."
+                        hint: "停止移动并取消待选命令。部队仍会射程内还击，禁止开火姿态除外。"
                     )
                 }
             }
@@ -131,9 +131,9 @@ struct TacticalQuickCommandRail: View {
                     expandsHorizontally: columns != 4
                 )
             )
-            .accessibilityLabel(isAwaitingTarget ? "Cancel \(command) target" : command)
-            .accessibilityValue(isAwaitingTarget ? "Waiting for \(command) target" : "Ready")
-            .accessibilityHint(isAwaitingTarget ? "Cancels \(command) target selection." : hint)
+            .accessibilityLabel(isAwaitingTarget ? "取消\(command)目标" : command)
+            .accessibilityValue(isAwaitingTarget ? "请选择\(command)目标" : "就绪")
+            .accessibilityHint(isAwaitingTarget ? "取消\(command)目标选择。" : hint)
 
         if let shortcut {
             button.keyboardShortcut(KeyEquivalent(Character(shortcut)), modifiers: [])

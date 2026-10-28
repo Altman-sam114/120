@@ -795,7 +795,8 @@ final class BattlefieldScene: SKScene {
     }
 
     private func unitMuzzleDistance(for type: UnitType, radius: Double) -> Double {
-        switch type {
+        if let distance = GeneratedUnitArt.muzzleDistance(for: type, radius: radius) { return distance }
+        return switch type {
         case .tank:
             radius * 1.02
         case .heavyTank:

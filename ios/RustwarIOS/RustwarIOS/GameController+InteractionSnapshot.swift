@@ -46,6 +46,7 @@ extension GameController {
             "cameraY": camera.center.y,
             "zoom": camera.zoom,
             "pending": isAwaitingTargetCommand,
+            "unitArtTypes": GeneratedUnitArt.loadedTypeCount,
             "projection": projection
         ]
         guard let data = try? JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys]),

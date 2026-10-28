@@ -22,7 +22,8 @@ const expected = [
   "testRenderedUnitDetoursAroundBuildingAndArrives",
   "testSelectedForceHealthAndOrdersRemainVisible",
   "testFriendlyTapWinsOverAdjacentEnemyHalo",
-  "testProductionCardsReflectQueueProgressAndCancellation"
+  "testProductionCardsReflectQueueProgressAndCancellation",
+  "testChineseHUDAndLayeredArtRemainPlayable"
 ];
 
 function assessUIResults(summary, tree, exitCode) {

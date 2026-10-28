@@ -10,12 +10,12 @@ enum TacticalHUDSection {
 
     var title: String {
         switch self {
-        case .commands: "Commands"
-        case .build: "Build & Upgrade"
-        case .production: "Production"
-        case .selection: "Selection"
-        case .groups: "Groups"
-        case .session: "Session"
+        case .commands: "战术指令"
+        case .build: "建造与升级"
+        case .production: "单位生产"
+        case .selection: "部队选择"
+        case .groups: "编队"
+        case .session: "对局设置"
         }
     }
 
@@ -38,6 +38,7 @@ struct TacticalMetricView: View {
     var spokenLabel: String?
     var spokenValue: String?
     var isInline = false
+    var metricID: String?
 
     var body: some View {
         let layout = isInline
@@ -72,7 +73,7 @@ struct TacticalMetricView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spokenLabel ?? label)
         .accessibilityValue(spokenValue ?? value)
-        .accessibilityIdentifier("status-metric-\(label.lowercased())")
+        .accessibilityIdentifier("status-metric-\(metricID ?? label.lowercased())")
     }
 }
 
@@ -102,7 +103,7 @@ struct TacticalCommandStatusView: View {
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
 
     private var readableText: String {
-        text.replacingOccurrences(of: "Attack-move", with: "Attack Move")
+        text.replacingOccurrences(of: "进攻移动", with: "进攻移动")
     }
 
     var body: some View {
@@ -118,7 +119,7 @@ struct TacticalCommandStatusView: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 if isAwaitingTarget && !usesCompactLayout {
-                    Text("TARGET MODE")
+                    Text("等待目标")
                         .font(.caption.bold())
                         .foregroundStyle(TacticalHUDTheme.awaitingStatusLabel)
                         .accessibilityHidden(true)
@@ -161,11 +162,11 @@ struct TacticalCommandStatusView: View {
                 )
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(isAwaitingTarget ? "Awaiting target command status" : "Command status")
+        .accessibilityLabel(isAwaitingTarget ? "等待目标" : "指令反馈")
         .accessibilityValue(readableText)
         .accessibilityHint(
             isAwaitingTarget
-                ? "Choose a target on the battlefield, or activate the command button again to cancel."
+                ? "点击战场目标；再次点击指令按钮可取消。"
                 : ""
         )
     }

@@ -30,8 +30,8 @@ struct TacticalSelectionSectionView: View {
                 .tacticalControl()
                 .keyboardShortcut(commandKey("e"), modifiers: [])
                 .disabled(!controller.canSelectIdleBuilders)
-                .accessibilityLabel("Select idle Builders")
-                .accessibilityHint("Selects all idle player Builder units.")
+                .accessibilityLabel("选择空闲工程车")
+                .accessibilityHint("选择全部空闲的我方工程车。")
 
                 Button(
                     controller.combatUnitsButtonTitle,
@@ -41,8 +41,8 @@ struct TacticalSelectionSectionView: View {
                 .tacticalControl()
                 .keyboardShortcut(commandKey("a"), modifiers: .control)
                 .disabled(!controller.canSelectCombatUnits)
-                .accessibilityLabel("Select combat units")
-                .accessibilityHint("Selects all player combat units.")
+                .accessibilityLabel("选择全部作战单位")
+                .accessibilityHint("选择全部存活的我方作战单位。")
 
                 Button(
                     controller.screenCombatUnitsButtonTitle,
@@ -52,8 +52,8 @@ struct TacticalSelectionSectionView: View {
                 .tacticalControl()
                 .keyboardShortcut(commandKey("f"), modifiers: [])
                 .disabled(!controller.canSelectScreenCombatUnits)
-                .accessibilityLabel("Select screen combat units")
-                .accessibilityHint("Selects player combat units currently visible on the battlefield.")
+                .accessibilityLabel("选择屏幕内作战单位")
+                .accessibilityHint("选择当前视野范围内的我方作战单位。")
             }
         }
     }

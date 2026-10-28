@@ -34,7 +34,7 @@ struct TacticalProductionQueueView: View {
                 .stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Production queue, \(items.count) \(items.count == 1 ? "order" : "orders")")
+        .accessibilityLabel("生产队列，共 \(items.count) 项订单")
     }
 }
 
@@ -72,7 +72,7 @@ private struct TacticalCurrentProductionView: View {
             }
             VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
                 HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.compactSpacing) {
-                    Text(definition.name)
+                    Text(definition.tacticalName)
                         .font(.footnote.bold())
                         .lineLimit(1)
                         .minimumScaleFactor(0.78)
@@ -88,7 +88,7 @@ private struct TacticalCurrentProductionView: View {
                         .font(.footnote.bold())
                         .foregroundStyle(TacticalHUDTheme.accent)
                         .monospacedDigit()
-                    Text("\(remainingSeconds)s left")
+                    Text("剩余 \(remainingSeconds) 秒")
                         .font(.caption2)
                         .foregroundStyle(TacticalHUDTheme.secondaryText)
                         .monospacedDigit()
@@ -109,8 +109,8 @@ private struct TacticalCurrentProductionView: View {
                 .stroke(TacticalHUDTheme.accent, lineWidth: 1.5)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Currently building \(definition.name)")
-        .accessibilityValue("\(percent) percent, about \(remainingSeconds) seconds remaining")
+        .accessibilityLabel("正在生产\(definition.tacticalName)")
+        .accessibilityValue("进度 \(percent)%，约剩余 \(remainingSeconds) 秒")
     }
 }
 
@@ -133,12 +133,12 @@ private struct TacticalQueuedProductionView: View {
                     .foregroundStyle(TacticalHUDTheme.accent)
                     .accessibilityHidden(true)
                 Spacer(minLength: 0)
-                Text("\(Int(item.buildTime))s")
+                Text("\(Int(item.buildTime))秒")
                     .font(.caption2)
                     .monospacedDigit()
                     .foregroundStyle(TacticalHUDTheme.secondaryText)
             }
-            Text(item.unitType.productionQueueDisplayName(fallback: definition.name))
+            Text(item.unitType.productionQueueDisplayName(fallback: definition.tacticalName))
                 .font(.caption.bold())
                 .lineLimit(1)
                 .minimumScaleFactor(0.68)
@@ -155,8 +155,8 @@ private struct TacticalQueuedProductionView: View {
         }
         .multilineTextAlignment(.center)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Queue position \(position), \(definition.name)")
-        .accessibilityValue("Build time \(Int(item.buildTime)) seconds")
+        .accessibilityLabel("队列第 \(position) 项，\(definition.tacticalName)")
+        .accessibilityValue("生产时间 \(Int(item.buildTime)) 秒")
     }
 }
 
@@ -164,9 +164,9 @@ extension UnitType {
     func productionQueueDisplayName(fallback: String) -> String {
         switch self {
         case .tank:
-            "Light Tank"
+            "轻型坦克"
         case .heavyTank:
-            "Heavy Tank"
+            "重型坦克"
         default:
             fallback
         }

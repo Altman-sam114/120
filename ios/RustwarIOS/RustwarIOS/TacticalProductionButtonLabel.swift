@@ -57,7 +57,7 @@ struct TacticalProductionButtonLabel: View {
                 productionIcon
                     .frame(width: 26)
                 VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
-                    Text(definition.name)
+                    Text(definition.tacticalName)
                         .font(.footnote.bold())
                         .lineLimit(2)
                     HStack(spacing: TacticalHUDTheme.compactSpacing) {
@@ -95,7 +95,7 @@ struct TacticalProductionButtonLabel: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
                     if case let .insufficientMetal(required, available) = availability {
-                        Text("-\(max(0, required - available))M")
+                        Text("-\(max(0, required - available))")
                             .font(.caption2.bold())
                             .monospacedDigit()
                             .foregroundStyle(TacticalHUDTheme.unavailableForeground)
@@ -116,7 +116,7 @@ struct TacticalProductionButtonLabel: View {
 
     private var productionIcon: some View {
         TacticalUnitPortrait(unitType: unitType)
-            .frame(width: 28, height: 34)
+            .frame(width: 40, height: 34)
             .overlay(alignment: .topLeading) {
                 if queuedCount > 0 {
                     Text(queuedCount.formatted())
@@ -167,40 +167,40 @@ struct TacticalProductionButtonLabel: View {
     }
 
     private var formattedBuildTime: String {
-        "\(buildTime.formatted(.number.precision(.fractionLength(0...1))))s"
+        "\(buildTime.formatted(.number.precision(.fractionLength(0...1))))秒"
     }
 
     private var compactMetrics: String {
-        "\(Int(definition.metalCost))M \(definition.supply)P \(formattedBuildTime)"
+        "\(Int(definition.metalCost))金 \(definition.supply)人 \(formattedBuildTime)"
     }
 
     private var denseCostSupply: String {
-        "\(Int(definition.metalCost))M · \(definition.supply)P"
+        "\(Int(definition.metalCost))金 \(definition.supply)人"
     }
 
     private var denseBuildTime: String {
-        "\(Int(buildTime.rounded(.up)))s"
+        "\(Int(buildTime.rounded(.up)))秒"
     }
 
     private var compactDisplayName: String {
         switch unitType {
         case .artillery:
-            "Arty"
+            "火炮"
         default:
-            unitType.productionQueueDisplayName(fallback: definition.name)
+            unitType.productionQueueDisplayName(fallback: definition.tacticalName)
         }
     }
 
     private var denseDisplayName: String {
         switch unitType {
-        case .builder: "Builder"
-        case .scout: "Scout"
-        case .tank: "Light"
-        case .heavyTank: "Heavy"
-        case .hover: "Hover"
-        case .aaTank: "AA"
-        case .artillery: "Arty"
-        case .gunboat: "Boat"
+        case .builder: "工程车"
+        case .scout: "侦察车"
+        case .tank: "轻坦"
+        case .heavyTank: "重坦"
+        case .hover: "悬浮"
+        case .aaTank: "防空"
+        case .artillery: "火炮"
+        case .gunboat: "炮艇"
         }
     }
 }

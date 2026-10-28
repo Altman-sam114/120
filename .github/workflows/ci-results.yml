@@ -116,7 +116,18 @@ jobs:
       - name: Verify CI reporting helpers
         id: reporter-tests
         shell: bash
-        run: node --test ci/*.test.js | tee ci-results/ci-reporting-tests.log
+        run: |
+          node --test ci/*.test.js | tee ci-results/ci-reporting-tests.log
+          node <<'NODE' | tee -a ci-results/ci-reporting-tests.log
+          const fs = require("node:fs");
+          const { localLinkProblems } = require("./ci/run-scoped-checks");
+          const scope = JSON.parse(process.env.VALIDATION_SCOPE);
+          const files = scope.changedFiles.filter((file) => file.endsWith(".md") && fs.existsSync(file));
+          const problems = files.flatMap((file) => localLinkProblems(file, fs.readFileSync(file, "utf8")));
+          for (const problem of problems) console.error(problem);
+          console.log(`Changed Markdown local links: ${files.length} documents, ${problems.length} problems.`);
+          process.exitCode = problems.length ? 1 : 0;
+          NODE
 
       - name: Run checks and write result package
         id: checks
@@ -506,7 +517,7 @@ jobs:
             echo "- xcodebuild ${IOS_SCHEME}: $([[ "$xcode_build_status" -eq 0 ]] && echo success || echo failure)"
             echo "- iOS Simulator launches and screenshots: $([[ "$simulator_visual_status" -eq 0 ]] && echo success || echo failure)"
             echo "- workflow YAML parse: $([[ "$yaml_status" -eq 0 ]] && echo success || echo failure)"
-            echo "- actual iOS interaction tests (at least 20 exact cases, no failures/skips): $([[ "$ui_test_status" -eq 0 ]] && echo success || echo failure)"
+            echo "- actual iOS interaction tests (at least 21 exact cases, no failures/skips): $([[ "$ui_test_status" -eq 0 ]] && echo success || echo failure)"
             echo "- Browser smoke/regression: skipped; Rustwar currently has no headless browser CI."
           } > ci-results/ci-failure-summary.md
 
@@ -577,7 +588,7 @@ jobs:
             {
               name: "actual iOS interaction tests",
               ok: process.env.CHECK_UI_TEST_STATUS === "0",
-              message: "xcodebuild test must execute at least 20 exact successful UI cases in the expected suite, with matching tree/summary counts, zero failures, duplicates or skips."
+              message: "xcodebuild test must execute at least 21 exact successful UI cases in the expected suite, with matching tree/summary counts, zero failures, duplicates or skips."
             },
             {
               name: "pinned Xcode 26.5 toolchain",

@@ -18,18 +18,18 @@ struct TacticalBuildSectionView: View {
                     .keyboardShortcut(commandKey("e"), modifiers: .shift)
                     .accessibilityLabel(
                         controller.isAwaitingBuildExtractorTarget
-                            ? "Cancel extractor placement"
-                            : "Build extractor"
+                            ? "取消提取器放置"
+                            : "建造提取器"
                     )
                     .accessibilityValue(
                         controller.isAwaitingBuildExtractorTarget
-                            ? "Waiting for extractor placement"
-                            : "Ready"
+                            ? "请选择提取器位置"
+                            : "就绪"
                     )
                     .accessibilityHint(
                         controller.isAwaitingBuildExtractorTarget
-                            ? "Cancels extractor placement."
-                            : "Choose an available resource point on the battlefield."
+                            ? "取消提取器放置。"
+                            : "点击战场上的空闲资源点。"
                     )
                 }
                 if controller.canIssueBuildTurret || controller.isAwaitingBuildTurretTarget {
@@ -42,18 +42,18 @@ struct TacticalBuildSectionView: View {
                     .keyboardShortcut(commandKey("t"), modifiers: .shift)
                     .accessibilityLabel(
                         controller.isAwaitingBuildTurretTarget
-                            ? "Cancel turret placement"
-                            : "Build turret"
+                            ? "取消炮塔放置"
+                            : "建造防御炮塔"
                     )
                     .accessibilityValue(
                         controller.isAwaitingBuildTurretTarget
-                            ? "Waiting for turret placement"
-                            : "Ready"
+                            ? "请选择炮塔位置"
+                            : "就绪"
                     )
                     .accessibilityHint(
                         controller.isAwaitingBuildTurretTarget
-                            ? "Cancels turret placement."
-                            : "Choose a clear land position on the battlefield."
+                            ? "取消炮塔放置。"
+                            : "点击空旷的可通行陆地。"
                     )
                 }
                 if controller.canIssueBuildFactory || controller.isAwaitingBuildFactoryTarget {
@@ -66,18 +66,18 @@ struct TacticalBuildSectionView: View {
                     .keyboardShortcut(commandKey("f"), modifiers: .shift)
                     .accessibilityLabel(
                         controller.isAwaitingBuildFactoryTarget
-                            ? "Cancel land factory placement"
-                            : "Build land factory"
+                            ? "取消工厂放置"
+                            : "建造陆军工厂"
                     )
                     .accessibilityValue(
                         controller.isAwaitingBuildFactoryTarget
-                            ? "Waiting for land factory placement"
-                            : "Ready"
+                            ? "请选择工厂位置"
+                            : "就绪"
                     )
                     .accessibilityHint(
                         controller.isAwaitingBuildFactoryTarget
-                            ? "Cancels land factory placement."
-                            : "Choose a clear land position on the battlefield."
+                            ? "取消陆军工厂放置。"
+                            : "点击空旷的可通行陆地。"
                     )
                 }
                 if controller.canIssueBuildRadar || controller.isAwaitingBuildRadarTarget {
@@ -90,18 +90,18 @@ struct TacticalBuildSectionView: View {
                     .keyboardShortcut(commandKey("d"), modifiers: .shift)
                     .accessibilityLabel(
                         controller.isAwaitingBuildRadarTarget
-                            ? "Cancel radar placement"
-                            : "Build radar"
+                            ? "取消雷达放置"
+                            : "建造雷达站"
                     )
                     .accessibilityValue(
                         controller.isAwaitingBuildRadarTarget
-                            ? "Waiting for radar placement"
-                            : "Ready"
+                            ? "请选择雷达位置"
+                            : "就绪"
                     )
                     .accessibilityHint(
                         controller.isAwaitingBuildRadarTarget
-                            ? "Cancels radar placement."
-                            : "Choose a clear land position on the battlefield."
+                            ? "取消雷达站放置。"
+                            : "点击空旷的可通行陆地。"
                     )
                 }
                 if controller.showsSelectedRadarUpgradeControl {
@@ -112,14 +112,14 @@ struct TacticalBuildSectionView: View {
                     )
                     .tacticalProminentControl()
                     .disabled(!controller.canUpgradeSelectedRadar)
-                    .accessibilityLabel("Upgrade radar")
-                    .accessibilityHint("Increases the selected Radar Station vision and radar range.")
+                    .accessibilityLabel("升级雷达站")
+                    .accessibilityHint("提高雷达站的视野和雷达覆盖范围。")
                 }
                 if controller.canCancelSelectedRadarUpgrade {
-                    Button("Cancel Upgrade", systemImage: "xmark.circle", action: controller.cancelRadarUpgrade)
+                    Button("取消升级", systemImage: "xmark.circle", action: controller.cancelRadarUpgrade)
                         .tacticalControl()
-                        .accessibilityLabel("Cancel radar upgrade")
-                        .accessibilityHint("Stops the selected Radar Station upgrade and refunds remaining metal.")
+                        .accessibilityLabel("取消雷达升级")
+                        .accessibilityHint("取消雷达升级，返还未完成部分的金属。")
                 }
                 if controller.showsSelectedExtractorUpgradeControl {
                     Button(
@@ -129,14 +129,14 @@ struct TacticalBuildSectionView: View {
                     )
                     .tacticalProminentControl()
                     .disabled(!controller.canUpgradeSelectedExtractor)
-                    .accessibilityLabel("Upgrade extractor")
-                    .accessibilityHint("Increases the selected Extractor income, hit points, and vision.")
+                    .accessibilityLabel("升级资源提取器")
+                    .accessibilityHint("提高提取器的金属收入、装甲和视野。")
                 }
                 if controller.canCancelSelectedExtractorUpgrade {
-                    Button("Cancel Upgrade", systemImage: "xmark.circle", action: controller.cancelExtractorUpgrade)
+                    Button("取消升级", systemImage: "xmark.circle", action: controller.cancelExtractorUpgrade)
                         .tacticalControl()
-                        .accessibilityLabel("Cancel extractor upgrade")
-                        .accessibilityHint("Stops the selected Extractor upgrade and refunds remaining metal.")
+                        .accessibilityLabel("取消提取器升级")
+                        .accessibilityHint("取消提取器升级，返还未完成部分的金属。")
                 }
             }
         }

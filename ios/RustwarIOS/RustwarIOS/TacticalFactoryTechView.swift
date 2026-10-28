@@ -54,16 +54,16 @@ struct TacticalFactoryTechView: View {
         }
         .tacticalProminentControl()
         .disabled(!controller.canUpgradeSelectedFactory)
-        .accessibilityLabel("Upgrade land factory to tech level 2")
+        .accessibilityLabel("将陆军工厂升级至 T2")
         .accessibilityValue(controller.factoryUpgradeBenefitText ?? "")
-        .accessibilityHint("Increases factory armor, vision, and future unit production speed.")
+        .accessibilityHint("提高工厂装甲、视野及新入队单位的生产速度。")
     }
 
     private func compactUpgradeProgress(progress: Double) -> some View {
         HStack(spacing: TacticalHUDTheme.compactSpacing) {
             VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
                 HStack(spacing: TacticalHUDTheme.compactSpacing) {
-                    Text("UPGRADING TO T\(controller.selectedFactoryTechLevel + 1)")
+                    Text("正在升级至 T\(controller.selectedFactoryTechLevel + 1)")
                         .font(.caption.bold())
                         .foregroundStyle(TacticalHUDTheme.metricLabel)
                     Text(progress, format: .percent.precision(.fractionLength(0)))
@@ -74,11 +74,11 @@ struct TacticalFactoryTechView: View {
                     .tint(TacticalHUDTheme.attention)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            Button("Cancel", systemImage: "xmark.circle", action: controller.cancelFactoryUpgrade)
+            Button("取消", systemImage: "xmark.circle", action: controller.cancelFactoryUpgrade)
                 .tacticalIconControl()
                 .labelStyle(.iconOnly)
-                .accessibilityLabel("Cancel factory upgrade")
-                .accessibilityHint("Stops the factory upgrade and refunds remaining metal.")
+                .accessibilityLabel("取消工厂升级")
+                .accessibilityHint("取消升级并退还未完成部分的金属。")
         }
         .frame(minHeight: TacticalHUDTheme.controlMinimumHeight, alignment: .center)
     }
@@ -137,14 +137,14 @@ struct TacticalFactoryTechView: View {
                 }
                 .tacticalProminentControl()
                 .disabled(!controller.canUpgradeSelectedFactory)
-                .accessibilityLabel("Upgrade land factory to tech level 2")
+                .accessibilityLabel("将陆军工厂升级至 T2")
                 .accessibilityValue(controller.factoryUpgradeBenefitText ?? "")
-                .accessibilityHint("Increases factory armor, vision, and future unit production speed.")
+                .accessibilityHint("提高工厂装甲、视野及新入队单位的生产速度。")
             } else if let progress = controller.selectedFactoryUpgradeProgress {
                 layout {
                     VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
                         HStack(spacing: TacticalHUDTheme.compactSpacing) {
-                            Text("UPGRADING TO T\(controller.selectedFactoryTechLevel + 1)")
+                            Text("正在升级至 T\(controller.selectedFactoryTechLevel + 1)")
                                 .font(.caption.bold())
                                 .foregroundStyle(TacticalHUDTheme.metricLabel)
                             Text(progress, format: .percent.precision(.fractionLength(0)))
@@ -155,11 +155,11 @@ struct TacticalFactoryTechView: View {
                             .tint(TacticalHUDTheme.attention)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    Button("Cancel", systemImage: "xmark.circle", action: controller.cancelFactoryUpgrade)
+                    Button("取消", systemImage: "xmark.circle", action: controller.cancelFactoryUpgrade)
                         .tacticalIconControl()
                         .labelStyle(.iconOnly)
-                        .accessibilityLabel("Cancel factory upgrade")
-                        .accessibilityHint("Stops the factory upgrade and refunds remaining metal.")
+                        .accessibilityLabel("取消工厂升级")
+                        .accessibilityHint("取消升级并退还未完成部分的金属。")
                 }
             }
         }
@@ -190,7 +190,7 @@ struct TacticalFactoryTechView: View {
     }
 
     private var factoryTitle: some View {
-        Text("FACTORY TECH")
+        Text("工厂科技")
             .font(.caption2.bold())
             .foregroundStyle(TacticalHUDTheme.metricLabel)
             .lineLimit(1)
@@ -225,9 +225,9 @@ struct TacticalFactoryTechView: View {
 
     private var factoryStatusTitle: String {
         if controller.selectedFactoryUpgradeProgress != nil {
-            return "UPGRADING"
+            return "升级中"
         }
-        return controller.showsSelectedFactoryUpgradeControl ? "T2 READY" : "MAX TECH"
+        return controller.showsSelectedFactoryUpgradeControl ? "可升级 T2" : "最高科技"
     }
 
     private var factoryStatusForeground: Color {

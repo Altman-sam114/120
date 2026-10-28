@@ -120,6 +120,10 @@ public struct GameEngine: Sendable {
         return target
     }
 
+    public mutating func clearSelection() {
+        applySelection([], mutation: .replace)
+    }
+
     public mutating func reset(mapID: MapID = .coast) {
         state = GameState(mapID: mapID)
         navigation = UnitNavigationState(terrain: state.terrain)

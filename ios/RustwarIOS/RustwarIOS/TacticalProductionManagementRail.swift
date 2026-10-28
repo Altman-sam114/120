@@ -26,19 +26,19 @@ struct TacticalProductionManagementRail: View {
         ) {
             Button(action: controller.cancelProduction) {
                 managementLabel(
-                    title: usesCompactRail ? "Cancel" : "Cancel Last",
+                    title: usesCompactRail ? "撤单" : "撤销末项",
                     systemImage: "minus.circle"
                 )
             }
             .tacticalControl()
             .disabled(!controller.canCancelProduction)
             .keyboardShortcut(commandKey("c"), modifiers: .shift)
-            .accessibilityLabel("Cancel last queued production item")
-            .accessibilityValue(controller.canCancelProduction ? "Available" : "Queue empty")
+            .accessibilityLabel("撤销队尾生产订单")
+            .accessibilityValue(controller.canCancelProduction ? "可用" : "队列为空")
             .accessibilityHint(
                 controller.canCancelProduction
-                    ? "Cancels the last queued item and refunds its unfinished metal."
-                    : "No queued production item is available to cancel."
+                    ? "撤销队尾订单，返还未完成部分的金属。"
+                    : "队列中没有可撤销的订单。"
             )
 
             repeatMenu
@@ -52,14 +52,14 @@ struct TacticalProductionManagementRail: View {
             .tacticalControl(isActive: controller.isAwaitingRallyTarget)
             .disabled(!controller.canIssueRally && !controller.isAwaitingRallyTarget)
             .keyboardShortcut(commandKey("r"), modifiers: .shift)
-            .accessibilityLabel(controller.isAwaitingRallyTarget ? "Cancel rally target" : "Set rally point")
-            .accessibilityValue(controller.isAwaitingRallyTarget ? "Waiting for battlefield target" : "Ready")
+            .accessibilityLabel(controller.isAwaitingRallyTarget ? "取消集结点选择" : "设置集结点")
+            .accessibilityValue(controller.isAwaitingRallyTarget ? "等待战场目标" : "就绪")
             .accessibilityHint(
                 controller.isAwaitingRallyTarget
-                    ? "Cancels rally point targeting."
-                    : "Waits for a battlefield or tactical map point for newly produced units."
+                    ? "取消集结点选择。"
+                    : "点击战场或小地图，为新生产单位设置集结点。"
             )
-            .accessibilityInputLabels(["Rally", "Cancel rally"])
+            .accessibilityInputLabels(["集结点", "取消集结点"])
         }
     }
 
@@ -69,7 +69,7 @@ struct TacticalProductionManagementRail: View {
         return Menu {
             Button(action: { disableRepeatProduction(for: producerID) }) {
                 Label(
-                    "Off",
+                    "关闭",
                     systemImage: controller.repeatProductionUnit == nil
                         ? "checkmark.circle.fill"
                         : "circle"
@@ -79,7 +79,7 @@ struct TacticalProductionManagementRail: View {
                 controller.repeatProductionUnit == nil ? .isSelected : []
             )
             .accessibilityValue(
-                controller.repeatProductionUnit == nil ? "Selected" : "Not selected"
+                controller.repeatProductionUnit == nil ? "当前选择" : "未选择"
             )
 
             Divider()
@@ -87,7 +87,7 @@ struct TacticalProductionManagementRail: View {
             ForEach(controller.productionOptions, id: \.self) { unitType in
                 Button(action: { setRepeatProduction(unitType, for: producerID) }) {
                     Label(
-                        GameDefinitions.unit(unitType).name,
+                        GameDefinitions.unit(unitType).tacticalName,
                         systemImage: controller.repeatProductionUnit == unitType
                             ? "checkmark.circle.fill"
                             : "circle"
@@ -97,12 +97,12 @@ struct TacticalProductionManagementRail: View {
                     controller.repeatProductionUnit == unitType ? .isSelected : []
                 )
                 .accessibilityValue(
-                    controller.repeatProductionUnit == unitType ? "Selected" : "Not selected"
+                    controller.repeatProductionUnit == unitType ? "当前选择" : "未选择"
                 )
             }
         } label: {
             managementLabel(
-                title: "Repeat",
+                title: "循环",
                 systemImage: controller.repeatProductionSystemImage,
                 subtitle: repeatVisibleValue
             )
@@ -110,20 +110,20 @@ struct TacticalProductionManagementRail: View {
         .tacticalMenuPicker()
         .disabled(!controller.canCycleRepeatProduction || controller.productionOptions.isEmpty)
         .keyboardShortcut(commandKey("p"), modifiers: .shift)
-        .accessibilityLabel("Repeat production target")
+        .accessibilityLabel("循环生产目标")
         .accessibilityValue(controller.repeatProductionAccessibilityValue)
-        .accessibilityHint("Opens a menu to choose a unit to repeat, or turn repeat production off.")
-        .accessibilityInputLabels(["Repeat", "Repeat production"])
+        .accessibilityHint("打开菜单，选择循环生产的兵种或关闭循环。")
+        .accessibilityInputLabels(["循环", "循环生产"])
     }
 
     private var repeatVisibleValue: String {
         guard let unitType = controller.repeatProductionUnit else {
-            return "Off"
+            return "关闭"
         }
         if usesCompactRail {
             return controller.repeatProductionShortTitle
         }
-        return GameDefinitions.unit(unitType).name
+        return GameDefinitions.unit(unitType).tacticalName
     }
 
     private func managementLabel(
