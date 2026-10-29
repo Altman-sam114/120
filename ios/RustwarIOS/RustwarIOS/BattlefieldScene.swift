@@ -1013,10 +1013,11 @@ final class BattlefieldScene: SKScene {
         recoilDistance: Double = 0,
         isFrozen: Bool = false
     ) {
+        let muzzle = GeneratedBuildingArt.turretMuzzleDistance(size: size) ?? size * 0.5 * 1.045
         spawnFireEffect(
             from: source,
             heading: heading,
-            muzzleDistance: Swift.max(0, size * 0.5 * 1.045 - recoilDistance),
+            muzzleDistance: Swift.max(0, muzzle - recoilDistance),
             target: target,
             color: .systemOrange,
             teamAccent: teamColor(team),

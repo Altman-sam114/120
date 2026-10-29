@@ -43,6 +43,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let zoom: Double
         let pending: Bool
         let unitArtTypes: Int
+        let buildingArtVariants: Int
         let explosionArtFrames: Int
         let projection: Projection
 
@@ -154,6 +155,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
     func testChineseHUDAndLayeredArtRemainPlayable() async throws {
         let app = try await launch()
         XCTAssertEqual(try snapshot(app).unitArtTypes, 8, "Every bundled layered model must decode; fallback art cannot satisfy this gate")
+        XCTAssertEqual(try snapshot(app).buildingArtVariants, 9, "All building tiers and the independent turret layers must decode; geometry fallback cannot satisfy this gate")
         XCTAssertEqual(try snapshot(app).explosionArtFrames, 8, "The actual explosion atlas must decode all animation frames")
         XCTAssertEqual(app.buttons["pause-play"].label, "继续")
         let metal = app.descendants(matching: .any).matching(identifier: "status-metric-metal").firstMatch
@@ -189,7 +191,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         try await waitFor(app, "Chinese unit card queues a real paid production order") {
             $0.entity("input-factory")?.queue == 1 && $0.metal < before.metal
         }
-        print("CHINESE_LAYERED_ART types=8 realClear/targetCancel/orderPreserved/freshMove/paidProduction=passed")
+        print("CHINESE_LAYERED_ART units=8 buildings=9 realClear/targetCancel/orderPreserved/freshMove/paidProduction=passed")
     }
 
     @MainActor

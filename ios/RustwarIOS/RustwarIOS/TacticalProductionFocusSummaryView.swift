@@ -105,7 +105,7 @@ struct TacticalProductionFocusSummaryView: View {
         } else {
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.compactSpacing) {
-                    Image(systemName: "building.2.fill").accessibilityHidden(true)
+                    buildingPortrait
                     Text(controller.productionFocusBuildingName ?? "单位生产")
                         .font(.subheadline.bold())
                         .fixedSize(horizontal: true, vertical: false)
@@ -122,9 +122,17 @@ struct TacticalProductionFocusSummaryView: View {
 
     private var identityTitle: some View {
         HStack(spacing: TacticalHUDTheme.compactSpacing) {
-            Image(systemName: "building.2.fill").accessibilityHidden(true)
+            buildingPortrait
             Text(controller.productionFocusBuildingName ?? "单位生产")
                 .font(.subheadline.bold())
+        }
+    }
+
+    @ViewBuilder
+    private var buildingPortrait: some View {
+        if let building = controller.productionFocusBuilding {
+            TacticalBuildingPortrait(building: building)
+                .frame(width: 26, height: 20)
         }
     }
 

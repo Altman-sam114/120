@@ -47,6 +47,7 @@ extension GameController {
             "zoom": camera.zoom,
             "pending": isAwaitingTargetCommand,
             "unitArtTypes": GeneratedUnitArt.loadedTypeCount,
+            "buildingArtVariants": GeneratedBuildingArt.loadedVariantCount,
             "explosionArtFrames": GeneratedExplosionArt.loadedFrameCount,
             "projection": projection
         ]

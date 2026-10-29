@@ -1,4 +1,4 @@
-# 原生载具美术
+# 原生美术
 
 ## 来源与使用
 
@@ -48,4 +48,33 @@ Scene/backdrop: actual TRANSPARENT ALPHA, nothing behind or between sprites. No 
 Style/medium: high-quality pre-rendered VFX textures, believable turbulent billows, crisp ember fragments, warm white/yellow ignition, rich restrained amber flames within detailed charcoal and gray smoke. Physical volume and subtle lighting, not cartoon, not flat circles, not vector art. Consistent overhead perspective and pivot across all frames. Small readable combat effect, not a cinematic background.
 Animation stages: 1 small ignition; 2 compact white/amber burst; 3 expanding orange fire and initial soot; 4 peak irregular fireball embedded in smoke; 5 flame recedes into thick rolling smoke; 6 charcoal/dust plume with only a few embers; 7 thin broken smoke wisps; 8 almost dissipated faint gray wisps. The last frames should have significantly less opacity than the middle frames. Do not add a ring or a circular outline.
 Constraints: exactly eight isolated sprites. Landscape canvas 2:1, with no borders, labels, text, numbers, logos or watermark. Maintain truly transparent alpha, including soft translucent smoke edges. Entire blast must remain within each equal cell, no overlap with neighbors.
+```
+
+## 原创工业建筑与生产标题
+
+- 使用内置 image_gen、transparent_background=true 生成原创九建筑图集和单炮武器；选择的原始文件分别原样复制为 BuildingBaseAtlas.imageset/building-bases-v1.png、BuildingWeapon.imageset/building-weapon-v1.png。两图实际均为1254x1254 RGBA，不在线下载，不用脚本改图或抠图。
+- 先生成九建筑，再尝试武器；第一次武器错误地混入固定底座、炮口类似光学模块，未进入工程。第二次改用既有原创 UnitMountAtlas 作风格参考，得到真正独立的单炮武器，才作为成品来源。建筑图集参考既有 UnitHullAtlas 的材质，不复制商业游戏图片。
+- BuildingArtLayout.dataset/layout.json 使用1280x1280逻辑参考坐标记录实际裁剪、建筑轴和脚印跨度，再映射到源像素并向外取整；生成结果并非精确等分网格，禁止简单九宫格切图。每个裁剪保留透明边，脚印跨度只决定绘制比例，不改变 Core 的碰撞、选择或建造资格。
+- 当前覆盖指挥中心T1、工厂T1/T2、采集器T1/T2/T3、雷达T1/T2和炮塔T1。工厂冷却模块、采集器泵组、雷达第二天线提供实际等级轮廓；敌方以红色材质调和既有阵营徽记区分，不另存玩法状态。
+- GeneratedBuildingArt 缓存九种底座和唯一一组炮塔/炮管；固定底座不旋转，building-turret-mount继续走原有瞄准链路，building-recoil-mount只带动炮管。炮口取自实际炮管末端坐标，不把透明裁剪边当炮口；后坐与发射点共同减去原表现距离。
+- 生产标题/概览的缩略图复用同一裁剪和当前真实建筑等级，最多九份共享缓存。Controller只读暴露选中生产建筑，不创建第二套选择、科技、队列或计时器。缺少素材时保留原几何/符号后备，但九种实际加载门控不接受后备代替。
+- ci/building-art.test.js解码两张实际PNG，检查九种内容/透明留边/实体锚点/源细节、升级归一化轮廓差异、独立武器的轴/炮口边缘与炮管分割连续性；native真实UI保留全部点选、生产、升级、撤单、循环、集结和至少44pt/六卡首屏断言，五张云端图仍需实际复看。二维预渲染和静态截图不证明全设备交互或真机性能。
+
+### 建筑图集最终提示词
+
+```text
+Use case: stylized-concept. Asset type: production-ready BUILDING BASE sprite atlas for an original premium top-down military RTS on iOS. Image 1 is a MATERIAL/QUALITY reference only, not an edit target; match its believable olive/graphite armor, brushed steel bevels and subtle mint identification paint, but create ORIGINAL buildings, not vehicles.
+Composition: one SQUARE transparent PNG containing exactly NINE isolated structures in a precise 3 COLUMN x 3 ROW equal-cell grid. Each structure is centered in its cell and occupies only the central 72 percent of the cell width and height. Wide fully transparent gutters. Strict directly-overhead ORTHOGRAPHIC 90-degree camera, NOT isometric, no perspective, no visible front wall faces. Physical pre-rendered 3D material quality, crisp roof geometry, larger readable panels rather than busy noise. Soft directional light from upper left, ambient occlusion ONLY within structures. Actual transparent alpha outside silhouettes; no ground, no cast shadows, no checkerboard pixels, no matte, no borders, labels, text or logos.
+ROW 1 left-to-right: (1) fortified COMMAND CENTER, octagonal reinforced concrete foundation with graphite armored central command roof, teal recessed roof windows, four compact cooling annexes and a communications antenna; (2) LAND VEHICLE FACTORY TIER 1, low rectangular industrial hangar with ribbed roof, recessed mechanical fan, large EXIT RAMP ON THE RIGHT, restrained amber/black hazard marks; (3) SAME FACTORY TIER 2, recognizable same central hangar/right-hand exit, upgraded side gantries and additional paired cooling modules, broader and more sophisticated silhouette, no extra adjacent building.
+ROW 2 left-to-right: (4) RESOURCE EXTRACTOR TIER 1, central deep circular drilling well with machined steel rings and four radial olive mechanical support arms on an octagonal foundation; (5) SAME EXTRACTOR TIER 2, same central well plus four diagonal pump/reservoir pods, visibly richer intermediate silhouette; (6) SAME EXTRACTOR TIER 3, same central well plus armored perimeter pumping modules and two large cooling housings, substantial high-tech end-tier industrial silhouette. Three tiers must be visibly distinct without text.
+ROW 3 left-to-right: (7) RADAR STATION TIER 1, compact reinforced equipment shelter with a single broad elliptical steel mesh radar dish and clear support/receiver assembly seen directly from above; (8) SAME RADAR STATION TIER 2, same large dish plus a smaller second dish and two side electronics pods, visibly advanced silhouette; (9) DEFENSE TURRET BASE ONLY, square chamfered concrete/steel plinth with four armored corner anchors and a precise EMPTY circular gun-bearing socket EXACTLY at the cell center. Absolutely NO turret housing, NO weapon and NO barrel on this last base; rotating weapon will be a separate asset.
+All nine buildings belong to one coherent original industrial faction. Restrained pale mint strips, neutral dark olive titanium, warm steel edges, realistic recesses, fine bolts, vents and purposeful engineering. No bright glows, no thick outlines, no flat vector art, no cartoon, no surrounding scenery. Ensure every object is entirely inside its own cell with substantial transparent padding. This is one atlas asset with nine sprites, not a presentation sheet.
+```
+
+### 独立炮塔最终提示词
+
+```text
+Use case: stylized-concept. Image 1 is a reference of ORIGINAL isolated game weapon mounts, especially its top-row third and bottom-row third turret. Create ONE NEW isolated single-barrel defense GUN TURRET in that exact directly-overhead military game-sprite visual language. Only the movable gun turret and cannon, NOT its stationary support/base. SQUARE canvas with genuinely TRANSPARENT ALPHA, no floor or shadow outside the object.
+The subject is a compact angular low-profile olive armored TANK-LIKE TURRET HOUSING on the left joined to ONE LONG NARROW MACHINED CANNON BARREL pointing precisely RIGHT. The turret housing rotation axis is at (40 percent canvas width, 50 percent canvas height). Housing extends roughly from 17 to 58 percent canvas width, and from 30 to 70 percent canvas height; a long straight barrel runs from 56 to 87 percent width along the exact horizontal canvas centerline. The barrel terminates in a small squared slotted MUZZLE BRAKE, NOT a camera or lens. A clean physical cannon design: rounded breech shroud at housing front, narrow machined steel tube, vented muzzle. No optical assembly at the muzzle. Tiny restrained optics may be located on the housing itself only.
+Strict orthographic 90-degree overhead camera, zero isometric angle. Olive graphite titanium armor, brushed metal bevels, recessed panels, bolts, restrained pale mint painted stripe, believable fine wear, realistic pre-rendered materials consistent with Image 1. Clear readable silhouette, warm highlights from upper left. Substantial transparent margin around entire object. Do NOT draw the support base, a platform, foundation, circular pedestal, concrete, side cooling towers, tank hull, tracks or wheels. Do NOT place multiple objects or a sprite grid. No text, logo, watermark, glows, black/gray/white background, checkerboard pixels, cartoon or vector lines. Exactly one isolated operational cannon turret with a real straight barrel pointing right.
 ```

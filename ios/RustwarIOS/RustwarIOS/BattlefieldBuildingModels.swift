@@ -43,6 +43,10 @@ enum BattlefieldBuildingModels {
 
     static func body(for building: BuildingSnapshot, size: Double,
                      turretHeading: CGFloat, recoilDistance: Double) -> SKNode {
+        if let generated = GeneratedBuildingArt.body(for: building, size: size,
+                                                     turretHeading: turretHeading, recoilDistance: recoilDistance) {
+            return generated
+        }
         let level: Int
         switch building.type {
         case .extractor: level = min(3, max(1, building.upgradeLevel))

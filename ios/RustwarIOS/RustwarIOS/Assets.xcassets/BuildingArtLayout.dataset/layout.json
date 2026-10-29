@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "referenceSize": [1280, 1280],
+  "buildings": {
+    "command-1": {
+      "crop": [24, 44, 389, 406],
+      "pivot": [218, 264],
+      "footprintSpan": 368
+    },
+    "landFactory-1": {
+      "crop": [413, 96, 399, 335],
+      "pivot": [612, 264],
+      "footprintSpan": 378
+    },
+    "landFactory-2": {
+      "crop": [805, 68, 442, 385],
+      "pivot": [1026, 264],
+      "footprintSpan": 420
+    },
+    "extractor-1": {
+      "crop": [27, 486, 373, 348],
+      "pivot": [216, 677],
+      "footprintSpan": 346
+    },
+    "extractor-2": {
+      "crop": [421, 487, 366, 355],
+      "pivot": [602, 685],
+      "footprintSpan": 338
+    },
+    "extractor-3": {
+      "crop": [794, 468, 453, 393],
+      "pivot": [1028, 685],
+      "footprintSpan": 424
+    },
+    "radar-1": {
+      "crop": [62, 874, 287, 332],
+      "pivot": [206, 1050],
+      "footprintSpan": 277
+    },
+    "radar-2": {
+      "crop": [416, 854, 400, 354],
+      "pivot": [612, 1050],
+      "footprintSpan": 368
+    },
+    "turret-1": {
+      "crop": [875, 888, 318, 318],
+      "pivot": [1035, 1045],
+      "footprintSpan": 290
+    }
+  },
+  "turret": {
+    "crop": [38, 332, 1180, 586],
+    "pivot": [368, 671],
+    "weaponCutX": 698,
+    "muzzle": [1201, 671],
+    "muzzleDistance": 1.48
+  }
+}

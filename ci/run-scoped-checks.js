@@ -19,7 +19,7 @@ function localLinkProblems(file, source, exists = fs.existsSync) {
 function relatedNodeTests(files, exists = fs.existsSync) {
   const selected = new Set();
   const dependentTests = {
-    "ci/png-pixels.js": ["ci/unit-art.test.js", "ci/effect-art.test.js"],
+    "ci/png-pixels.js": ["ci/unit-art.test.js", "ci/effect-art.test.js", "ci/building-art.test.js"],
     "ci/inspect-ios-process.js": ["ci/capture-terrain-previews.test.js"]
   };
   for (const file of files.filter((name) => /^ci\/.*\.js$/.test(name))) {

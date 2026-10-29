@@ -102,9 +102,10 @@ private struct TacticalCompactProducerHeaderView: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: TacticalHUDTheme.compactSpacing) {
-            Image(systemName: "gearshape.2.fill")
-                .foregroundStyle(TacticalHUDTheme.metricLabel)
-                .accessibilityHidden(true)
+            if let building = controller.productionFocusBuilding {
+                TacticalBuildingPortrait(building: building)
+                    .frame(width: 34, height: 26)
+            }
             VStack(alignment: .leading, spacing: 0) {
                 Text(controller.productionFocusBuildingName ?? "单位生产")
                     .font(.subheadline.bold())

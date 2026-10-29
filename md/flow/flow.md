@@ -64,6 +64,7 @@ SwiftUI / 原生触点 / 键盘 / Tactical Map
 - BattlefieldScene 读取真实快照；单位/建筑的 body 与签名缓存按可见实体复用/回收，重新挂接前脱离旧父节点。地图重置清缓存，类型/队伍/科技改变时重建。
 - BattlefieldUnitModels、BattlefieldBuildingModels、BattlefieldEffectMaterials 和 BattlefieldTerrainArt 分别拥有共享材质/几何，HUD 缩略图复用相同模型。炮塔朝向与后坐是表现状态，不改 Core 命中或伤害。
 - GeneratedUnitArt 优先加载随 App 打包的两张原创透明图集；UnitArtLayout 为裁剪、炮塔轴与炮管分割的唯一美术坐标源。底盘/炮塔/炮管保留独立转向和后坐，炮口距离复用图集坐标；八类有限缓存，加载失败才使用原有几何后备，不在线下载素材。TacticalLocalization 只做中文投影，不改 Codable 标识或 Core 规则。
+- GeneratedBuildingArt 同样以 BuildingArtLayout 的实际裁剪/轴点/脚印跨度和独立武器坐标缓存九种建筑科技外观；Scene 的固定底座、转向炮塔、后坐炮管与炮口、生产建筑缩略图共享源图。Controller 只读投影当前生产建筑，不缓存第二套科技或生产状态；资源缺失才使用旧几何，Core 脚印、视野、命令和存档不变。
 - 地形表现按地图 revision 烘焙有重叠边、共享世界相位的底图，不逐帧重建，不改变 TerrainGrid 通行。资源、实体、特效、雾和雷达保持分层。
 - 当前可见、已探索、雷达 contact 分离。敌方真实外形、精确命中、目标线和精确瞄准必须受当前视野约束；雷达只显示信号，不提升真实视野。
 - 武器与受损/死亡特效从真实冷却、HP 和实体变化派生，受数量/寿命上限、可见性和 Reduce Motion 约束，暂停/重置/切图正确清理；不能靠特效推进伤害。

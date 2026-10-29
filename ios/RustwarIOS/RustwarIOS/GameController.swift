@@ -638,6 +638,10 @@ final class GameController {
         selectedPlayerProducer.map { GameDefinitions.building($0.type).tacticalName }
     }
 
+    var productionFocusBuilding: BuildingSnapshot? {
+        selectedPlayerProducer
+    }
+
     var productionFocusProducerID: String? {
         selectedPlayerProducer?.id
     }

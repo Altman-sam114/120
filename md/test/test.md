@@ -51,7 +51,7 @@ gh workflow run ci-results.yml --ref main -f validation_profile=native
 - 手动运行没有 push.before 时，auto 比较目标 commit 与父提交；需要整条原生链路就显式选 native，不借 auto 的较小范围冒充完整验证。
 - 现有 native job 固定 Xcode 26.5 / iOS Simulator SDK 26.5：先跑报告 helper 自测、工具链/静态/Core/project gate，再双架构 App build；编译成功才创建并启动固定云端 iPhone，复用已编译的像素探针，执行真实 UI 与 production/combat/structures/Islands/Lava 画面链路。任一前置失败保留真实失败和未执行项。
 - native 的具体测试名单、断言与结果计数以当前源码、validator 和实际结果为准，不在制度文档锁死逐版数字。不得把旧历史的八项/双图要求覆盖现有实际门控。
-- native 的 reporter gate 同时检查本次变更文档的本地文件链接；生成美术的直接回归解码仓库实际 PNG，兵模检查真实透明通道、有效像素、裁剪留边、锚点和炮管分割；爆炸检查逐帧透明边界、有效像素、实际帧差异及火焰到烟尘的消散，而非仅检查资源文件名是否出现。共享PNG解码改动同时选择这两份直接回归。
+- native 的 reporter gate 同时检查本次变更文档的本地文件链接；生成美术的直接回归解码仓库实际 PNG，兵模检查真实透明通道、有效像素、裁剪留边、锚点和炮管分割；建筑检查九种科技外观的透明裁剪/锚点、实际升级轮廓差异、独立炮塔/炮管与炮口边界；爆炸检查逐帧透明边界、有效像素、实际帧差异及火焰到烟尘的消散，而非仅检查资源文件名是否出现。共享PNG解码改动同时选择这三份直接回归；实际原生UI还需检查九种建筑素材全部加载，几何后备不算加载成功。
 - 安装后、首次启动前只解析一次固定云端设备的 bundle 容器；五场景复用该安装绑定，每次在云端宿主核对 CFBundleIdentifier、CFBundleExecutable、原始 launch PID 的完整可执行路径及状态。进程不存在、身份不符、停止/僵尸或检查超时均失败。存活检查热路径不再调用 Simulator IPC，不能用重启、另一个 PID 或旧截图补成成功。
 - 修改分流/profile/证据脚本时运行对应云端回归；修改 workflow 时云端做 YAML 解析并确认实际 job 选择符合计划。文档 job 的绿灯不证明 native job 能构建。
 
