@@ -1,3 +1,9 @@
+## v3.19.2 / 安装身份一次解析，场景存活纯宿主检查
+
+2026-10-29。f79d82146b8d7afd42fed54e9567f973b336008c / run40804778758 / attempt1 / job123221033466实际failure，18m6s。准确artifact rustwar-ci-v1.2-main-f79d821-run40804778758-attempt1（ID12868163670，6443625bytes，digest sha256:f20605408f84dc3328ba8ccb3ef10f3389c2bd85e08426120a84f1679f73deb8）由Altman-sam114下载/private/tmp/rustwar-review-40804778758/attempt-1/6.8M，API/manifest/scope/日志吻合。95reporter（含11爆炸实际PNG）、433Core、22/22真实UI和双架构全部通过；实际1774x887源图八帧alpha质量为10287.6/33479.8/61113.9/93970.0/75785.7/57911.6/36128.8/9206.4，修复取样后末帧确实消散，全部质量阈值通过。失败仅Combat与Lava在App启动后get_app_container 20秒ETIMEDOUT，缺两图，JUnit11/2/1、完整性失败，不作为游戏画面验收。
+
+定向CI修复：安装成功后、启动任何场景之前仅执行一次绑定原UDID/Bundle ID的容器解析，并导出到本次云端shell。五场景之后只使用云端宿主工具读取实际CFBundleIdentifier和CFBundleExecutable，再核对每次原launch PID的完整可执行路径/状态；不再在高负载启动后重复查询Simulator IPC。缺安装身份、错误device/bundle/路径/PID、元数据失败、停止/僵尸或超时仍真实失败，不重启/换PID/复用旧图。新增一次解析/五次检查/零热路径IPC、错误bundle等直接回归，保留原所有进程失败与PNG/UI断言；Core、App画面、资源和触控源码不改。workflow实际执行链路有改动，需显式native云端证明；本机不执行任何验证，等待新SHA完整五图和完整性结果。
+
 ## v3.19.1 / 分数纹素边界与真实PNG取样
 
 2026-10-29。v3.19的69d0d73d5600cecd9a3f800ae8eaf1d45510b169 / run40802848527 / attempt1 / job123214792277在reporter前置门控真实失败，94项92通过/2失败，Swift/App/UI/五场景未执行。准确artifact rustwar-ci-v1.2-main-69d0d73-run40802848527-attempt1（ID12866976499，6087bytes，digest sha256:ab20d67e8dd64d90d71614f6d0fac7c14de907bf93e610a5097da3e152472cef）由Altman-sam114下载/private/tmp/rustwar-review-40802848527/attempt-1/32K，manifest/scope/日志身份吻合，JUnit1/1/0、完整性明确失败，不能用v3.18.2通过替代。

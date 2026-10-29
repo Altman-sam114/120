@@ -1,21 +1,22 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { inspectLaunchedProcess } = require("./capture-terrain-previews");
+const { locateInstalledApp } = require("./inspect-ios-process");
 
 const container = "/Users/runner/Library/Developer/CoreSimulator/Devices/cloud-device/data/Containers/Bundle/Application/installed-uuid/RustwarIOS.app";
 const success = () => [
-  { code: 0, stdout: `${container}\n` },
+  { code: 0, stdout: "com.rustwar.prototype.ios\n" },
   { code: 0, stdout: "RustwarIOS\n" },
   { code: 0, stdout: `18851 Ss ${container}/RustwarIOS\n` }
 ];
 
 function fixture(results = success()) {
   const calls = [];
-  return { calls, run: (pid = "18851", device = "cloud-device", bundleID = "com.rustwar.prototype.ios") =>
+  return { calls, run: (pid = "18851", device = "cloud-device", bundleID = "com.rustwar.prototype.ios", installed = container) =>
     inspectLaunchedProcess(device, bundleID, pid, (...args) => {
       calls.push(args);
       return results[calls.length - 1];
-    }) };
+    }, installed) };
 }
 
 test("host inspection verifies the installed bundle, executable and exact launched PID", () => {
@@ -25,11 +26,12 @@ test("host inspection verifies the installed bundle, executable and exact launch
   assert.equal(report.executablePath, `${container}/RustwarIOS`);
   assert.equal(report.processState, "Ss");
   assert.deepEqual(input.calls, [
-    ["xcrun", ["simctl", "get_app_container", "cloud-device", "com.rustwar.prototype.ios", "app"], { timeout: 20_000 }],
+    ["/usr/libexec/PlistBuddy", ["-c", "Print :CFBundleIdentifier", `${container}/Info.plist`], { timeout: 5_000 }],
     ["/usr/libexec/PlistBuddy", ["-c", "Print :CFBundleExecutable", `${container}/Info.plist`], { timeout: 5_000 }],
     ["/bin/ps", ["-ww", "-p", "18851", "-o", "pid=,stat=,comm="], { timeout: 5_000 }]
   ]);
-  assert.deepEqual(report.attempts.map((attempt) => attempt.step), ["installedBundle", "bundleExecutable", "hostProcess"]);
+  assert.equal(report.containerSource, "prelaunchInstallation");
+  assert.deepEqual(report.attempts.map((attempt) => attempt.step), ["bundleIdentifier", "bundleExecutable", "hostProcess"]);
   assert.ok(report.attempts.every((attempt) => attempt.exitCode === 0 && !attempt.timedOut));
 });
 
@@ -73,10 +75,10 @@ test("missing device or bundle identity cannot be replaced with another app", ()
 });
 
 test("a bundle container from another Simulator or a relative path fails closed", () => {
-  for (const value of [container.replace("cloud-device", "other-device"), "relative/RustwarIOS.app", `${container}\n${container}`]) {
-    const input = fixture([{ code: 0, stdout: value }]);
-    assert.equal(input.run().exitCode, 1);
-    assert.equal(input.calls.length, 1);
+  for (const value of [container.replace("cloud-device", "other-device"), "relative/RustwarIOS.app", `${container}\n${container}`, ""]) {
+    const input = fixture([]);
+    assert.equal(input.run("18851", "cloud-device", "com.rustwar.prototype.ios", value).exitCode, 1);
+    assert.equal(input.calls.length, 0);
   }
 });
 
@@ -111,9 +113,8 @@ test("host inspection accepts actual running or sleeping states and paths with s
   for (const state of ["R+", "S", "Ss", "I"]) {
     const spaced = container.replace("/Users/runner/", "/Users/cloud runner/");
     const results = success();
-    results[0].stdout = `${spaced}\n`;
     results[2].stdout = ` 18851  ${state}   ${spaced}/RustwarIOS\n`;
-    assert.equal(fixture(results).run().exitCode, 0);
+    assert.equal(fixture(results).run("18851", "cloud-device", "com.rustwar.prototype.ios", spaced).exitCode, 0);
   }
 });
 
@@ -121,4 +122,51 @@ test("unknown signal failures cannot turn into success", () => {
   const input = fixture([{ code: 1, stdout: "", timedOut: false }]);
   assert.equal(input.run().exitCode, 1);
   assert.equal(input.calls.length, 1);
+});
+
+test("installation resolution binds the exact device and bundle before any scene starts", () => {
+  const calls = [];
+  const report = locateInstalledApp("cloud-device", "com.rustwar.prototype.ios", (...args) => {
+    calls.push(args);
+    return { code: 0, stdout: `${container}\n` };
+  });
+  assert.equal(report.exitCode, 0);
+  assert.equal(report.appContainer, container);
+  assert.deepEqual(calls, [["xcrun", ["simctl", "get_app_container", "cloud-device", "com.rustwar.prototype.ios", "app"], { timeout: 120_000 }]]);
+});
+
+test("installation resolution rejects timeouts, failures and wrong-device paths without retries", () => {
+  for (const result of [{ code: 1, timedOut: true }, { code: 3 },
+    { code: 0, stdout: container.replace("cloud-device", "other-device") }, { code: 0, stdout: "relative/Game.app" }]) {
+    let calls = 0;
+    const report = locateInstalledApp("cloud-device", "com.rustwar.prototype.ios", () => { calls += 1; return result; });
+    assert.notEqual(report.exitCode, 0);
+    assert.equal(calls, 1);
+  }
+});
+
+test("wrong bundle metadata cannot borrow the prelaunch installation identity", () => {
+  const results = success();
+  results[0].stdout = "com.other.game\n";
+  const input = fixture(results);
+  assert.equal(input.run().exitCode, 1);
+  assert.equal(input.calls.length, 1);
+});
+
+test("five scene checks reuse one installation lookup with no hot-path Simulator IPC", () => {
+  const calls = [];
+  const command = (name, args) => {
+    calls.push([name, args]);
+    if (name === "xcrun") return { code: 0, stdout: `${container}\n` };
+    if (name === "/usr/libexec/PlistBuddy") return { code: 0,
+      stdout: args[1] === "Print :CFBundleIdentifier" ? "com.rustwar.prototype.ios\n" : "RustwarIOS\n" };
+    return { code: 0, stdout: `${args[2]} Ss ${container}/RustwarIOS\n` };
+  };
+  const installation = locateInstalledApp("cloud-device", "com.rustwar.prototype.ios", command);
+  assert.equal(installation.exitCode, 0);
+  for (const pid of ["18851", "18852", "18853", "18854", "18855"]) {
+    assert.equal(inspectLaunchedProcess("cloud-device", "com.rustwar.prototype.ios", pid, command, installation.appContainer).exitCode, 0);
+  }
+  assert.equal(calls.filter(([name]) => name === "xcrun").length, 1);
+  assert.equal(calls.length, 16);
 });

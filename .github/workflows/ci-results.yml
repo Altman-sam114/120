@@ -314,6 +314,8 @@ jobs:
 
           echo "== install, launch, and capture iOS app ==" >> "$build_log"
           simulator_install_status=77
+          simulator_identity_status=77
+          export RUSTWAR_SIMULATOR_APP_CONTAINER=""
           simulator_launch_status=77
           simulator_process_status=77
           simulator_screenshot_status=77
@@ -335,6 +337,13 @@ jobs:
             xcrun simctl install "$simulator_udid" "$app_path" >> "$build_log" 2>&1
             simulator_install_status=$?
             if [[ "$simulator_install_status" -eq 0 ]]; then
+              app_container="$(node ci/inspect-ios-process.js --locate "$simulator_udid" "$IOS_BUNDLE_ID" 2>> "$build_log")"
+              simulator_identity_status=$?
+              if [[ "$simulator_identity_status" -eq 0 ]]; then
+                export RUSTWAR_SIMULATOR_APP_CONTAINER="$app_container"
+              fi
+            fi
+            if [[ "$simulator_install_status" -eq 0 && "$simulator_identity_status" -eq 0 ]]; then
               launch_output="$(xcrun simctl launch \
                 "$simulator_udid" \
                 "$IOS_BUNDLE_ID" \
@@ -368,7 +377,7 @@ jobs:
               screenshot_probe_status=$?
             fi
 
-            if [[ "$simulator_install_status" -eq 0 ]]; then
+            if [[ "$simulator_install_status" -eq 0 && "$simulator_identity_status" -eq 0 ]]; then
               echo "== relaunch iOS combat visual smoke ==" >> "$build_log"
               xcrun simctl terminate "$simulator_udid" "$IOS_BUNDLE_ID" >> "$build_log" 2>&1
               echo "production smoke terminate exit=$?" >> "$build_log"
@@ -404,7 +413,7 @@ jobs:
                 "$combat_screenshot_metrics_path" >> "$build_log" 2>&1
               combat_screenshot_probe_status=$?
             fi
-            if [[ "$simulator_install_status" -eq 0 ]]; then
+            if [[ "$simulator_install_status" -eq 0 && "$simulator_identity_status" -eq 0 ]]; then
               node ci/capture-terrain-previews.js "$simulator_udid" "$IOS_BUNDLE_ID" ci-results >> "$build_log" 2>&1
               terrain_visual_status=$?
               node ci/capture-structure-preview.js "$simulator_udid" "$IOS_BUNDLE_ID" ci-results >> "$build_log" 2>&1
@@ -412,6 +421,7 @@ jobs:
             fi
           fi
           echo "simulator install exit=$simulator_install_status" >> "$build_log"
+          echo "simulator prelaunch identity exit=$simulator_identity_status" >> "$build_log"
           echo "simulator launch exit=$simulator_launch_status" >> "$build_log"
           echo "simulator process alive exit=$simulator_process_status" >> "$build_log"
           echo "simulator screenshot exit=$simulator_screenshot_status" >> "$build_log"
@@ -437,6 +447,7 @@ jobs:
             echo "boot_exit=${simulator_boot_status}"
             echo "build_exit=${xcode_build_status}"
             echo "install_exit=${simulator_install_status}"
+            echo "prelaunch_identity_exit=${simulator_identity_status}"
             echo "launch_exit=${simulator_launch_status}"
             echo "process_alive_exit=${simulator_process_status}"
             echo "screenshot_exit=${simulator_screenshot_status}"
