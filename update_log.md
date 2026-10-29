@@ -1,3 +1,11 @@
+## v3.21.1 / 合并宿主安装身份读取
+
+2026-10-29。e9e891b56a0f1d62dc2e755a5f71ddfc0167d4d2 / 显式native run40825838413/attempt1/job123288598648实际failure，job26m27s。准确artifact rustwar-ci-v1.2-main-e9e891b-run40825838413-attempt1（ID12878035178，8329324bytes，sha256:74f5cbd5b7a4ba7a4d2c5feb005ba2274a038fc78fd28e1b6c049822709f3b2f）经Altman-sam114下载/private/tmp/rustwar-review-40825838413/attempt-1/8.7M，API/manifest/scope/命令/身份匹配，JUnit11/2/1、完整性失败。
+
+433Core、118reporter（含6矿床PNG）、23/23真实UI及双架构均通过。四种实际矿床的透明比例37.3%/52.0%/46.1%/52.1%、边界全0；真实MINERAL_BUILD在54.403秒内完成首屏建造/可建与占用指引/扣260/重复拒绝/自然10秒完工/升级650退款/新Move，原22项保持。失败仅首个生产场景在已成功启动PID17132后，宿主PlistBuddy读取CFBundleIdentifier的5秒冷启动超时，缺Home；其余四图/对应原PID检查成功，不能宣布完整画面验收或据此判断App崩溃。
+
+定向优化CI：每个场景不再启动两个PlistBuddy进程逐键读取，而用一次宿主plutil把该次实际安装Info.plist转JSON，严格核对两个字段后再查原PID的完整路径/状态。元数据10秒+ps5秒仍为原总15秒上限，五场景宿主元数据/进程检查从15次减10次；一次安装绑定和零热路径Simulator IPC保持。无效JSON/字段类型/Bundle ID/可执行名、超时/非零退出、错PID/路径/僵尸仍失败，不重试、不重启、不换PID或复用旧图。原失败分支回归全部按实际两命令路径保留，并新增非法JSON/类型覆盖；游戏源码/素材/触控不改。新SHA需显式native云端证明，不能以纯helper自测或前轮UI通过代替五图验收，本机没有任何验证。
+
 ## v3.21 / 原创矿床与首屏工程建造
 
 2026-10-29。v3.20.1建筑与docs证据已收口后继续同一长期目标，不启动子智能体、不运行本机验证。内置image_gen生成一份四种原创金属矿床图集，1254x1254 RGBA原样入ResourceAtlas，实际裁剪/锚点/跨度写ResourceArtLayout，完整提示词和来源写ARTWORK。四种外观由稳定资源ID选择，不改变Core的richness、资源半径/位置、收入或命中；不旋转烘焙照明，不引入网络依赖。

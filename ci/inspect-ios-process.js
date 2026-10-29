@@ -48,16 +48,21 @@ function inspectLaunchedProcess(device, bundleID, pid, runCommand = run,
     report.attempts.push({ step, exitCode: result.code, timedOut: result.timedOut === true });
     return result;
   };
-  const identifierResult = inspect("bundleIdentifier", "/usr/libexec/PlistBuddy",
-    ["-c", "Print :CFBundleIdentifier", path.join(container, "Info.plist")], 5_000);
-  if (identifierResult.code !== 0 || identifierResult.timedOut) return fail("Bundle identity lookup failed.", identifierResult.code);
-  if (identifierResult.stdout.trim() !== bundleID) return fail("The installed bundle identifier does not match the launched game.");
-
-  const executableResult = inspect("bundleExecutable", "/usr/libexec/PlistBuddy",
-    ["-c", "Print :CFBundleExecutable", path.join(container, "Info.plist")], 5_000);
-  if (executableResult.code !== 0 || executableResult.timedOut) return fail("Bundle executable lookup failed.", executableResult.code);
-  const executable = executableResult.stdout.trim();
-  if (!executable || executable === "." || executable === ".." || /[\/\r\n]/.test(executable)) {
+  // Read both keys from the actual installed plist in one host process. This
+  // avoids two cold PlistBuddy launches; the total metadata+ps budget stays 15s.
+  const metadataResult = inspect("bundleMetadata", "/usr/bin/plutil",
+    ["-convert", "json", "-o", "-", path.join(container, "Info.plist")], 10_000);
+  if (metadataResult.code !== 0 || metadataResult.timedOut) return fail("Bundle metadata lookup failed.", metadataResult.code);
+  let metadata;
+  try { metadata = JSON.parse(metadataResult.stdout); }
+  catch { return fail("Installed bundle metadata is not valid JSON."); }
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata) || metadata.CFBundleIdentifier !== bundleID) {
+    return fail("The installed bundle identifier does not match the launched game.");
+  }
+  report.installedBundleIdentifier = metadata.CFBundleIdentifier;
+  const executable = metadata.CFBundleExecutable;
+  if (typeof executable !== "string" || !executable || executable.trim() !== executable ||
+      executable === "." || executable === ".." || /[\\/\x00-\x1f\x7f]/.test(executable)) {
     return fail("Invalid CFBundleExecutable.");
   }
   report.executablePath = path.join(container, executable);
