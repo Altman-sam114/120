@@ -1,3 +1,12 @@
+## v3.18.2 / 云端进程探测与生命值格式修复
+
+2026-10-29。恢复后重新核对最新main和准确失败结果，不把历史绿色当作当前通过。f3aaccec6d4ecfe4f9435eadb1cdbba0ff07ea70 / run40708331594 / attempt1 / job122886491637实际failure，32m28s。Altman-sam114下载artifact rustwar-ci-v1.2-main-f3aacce-run40708331594-attempt1（ID12826648630，7893968bytes，digest sha256:4b7c0135769057f5abae79b264df7341ac058c88f5430d28001e320b17d24d2f）到/private/tmp/rustwar-review-40708331594/attempt-1/，8.4M；API/manifest/scope/日志身份一致。433Core、79reporter、双架构通过，22UI中21通过/1失败；structures没有生成，完整性和JUnit不通过，不能验收。
+
+- UI唯一断言失败是SwiftUI自动将插入LocalizedStringKey的整数格式化为1,040，而严格值要求1040；不是单行高度或六项首屏指令失败。生命值展示及完整辅助功能值改为明确的无分组String与verbatim Text，不删除或放宽原测试。
+- structures实际launch成功，simctl spawn launchctl print两次30秒ETIMEDOUT，后续截图未执行；Lava也曾一次超时。改为共享inspect-ios-process：从原固定设备/原bundle查询安装容器和CFBundleExecutable，用宿主机ps核对原launch PID、精确可执行路径与存活状态。home/combat及Islands/Lava/structures全部走同一检查，不重启、不换PID、不跳过进程验证；任何超时/缺失/错误身份/停止或僵尸仍真实失败。报告保留各步状态和真实身份。
+- 云端直接回归覆盖精确命令/设备/bundle/PID、超时/失败短路、跨设备容器、无效元数据、PID或可执行文件不匹配、停止/僵尸、空格路径和正常进程状态；范围选择器将该实际运行helper归入native。原22实际UI、433Core、PNG、双架构和五场景门控不降。
+- 本机只读写/Git/远端查询/结果下载，未执行测试、解析、diff空白检查、编译或模拟器。新提交需显式native云端验证并下载五图，目前待运行；生成兵模已在v3.18交付，品质与操作长期目标仍继续，不宣称完整复刻或真机手感已达标。
+
 ## v3.18.1 / 小队生命值与队列视觉精修
 
 2026-10-28。v3.18 完整云端及五图复核后继续小步修正，不把 CI 绿色当作画面无问题。战斗图中 1345/1345 生命值被四字交战姿态和取消选择按钮挤为两行；紧凑姿态改为两字“接敌/防御/停火”，完整 VoiceOver 含义保持，生命值以心形图标、完整数字、优先布局取代重复文字，正常字号单行，大字号仍可自然换行。当前与待生产队列缩略图复用同一兵模，替换通用兵种符号。

@@ -23,6 +23,8 @@ struct TacticalSelectionSummaryView: View {
         let health = units.reduce(0) { $0 + min($1.maxHitPoints, max(0, $1.hitPoints)) }
         let maximum = units.reduce(0) { $0 + max(0, $1.maxHitPoints) }
         let fraction = maximum > 0 ? min(1, health / maximum) : 0
+        let currentText = String(Int(health.rounded(.down)))
+        let maximumText = String(Int(maximum.rounded(.down)))
         let composition = UnitType.allCases.compactMap { type -> (type: UnitType, count: Int)? in
             let count = units.filter { $0.type == type }.count
             return count > 0 ? (type, count) : nil
@@ -50,7 +52,7 @@ struct TacticalSelectionSummaryView: View {
 
                     HStack(alignment: .firstTextBaseline, spacing: TacticalHUDTheme.denseSpacing) {
                         Label {
-                            Text("\(Int(health.rounded(.down))) / \(Int(maximum.rounded(.down)))")
+                            Text(verbatim: "\(currentText) / \(maximumText)")
                                 .monospacedDigit()
                                 .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                                 .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.9)
@@ -66,7 +68,7 @@ struct TacticalSelectionSummaryView: View {
                         .accessibilityElement(children: .ignore)
                         .accessibilityIdentifier("selection-health")
                         .accessibilityLabel("部队总生命值")
-                        .accessibilityValue("当前生命 \(Int(health.rounded(.down)))，上限 \(Int(maximum.rounded(.down)))")
+                        .accessibilityValue(Text(verbatim: "当前生命 \(currentText)，上限 \(maximumText)"))
                         if !dynamicTypeSize.isAccessibilitySize, let attackStanceSummary {
                             Spacer(minLength: 0)
                             Text(attackStanceSummary)

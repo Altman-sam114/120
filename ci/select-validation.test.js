@@ -31,7 +31,7 @@ test("CI-only routing changes select helper validation, not App compilation", ()
 
 test("Core, App, real capture helpers and unknown assets retain native integration", () => {
   for (const file of ["swift/RustwarCore/Package.swift", "ios/RustwarIOS/RustwarIOS/BattlefieldScene.swift",
-    "ci/validate-ios-screenshot.swift", "ci/capture-terrain-previews.js", "textures/terrain.png"]) {
+    "ci/validate-ios-screenshot.swift", "ci/capture-terrain-previews.js", "ci/inspect-ios-process.js", "textures/terrain.png"]) {
     assert.equal(selectValidation(["README.md", file]).native, true, file);
   }
   assert.equal(selectValidation(["ci/capture-terrain-previews.test.js"]).native, false);

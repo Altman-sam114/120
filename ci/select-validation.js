@@ -13,6 +13,7 @@ function selectValidation(files, requested = "auto") {
   // Unknown paths fail closed instead of silently skipping native integration.
   const native = requested === "native" || changedFiles.length === 0 ||
     changedFiles.some((file) => file.endsWith(".swift") ||
+      file === "ci/inspect-ios-process.js" ||
       (file.startsWith("ci/capture-") && file.endsWith(".js") && !file.endsWith(".test.js"))) ||
     changedFiles.some((file) => !knownLightweight(file));
   return {

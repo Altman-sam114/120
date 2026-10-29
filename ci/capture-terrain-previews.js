@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
+const { inspectLaunchedProcess } = require("./inspect-ios-process");
 
 const [udid, bundleID, outputDirectory = "ci-results"] = process.argv.slice(2);
 const report = { outcome: "failure", scenes: [] };
@@ -15,18 +16,6 @@ function run(command, args, options = {}) {
   if (result.stderr) process.stderr.write(result.stderr);
   if (result.error) console.error(result.error.message);
   return { code: result.status ?? 1, stdout: result.stdout || "", timedOut: result.error?.code === "ETIMEDOUT" };
-}
-
-async function inspectLaunchedProcess(device, pid, runCommand = run, pause = wait) {
-  const attempts = [];
-  if (!device || !/^[1-9][0-9]*$/.test(pid ?? "")) return { exitCode: 1, attempts };
-  for (let index = 0; index < 2; index += 1) {
-    const result = runCommand("xcrun", ["simctl", "spawn", device, "launchctl", "print", `pid/${pid}`], { timeout: 30_000 });
-    attempts.push({ exitCode: result.code, timedOut: result.timedOut === true });
-    // Retry an inspection transport timeout, never a missing/crashed process.
-    if (!result.timedOut || index === 1) return { exitCode: result.code, attempts };
-    await pause(1_000);
-  }
 }
 
 async function capture(name, options = {}) {
@@ -45,9 +34,10 @@ async function capture(name, options = {}) {
   if (scene.launchExit === 0) {
     const pid = launched.stdout.trim().match(/: (\d+)$/)?.[1];
     await wait(5_000);
-    const inspection = await inspectLaunchedProcess(udid, pid);
+    const inspection = inspectLaunchedProcess(udid, bundleID, pid, run);
     scene.processExit = inspection.exitCode;
     scene.processAttempts = inspection.attempts;
+    scene.processInspection = inspection;
   }
   if (scene.processExit === 0) {
     scene.screenshotExit = run("xcrun", ["simctl", "io", udid, "screenshot", "--type=png", scene.screenshotPath]).code;
