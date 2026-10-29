@@ -4,6 +4,10 @@
 
 定向CI修复：安装成功后、启动任何场景之前仅执行一次绑定原UDID/Bundle ID的容器解析，并导出到本次云端shell。五场景之后只使用云端宿主工具读取实际CFBundleIdentifier和CFBundleExecutable，再核对每次原launch PID的完整可执行路径/状态；不再在高负载启动后重复查询Simulator IPC。缺安装身份、错误device/bundle/路径/PID、元数据失败、停止/僵尸或超时仍真实失败，不重启/换PID/复用旧图。新增一次解析/五次检查/零热路径IPC、错误bundle等直接回归，保留原所有进程失败与PNG/UI断言；Core、App画面、资源和触控源码不改。workflow实际执行链路有改动，需显式native云端证明；本机不执行任何验证，等待新SHA完整五图和完整性结果。
 
+- 实际完整云端通过：d0e35d0f46c85e7267ed053cbadb59779c0ed4b2，显式native workflow_dispatch run40808138046/attempt1/job123233463862，job18m42s。Altman-sam114下载准确artifact rustwar-ci-v1.2-main-d0e35d0-run40808138046-attempt1（ID12869733421，10267484bytes，digest sha256:325751737544d350afdfb773599713212e7c7a20d3dce4a42cf98b812e3e897e）到/private/tmp/rustwar-review-40808138046/attempt-1/11M。API/manifest/scope/日志身份一致：433Core、99reporter（含11实际爆炸PNG与原17兵模）、22/22真实UI、arm64+x86_64 App、五场景及完整性均成功，JUnit11/0/1。唯一skip仍是未提供的Web浏览器回归；本机没有执行编译、测试、解析、模拟器、Preview或浏览器验证。
+- 实际日志只有一次安装容器解析，五个不同原launch PID均完成当前Bundle ID/完整可执行文件/状态核对，无热路径Simulator查询或超时；Islands/Lava/structures实际scene为16.748/22.019/19.747秒。五图已逐一复看：新爆炸峰值火焰、黑烟和透明边缘实际出现在Combat，未见黑底、串格或旧几何后备替代；生产卡、四位数生命值、九种建筑等级的敌我两组、Islands/Lava及原单位保持。新八帧实际资源解码断言与原中文取消/移动/付费生产均通过。静态画面不外推完整动画节奏、任意设备触摸时序或真机性能，建筑/地形/更多兵种和操作品质继续迭代。
+- 本次后续收口仅追加已发生的云端证据，源代码与原始资源不改；收口提交应自动选择docs profile，只做文档baseline，不再无关启动原生。
+
 ## v3.19.1 / 分数纹素边界与真实PNG取样
 
 2026-10-29。v3.19的69d0d73d5600cecd9a3f800ae8eaf1d45510b169 / run40802848527 / attempt1 / job123214792277在reporter前置门控真实失败，94项92通过/2失败，Swift/App/UI/五场景未执行。准确artifact rustwar-ci-v1.2-main-69d0d73-run40802848527-attempt1（ID12866976499，6087bytes，digest sha256:ab20d67e8dd64d90d71614f6d0fac7c14de907bf93e610a5097da3e152472cef）由Altman-sam114下载/private/tmp/rustwar-review-40802848527/attempt-1/32K，manifest/scope/日志身份吻合，JUnit1/1/0、完整性明确失败，不能用v3.18.2通过替代。
