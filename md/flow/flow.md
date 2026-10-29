@@ -43,6 +43,7 @@ SwiftUI / 原生触点 / 键盘 / Tactical Map
 ```
 
 - BattlefieldView 和 BattlefieldTouchSession 处理触摸序列；普通点按、平移、双指框选、捏合、长按互斥。触点 owner、epoch、相机 revision 约束旧回调，结束最多提交一次，取消/切图/读档后不能串到新状态。
+- GeneratedExplosionArt 缓存八帧原创透明素材；Scene 仍按既有可见伤害/摧毁事件调用、预算和生命周期挂载，不生成战斗命令或推进模拟。水面反馈独立保留，减少动态效果使用静态淡出。
 - 普通点选、触点预览和长按上下文共享可见候选与基础轮廓优先策略；扩大触控 halo 不可抢过真实模型命中。显式 Attack 等待态继续使用对应队伍和目标资格过滤。
 - 点友军选择，已有单位选择时点空地执行普通 Move，点可见敌方执行合法 Attack。Move 不为自动追击改变目的地；射程内开火、Stop 驻守、Hold Fire 和手动 Attack 由 Core 控制。
 - Builder 仅执行允许的移动/建造/维修/回收等命令，不因混选被改写为作战订单；控制编队和多选都过滤死亡、缺失或非己方实体。

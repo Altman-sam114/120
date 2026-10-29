@@ -18,6 +18,8 @@ test("missing and malformed local links fail without fetching any network resour
 
 test("helper tests are selected by the edited helper rather than a global test wildcard", () => {
   assert.deepEqual(relatedNodeTests(["ci/select-validation.js", "ci/select-validation.test.js", "README.md"], () => true), ["ci/select-validation.test.js"]);
+  assert.deepEqual(relatedNodeTests(["ci/png-pixels.js", "ci/unit-art.test.js"], () => true), ["ci/effect-art.test.js", "ci/unit-art.test.js"]);
+  assert.deepEqual(relatedNodeTests(["ci/inspect-ios-process.js"], () => true), ["ci/capture-terrain-previews.test.js"]);
   assert.deepEqual(relatedNodeTests(["ci/deleted.js"], () => false), []);
 });
 

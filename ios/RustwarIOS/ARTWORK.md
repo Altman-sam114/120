@@ -30,3 +30,22 @@ Use case: stylized-concept. Image 1 is a style and component-scale reference ONL
 - ci/unit-art.test.js 解码实际 PNG，检查 RGBA、每个实际裁剪的透明留边/可见像素、轴点与分割范围，避免不透明黑底、裁切和邻图串入。
 - native CI 编译实际 App、执行中文真实点选/取消选择/移动/付费生产，以及既有多指/战斗/生产/UI 回归；五张云端场景图需下载复看。
 - 图集仍是二维预渲染素材，不是完整 3D 模型；生成的磨损细节、炮管分割边缘、小比例清晰度和真机性能需要持续实际画面迭代，不能仅凭生成图宣布高端成品验收。
+
+## 原创陆地爆炸动画
+
+- ExplosionAtlas.imageset/explosion-v1.png 使用内置 image_gen、transparent_background=true 生成，原文件直接复制到工程；未重绘、抠图或替换透明背景，没有复制商业游戏特效。
+- 图集为4列2行、八个等大正方形单元，顺序从左到右、从上到下。GeneratedExplosionArt 一次裁剪并缓存全部帧，场景初始化时预加载，不在每次命中时解码图片；普通 alpha 混合保留炭黑烟尘，不用加色混合把黑烟擦除。
+- 普通陆地命中和摧毁共享素材，但直径不同；0.6秒八帧加0.12秒淡出，Scene在0.76秒回收，继续使用既有64根特效/32焦痕预算、可见性来源和水面分支。减少动态效果使用单帧0.18秒静态淡出，不播放爆炸扩张。
+- 旧几何表现仅作素材缺失后备；实际UI检查全部八帧成功加载。ci/effect-art.test.js 解码实际RGBA，检查每帧有效内容、透明边界、不同帧、火焰色彩与末帧烟尘消散；五张游戏画面仍需下载复看。静态场景及像素门控不证明完整动画节奏或真机性能。
+
+### 爆炸图集最终提示词
+
+```text
+Use case: stylized-concept.
+Asset type: production-ready animated explosion sprite atlas for an original premium military top-down RTS on iOS, matching realistic graphite/olive armored vehicles.
+Primary request: ONE coherent eight-frame high-explosive ground impact, chronologically growing from a tiny white-hot ignition through a compact orange fireball and dark rolling smoke to dissipating charcoal dust. EXACT 4 COLUMNS x 2 ROWS uniform grid, eight square equal-sized cells, frame order left-to-right then top-to-bottom. Every frame stays centered on the same pivot at its cell center. Directly overhead orthographic camera, looking down onto the blast, NOT a side-view mushroom cloud.
+Scene/backdrop: actual TRANSPARENT ALPHA, nothing behind or between sprites. No floor, no dark/white matte, no checkerboard pixels, no cast shadow outside the effect. Every cell has wide completely transparent padding, with the outermost smoke/sparks contained within central 72 percent of the cell width and height.
+Style/medium: high-quality pre-rendered VFX textures, believable turbulent billows, crisp ember fragments, warm white/yellow ignition, rich restrained amber flames within detailed charcoal and gray smoke. Physical volume and subtle lighting, not cartoon, not flat circles, not vector art. Consistent overhead perspective and pivot across all frames. Small readable combat effect, not a cinematic background.
+Animation stages: 1 small ignition; 2 compact white/amber burst; 3 expanding orange fire and initial soot; 4 peak irregular fireball embedded in smoke; 5 flame recedes into thick rolling smoke; 6 charcoal/dust plume with only a few embers; 7 thin broken smoke wisps; 8 almost dissipated faint gray wisps. The last frames should have significantly less opacity than the middle frames. Do not add a ring or a circular outline.
+Constraints: exactly eight isolated sprites. Landscape canvas 2:1, with no borders, labels, text, numbers, logos or watermark. Maintain truly transparent alpha, including soft translucent smoke edges. Entire blast must remain within each equal cell, no overlap with neighbors.
+```

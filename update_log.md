@@ -1,3 +1,11 @@
+## v3.19 / 原创八帧爆炸与共享透明材质
+
+2026-10-29。v3.18.2完整云端和五图复核后继续战斗表现小步，不启动子智能体。内置image_gen实际生成原创4列2行八帧RGBA爆炸图集，原文件复制入ExplosionAtlas.imageset；独立GeneratedExplosionArt预加载并缓存纹理，陆地命中/摧毁用不同直径共享点火、火焰、烟尘消散序列，普通alpha混合保留黑烟。替代正常资源加载路径中的几何火花/三角碎片组合，原几何仅作缺失后备；水面命中、伤害时序、单位数值、触控、生产和存档不改。
+
+Scene继续拥有原可见事件来源、64根特效/32焦痕上限和回收，不另造模拟状态；普通播放0.6秒八帧和0.12秒淡出，减少动态效果仅短暂静态淡出。新增Swift文件已注册target，实际中文UI检查全部8帧成功加载，原22操作断言不删不降。PNG解码从原unit-art直接回归提取成共享函数，原17项兵模断言保持；新增10项真实爆炸像素回归，检查等大单元、RGBA、逐帧透明留边/有效像素、八帧差异、点火到峰值和末帧烟尘消散，不用文件名合同冒充质量。轻量CI按共享helper的实际依赖选择对应回归，不扩大无关套件。
+
+完整提示词及来源写入ios/RustwarIOS/ARTWORK.md。重新读取Corroding Games官方产品页；百度搜索仍返回安全验证，没有假称获得搜索结果。当前新美术提交待native云端编译、PNG/既有Core/22UI/双架构/五图与完整性；本机没有执行任何验证，不用上一版本绿灯替代本次验收，静态图也不证明完整动画节奏或真机性能。地形轮廓、建筑材质、更多兵种与避让等长期目标仍继续。
+
 ## v3.18.2 / 云端进程探测与生命值格式修复
 
 2026-10-29。恢复后重新核对最新main和准确失败结果，不把历史绿色当作当前通过。f3aaccec6d4ecfe4f9435eadb1cdbba0ff07ea70 / run40708331594 / attempt1 / job122886491637实际failure，32m28s。Altman-sam114下载artifact rustwar-ci-v1.2-main-f3aacce-run40708331594-attempt1（ID12826648630，7893968bytes，digest sha256:4b7c0135769057f5abae79b264df7341ac058c88f5430d28001e320b17d24d2f）到/private/tmp/rustwar-review-40708331594/attempt-1/，8.4M；API/manifest/scope/日志身份一致。433Core、79reporter、双架构通过，22UI中21通过/1失败；structures没有生成，完整性和JUnit不通过，不能验收。
@@ -6,6 +14,7 @@
 - structures实际launch成功，simctl spawn launchctl print两次30秒ETIMEDOUT，后续截图未执行；Lava也曾一次超时。改为共享inspect-ios-process：从原固定设备/原bundle查询安装容器和CFBundleExecutable，用宿主机ps核对原launch PID、精确可执行路径与存活状态。home/combat及Islands/Lava/structures全部走同一检查，不重启、不换PID、不跳过进程验证；任何超时/缺失/错误身份/停止或僵尸仍真实失败。报告保留各步状态和真实身份。
 - 云端直接回归覆盖精确命令/设备/bundle/PID、超时/失败短路、跨设备容器、无效元数据、PID或可执行文件不匹配、停止/僵尸、空格路径和正常进程状态；范围选择器将该实际运行helper归入native。原22实际UI、433Core、PNG、双架构和五场景门控不降。
 - 本机只读写/Git/远端查询/结果下载，未执行测试、解析、diff空白检查、编译或模拟器。新提交需显式native云端验证并下载五图，目前待运行；生成兵模已在v3.18交付，品质与操作长期目标仍继续，不宣称完整复刻或真机手感已达标。
+- 实际云端通过：077818a47d411228e791172f9db2a4ac8d1ddbf3，显式native workflow_dispatch run40799739918/attempt1/job123204751439，24m0s。准确artifact rustwar-ci-v1.2-main-077818a-run40799739918-attempt1（ID12866542268，10208275bytes，digest sha256:02e0da1a0c22ae70fe5edd28bc357776b363a07f6869794ae7d36f5bcea627c1）经Altman-sam114下载到/private/tmp/rustwar-review-40799739918/attempt-1/10M。API/manifest/scope/命令身份一致，433Core、84reporter、22/22真实UI、双架构及五场景成功，JUnit11/0/1、pipeline success、完整性为空；唯一skip仍为未提供的Web浏览器回归。真实FOUR_DIGIT_HEALTH为height12pt/1040完整值/六指令首屏/双单位Move；全部五场景原PID/容器/可执行文件检查成功无超时，structures恢复，Islands/Lava/structures实际scene耗时21.266/19.401/19.416秒。五图已逐一复看，战斗1345/1345单行、兵模/生产/建筑/地形保持；未外推真机手感或性能。自动push run40799739111由concurrency取消，不作验收。
 
 ## v3.18.1 / 小队生命值与队列视觉精修
 

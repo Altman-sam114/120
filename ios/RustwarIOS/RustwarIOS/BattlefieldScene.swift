@@ -171,6 +171,7 @@ final class BattlefieldScene: SKScene {
         worldNode.addChild(fogNode)
         worldNode.addChild(touchPreviewNode)
         worldNode.addChild(radarNode)
+        GeneratedExplosionArt.preload()
     }
 
     private func drawTouchPreview(_ preview: BattlefieldTouchPreview?) {
@@ -1482,6 +1483,17 @@ final class BattlefieldScene: SKScene {
 
         addScorchMark(at: position, radius: 8.5 * intensity, isFrozen: isFrozen)
 
+        if let blast = GeneratedExplosionArt.sprite(diameter: 42 * intensity, isFrozen: isFrozen,
+                                                     reduceMotion: accessibilityReduceMotion) {
+            blast.position = spritePoint(for: position)
+            if isFrozen {
+                addPersistentGroundImpact(blast)
+            } else {
+                addBoundedGroundImpact(blast, lifetime: GeneratedExplosionArt.lifetime(reduceMotion: accessibilityReduceMotion))
+            }
+            return
+        }
+
         let container = SKNode()
         container.position = spritePoint(for: position)
 
@@ -1735,6 +1747,17 @@ final class BattlefieldScene: SKScene {
         }
 
         addScorchMark(at: position, radius: 12 * intensity, isFrozen: isFrozen)
+
+        if let blast = GeneratedExplosionArt.sprite(diameter: 62 * intensity, isFrozen: isFrozen,
+                                                     reduceMotion: accessibilityReduceMotion) {
+            blast.position = spritePoint(for: position)
+            if isFrozen {
+                addPersistentBoundedEffect(blast)
+            } else {
+                addBoundedEffect(blast, lifetime: GeneratedExplosionArt.lifetime(reduceMotion: accessibilityReduceMotion))
+            }
+            return
+        }
 
         let container = SKNode()
         container.position = spritePoint(for: position)

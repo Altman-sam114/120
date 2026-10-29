@@ -43,6 +43,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let zoom: Double
         let pending: Bool
         let unitArtTypes: Int
+        let explosionArtFrames: Int
         let projection: Projection
 
         func entity(_ id: String) -> Entity? { (units + buildings).first { $0.id == id } }
@@ -153,6 +154,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
     func testChineseHUDAndLayeredArtRemainPlayable() async throws {
         let app = try await launch()
         XCTAssertEqual(try snapshot(app).unitArtTypes, 8, "Every bundled layered model must decode; fallback art cannot satisfy this gate")
+        XCTAssertEqual(try snapshot(app).explosionArtFrames, 8, "The actual explosion atlas must decode all animation frames")
         XCTAssertEqual(app.buttons["pause-play"].label, "继续")
         let metal = app.descendants(matching: .any).matching(identifier: "status-metric-metal").firstMatch
         XCTAssertEqual(metal.label, "金属")
