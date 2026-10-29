@@ -54,7 +54,7 @@ Constraints: exactly eight isolated sprites. Landscape canvas 2:1, with no borde
 
 - 使用内置 image_gen、transparent_background=true 生成原创九建筑图集和单炮武器；选择的原始文件分别原样复制为 BuildingBaseAtlas.imageset/building-bases-v1.png、BuildingWeapon.imageset/building-weapon-v1.png。两图实际均为1254x1254 RGBA，不在线下载，不用脚本改图或抠图。
 - 先生成九建筑，再尝试武器；第一次武器错误地混入固定底座、炮口类似光学模块，未进入工程。第二次改用既有原创 UnitMountAtlas 作风格参考，得到真正独立的单炮武器，才作为成品来源。建筑图集参考既有 UnitHullAtlas 的材质，不复制商业游戏图片。
-- BuildingArtLayout.dataset/layout.json 使用1280x1280逻辑参考坐标记录实际裁剪、建筑轴和脚印跨度，再映射到源像素并向外取整；生成结果并非精确等分网格，禁止简单九宫格切图。每个裁剪保留透明边，脚印跨度只决定绘制比例，不改变 Core 的碰撞、选择或建造资格。
+- BuildingArtLayout.dataset/layout.json 使用与源文件一致的1254x1254参考坐标记录实际裁剪、建筑轴和脚印跨度，再映射到源像素并向外取整；不能把界面显示尺寸当作源像素。生成结果并非精确等分网格，禁止简单九宫格切图。每个裁剪保留透明边，脚印跨度只决定绘制比例，不改变 Core 的碰撞、选择或建造资格。
 - 当前覆盖指挥中心T1、工厂T1/T2、采集器T1/T2/T3、雷达T1/T2和炮塔T1。工厂冷却模块、采集器泵组、雷达第二天线提供实际等级轮廓；敌方以红色材质调和既有阵营徽记区分，不另存玩法状态。
 - GeneratedBuildingArt 缓存九种底座和唯一一组炮塔/炮管；固定底座不旋转，building-turret-mount继续走原有瞄准链路，building-recoil-mount只带动炮管。炮口取自实际炮管末端坐标，不把透明裁剪边当炮口；后坐与发射点共同减去原表现距离。
 - 生产标题/概览的缩略图复用同一裁剪和当前真实建筑等级，最多九份共享缓存。Controller只读暴露选中生产建筑，不创建第二套选择、科技、队列或计时器。缺少素材时保留原几何/符号后备，但九种实际加载门控不接受后备代替。

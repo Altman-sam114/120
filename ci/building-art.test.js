@@ -20,6 +20,7 @@ function cropStats(image, crop) {
   const left = Math.floor(x * sx), right = Math.ceil((x + w) * sx);
   const top = Math.floor(y * sy), bottom = Math.ceil((y + h) * sy);
   let opaque = 0, transparent = 0, border = 0, darkest = 255, lightest = 0, maxX = left;
+  const borderSides = { left: 0, right: 0, top: 0, bottom: 0 };
   for (let py = top; py < bottom; py += 1) {
     for (let px = left; px < right; px += 1) {
       const alpha = image.alpha(px, py);
@@ -32,15 +33,21 @@ function cropStats(image, crop) {
         maxX = Math.max(maxX, px);
       }
       if ((px <= left + 1 || px >= right - 2 || py <= top + 1 || py >= bottom - 2) && alpha > 16) border += 1;
+      if (alpha > 16) {
+        if (px <= left + 1) borderSides.left += 1;
+        if (px >= right - 2) borderSides.right += 1;
+        if (py <= top + 1) borderSides.top += 1;
+        if (py >= bottom - 2) borderSides.bottom += 1;
+      }
     }
   }
-  return { opaque, transparent, border, darkest, lightest, maxX,
+  return { opaque, transparent, border, borderSides, darkest, lightest, maxX,
     width: right - left, height: bottom - top, count: (right - left) * (bottom - top) };
 }
 
 function assertCrop(image, crop, name, minimumContent) {
   const stats = cropStats(image, crop);
-  console.log(`Building crop ${name}: ${stats.width}x${stats.height}, opaque=${(stats.opaque / stats.count).toFixed(3)}, transparent=${(stats.transparent / stats.count).toFixed(3)}, border=${stats.border}`);
+  console.log(`Building crop ${name}: ${stats.width}x${stats.height}, opaque=${(stats.opaque / stats.count).toFixed(3)}, transparent=${(stats.transparent / stats.count).toFixed(3)}, border=${stats.border}, sides=${JSON.stringify(stats.borderSides)}`);
   assert.ok(stats.opaque / stats.count > minimumContent, `${name}: missing or effectively empty artwork`);
   assert.ok(stats.transparent / stats.count > 0.05, `${name}: opaque matte or insufficient transparent gutters`);
   assert.equal(stats.border, 0, `${name}: crop clips artwork or includes a neighboring building`);
@@ -51,12 +58,13 @@ function assertCrop(image, crop, name, minimumContent) {
 test("building catalog covers all nine native type/tier variants with bounded authored footprint coordinates", () => {
   assert.deepEqual(Object.keys(catalog.buildings).sort(), ["command-1", "landFactory-1", "landFactory-2",
     "extractor-1", "extractor-2", "extractor-3", "radar-1", "radar-2", "turret-1"].sort());
-  assert.deepEqual(catalog.referenceSize, [1280, 1280]);
+  assert.deepEqual(catalog.referenceSize, [base.width, base.height], "Authored pixel coordinates must use the actual source dimensions, not display scaling");
+  assert.deepEqual([weapon.width, weapon.height], catalog.referenceSize);
   for (const entry of Object.values(catalog.buildings)) {
     const [x, y, w, h] = entry.crop;
     const [px, py] = entry.pivot;
     assert.ok([...entry.crop, px, py, entry.footprintSpan].every(Number.isFinite));
-    assert.ok(x >= 0 && y >= 0 && w > 0 && h > 0 && x + w <= 1280 && y + h <= 1280);
+    assert.ok(x >= 0 && y >= 0 && w > 0 && h > 0 && x + w <= base.width && y + h <= base.height);
     assert.ok(px > x && px < x + w && py > y && py < y + h);
     assert.ok(entry.footprintSpan >= 270 && entry.footprintSpan <= 430);
     assert.ok(Math.max(px - x, x + w - px, py - y, y + h - py) / entry.footprintSpan < 0.66,

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "referenceSize": [1280, 1280],
+  "referenceSize": [1254, 1254],
   "buildings": {
     "command-1": {
       "crop": [24, 44, 389, 406],
