@@ -24,7 +24,8 @@ const expected = [
   "testFriendlyTapWinsOverAdjacentEnemyHalo",
   "testProductionCardsReflectQueueProgressAndCancellation",
   "testChineseHUDAndLayeredArtRemainPlayable",
-  "testFourDigitSquadHealthStaysReadableWithFirstScreenOrders"
+  "testFourDigitSquadHealthStaysReadableWithFirstScreenOrders",
+  "testMineralDepositBuildGuidesAndExtractorRemainPlayable"
 ];
 
 function assessUIResults(summary, tree, exitCode) {

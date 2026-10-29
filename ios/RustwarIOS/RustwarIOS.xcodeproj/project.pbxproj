@@ -64,6 +64,7 @@
 		A00100000000000000000046 /* GeneratedExplosionArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000046 /* GeneratedExplosionArt.swift */; };
 		A00100000000000000000047 /* GeneratedBuildingArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000047 /* GeneratedBuildingArt.swift */; };
 		A00100000000000000000048 /* TacticalBuildingPortrait.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000048 /* TacticalBuildingPortrait.swift */; };
+		A00100000000000000000049 /* GeneratedResourceArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200000000000000000049 /* GeneratedResourceArt.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -117,6 +118,7 @@
 		A00200000000000000000046 /* GeneratedExplosionArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedExplosionArt.swift; sourceTree = "<group>"; };
 		A00200000000000000000047 /* GeneratedBuildingArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedBuildingArt.swift; sourceTree = "<group>"; };
 		A00200000000000000000048 /* TacticalBuildingPortrait.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalBuildingPortrait.swift; sourceTree = "<group>"; };
+		A00200000000000000000049 /* GeneratedResourceArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedResourceArt.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -171,6 +173,7 @@
 				A00200000000000000000046 /* GeneratedExplosionArt.swift */,
 				A00200000000000000000047 /* GeneratedBuildingArt.swift */,
 				A00200000000000000000048 /* TacticalBuildingPortrait.swift */,
+				A00200000000000000000049 /* GeneratedResourceArt.swift */,
 				A00200000000000000000037 /* BattlefieldTerrainArt.swift */,
 				A00200000000000000000038 /* BattlefieldBuildingModels.swift */,
 				A00200000000000000000039 /* BattlefieldEffectMaterials.swift */,
@@ -321,6 +324,7 @@
 				A00100000000000000000046 /* GeneratedExplosionArt.swift in Sources */,
 				A00100000000000000000047 /* GeneratedBuildingArt.swift in Sources */,
 				A00100000000000000000048 /* TacticalBuildingPortrait.swift in Sources */,
+				A00100000000000000000049 /* GeneratedResourceArt.swift in Sources */,
 				A00100000000000000000037 /* BattlefieldTerrainArt.swift in Sources */,
 				A00100000000000000000038 /* BattlefieldBuildingModels.swift in Sources */,
 				A00100000000000000000039 /* BattlefieldEffectMaterials.swift in Sources */,

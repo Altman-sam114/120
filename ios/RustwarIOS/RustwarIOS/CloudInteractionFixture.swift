@@ -19,6 +19,9 @@ enum CloudInteractionFixture {
             tiles: Array(repeating: .grass, count: state.terrain.tiles.count)
         )
         state.resources = []
+        if ProcessInfo.processInfo.arguments.contains("--rustwar-ci-resource-build") {
+            state.resources = [ResourceNode(id: "input-resource", position: WorldPoint(1_515, 1_930))]
+        }
         state.wrecks = []
         state.selectedEntityID = nil
         state.selectedEntityIDs = []

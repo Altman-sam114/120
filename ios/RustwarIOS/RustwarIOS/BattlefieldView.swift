@@ -95,6 +95,7 @@ private final class BattlefieldInputView: SKView {
             let text = controller.interactionTestSnapshot(
                 viewportSize: bounds.size,
                 entityPoint: { id in battlefieldScene.viewPoint(forEntityID: id, in: self) },
+                resourceGuide: { id in battlefieldScene.renderedResourceGuide(for: id) },
                 project: { point in battlefieldScene.viewPoint(for: point, in: self) }
             )
             guard controller.runsInteractionTests,

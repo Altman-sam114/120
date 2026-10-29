@@ -49,6 +49,9 @@ struct TacticalCommandDockView: View {
                             if hasSelectedBuildingUpgradeControls {
                                 TacticalBuildSectionView(controller: controller, columns: commandColumnCount)
                             }
+                            if hasBuildControls && !hasSelectedBuildingUpgradeControls {
+                                TacticalBuildSectionView(controller: controller, columns: commandColumnCount)
+                            }
                             if hasCommandControls {
                                 TacticalCommandsSectionView(
                                     controller: controller,
@@ -56,9 +59,6 @@ struct TacticalCommandDockView: View {
                                     showsStop: shouldShowStop,
                                     showsPrimaryCommands: !showsQuickCommandRail
                                 )
-                            }
-                            if hasBuildControls && !hasSelectedBuildingUpgradeControls {
-                                TacticalBuildSectionView(controller: controller, columns: commandColumnCount)
                             }
                             TacticalSelectionSectionView(
                                 controller: controller,

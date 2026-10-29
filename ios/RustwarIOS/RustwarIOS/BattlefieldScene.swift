@@ -75,6 +75,16 @@ final class BattlefieldScene: SKScene {
     private var cachedUnitBodySignatures: [String: String] = [:]
     private var cachedBuildingBodies: [String: SKNode] = [:]
     private var cachedBuildingBodySignatures: [String: String] = [:]
+    private enum ResourceGuide: String, Equatable {
+        case none, available, occupied
+    }
+    private struct ResourceSignature: Equatable {
+        let radius: Double
+        let claimed: Bool
+        let guide: ResourceGuide
+    }
+    private var cachedResourceBodies: [String: SKNode] = [:]
+    private var cachedResourceSignatures: [String: ResourceSignature] = [:]
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -113,8 +123,17 @@ final class BattlefieldScene: SKScene {
     }
 
     func viewPoint(forEntityID id: String, in view: SKView) -> CGPoint? {
-        guard let node = entityNode.children.first(where: { $0.name == id }) else { return nil }
+        guard let node = entityNode.children.first(where: { $0.name == id }) ??
+                resourceNode.children.first(where: { $0.name == id }) else { return nil }
         return view.convert(node.convert(.zero, to: self), from: self)
+    }
+
+    func renderedResourceGuide(for id: String) -> String? {
+        guard controller?.runsInteractionTests == true,
+              let node = cachedResourceBodies[id], node.parent === resourceNode else { return nil }
+        guard let guide = node.children.first(where: { $0.name?.hasPrefix("resource-guide-") == true }),
+              let name = guide.name else { return nil }
+        return name.replacingOccurrences(of: "resource-guide-", with: "")
     }
 
     private func renderNow(visualDeltaTime: TimeInterval) {
@@ -143,7 +162,7 @@ final class BattlefieldScene: SKScene {
             visualDeltaTime: visualDeltaTime
         )
         showCommandConfirmationIfNeeded(controller.commandConfirmation, visibility: playerVisibility)
-        drawResources(state.resources)
+        drawResources(state.resources, visibility: playerVisibility)
         drawEntities(
             state,
             playerVisibility: playerVisibility,
@@ -295,13 +314,65 @@ final class BattlefieldScene: SKScene {
         terrainNode.addChild(BattlefieldTerrainArt.node(for: terrain))
     }
 
-    private func drawResources(_ resources: [ResourceNode]) {
-        resourceNode.removeAllChildren()
+    private func drawResources(_ resources: [ResourceNode], visibility: VisibilitySnapshot) {
+        let ids = Set(resources.map(\.id))
+        for (id, body) in cachedResourceBodies where !ids.contains(id) { body.removeFromParent() }
+        cachedResourceBodies = cachedResourceBodies.filter { ids.contains($0.key) }
+        cachedResourceSignatures = cachedResourceSignatures.filter { ids.contains($0.key) }
         for resource in resources {
-            let node = resourceDepositNode(for: resource)
+            // The new markers must not reveal an unseen enemy's occupation.
+            // Geometry stays below the original fog layer, like other deposits.
+            let knowsOccupancy = resource.claimedBy == .player || visibility.isVisible(at: resource.position)
+            let claimed = knowsOccupancy && resource.claimedBy != nil
+            let guide: ResourceGuide = controller?.isAwaitingBuildExtractorTarget == true && knowsOccupancy
+                ? (claimed ? .occupied : .available) : .none
+            let signature = ResourceSignature(radius: resource.radius, claimed: claimed, guide: guide)
+            let node: SKNode
+            if cachedResourceSignatures[resource.id] == signature, let cached = cachedResourceBodies[resource.id] {
+                node = cached
+            } else {
+                cachedResourceBodies[resource.id]?.removeFromParent()
+                node = SKNode()
+                if let art = GeneratedResourceArt.sprite(id: resource.id, radius: resource.radius) {
+                    art.alpha = claimed ? 0.52 : 1
+                    node.addChild(art)
+                } else {
+                    var projected = resource
+                    if !knowsOccupancy { projected.claimedBy = nil }
+                    node.addChild(resourceDepositNode(for: projected))
+                }
+                if guide != .none { node.addChild(resourceBuildGuide(radius: resource.radius, state: guide)) }
+                if controller?.runsInteractionTests == true { node.name = resource.id }
+                cachedResourceBodies[resource.id] = node
+                cachedResourceSignatures[resource.id] = signature
+            }
             node.position = spritePoint(for: resource.position)
-            resourceNode.addChild(node)
+            if node.parent == nil { resourceNode.addChild(node) }
         }
+    }
+
+    private func resourceBuildGuide(radius: Double, state: ResourceGuide) -> SKShapeNode {
+        let path = CGMutablePath()
+        let r = CGFloat(radius * 0.98), length = CGFloat(radius * 0.28)
+        let signs: [CGFloat] = [-1, 1]
+        for x in signs {
+            for y in signs {
+                path.move(to: CGPoint(x: x * (r - length), y: y * r))
+                path.addLine(to: CGPoint(x: x * r, y: y * r))
+                path.addLine(to: CGPoint(x: x * r, y: y * (r - length)))
+            }
+        }
+        let guide = SKShapeNode(path: path)
+        guide.name = "resource-guide-\(state.rawValue)"
+        guide.strokeColor = state == .available
+            ? SKColor(red: 0.55, green: 0.95, blue: 0.77, alpha: 1)
+            : SKColor(red: 0.94, green: 0.69, blue: 0.31, alpha: 1)
+        guide.lineWidth = 2
+        guide.lineCap = .round
+        guide.lineJoin = .round
+        guide.fillColor = .clear
+        guide.zPosition = 0.1
+        return guide
     }
 
     private func resourceDepositNode(for resource: ResourceNode) -> SKNode {
@@ -490,6 +561,9 @@ final class BattlefieldScene: SKScene {
         cachedUnitBodySignatures.removeAll()
         cachedBuildingBodies.removeAll()
         cachedBuildingBodySignatures.removeAll()
+        resourceNode.removeAllChildren()
+        cachedResourceBodies.removeAll()
+        cachedResourceSignatures.removeAll()
     }
 
     private func updateVisualHistoryAndEffects(

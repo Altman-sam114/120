@@ -6,6 +6,7 @@ extension GameController {
     /// Read-only diagnostics available only under the cloud interaction flag.
     /// XCTest reads this after real taps/drags; no expected result is stored here.
     func interactionTestSnapshot(viewportSize: CGSize, entityPoint: (String) -> CGPoint?,
+                                 resourceGuide: (String) -> String?,
                                  project: (WorldPoint) -> CGPoint) -> String {
         guard runsInteractionTests, viewportSize.width > 0, viewportSize.height > 0 else { return "" }
         let units: [[String: Any]] = engine.state.units.map { unit in
@@ -23,6 +24,17 @@ extension GameController {
             item["queue"] = building.productionQueue.count
             item["upgrading"] = building.upgradeProgress != nil
             item["level"] = building.upgradeLevel
+            item["type"] = building.type.rawValue
+            if let nodeID = building.nodeID { item["nodeID"] = nodeID }
+            item["progress"] = building.buildProgress
+            return item
+        }
+        let resources: [[String: Any]] = engine.state.resources.map { resource in
+            let rendered = entityPoint(resource.id)
+            var item = interactionEntity(id: resource.id, screenPoint: rendered ?? project(resource.position),
+                                         rendered: rendered != nil, viewportSize: viewportSize)
+            if let team = resource.claimedBy { item["claimedBy"] = team.rawValue }
+            if let guide = resourceGuide(resource.id) { item["guide"] = guide }
             return item
         }
         let origin = project(WorldPoint(0, 0))
@@ -41,6 +53,7 @@ extension GameController {
             "selected": dockSelectionIdentity,
             "units": units,
             "buildings": buildings,
+            "resources": resources,
             "metal": engine.state.metal[.player] ?? 0,
             "cameraX": camera.center.x,
             "cameraY": camera.center.y,
@@ -48,6 +61,7 @@ extension GameController {
             "pending": isAwaitingTargetCommand,
             "unitArtTypes": GeneratedUnitArt.loadedTypeCount,
             "buildingArtVariants": GeneratedBuildingArt.loadedVariantCount,
+            "resourceArtVariants": GeneratedResourceArt.loadedVariantCount,
             "explosionArtFrames": GeneratedExplosionArt.loadedFrameCount,
             "projection": projection
         ]

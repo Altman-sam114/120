@@ -10,6 +10,18 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let rendered: Bool
         let queue: Int?
         let upgrading: Bool?
+        let type: String?
+        let nodeID: String?
+        let progress: Double?
+    }
+
+    private struct Resource: Decodable {
+        let id: String
+        let x: Double
+        let y: Double
+        let rendered: Bool
+        let claimedBy: Int?
+        let guide: String?
     }
 
     private struct Projection: Decodable {
@@ -37,6 +49,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let selected: [String]
         let units: [Entity]
         let buildings: [Entity]
+        let resources: [Resource]
         let metal: Double
         let cameraX: Double
         let cameraY: Double
@@ -44,6 +57,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let pending: Bool
         let unitArtTypes: Int
         let buildingArtVariants: Int
+        let resourceArtVariants: Int
         let explosionArtFrames: Int
         let projection: Projection
 
@@ -54,7 +68,8 @@ final class RustwarIOSInteractionTests: XCTestCase {
     private func launch(lowMetal: Bool = false, tech2: Bool = false, centeredUnit: Bool = false,
                         stationaryDefense: Bool = false, commandCenterVisible: Bool = false,
                         navigationObstacle: Bool = false, woundedUnit: Bool = false,
-                        closeOpponents: Bool = false, heavySquad: Bool = false) async throws -> XCUIApplication {
+                        closeOpponents: Bool = false, heavySquad: Bool = false,
+                        resourceBuild: Bool = false) async throws -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = XCUIApplication()
@@ -68,6 +83,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         if woundedUnit { app.launchArguments.append("--rustwar-ci-wounded-unit") }
         if closeOpponents { app.launchArguments.append("--rustwar-ci-close-opponents") }
         if heavySquad { app.launchArguments.append("--rustwar-ci-heavy-squad") }
+        if resourceBuild { app.launchArguments.append("--rustwar-ci-resource-build") }
         app.launch()
         XCTAssertTrue(battlefield(app).waitForExistence(timeout: 15))
         try await waitFor(app, "fixture and rendered anchors loaded") {
@@ -123,6 +139,77 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let viewport = app.scrollViews["command-dock-scroll"].frame
         XCTAssertTrue(viewport.contains(button.frame), "Card clipped: \(button.frame), viewport \(viewport)", file: file, line: line)
         XCTAssertGreaterThanOrEqual(button.frame.height, 44, file: file, line: line)
+    }
+
+    @MainActor
+    func testMineralDepositBuildGuidesAndExtractorRemainPlayable() async throws {
+        let app = try await launch(resourceBuild: true)
+        XCTAssertEqual(try snapshot(app).resourceArtVariants, 4, "All real mineral patches must decode; geometry fallback cannot satisfy this gate")
+        try await waitFor(app, "mineral patch actually rendered") {
+            $0.resources.first?.rendered == true && $0.resources.first?.claimedBy == nil
+        }
+        let resource = try XCTUnwrap(snapshot(app).resources.first)
+        XCTAssertEqual(resource.id, "input-resource")
+        XCTAssertTrue((0.05...0.95).contains(resource.x) && (0.05...0.95).contains(resource.y))
+        let resourcePoint = battlefield(app).coordinate(withNormalizedOffset: CGVector(dx: resource.x, dy: resource.y))
+        let initialMetal = try snapshot(app).metal
+        try tapEntity("input-builder", in: app)
+        try await waitFor(app, "Builder selected") { $0.selected == ["input-builder"] }
+        let build = app.buttons["建造提取器"]
+        assertFullyVisible(build, in: app)
+        build.tap()
+        try await waitFor(app, "real placement mode draws an available mineral guide") {
+            $0.pending && $0.resources.first?.guide == "available"
+        }
+        resourcePoint.tap()
+        try await waitFor(app, "real resource tap pays 260 and creates exactly one extractor") {
+            !$0.pending && abs($0.metal - (initialMetal - 260)) < 0.01 &&
+                $0.entity("input-builder")?.order == "build" && $0.resources.first?.claimedBy == 0 &&
+                $0.buildings.filter { $0.nodeID == resource.id && $0.type == "extractor" }.count == 1
+        }
+        let extractor = try XCTUnwrap(snapshot(app).buildings.first { $0.nodeID == resource.id })
+        XCTAssertEqual(extractor.progress, 0, "Paused placement must not fake construction progress")
+        build.tap()
+        try await waitFor(app, "claimed resource changes the actual renderer guide to occupied") {
+            $0.pending && $0.resources.first?.guide == "occupied"
+        }
+        resourcePoint.tap()
+        try await waitFor(app, "occupied deposit refuses a duplicate without payment or lost target mode") {
+            $0.pending && abs($0.metal - (initialMetal - 260)) < 0.01 &&
+                $0.buildings.filter { $0.nodeID == resource.id }.count == 1 &&
+                $0.entity("input-builder")?.order == "build"
+        }
+        app.buttons["取消提取器放置"].tap()
+        try await waitFor(app, "cancel hides placement guide but preserves the paid construction order") {
+            !$0.pending && $0.resources.first?.guide == nil && $0.entity("input-builder")?.order == "build"
+        }
+        app.buttons["继续"].tap()
+        try await waitFor(app, "normal simulation completes the real ten-second construction", attempts: 160) {
+            $0.entity(extractor.id)?.progress == 1 && $0.entity(extractor.id)?.rendered == true &&
+                $0.entity("input-builder")?.order == "idle"
+        }
+        app.buttons["暂停"].tap()
+        try tapEntity(extractor.id, in: app)
+        try await waitFor(app, "completed extractor selected through its real model") { $0.selected == [extractor.id] }
+        let upgrade = app.buttons["升级资源提取器"]
+        assertFullyVisible(upgrade, in: app)
+        let beforeUpgrade = try snapshot(app).metal
+        upgrade.tap()
+        try await waitFor(app, "extractor upgrade uses the real 650-metal action") {
+            $0.entity(extractor.id)?.upgrading == true && abs($0.metal - (beforeUpgrade - 650)) < 0.01
+        }
+        let cancelUpgrade = app.buttons["取消提取器升级"]
+        assertFullyVisible(cancelUpgrade, in: app)
+        cancelUpgrade.tap()
+        try await waitFor(app, "paused upgrade cancellation refunds its unchanged progress") {
+            $0.entity(extractor.id)?.upgrading == false && abs($0.metal - beforeUpgrade) < 0.01
+        }
+        try tapEntity("input-builder", in: app)
+        try worldCoordinate(1_500, 1_880, in: app).tap()
+        try await waitFor(app, "fresh Builder movement after mineral build and upgrade controls") {
+            $0.entity("input-builder")?.order == "move"
+        }
+        print("MINERAL_BUILD variants=4 firstScreenBuild/availableGuide/pay260/occupiedGuide/duplicateReject/naturalCompletion/upgrade650/refund/freshMove=passed")
     }
 
     @MainActor
