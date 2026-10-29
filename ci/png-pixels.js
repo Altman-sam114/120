@@ -45,9 +45,15 @@ function rgbaPNG(file) {
       pixels[y * stride + x] = (scanlines[y * (stride + 1) + x + 1] + predictor) & 255;
     }
   }
+  const pixelOffset = (x, y) => {
+    if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= width || y >= height) {
+      throw new RangeError(`Invalid source pixel ${x},${y} in ${width}x${height}`);
+    }
+    return (y * width + x) * 4;
+  };
   return { width, height, pixels,
-    alpha: (x, y) => pixels[(y * width + x) * 4 + 3],
-    channel: (x, y, channel) => pixels[(y * width + x) * 4 + channel] };
+    alpha: (x, y) => pixels[pixelOffset(x, y) + 3],
+    channel: (x, y, channel) => pixels[pixelOffset(x, y) + channel] };
 }
 
 module.exports = { rgbaPNG };

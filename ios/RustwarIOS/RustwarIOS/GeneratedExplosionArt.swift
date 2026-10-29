@@ -7,15 +7,16 @@ import UIKit
 enum GeneratedExplosionArt {
     private static let frames: [SKTexture] = {
         guard let image = UIImage(named: "ExplosionAtlas")?.cgImage,
-              image.width.isMultiple(of: 4), image.height.isMultiple(of: 2),
-              image.width / 4 == image.height / 2 else { return [] }
-        let side = image.width / 4
+              image.width == image.height * 2 else { return [] }
+        let atlas = SKTexture(cgImage: image)
+        atlas.filteringMode = .linear
+        atlas.usesMipmaps = true
         var textures: [SKTexture] = []
         for index in 0..<8 {
-            let crop = CGRect(x: (index % 4) * side, y: (index / 4) * side,
-                              width: side, height: side)
-            guard let pixels = image.cropping(to: crop) else { return [] }
-            let texture = SKTexture(cgImage: pixels)
+            // UV cells remain equal even when a boundary falls between texels.
+            let crop = CGRect(x: CGFloat(index % 4) / 4, y: 1 - CGFloat(index / 4 + 1) / 2,
+                              width: 0.25, height: 0.5)
+            let texture = SKTexture(rect: crop, in: atlas)
             texture.filteringMode = .linear
             texture.usesMipmaps = true
             textures.append(texture)
