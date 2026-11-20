@@ -1,3 +1,7 @@
+## v3.23 / 炮艇残骸云端验证结果
+
+2026-11-20。dba359f83bcfdead6caea1dbb76684ff5a7858f0 的 native push run 44686528077 / attempt 1 / job 136122104729成功；artifact 14608350600（rustwar-ci-v1.2-main-dba359f-run44686528077-attempt1，sha256:8b5b382e18354460d1e3a9c380125787eb9ce1c1d08d81afe863f06689bc06d0）已下载至 /private/tmp/rustwar-review-44686528077/attempt-1。scope 与 SHA 一致，JUnit 11/0/1；433 Core、23/23 真实 iOS UI、双架构编译、五场景与完整性通过。炮艇源 PNG 实际边界 0、透明像素 948430、实体像素 597352；战斗截图可见水面船形残骸及回收条，无背景色块。唯一跳过项为尚无入口的 Web 浏览器回归；未做本机测试。静态截图不代表真机性能、全设备体验或完整复刻。
+
 ## v3.22 / 云端原生验证结果
 
 2026-11-20。ee3729ac1d721ba27813e141064abcb7624ce811 的 native push run 44683722119 / attempt 1 / job 136113050494 成功；artifact 14605749689（rustwar-ci-v1.2-main-ee3729a-run44683722119-attempt1，sha256:fc8fac1fd80985091ce7b187870dc2b85efe437358698aaddb6db56a3213e1d5）已下载到 /private/tmp/rustwar-review-44683722119/attempt-1。scope、SHA、JUnit 和 UI 汇总一致，JUnit 11/0/1；433 Core、23/23 真实 iOS UI、双架构编译、五场景和完整性通过。四格真实 RGBA 源图边界均零裁切，四种纹理在真实 App 中加载；战斗截图中可见坦克残骸与回收条。唯一跳过项是尚无入口的 Web 浏览器回归。本机未执行测试。炮塔等未匹配类型仍用几何后备；静态截图不能证明全部类别、动态效果或真机性能。
