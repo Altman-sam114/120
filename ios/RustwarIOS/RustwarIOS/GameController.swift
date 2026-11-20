@@ -309,6 +309,13 @@ final class GameController {
                 source: .unit(.tank)
             ),
             WreckSnapshot(
+                id: "visual-gunboat-wreck",
+                position: WorldPoint(1_920, 1_425),
+                size: GameDefinitions.unit(.gunboat).radius * 1.7,
+                team: .enemy, metal: 46, maxMetal: 72, ttl: 46,
+                source: .unit(.gunboat)
+            ),
+            WreckSnapshot(
                 id: "visual-enemy-turret-wreck",
                 position: WorldPoint(1_990, 1_455),
                 size: GameDefinitions.building(.turret).size * 0.55,

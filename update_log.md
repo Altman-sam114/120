@@ -1,3 +1,7 @@
+## v3.22 / 云端原生验证结果
+
+2026-11-20。ee3729ac1d721ba27813e141064abcb7624ce811 的 native push run 44683722119 / attempt 1 / job 136113050494 成功；artifact 14605749689（rustwar-ci-v1.2-main-ee3729a-run44683722119-attempt1，sha256:fc8fac1fd80985091ce7b187870dc2b85efe437358698aaddb6db56a3213e1d5）已下载到 /private/tmp/rustwar-review-44683722119/attempt-1。scope、SHA、JUnit 和 UI 汇总一致，JUnit 11/0/1；433 Core、23/23 真实 iOS UI、双架构编译、五场景和完整性通过。四格真实 RGBA 源图边界均零裁切，四种纹理在真实 App 中加载；战斗截图中可见坦克残骸与回收条。唯一跳过项是尚无入口的 Web 浏览器回归。本机未执行测试。炮塔等未匹配类型仍用几何后备；静态截图不能证明全部类别、动态效果或真机性能。
+
 ## v3.21.1 / 云端原生验证结果
 
 4365e1a9f22c9c949589cec5cb1d22d3ba5a27a4 的显式 native run 40829402727、attempt 1、job 123299933335 成功。经 Altman-sam114 下载 artifact 12878628018（rustwar-ci-v1.2-main-4365e1a-run40829402727-attempt1，sha256:00d45c2353b09380d5301f9f3d7d6c019777a9a62f577ec57c1696f4e0c25332）至 /private/tmp/rustwar-review-40829402727/attempt-1。manifest、scope、SHA、JUnit 与 UI 树一致，完整性通过；JUnit 11/0/1，23/23 真实 UI 通过，Core、双架构构建及五场景截图通过。唯一 skip 是尚无入口的 Web 浏览器回归。此前 Home 的宿主元数据超时未在本次复现。本机没有编译或运行测试。静态截图和模拟器不代表真机性能或所有设备操作。
@@ -7394,3 +7398,7 @@ workflow 在同一 pinned Simulator 执行实际 xcodebuild test，导出必要 
 ## v3.22 / 原创战斗残骸素材
 
 内置 image_gen 生成四格原创透明残骸图集，接入履带、轮式、悬浮单位及陆军工厂；其他种类保留原几何。保留原回收条、残骸生命周期和玩法状态。新增实际 PNG 边界/透明/细节检查及真实 UI 四图加载断言；完整提示词和素材来源见 ios/RustwarIOS/ARTWORK.md。此记录只说明实现，云端原生编译、交互与画面结果以新提交对应的实际 run 为准。
+
+## v3.23 / 炮艇残骸贴图
+
+内置 image_gen 制作原创俯视炮艇残骸并按源图长宽比接入 .gunboat；保留原残骸生命周期、回收与几何后备。新增真实 PNG 透明边界检查、App 加载断言及战斗截图样例。实际编译、UI和画面需以此变更对应的云端 run 为准。

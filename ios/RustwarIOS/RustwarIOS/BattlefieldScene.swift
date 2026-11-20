@@ -3209,9 +3209,24 @@ final class BattlefieldScene: SKScene {
         }
     }()
 
+    private static let gunboatWreckTexture: SKTexture? = {
+        guard let image = UIImage(named: "WreckGunboat")?.cgImage else { return nil }
+        let texture = SKTexture(cgImage: image)
+        texture.filteringMode = .linear
+        texture.usesMipmaps = true
+        return texture
+    }()
+
     static var loadedWreckArtCount: Int { wreckTextures.count }
+    static var loadedGunboatWreck: Bool { gunboatWreckTexture != nil }
 
     private func generatedWreck(for wreck: WreckSnapshot, side: Double) -> SKNode? {
+        if case .unit(.gunboat) = wreck.source, let texture = Self.gunboatWreckTexture {
+            let sprite = SKSpriteNode(texture: texture,
+                                      size: CGSize(width: side * 1.4, height: side * 1.4 / 3))
+            sprite.name = "generated-wreck-gunboat"
+            return sprite
+        }
         let index: Int
         switch wreck.source {
         case .unit(.tank), .unit(.heavyTank), .unit(.aaTank), .unit(.artillery): index = 0

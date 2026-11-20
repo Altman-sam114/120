@@ -27,3 +27,25 @@ test("wreck atlas has four isolated detailed transparent cells", () => {
     assert.ok(high - low > 60, "metal must retain visible detail");
   }
 });
+
+test("gunboat wreck has transparent margins and detailed opaque hull", () => {
+  const boat = rgbaPNG(path.join(__dirname, "../ios/RustwarIOS/RustwarIOS/Assets.xcassets/WreckGunboat.imageset/gunboat-wreck-v1.png"));
+  assert.equal(boat.width, 2172);
+  assert.equal(boat.height, 724);
+  let opaque = 0, transparent = 0, border = 0, low = 255, high = 0;
+  for (let y = 0; y < boat.height; y++) for (let x = 0; x < boat.width; x++) {
+    const alpha = boat.alpha(x, y);
+    if (alpha === 0) transparent++;
+    if (alpha >= 192) {
+      opaque++;
+      const luma = (boat.channel(x, y, 0) + boat.channel(x, y, 1) + boat.channel(x, y, 2)) / 3;
+      low = Math.min(low, luma); high = Math.max(high, luma);
+    }
+    if ((x < 2 || y < 2 || x >= boat.width - 2 || y >= boat.height - 2) && alpha > 16) border++;
+  }
+  console.log(`Gunboat wreck: opaque=${opaque}, transparent=${transparent}, border=${border}, range=${high-low}`);
+  assert.ok(opaque > 100000);
+  assert.ok(transparent > 100000);
+  assert.equal(border, 0);
+  assert.ok(high - low > 60);
+});
