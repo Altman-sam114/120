@@ -63,6 +63,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let resourceArtVariants: Int
         let explosionArtFrames: Int
         let projection: Projection
+        let touchTrace: [String]?
 
         func entity(_ id: String) -> Entity? { (units + buildings).first { $0.id == id } }
     }
@@ -608,7 +609,16 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let completed = try snapshot(app)
         let produced = try XCTUnwrap(completed.units.first { !existingIDs.contains($0.id) })
         XCTAssertTrue(produced.rendered)
+        let traceBeforeTap = try snapshot(app).touchTrace
         try tapEntity(produced.id, in: app)
+        let traceAfterTap = try snapshot(app).touchTrace
+        // UIKit can cancel a synthesized contact after pausing.
+        // Only a recorded cancellation warrants a second real tap; an ended tap
+        // that fails to select still fails the existing selection assertion.
+        if traceAfterTap != traceBeforeTap, traceAfterTap?.last?.contains(":cancelled@") == true {
+            print("COMMAND_CENTER_BUILDER UIKit cancelled contact; issuing a fresh real tap")
+            try tapEntity(produced.id, in: app)
+        }
         try await waitFor(app, "newly produced Builder selected through its rendered model") { $0.selected == [produced.id] }
         try worldCoordinate(1_550, 1_890, in: app).tap()
         try await waitFor(app, "newly produced Builder accepts a ground Move") { $0.entity(produced.id)?.order == "move" }
