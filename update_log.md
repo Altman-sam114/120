@@ -1,3 +1,7 @@
+## v3.21.1 / 云端原生验证结果
+
+4365e1a9f22c9c949589cec5cb1d22d3ba5a27a4 的显式 native run 40829402727、attempt 1、job 123299933335 成功。经 Altman-sam114 下载 artifact 12878628018（rustwar-ci-v1.2-main-4365e1a-run40829402727-attempt1，sha256:00d45c2353b09380d5301f9f3d7d6c019777a9a62f577ec57c1696f4e0c25332）至 /private/tmp/rustwar-review-40829402727/attempt-1。manifest、scope、SHA、JUnit 与 UI 树一致，完整性通过；JUnit 11/0/1，23/23 真实 UI 通过，Core、双架构构建及五场景截图通过。唯一 skip 是尚无入口的 Web 浏览器回归。此前 Home 的宿主元数据超时未在本次复现。本机没有编译或运行测试。静态截图和模拟器不代表真机性能或所有设备操作。
+
 ## v3.21.1 / 合并宿主安装身份读取
 
 2026-10-29。e9e891b56a0f1d62dc2e755a5f71ddfc0167d4d2 / 显式native run40825838413/attempt1/job123288598648实际failure，job26m27s。准确artifact rustwar-ci-v1.2-main-e9e891b-run40825838413-attempt1（ID12878035178，8329324bytes，sha256:74f5cbd5b7a4ba7a4d2c5feb005ba2274a038fc78fd28e1b6c049822709f3b2f）经Altman-sam114下载/private/tmp/rustwar-review-40825838413/attempt-1/8.7M，API/manifest/scope/命令/身份匹配，JUnit11/2/1、完整性失败。
@@ -7386,3 +7390,7 @@ workflow 在同一 pinned Simulator 执行实际 xcodebuild test，导出必要 
 ## v2.94 / 多单位选中 HUD 反馈
 
 多单位框选或点选后，Selection summary 增加勾选图标与高对比数量胶囊，和攻击姿态同一视觉层级；VoiceOver 继续读取完整 selectedSummary，输入、Core、命令、战斗模型和生产保持。等待云端验收。
+
+## v3.22 / 原创战斗残骸素材
+
+内置 image_gen 生成四格原创透明残骸图集，接入履带、轮式、悬浮单位及陆军工厂；其他种类保留原几何。保留原回收条、残骸生命周期和玩法状态。新增实际 PNG 边界/透明/细节检查及真实 UI 四图加载断言；完整提示词和素材来源见 ios/RustwarIOS/ARTWORK.md。此记录只说明实现，云端原生编译、交互与画面结果以新提交对应的实际 run 为准。

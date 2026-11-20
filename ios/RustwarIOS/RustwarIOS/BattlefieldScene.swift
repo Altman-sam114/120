@@ -1,5 +1,6 @@
 import SpriteKit
 import RustwarCore
+import UIKit
 
 struct BattlefieldTouchPreview: Equatable {
     enum Intent: Equatable {
@@ -3194,7 +3195,40 @@ final class BattlefieldScene: SKScene {
         return CGFloat(bucket - 6) * 0.055
     }
 
+    // Four shared, isolated atlas cells; nil leaves the original geometry as a fallback.
+    private static let wreckTextures: [SKTexture] = {
+        guard let image = UIImage(named: "WreckAtlas")?.cgImage,
+              image.width == 1254, image.height == 1254 else { return [] }
+        return (0..<4).compactMap { index in
+            let crop = CGRect(x: CGFloat((index % 2) * 627), y: CGFloat((index / 2) * 627), width: 627, height: 627)
+            guard let cell = image.cropping(to: crop) else { return nil }
+            let texture = SKTexture(cgImage: cell)
+            texture.filteringMode = .linear
+            texture.usesMipmaps = true
+            return texture
+        }
+    }()
+
+    static var loadedWreckArtCount: Int { wreckTextures.count }
+
+    private func generatedWreck(for wreck: WreckSnapshot, side: Double) -> SKNode? {
+        let index: Int
+        switch wreck.source {
+        case .unit(.tank), .unit(.heavyTank), .unit(.aaTank), .unit(.artillery): index = 0
+        case .unit(.scout), .unit(.builder): index = 1
+        case .unit(.hover): index = 2
+        case .building(.landFactory): index = 3
+        default: return nil
+        }
+        guard Self.wreckTextures.count == 4 else { return nil }
+        let sprite = SKSpriteNode(texture: Self.wreckTextures[index],
+                                  size: CGSize(width: side * 1.15, height: side * 1.15))
+        sprite.name = "generated-wreck"
+        return sprite
+    }
+
     private func wreckBody(for wreck: WreckSnapshot, side: Double) -> SKNode {
+        if let generated = generatedWreck(for: wreck, side: side) { return generated }
         let body = SKNode()
         let rust = SKColor(red: 0.3, green: 0.22, blue: 0.15, alpha: 0.96)
         let char = SKColor(red: 0.08, green: 0.075, blue: 0.07, alpha: 0.98)
