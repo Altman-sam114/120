@@ -1,3 +1,7 @@
+## v3.24.1 / 原生云端复验
+
+2026-11-20。f93647160bb22dd7bb2aa2fd5cab7b97e17ac73e 的 native push run 44694267113 / attempt 1 / job 136147202064 成功；准确 artifact 14610713585（rustwar-ci-v1.2-main-f936471-run44694267113-attempt1，sha256:0247d12976e2597813ace2d923592eedab291a0c1091a8eb0a01c5a48dd524c5）已下载 /private/tmp/rustwar-review-44694267113/attempt-1。scope/SHA、JUnit 11/0/1、433 Core、23/23 真实 UI、双架构和五场景/完整性一致；四建筑残骸真实PNG边界均0，App四格加载成功。工程车真实生产、选中、移动并到达；本次日志没有触发cancelled分支，不能声称该分支已实测。战斗截图显示新炮塔残骸和回收条，其他三类实际战场截图未覆盖。唯一skip为无入口的Web浏览器回归，无本机测试；真机性能与完整视觉体验未覆盖。
+
 ## v3.24.1 / 云端触摸中断处理
 
 5fc0f0fb9df936cdc445e89556dfb15aa9e15363 的 native run 44690577972 / attempt 1 失败；artifact 14609194402（sha256:73f3eb89d34f44775529dca2adacba869bd4f302322006f14ee87e74745ad611）已下载。四格 PNG 边界均为零，433 Core、App 构建、五张截图和新图集加载通过；真实 UI 22/23，工程车已生产并渲染，但后续合成触摸记录为 UIKit began 后 cancelled，未产生 tap，选中断言超时。原因仅能定位到系统取消事件，不能断言是图集引起或把此次运行算作通过。
