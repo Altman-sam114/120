@@ -58,6 +58,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let unitArtTypes: Int
         let buildingArtVariants: Int
         let gunboatWreckArt: Bool
+        let structureWreckArtVariants: Int
         let wreckArtVariants: Int
         let resourceArtVariants: Int
         let explosionArtFrames: Int
@@ -245,6 +246,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let app = try await launch()
         XCTAssertEqual(try snapshot(app).unitArtTypes, 8, "Every bundled layered model must decode; fallback art cannot satisfy this gate")
         XCTAssertTrue(try snapshot(app).gunboatWreckArt, "The actual gunboat wreck must load")
+        XCTAssertEqual(try snapshot(app).structureWreckArtVariants, 4, "All structure wreck atlas cells must decode")
         XCTAssertEqual(try snapshot(app).wreckArtVariants, 4, "All actual wreck atlas cells must decode")
         XCTAssertEqual(try snapshot(app).buildingArtVariants, 9, "All building tiers and the independent turret layers must decode; geometry fallback cannot satisfy this gate")
         XCTAssertEqual(try snapshot(app).explosionArtFrames, 8, "The actual explosion atlas must decode all animation frames")

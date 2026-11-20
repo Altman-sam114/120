@@ -3196,8 +3196,11 @@ final class BattlefieldScene: SKScene {
     }
 
     // Four shared, isolated atlas cells; nil leaves the original geometry as a fallback.
-    private static let wreckTextures: [SKTexture] = {
-        guard let image = UIImage(named: "WreckAtlas")?.cgImage,
+    private static let wreckTextures = loadWreckAtlas("WreckAtlas")
+    private static let structureWreckTextures = loadWreckAtlas("StructureWreckAtlas")
+
+    private static func loadWreckAtlas(_ name: String) -> [SKTexture] {
+        guard let image = UIImage(named: name)?.cgImage,
               image.width == 1254, image.height == 1254 else { return [] }
         return (0..<4).compactMap { index in
             let crop = CGRect(x: CGFloat((index % 2) * 627), y: CGFloat((index / 2) * 627), width: 627, height: 627)
@@ -3207,7 +3210,7 @@ final class BattlefieldScene: SKScene {
             texture.usesMipmaps = true
             return texture
         }
-    }()
+    }
 
     private static let gunboatWreckTexture: SKTexture? = {
         guard let image = UIImage(named: "WreckGunboat")?.cgImage else { return nil }
@@ -3218,6 +3221,7 @@ final class BattlefieldScene: SKScene {
     }()
 
     static var loadedWreckArtCount: Int { wreckTextures.count }
+    static var loadedStructureWreckArtCount: Int { structureWreckTextures.count }
     static var loadedGunboatWreck: Bool { gunboatWreckTexture != nil }
 
     private func generatedWreck(for wreck: WreckSnapshot, side: Double) -> SKNode? {
@@ -3225,6 +3229,20 @@ final class BattlefieldScene: SKScene {
             let sprite = SKSpriteNode(texture: texture,
                                       size: CGSize(width: side * 1.4, height: side * 1.4 / 3))
             sprite.name = "generated-wreck-gunboat"
+            return sprite
+        }
+        let structureIndex: Int?
+        switch wreck.source {
+        case .building(.turret): structureIndex = 0
+        case .building(.radar): structureIndex = 1
+        case .building(.extractor): structureIndex = 2
+        case .building(.command): structureIndex = 3
+        default: structureIndex = nil
+        }
+        if let structureIndex, Self.structureWreckTextures.count == 4 {
+            let sprite = SKSpriteNode(texture: Self.structureWreckTextures[structureIndex],
+                                      size: CGSize(width: side * 1.15, height: side * 1.15))
+            sprite.name = "generated-structure-wreck"
             return sprite
         }
         let index: Int

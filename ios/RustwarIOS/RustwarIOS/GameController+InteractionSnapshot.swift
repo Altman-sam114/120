@@ -63,6 +63,7 @@ extension GameController {
             "buildingArtVariants": GeneratedBuildingArt.loadedVariantCount,
             "resourceArtVariants": GeneratedResourceArt.loadedVariantCount,
             "wreckArtVariants": BattlefieldScene.loadedWreckArtCount,
+            "structureWreckArtVariants": BattlefieldScene.loadedStructureWreckArtCount,
             "gunboatWreckArt": BattlefieldScene.loadedGunboatWreck,
             "explosionArtFrames": GeneratedExplosionArt.loadedFrameCount,
             "projection": projection
