@@ -60,3 +60,24 @@ test("PNG sampling rejects fractional or out-of-bounds coordinates instead of re
     assert.throws(() => image.channel(x, y, 0), RangeError);
   }
 });
+
+test("water impact contains isolated translucent foam with padding", () => {
+  const splash = rgbaPNG(path.join(__dirname, "../ios/RustwarIOS/RustwarIOS/Assets.xcassets/WaterImpact.imageset/water-impact-v1.png"));
+  const count = splash.width * splash.height;
+  assert.equal(splash.width, splash.height, "The water sprite uses a square world footprint");
+  let clear = 0, border = 0, foam = 0;
+  for (let y = 0; y < splash.height; y += 1) {
+    for (let x = 0; x < splash.width; x += 1) {
+      const alpha = splash.alpha(x, y);
+      if (alpha <= 8) clear += 1;
+      if ((x === 0 || x === splash.width - 1 || y === 0 || y === splash.height - 1) && alpha > 16) border += 1;
+      if (alpha >= 128 && splash.channel(x, y, 1) > 145 && splash.channel(x, y, 2) > 145) foam += 1;
+    }
+  }
+  console.log(`Water impact: ${splash.width}x${splash.height}, clear=${clear}, foam=${foam}, border=${border}.`);
+  assert.equal(border, 0, "Splash must fade into open water with no clipped artwork");
+  assert.ok(clear > count * 0.45, "The sprite needs substantial genuine transparency");
+  assert.ok(foam > count * 0.06, "Foam must be visible at battlefield scale");
+  assert.ok(splash.alpha(Math.floor(splash.width / 2), Math.floor(splash.height / 2)) <= 16,
+    "The center must reveal the underlying water");
+});

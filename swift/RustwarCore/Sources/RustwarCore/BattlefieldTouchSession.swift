@@ -221,7 +221,9 @@ public struct BattlefieldTouchSession<ID: Hashable> {
                 elapsed: time - startedAt,
                 isTargetCommandPending: context.mode != .normal
             )
-            if phase == .pair, intent == .pinch || isRelativePinch(first: first, second: second) {
+            if phase == .pair,
+               intent == .pinch || isRelativePinch(first: first, second: second),
+               hasPinchCommitment(first: first, second: second) {
                 phase = .pinch
                 actions.append(.selectionBox(nil))
             }
@@ -247,6 +249,20 @@ public struct BattlefieldTouchSession<ID: Hashable> {
             }
         }
         return actions
+    }
+
+    private func hasPinchCommitment(first: Contact, second: Contact) -> Bool {
+        let minimumTravelSquared = min(
+            first.start.distanceSquared(to: first.current),
+            second.start.distanceSquared(to: second.current)
+        )
+        if minimumTravelSquared >= 1 { return true }
+
+        // UIKit can deliver a sweep one contact at a time. An anchored pinch
+        // still works once its changing span clearly exceeds that first step.
+        let initialDistance = sqrt(first.start.distanceSquared(to: second.start))
+        let threshold = max(14, min(32, initialDistance * 0.20))
+        return abs(pairDistance - initialDistance) >= threshold
     }
 
     private func isRelativePinch(first: Contact, second: Contact) -> Bool {

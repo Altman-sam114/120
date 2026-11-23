@@ -62,6 +62,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let wreckArtVariants: Int
         let resourceArtVariants: Int
         let explosionArtFrames: Int
+        let waterImpactArtLoaded: Bool
         let projection: Projection
         let touchTrace: [String]?
 
@@ -251,6 +252,7 @@ final class RustwarIOSInteractionTests: XCTestCase {
         XCTAssertEqual(try snapshot(app).wreckArtVariants, 4, "All actual wreck atlas cells must decode")
         XCTAssertEqual(try snapshot(app).buildingArtVariants, 9, "All building tiers and the independent turret layers must decode; geometry fallback cannot satisfy this gate")
         XCTAssertEqual(try snapshot(app).explosionArtFrames, 8, "The actual explosion atlas must decode all animation frames")
+        XCTAssertTrue(try snapshot(app).waterImpactArtLoaded, "The bundled water impact sprite must decode")
         XCTAssertEqual(app.buttons["pause-play"].label, "继续")
         let metal = app.descendants(matching: .any).matching(identifier: "status-metric-metal").firstMatch
         XCTAssertEqual(metal.label, "金属")
@@ -581,6 +583,12 @@ final class RustwarIOSInteractionTests: XCTestCase {
         scout.tap()
         try await waitFor(app, "production queue and charge") {
             $0.entity("input-factory")?.queue == 1 && $0.metal == metal - 90
+        }
+        let clear = app.buttons["selection-clear"]
+        assertFullyVisible(clear, in: app)
+        clear.tap()
+        try await waitFor(app, "leaving the factory panel keeps paid production queued") {
+            $0.selected.isEmpty && !$0.pending && $0.entity("input-factory")?.queue == 1
         }
     }
 

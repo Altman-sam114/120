@@ -192,6 +192,7 @@ final class BattlefieldScene: SKScene {
         worldNode.addChild(touchPreviewNode)
         worldNode.addChild(radarNode)
         GeneratedExplosionArt.preload()
+        GeneratedWaterImpactArt.preload()
     }
 
     private func drawTouchPreview(_ preview: BattlefieldTouchPreview?) {
@@ -1648,8 +1649,8 @@ final class BattlefieldScene: SKScene {
             width: 28 * scale,
             height: 13 * scale
         ))
-        surface.fillColor = SKColor.systemBlue.withAlphaComponent(0.18)
-        surface.strokeColor = SKColor.systemCyan.withAlphaComponent(0.72)
+        surface.fillColor = SKColor.systemBlue.withAlphaComponent(0.10)
+        surface.strokeColor = SKColor(red: 0.54, green: 0.83, blue: 0.85, alpha: 0.41)
         surface.lineWidth = 1.35
         surface.zPosition = -3
         container.addChild(surface)
@@ -1659,11 +1660,46 @@ final class BattlefieldScene: SKScene {
             height: 7 * scale
         ))
         innerRing.fillColor = .clear
-        innerRing.strokeColor = .white.withAlphaComponent(0.78)
+        innerRing.strokeColor = .white.withAlphaComponent(0.27)
         innerRing.lineWidth = 1.05
         innerRing.zPosition = -2.5
         container.addChild(innerRing)
 
+        if let foam = GeneratedWaterImpactArt.sprite(
+            diameter: 33 * scale, isFrozen: isFrozen, reduceMotion: accessibilityReduceMotion
+        ) {
+            foam.zPosition = -1
+            container.addChild(foam)
+        } else {
+            addFallbackWaterSpray(to: container, scale: scale, isFrozen: isFrozen)
+        }
+
+        if isFrozen {
+            addPersistentBoundedEffect(container, to: layer)
+            return
+        }
+
+        if accessibilityReduceMotion {
+            surface.run(.fadeOut(withDuration: 0.2))
+            innerRing.run(.fadeOut(withDuration: 0.18))
+        } else {
+            surface.run(.group([
+                .fadeOut(withDuration: 0.5),
+                .scale(to: 1.42, duration: 0.5)
+            ]))
+            innerRing.run(.group([
+                .fadeOut(withDuration: 0.36),
+                .scale(to: 1.55, duration: 0.36)
+            ]))
+        }
+        addBoundedEffect(
+            container,
+            lifetime: accessibilityReduceMotion ? 0.22 : 0.55,
+            to: layer
+        )
+    }
+
+    private func addFallbackWaterSpray(to container: SKNode, scale: CGFloat, isFrozen: Bool) {
         let arcAngles = [-0.95, 0.0, 0.95]
         for (index, angle) in arcAngles.enumerated() {
             let arc = waterSplashArcNode(
@@ -1714,30 +1750,6 @@ final class BattlefieldScene: SKScene {
                 ]))
             }
         }
-
-        if isFrozen {
-            addPersistentBoundedEffect(container, to: layer)
-            return
-        }
-
-        if accessibilityReduceMotion {
-            surface.run(.fadeOut(withDuration: 0.2))
-            innerRing.run(.fadeOut(withDuration: 0.18))
-        } else {
-            surface.run(.group([
-                .fadeOut(withDuration: 0.5),
-                .scale(to: 1.42, duration: 0.5)
-            ]))
-            innerRing.run(.group([
-                .fadeOut(withDuration: 0.36),
-                .scale(to: 1.55, duration: 0.36)
-            ]))
-        }
-        addBoundedEffect(
-            container,
-            lifetime: accessibilityReduceMotion ? 0.22 : 0.55,
-            to: layer
-        )
     }
 
     private func waterSplashArcNode(angle: Double, scale: CGFloat, index: Int) -> SKShapeNode {
@@ -2135,6 +2147,13 @@ final class BattlefieldScene: SKScene {
                 intensity: impactIntensity(for: target.type) * 1.08,
                 isFrozen: true
             )
+        }
+        // Keep a water impact clear of the gunboat silhouette in the paused screenshot.
+        if let boat = state.units.first(where: { $0.id == "visual-enemy-gunboat" }) {
+            let splash = WorldPoint(boat.position.x - 44, boat.position.y - 31)
+            if isWaterImpact(at: splash) {
+                spawnImpactEffect(at: splash, intensity: 1.35, isFrozen: true)
+            }
         }
         // Keep separate water and land destruction samples in the paused fixture.
         spawnDestructionEffect(

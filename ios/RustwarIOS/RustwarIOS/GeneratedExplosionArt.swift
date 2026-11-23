@@ -55,3 +55,42 @@ enum GeneratedExplosionArt {
         return sprite
     }
 }
+
+@MainActor
+enum GeneratedWaterImpactArt {
+    private static let texture: SKTexture? = {
+        guard let image = UIImage(named: "WaterImpact")?.cgImage else { return nil }
+        let texture = SKTexture(cgImage: image)
+        texture.filteringMode = .linear
+        texture.usesMipmaps = true
+        return texture
+    }()
+
+    static var isLoaded: Bool { texture != nil }
+
+    static func preload() {
+        if let texture { SKTexture.preload([texture]) {} }
+    }
+
+    static func sprite(diameter: CGFloat, isFrozen: Bool, reduceMotion: Bool) -> SKSpriteNode? {
+        guard let texture else { return nil }
+        let sprite = SKSpriteNode(texture: texture, size: CGSize(width: diameter, height: diameter))
+        sprite.name = "generated-water-impact"
+        sprite.blendMode = .alpha
+        sprite.alpha = 0.84
+        if !isFrozen {
+            if reduceMotion {
+                sprite.run(.fadeOut(withDuration: 0.20))
+            } else {
+                sprite.setScale(0.42)
+                let burst = SKAction.scale(to: 0.94, duration: 0.12)
+                burst.timingMode = .easeOut
+                sprite.run(.sequence([
+                    burst,
+                    .group([.scale(to: 1.24, duration: 0.34), .fadeOut(withDuration: 0.34)])
+                ]))
+            }
+        }
+        return sprite
+    }
+}

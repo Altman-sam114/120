@@ -10,7 +10,10 @@ struct TacticalCommandDockHeaderView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.compactSpacing) {
             if showsCompactProducerContext {
-                TacticalCompactProducerHeaderView(controller: controller)
+                HStack(spacing: TacticalHUDTheme.denseSpacing) {
+                    TacticalCompactProducerHeaderView(controller: controller)
+                    clearSelectionButton
+                }
             } else {
                 HStack(alignment: .top, spacing: TacticalHUDTheme.denseSpacing) {
                     TacticalSelectionSummaryView(
@@ -23,17 +26,7 @@ struct TacticalCommandDockHeaderView: View {
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
                     if !controller.dockSelectionIdentity.isEmpty {
-                        Button(action: controller.clearSelection) {
-                            Image(systemName: "xmark")
-                                .font(.caption.weight(.semibold))
-                                .frame(width: 44, height: 44)
-                                .contentShape(.rect)
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(TacticalHUDTheme.secondaryText)
-                        .accessibilityLabel("取消选择")
-                        .accessibilityHint("取消目标模式并清空选择，不改变部队正在执行的命令。")
-                        .accessibilityIdentifier("selection-clear")
+                        clearSelectionButton
                     }
                 }
                 if controller.commandStatus == nil && controller.shouldShowBattlefieldInteractionHint {
@@ -90,6 +83,20 @@ struct TacticalCommandDockHeaderView: View {
                 )
                 .frame(height: controller.isAwaitingTargetCommand ? 2 : 1)
         }
+    }
+
+    private var clearSelectionButton: some View {
+        Button(action: controller.clearSelection) {
+            Image(systemName: "xmark")
+                .font(.caption.weight(.semibold))
+                .frame(width: 44, height: 44)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(TacticalHUDTheme.secondaryText)
+        .accessibilityLabel("取消选择")
+        .accessibilityHint("清空选择并退出目标模式，正在执行的命令会继续。")
+        .accessibilityIdentifier("selection-clear")
     }
 }
 

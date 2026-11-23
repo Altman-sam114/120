@@ -256,3 +256,23 @@ func nativeTouchContextChangeRejectsOldTapAndAllowsFreshTouch(cameraChange: Bool
     #expect(feed(&session, [contact(1, -20, 0, .moved), contact(2, 120, 0, .moved)], 0.3)
         .contains(.zoom(1.4)))
 }
+
+@Test func nativeTouchSweepKeepsSelectionWhenOneContactArrivesFirst() {
+    var session = TouchSession()
+    _ = feed(&session, [contact(1, 0, 0, .began), contact(2, 140, 0, .began)], 0)
+    _ = feed(&session, [contact(1, 16, 0, .moved)], 0.08)
+    #expect(session.phase == .pair)
+    let sweep = feed(&session, [contact(2, 156, 0, .moved)], 0.09)
+    let box = WorldRect(minX: 0, minY: -8, maxX: 156, maxY: 8)
+    #expect(sweep.contains(.selectionBox(box)))
+    let end = feed(&session, [contact(1, 16, 0, .ended), contact(2, 156, 0, .ended)], 0.2)
+    #expect(selections(end) == [box])
+}
+
+@Test func nativeTouchDeliberateAnchoredPinchStillZooms() {
+    var session = TouchSession()
+    _ = feed(&session, [contact(1, 0, 0, .began), contact(2, 140, 0, .began)], 0)
+    let moved = feed(&session, [contact(2, 175, 0, .moved)], 0.1)
+    #expect(moved.contains(.zoom(1.25)))
+    #expect(session.phase == .pinch)
+}

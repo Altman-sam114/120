@@ -110,7 +110,7 @@ enum BattlefieldTerrainArt {
                     current = chosen
                 } while current != start && ring.count <= edgeCount
                 if current == start, ring.count >= 4 {
-                    appendRounded(ring, stride: stride, to: path)
+                    appendRounded(ring, kind: kind, stride: stride, to: path)
                 }
             }
         }
@@ -133,7 +133,7 @@ enum BattlefieldTerrainArt {
         }
     }
 
-    private static func appendRounded(_ ring: [Int], stride: Int, to path: CGMutablePath) {
+    private static func appendRounded(_ ring: [Int], kind: TerrainKind, stride: Int, to path: CGMutablePath) {
         let corners = ring.indices.filter { index in
             let previous = ring[(index + ring.count - 1) % ring.count]
             let current = ring[index]
@@ -150,10 +150,11 @@ enum BattlefieldTerrainArt {
             let previous = point(corners[(index + corners.count - 1) % corners.count])
             let next = point(corners[(index + 1) % corners.count])
             var random = ArtRandom(state: UInt64(corners[index]) &* 7_919 &+ 83)
-            let radius = tileSize * random.range(0.25, 0.34)
+            let softEdge = kind == .water || kind == .deep || kind == .dirt || kind == .sand
+            let radius = tileSize * (softEdge ? random.range(0.41, 0.55) : random.range(0.25, 0.34))
             let beforeLength = max(1, hypot(previous.x - current.x, previous.y - current.y))
             let afterLength = max(1, hypot(next.x - current.x, next.y - current.y))
-            let inset = min(radius, min(beforeLength * 0.45, afterLength * 0.45))
+            let inset = min(radius, min(beforeLength * 0.48, afterLength * 0.48))
             let entry = CGPoint(x: current.x + (previous.x - current.x) * inset / beforeLength,
                                 y: current.y + (previous.y - current.y) * inset / beforeLength)
             let exit = CGPoint(x: current.x + (next.x - current.x) * inset / afterLength,
@@ -233,8 +234,13 @@ enum BattlefieldTerrainArt {
         stroke(path, UIColor(red: 0.16, green: 0.36, blue: 0.32, alpha: 0.10), width: 1.1, context)
         context.restoreGState()
         if kind == .water {
-            context.setLineDash(phase: 0, lengths: [3, 7, 1, 5])
-            stroke(path, UIColor(red: 0.65, green: 0.78, blue: 0.65, alpha: 0.14), width: 0.7, context)
+            // Build the translucent shallows inside the existing water mask.
+            let shelf = UIColor(red: 0.43, green: 0.67, blue: 0.57, alpha: 1)
+            stroke(path, shelf.withAlphaComponent(0.07), width: 30, context)
+            stroke(path, shelf.withAlphaComponent(0.10), width: 19, context)
+            stroke(path, shelf.withAlphaComponent(0.14), width: 9, context)
+            context.setLineDash(phase: 0, lengths: [5, 7, 2, 5])
+            stroke(path, UIColor(red: 0.73, green: 0.84, blue: 0.74, alpha: 0.27), width: 1.6, context)
         }
         context.restoreGState()
     }
