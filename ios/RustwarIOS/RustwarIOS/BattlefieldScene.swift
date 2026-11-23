@@ -1652,7 +1652,7 @@ final class BattlefieldScene: SKScene {
         surface.fillColor = SKColor.systemBlue.withAlphaComponent(0.10)
         surface.strokeColor = SKColor(red: 0.54, green: 0.83, blue: 0.85, alpha: 0.41)
         surface.lineWidth = 1.35
-        surface.zPosition = -3
+        // Equal depth keeps sibling order above terrain and below later fog.
         container.addChild(surface)
 
         let innerRing = SKShapeNode(ellipseOf: CGSize(
@@ -1662,13 +1662,11 @@ final class BattlefieldScene: SKScene {
         innerRing.fillColor = .clear
         innerRing.strokeColor = .white.withAlphaComponent(0.27)
         innerRing.lineWidth = 1.05
-        innerRing.zPosition = -2.5
         container.addChild(innerRing)
 
         if let foam = GeneratedWaterImpactArt.sprite(
             diameter: 33 * scale, isFrozen: isFrozen, reduceMotion: accessibilityReduceMotion
         ) {
-            foam.zPosition = -1
             container.addChild(foam)
         } else {
             addFallbackWaterSpray(to: container, scale: scale, isFrozen: isFrozen)
@@ -1781,7 +1779,6 @@ final class BattlefieldScene: SKScene {
         arc.lineWidth = (1.25 + (index == 1 ? 0.35 : 0)) * scale
         arc.lineCap = .round
         arc.glowWidth = 0.8 * scale
-        arc.zPosition = -1
         return arc
     }
 

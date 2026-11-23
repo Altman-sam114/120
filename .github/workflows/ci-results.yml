@@ -410,7 +410,7 @@ jobs:
             if [[ "$combat_screenshot_orientation_status" -eq 0 ]]; then
               "$screenshot_probe_binary" \
                 "$combat_screenshot_path" \
-                "$combat_screenshot_metrics_path" >> "$build_log" 2>&1
+                "$combat_screenshot_metrics_path" --combat-foam >> "$build_log" 2>&1
               combat_screenshot_probe_status=$?
             fi
             if [[ "$simulator_install_status" -eq 0 && "$simulator_identity_status" -eq 0 ]]; then

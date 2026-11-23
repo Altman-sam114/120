@@ -13,7 +13,7 @@ enum ScreenshotValidationError: Error, CustomStringConvertible {
     var description: String {
         switch self {
         case .invalidArguments:
-            "Usage: validate-ios-screenshot.swift <input.png> <metrics.txt>"
+            "Usage: validate-ios-screenshot.swift <input.png> <metrics.txt> [--combat-foam]"
         case .imageSourceUnavailable:
             "The screenshot could not be opened as an image source."
         case .imageDecodeFailed:
@@ -33,9 +33,10 @@ struct ScreenshotMetrics {
     let meanLuminance: Double
     let luminanceStandardDeviation: Double
     let luminanceRange: Double
+    let combatFoamPixelRatio: Double?
 
     var report: String {
-        [
+        var lines = [
             "width=\(width)",
             "height=\(height)",
             "pixel_count=\(width * height)",
@@ -43,11 +44,15 @@ struct ScreenshotMetrics {
             "mean_luminance=\(meanLuminance)",
             "luminance_standard_deviation=\(luminanceStandardDeviation)",
             "luminance_range=\(luminanceRange)",
-        ].joined(separator: "\n") + "\n"
+        ]
+        if let combatFoamPixelRatio {
+            lines.append("combat_foam_pixel_ratio=\(combatFoamPixelRatio)")
+        }
+        return lines.joined(separator: "\n") + "\n"
     }
 }
 
-func analyzeScreenshot(at inputURL: URL) throws -> ScreenshotMetrics {
+func analyzeScreenshot(at inputURL: URL, checksCombatFoam: Bool) throws -> ScreenshotMetrics {
     guard let source = CGImageSourceCreateWithURL(inputURL as CFURL, nil) else {
         throw ScreenshotValidationError.imageSourceUnavailable
     }
@@ -58,30 +63,8 @@ func analyzeScreenshot(at inputURL: URL) throws -> ScreenshotMetrics {
     let width = image.width
     let height = image.height
     let bytesPerPixel = 4
-    let bytesPerRow = width * bytesPerPixel
-    var pixels = [UInt8](repeating: 0, count: bytesPerRow * height)
-    let colorSpace = CGColorSpaceCreateDeviceRGB()
-    let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
-
-    let rendered = pixels.withUnsafeMutableBytes { buffer in
-        guard let address = buffer.baseAddress,
-              let context = CGContext(
-                data: address,
-                width: width,
-                height: height,
-                bitsPerComponent: 8,
-                bytesPerRow: bytesPerRow,
-                space: colorSpace,
-                bitmapInfo: bitmapInfo
-              ) else {
-            return false
-        }
-        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
-        return true
-    }
-    guard rendered else {
-        throw ScreenshotValidationError.pixelBufferUnavailable
-    }
+    let pixels = try rgbaPixels(of: image)
+    let foamRatio = checksCombatFoam ? try combatFoamRatio(in: image) : nil
 
     var transparentPixels = 0
     var luminanceMean = 0.0
@@ -115,18 +98,71 @@ func analyzeScreenshot(at inputURL: URL) throws -> ScreenshotMetrics {
         transparentRatio: Double(transparentPixels) / Double(pixelCount),
         meanLuminance: luminanceMean,
         luminanceStandardDeviation: sqrt(luminanceM2 / Double(pixelCount)),
-        luminanceRange: maximumLuminance - minimumLuminance
+        luminanceRange: maximumLuminance - minimumLuminance,
+        combatFoamPixelRatio: foamRatio
     )
 }
 
+func rgbaPixels(of image: CGImage) throws -> [UInt8] {
+    let width = image.width
+    let height = image.height
+    let bytesPerRow = width * 4
+    var pixels = [UInt8](repeating: 0, count: bytesPerRow * height)
+    let colorSpace = CGColorSpaceCreateDeviceRGB()
+    let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
+
+    let rendered = pixels.withUnsafeMutableBytes { buffer in
+        guard let address = buffer.baseAddress,
+              let context = CGContext(
+                data: address,
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bytesPerRow: bytesPerRow,
+                space: colorSpace,
+                bitmapInfo: bitmapInfo
+              ) else {
+            return false
+        }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return true
+    }
+    guard rendered else {
+        throw ScreenshotValidationError.pixelBufferUnavailable
+    }
+    return pixels
+}
+
+func combatFoamRatio(in image: CGImage) throws -> Double {
+    // Clear water between the top HUD and the enemy tank, left of the gunboat.
+    // This region covers the frozen off-hull impact and excludes the health bars.
+    let width = CGFloat(image.width)
+    let height = CGFloat(image.height)
+    let region = CGRect(x: width * 0.529, y: height * 0.137,
+                        width: width * 0.026, height: height * 0.054).integral
+    guard let crop = image.cropping(to: region) else {
+        throw ScreenshotValidationError.pixelBufferUnavailable
+    }
+    let pixels = try rgbaPixels(of: crop)
+    var foamPixels = 0
+    for offset in stride(from: 0, to: pixels.count, by: 4) {
+        if pixels[offset] >= 128, pixels[offset + 1] >= 165, pixels[offset + 2] >= 158 {
+            foamPixels += 1
+        }
+    }
+    return Double(foamPixels) / Double(crop.width * crop.height)
+}
+
 do {
-    guard CommandLine.arguments.count == 3 else {
+    let arguments = CommandLine.arguments
+    let checksCombatFoam = arguments.count == 4 && arguments[3] == "--combat-foam"
+    guard arguments.count == 3 || checksCombatFoam else {
         throw ScreenshotValidationError.invalidArguments
     }
 
-    let inputURL = URL(fileURLWithPath: CommandLine.arguments[1])
-    let metricsURL = URL(fileURLWithPath: CommandLine.arguments[2])
-    let metrics = try analyzeScreenshot(at: inputURL)
+    let inputURL = URL(fileURLWithPath: arguments[1])
+    let metricsURL = URL(fileURLWithPath: arguments[2])
+    let metrics = try analyzeScreenshot(at: inputURL, checksCombatFoam: checksCombatFoam)
     try metrics.report.write(to: metricsURL, atomically: true, encoding: .utf8)
 
     var failures: [String] = []
@@ -144,6 +180,9 @@ do {
     }
     if metrics.luminanceRange < 40 {
         failures.append("luminance range is below 40")
+    }
+    if let ratio = metrics.combatFoamPixelRatio, ratio < 0.018 {
+        failures.append("combat water impact is obscured or missing (bright foam ratio \(ratio))")
     }
     if !failures.isEmpty {
         throw ScreenshotValidationError.validationFailed(failures)
