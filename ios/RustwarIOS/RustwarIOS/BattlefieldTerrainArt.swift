@@ -29,7 +29,7 @@ enum BattlefieldTerrainArt {
         let node = SKNode()
         var sourceBytes = 0
         let paths = Dictionary(uniqueKeysWithValues: families.filter { $0 != .grass }.map {
-            ($0, regionPath(for: $0, terrain: terrain))
+            ($0, $0 == .dirt ? dirtPath(for: terrain) : regionPath(for: $0, terrain: terrain))
         })
         let width = CGFloat(GameConstants.mapWidth)
         let height = CGFloat(GameConstants.mapHeight)
@@ -59,6 +59,78 @@ enum BattlefieldTerrainArt {
 
     private static func family(_ kind: TerrainKind) -> TerrainKind {
         kind == .grass2 ? .grass : kind
+    }
+
+    private static func dirtPath(for terrain: TerrainGrid) -> CGPath {
+        let tracks = CGMutablePath()
+        let path = CGMutablePath()
+        let tile = CGFloat(GameConstants.tileSize)
+        let forwardNeighbors = [(1, 0), (-1, 1), (0, 1), (1, 1)]
+
+        func isDirt(_ column: Int, _ row: Int) -> Bool {
+            column >= 0 && column < terrain.columns && row >= 0 && row < terrain.rows &&
+                terrain.terrain(column: column, row: row) == .dirt
+        }
+
+        func center(_ column: Int, _ row: Int) -> CGPoint {
+            let seed = UInt64(row * terrain.columns + column)
+            var random = ArtRandom(state: seed &* 14_729 &+ 101)
+            return CGPoint(x: (CGFloat(column) + random.range(0.38, 0.62)) * tile,
+                           y: (CGFloat(row) + random.range(0.38, 0.62)) * tile)
+        }
+
+        for row in 0..<terrain.rows {
+            for column in 0..<terrain.columns where isDirt(column, row) {
+                let point = center(column, row)
+                var hasNeighbor = false
+                for (dx, dy) in forwardNeighbors {
+                    if isDirt(column - dx, row - dy) {
+                        hasNeighbor = true
+                    }
+                    guard isDirt(column + dx, row + dy) else { continue }
+                    hasNeighbor = true
+                    let next = center(column + dx, row + dy)
+                    tracks.move(to: point)
+                    tracks.addQuadCurve(
+                        to: next,
+                        control: CGPoint(x: (point.x + next.x) / 2 - CGFloat(dy) * tile * 0.06,
+                                         y: (point.y + next.y) / 2 + CGFloat(dx) * tile * 0.06)
+                    )
+                }
+                if !hasNeighbor {
+                    let seed = UInt64(row * terrain.columns + column)
+                    appendGroundPatch(center: point, radius: tile * 0.27, seed: seed, to: path)
+                }
+            }
+        }
+        // Rounded caps meet at a shared, deterministic world-space center.
+        if !tracks.isEmpty {
+            path.addPath(tracks.copy(strokingWithWidth: tile * 0.44, lineCap: .round, lineJoin: .round,
+                                     miterLimit: 1, transform: .identity))
+        }
+        return path
+    }
+
+    private static func appendGroundPatch(
+        center: CGPoint, radius: CGFloat, seed: UInt64, to path: CGMutablePath
+    ) {
+        var random = ArtRandom(state: seed &* 23_849 &+ 1_009)
+        let fullTurn = CGFloat.pi * 2
+        let rotation = random.range(0, fullTurn)
+        let angleStep = fullTurn / 7
+        let points = (0..<7).map { index in
+            let angle = rotation + CGFloat(index) * angleStep
+            let distance = radius * random.range(0.70, 1.20)
+            return CGPoint(x: center.x + cos(angle) * distance, y: center.y + sin(angle) * distance)
+        }
+        let previous = points[6]
+        path.move(to: CGPoint(x: (previous.x + points[0].x) / 2, y: (previous.y + points[0].y) / 2))
+        for index in points.indices {
+            let corner = points[index]
+            let next = points[(index + 1) % points.count]
+            path.addQuadCurve(to: CGPoint(x: (corner.x + next.x) / 2, y: (corner.y + next.y) / 2), control: corner)
+        }
+        path.closeSubpath()
     }
 
     private static func regionPath(for kind: TerrainKind, terrain: TerrainGrid) -> CGPath {
@@ -97,10 +169,9 @@ enum BattlefieldTerrainArt {
                     guard let candidates = edges[current], !candidates.isEmpty else { break }
                     let chosen: Int
                     if let incoming {
-                        // Stitch diagonal dirt tracks, but keep water corners and holes distinct.
                         chosen = candidates.min { left, right in
-                            turnRank(from: incoming, to: direction(current, left, stride: stride), joinDiagonal: kind == .dirt) <
-                                turnRank(from: incoming, to: direction(current, right, stride: stride), joinDiagonal: kind == .dirt)
+                            turnRank(from: incoming, to: direction(current, left, stride: stride)) <
+                                turnRank(from: incoming, to: direction(current, right, stride: stride))
                         } ?? candidates[0]
                     } else {
                         chosen = candidates.min() ?? candidates[0]
@@ -124,11 +195,11 @@ enum BattlefieldTerrainArt {
         return 3
     }
 
-    private static func turnRank(from incoming: Int, to outgoing: Int, joinDiagonal: Bool) -> Int {
+    private static func turnRank(from incoming: Int, to outgoing: Int) -> Int {
         switch (outgoing - incoming + 4) % 4 {
-        case 1: joinDiagonal ? 2 : 0
+        case 1: 0
         case 0: 1
-        case 3: joinDiagonal ? 0 : 2
+        case 3: 2
         default: 3
         }
     }
@@ -142,15 +213,22 @@ enum BattlefieldTerrainArt {
         }.map { ring[$0] }
         guard corners.count >= 4 else { return }
         let tileSize = CGFloat(GameConstants.tileSize)
+        let softEdge = kind == .water || kind == .deep || kind == .sand
         func point(_ vertex: Int) -> CGPoint {
             CGPoint(x: CGFloat(vertex % stride) * tileSize, y: CGFloat(vertex / stride) * tileSize)
+        }
+        if kind == .sand, ring.count == 4 {
+            let first = point(corners[0])
+            let opposite = point(corners[2])
+            appendGroundPatch(center: CGPoint(x: (first.x + opposite.x) / 2, y: (first.y + opposite.y) / 2),
+                              radius: tileSize * 0.49, seed: UInt64(corners.min() ?? corners[0]), to: path)
+            return
         }
         for index in corners.indices {
             let current = point(corners[index])
             let previous = point(corners[(index + corners.count - 1) % corners.count])
             let next = point(corners[(index + 1) % corners.count])
             var random = ArtRandom(state: UInt64(corners[index]) &* 7_919 &+ 83)
-            let softEdge = kind == .water || kind == .deep || kind == .dirt || kind == .sand
             let radius = tileSize * (softEdge ? random.range(0.41, 0.55) : random.range(0.25, 0.34))
             let beforeLength = max(1, hypot(previous.x - current.x, previous.y - current.y))
             let afterLength = max(1, hypot(next.x - current.x, next.y - current.y))
@@ -181,24 +259,27 @@ enum BattlefieldTerrainArt {
             for kind in families where kind != .grass {
                 guard let path = paths[kind], !path.isEmpty else { continue }
                 drawMaterialMargin(kind, path: path, context: context)
-                context.saveGState()
-                context.setShadow(offset: CGSize(width: 0, height: kind == .rock ? 3 : 1),
-                                  blur: kind == .rock ? 7 : 4,
-                                  color: UIColor.black.withAlphaComponent(kind == .rock ? 0.26 : 0.15).cgColor)
-                context.addPath(path)
-                context.setFillColor(baseColor(kind).cgColor)
-                context.fillPath()
-                context.restoreGState()
+                if kind != .dirt && kind != .sand {
+                    context.saveGState()
+                    context.setShadow(offset: CGSize(width: 0, height: kind == .rock ? 3 : 1),
+                                      blur: kind == .rock ? 7 : 4,
+                                      color: UIColor.black.withAlphaComponent(kind == .rock ? 0.26 : 0.15).cgColor)
+                    fill(path, baseColor(kind), context)
+                    context.restoreGState()
+                }
                 context.saveGState()
                 context.addPath(path)
                 context.clip()
                 if let material = material(for: kind).cgImage {
                     context.draw(material, in: CGRect(x: 0, y: 0, width: materialSide, height: materialSide), byTiling: true)
                 }
-                if kind == .water || kind == .deep {
-                    drawWaterShelf(kind, path: path, context: context)
+                if kind == .deep {
+                    drawDeepWaterEdge(path, context: context)
                 }
                 context.restoreGState()
+            }
+            if let water = paths[.water], !water.isEmpty {
+                drawWaterShelf(water, context: context)
             }
             let colors = [UIColor(red: 0.88, green: 0.86, blue: 0.68, alpha: 0.06).cgColor,
                           UIColor.clear.cgColor, UIColor.black.withAlphaComponent(0.10).cgColor] as CFArray
@@ -225,23 +306,25 @@ enum BattlefieldTerrainArt {
         context.restoreGState()
     }
 
-    /// Called inside the material clip, so the shelf never spills onto land.
-    private static func drawWaterShelf(_ kind: TerrainKind, path: CGPath, context: CGContext) {
+    /// Draw over both water materials so deep water can meet a shoreline.
+    private static func drawWaterShelf(_ water: CGPath, context: CGContext) {
         context.saveGState()
+        context.addPath(water)
+        context.clip()
+        let shelf = UIColor(red: 0.43, green: 0.67, blue: 0.57, alpha: 1)
+        stroke(water, shelf.withAlphaComponent(0.07), width: 30, context)
+        stroke(water, shelf.withAlphaComponent(0.10), width: 19, context)
+        stroke(water, shelf.withAlphaComponent(0.14), width: 9, context)
+        context.setLineDash(phase: 0, lengths: [5, 7, 2, 5])
+        stroke(water, UIColor(red: 0.73, green: 0.84, blue: 0.74, alpha: 0.27), width: 1.6, context)
+        context.restoreGState()
+    }
+
+    private static func drawDeepWaterEdge(_ path: CGPath, context: CGContext) {
         context.saveGState()
         context.setShadow(offset: .zero, blur: 4,
                           color: UIColor(red: 0.06, green: 0.19, blue: 0.20, alpha: 0.22).cgColor)
         stroke(path, UIColor(red: 0.16, green: 0.36, blue: 0.32, alpha: 0.10), width: 1.1, context)
-        context.restoreGState()
-        if kind == .water {
-            // Build the translucent shallows inside the existing water mask.
-            let shelf = UIColor(red: 0.43, green: 0.67, blue: 0.57, alpha: 1)
-            stroke(path, shelf.withAlphaComponent(0.07), width: 30, context)
-            stroke(path, shelf.withAlphaComponent(0.10), width: 19, context)
-            stroke(path, shelf.withAlphaComponent(0.14), width: 9, context)
-            context.setLineDash(phase: 0, lengths: [5, 7, 2, 5])
-            stroke(path, UIColor(red: 0.73, green: 0.84, blue: 0.74, alpha: 0.27), width: 1.6, context)
-        }
         context.restoreGState()
     }
 
