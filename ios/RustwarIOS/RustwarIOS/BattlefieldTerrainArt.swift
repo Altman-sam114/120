@@ -134,18 +134,46 @@ enum BattlefieldTerrainArt {
         var random = ArtRandom(state: seed &* 23_849 &+ 1_009)
         let fullTurn = CGFloat.pi * 2
         let rotation = random.range(0, fullTurn)
-        let angleStep = fullTurn / 7
-        let points = (0..<7).map { index in
-            let angle = rotation + CGFloat(index) * angleStep
-            let distance = radius * random.range(0.70, 1.20)
+        let lobeCount = 11
+        let angleStep = fullTurn / CGFloat(lobeCount)
+        let pinchA = random.range(0, fullTurn)
+        let pinchB = random.range(0, fullTurn)
+        let points = (0..<lobeCount).map { index in
+            let angle = rotation + CGFloat(index) * angleStep + random.range(-0.14, 0.14)
+            let harmonic = 1 + 0.22 * cos(angle * 2 - pinchA) + 0.14 * sin(angle * 3 - pinchB)
+            let distance = radius * harmonic * random.range(0.68, 1.12)
             return CGPoint(x: center.x + cos(angle) * distance, y: center.y + sin(angle) * distance)
         }
-        let previous = points[6]
+        let previous = points[lobeCount - 1]
         path.move(to: CGPoint(x: (previous.x + points[0].x) / 2, y: (previous.y + points[0].y) / 2))
         for index in points.indices {
             let corner = points[index]
             let next = points[(index + 1) % points.count]
             path.addQuadCurve(to: CGPoint(x: (corner.x + next.x) / 2, y: (corner.y + next.y) / 2), control: corner)
+        }
+        path.closeSubpath()
+
+        // Add one small natural satellite pebble/sand drift near the main patch to break symmetry.
+        let driftAngle = random.range(0, fullTurn)
+        let driftDist = radius * random.range(0.95, 1.30)
+        let driftRadius = radius * random.range(0.22, 0.34)
+        let driftCenter = CGPoint(
+            x: center.x + cos(driftAngle) * driftDist,
+            y: center.y + sin(driftAngle) * driftDist
+        )
+        let satCount = 6
+        let satStep = fullTurn / CGFloat(satCount)
+        let satPoints = (0..<satCount).map { index in
+            let a = driftAngle + CGFloat(index) * satStep
+            let d = driftRadius * random.range(0.72, 1.18)
+            return CGPoint(x: driftCenter.x + cos(a) * d, y: driftCenter.y + sin(a) * d)
+        }
+        let satPrev = satPoints[satCount - 1]
+        path.move(to: CGPoint(x: (satPrev.x + satPoints[0].x) / 2, y: (satPrev.y + satPoints[0].y) / 2))
+        for index in satPoints.indices {
+            let c = satPoints[index]
+            let n = satPoints[(index + 1) % satCount]
+            path.addQuadCurve(to: CGPoint(x: (c.x + n.x) / 2, y: (c.y + n.y) / 2), control: c)
         }
         path.closeSubpath()
     }

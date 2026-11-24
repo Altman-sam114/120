@@ -2884,6 +2884,14 @@ final class BattlefieldScene: SKScene {
         if building.buildProgress < 1 {
             addConstructionFrame(size: definition.size, to: node)
         } else {
+            if controller?.cloudVisualScenario != .structures {
+                addBuildingOperationalEffects(
+                    for: building,
+                    size: definition.size,
+                    time: controller?.engine.state.time ?? 0,
+                    to: node
+                )
+            }
             addDamageState(
                 currentHitPoints: building.hitPoints,
                 maximumHitPoints: building.maxHitPoints,
@@ -3524,6 +3532,126 @@ final class BattlefieldScene: SKScene {
         frame.lineWidth = 2
         frame.lineCap = .round
         node.addChild(frame)
+    }
+
+    /// Subtle time-derived operational lighting makes completed bases feel alive
+    /// without mutating simulation state, breaking pause freeze, or leaking fog.
+    private func addBuildingOperationalEffects(
+        for building: BuildingSnapshot,
+        size: Double,
+        time: Double,
+        to node: SKNode
+    ) {
+        let pulse = accessibilityReduceMotion ? 0.65 : (0.5 + 0.5 * sin(time * 3.2))
+        switch building.type {
+        case .radar:
+            let sweepRadius = CGFloat(size * (building.upgradeLevel >= 2 ? 0.80 : 0.64))
+            let sweepAngle = accessibilityReduceMotion ? CGFloat(0.65) : CGFloat(time * 1.45)
+            let sectorSpan: CGFloat = 0.68
+            let sweepPath = CGMutablePath()
+            sweepPath.move(to: .zero)
+            sweepPath.addArc(
+                center: .zero,
+                radius: sweepRadius,
+                startAngle: sweepAngle - sectorSpan,
+                endAngle: sweepAngle,
+                clockwise: false
+            )
+            sweepPath.closeSubpath()
+
+            let radarTint = building.team == .player
+                ? SKColor(red: 0.34, green: 0.88, blue: 0.98, alpha: 1)
+                : SKColor(red: 1.0, green: 0.45, blue: 0.32, alpha: 1)
+
+            let sector = SKShapeNode(path: sweepPath)
+            sector.fillColor = radarTint.withAlphaComponent(0.15)
+            sector.strokeColor = .clear
+            sector.lineWidth = 0
+            sector.blendMode = .add
+            sector.zPosition = 2.4
+            node.addChild(sector)
+
+            let leadPath = CGMutablePath()
+            leadPath.move(to: .zero)
+            leadPath.addLine(to: CGPoint(x: cos(sweepAngle) * sweepRadius, y: sin(sweepAngle) * sweepRadius))
+            let leadBeam = SKShapeNode(path: leadPath)
+            leadBeam.strokeColor = radarTint.withAlphaComponent(0.58)
+            leadBeam.lineWidth = 1.4
+            leadBeam.lineCap = .round
+            leadBeam.blendMode = .add
+            leadBeam.zPosition = 2.5
+            node.addChild(leadBeam)
+
+            let ring = SKShapeNode(circleOfRadius: sweepRadius)
+            ring.fillColor = .clear
+            ring.strokeColor = radarTint.withAlphaComponent(0.20)
+            ring.lineWidth = 0.9
+            ring.blendMode = .add
+            ring.zPosition = 2.3
+            node.addChild(ring)
+
+        case .extractor:
+            let tierBoost = 1.0 + Double(Swift.max(0, building.upgradeLevel - 1)) * 0.14
+            let boreRadius = CGFloat(size * 0.16 * tierBoost)
+            let boreColor = SKColor(red: 0.35, green: 0.94, blue: 0.78, alpha: 1)
+            let coreGlow = BattlefieldEffectMaterials.sprite(
+                .glow,
+                width: Double(boreRadius * 3.4),
+                height: Double(boreRadius * 3.4),
+                color: boreColor,
+                alpha: 0.24 + 0.16 * pulse
+            )
+            coreGlow.zPosition = 2.2
+            node.addChild(coreGlow)
+
+            let ringScale = accessibilityReduceMotion ? 1.0 : CGFloat(0.86 + 0.32 * pulse)
+            let pulseRing = SKShapeNode(circleOfRadius: boreRadius * ringScale)
+            pulseRing.fillColor = .clear
+            pulseRing.strokeColor = boreColor.withAlphaComponent(CGFloat(0.42 * (1.15 - pulse * 0.6)))
+            pulseRing.lineWidth = 1.1
+            pulseRing.blendMode = .add
+            pulseRing.zPosition = 2.3
+            node.addChild(pulseRing)
+
+        case .landFactory:
+            guard !building.productionQueue.isEmpty else { return }
+            let bayGlow = BattlefieldEffectMaterials.sprite(
+                .glow,
+                width: size * 0.42,
+                height: size * 0.56,
+                color: SKColor(red: 1.0, green: 0.76, blue: 0.32, alpha: 1),
+                alpha: 0.26 + 0.18 * pulse
+            )
+            bayGlow.position = CGPoint(x: CGFloat(size * 0.34), y: 0)
+            bayGlow.zPosition = 2.2
+            node.addChild(bayGlow)
+
+            let strip = SKShapeNode(
+                rectOf: CGSize(width: 2.2, height: size * 0.36),
+                cornerRadius: 1.0
+            )
+            strip.fillColor = SKColor(red: 0.42, green: 0.96, blue: 0.74, alpha: CGFloat(0.62 + 0.30 * pulse))
+            strip.strokeColor = .clear
+            strip.blendMode = .add
+            strip.position = CGPoint(x: CGFloat(size * 0.40), y: 0)
+            strip.zPosition = 2.4
+            node.addChild(strip)
+
+        case .commandCenter:
+            guard !building.productionQueue.isEmpty else { return }
+            let coreGlow = BattlefieldEffectMaterials.sprite(
+                .glow,
+                width: size * 0.46,
+                height: size * 0.46,
+                color: SKColor(red: 0.36, green: 0.94, blue: 0.72, alpha: 1),
+                alpha: 0.22 + 0.14 * pulse
+            )
+            coreGlow.zPosition = 2.2
+            node.addChild(coreGlow)
+
+        case .turret:
+            break
+        }
     }
 
     private func polygonNode(

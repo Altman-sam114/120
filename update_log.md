@@ -1,10 +1,21 @@
+## v3.31 / 基地建筑动态工业光效与自然风蚀沙斑地貌
+
+2026-11-24。v3.30 完整五图全绿验收后继续视觉与沉浸感迭代，不启动子智能体、不在本机运行验证。
+
+- **基地建筑运作光效**（`BattlefieldScene.swift`）：新增 `addBuildingOperationalEffects`，完全从只读快照与 `state.time` 派生（不改变模拟状态、暂停自动定格、Reduce Motion 保持静态、`.structures` 展示模式跳过以维持原貌）：
+  - 雷达站：叠加青色/阵营色 38° 扫描扇面、前沿扫描射线与低噪信号外环（T2 扫描圈更大）。
+  - 金属提取器：中央钻井口叠加随科技等级微增的蓝绿采矿脉冲光环与柔和核心辉光。
+  - 生产中陆军工厂/指挥中心：当 `productionQueue` 非空时，在工厂右侧出厂坡道叠加温暖琥珀/磷绿作业微光条，在指挥中心穹顶叠加运作辉光。
+- **自然风蚀孤立沙地/土斑**（`BattlefieldTerrainArt.swift`）：将 `appendGroundPatch` 从 7 顶点椭圆升级为 11 顶点多瓣谐波风蚀轮廓并附带一处卫星碎砾斑块，消除岛屿地图孤立沙斑的圆润贴片感。
+- 待本提交精确 SHA 的云端 native CI 与全部五张新截图复看。
+
 ## v3.30 / 弹药写实军工比例精修与双指战术瞄准框
 
 2026-11-24。基于 v3.29 云端战斗截图实测反馈继续精修，不启动子智能体、不在本机运行验证。
 
 - **弹药写实军工比例精调**（`BattlefieldScene.swift`）：将穿甲炮弹与高爆榴弹缩放至约 60% 真实战车比例（收窄金属弹体、降低抛物线峰值放大系数、以细暗金属边替代厚黑描边），纤细化高速曳光弹体，兼顾清晰辨识度与写实战地质感。
 - **双指战术扫描框**（`BattlefieldView.swift`）：为多指/显式框选层新增 `selectionCornerLayer`，叠加四角加粗磷绿 L 型军工瞄准括号，与 HUD / 小地图瞄准框语言完全统一。
-- 待本提交精确 SHA 的云端 native CI 与全部五张新截图完整复验。
+- **云端原生验证通过**：`c625de61af79c95dd02f4e5703e71706044599f8` 在自动触发 native push run `45357323064` / attempt `1` 成功通过。已以 `Altman-sam114` 下载核对 artifact `14904561926`（`rustwar-ci-v1.2-main-c625de6-run45357323064-attempt1`，sha256 `2e7c91ae4995aafdf8ec8a08904fc41357b02afeed4bd310a0310f3764bf63c8`，17.1MB）至 `/private/tmp/rustwar-review-45357323064/attempt-1`。SHA、scope、JUnit（`11/0/1`，唯一跳过为无入口的 Web 浏览器回归）、Core tests、双架构构建、23/23 真实 iOS UI 测试、水花探针（`47.39%`）与全部 5 张云端新截图复看均通过：`ios-home.png` 正常完整渲染（`mean_luminance=57.74`），`ios-combat.png` 精调后的穿甲弹/高爆榴弹/曳光弹比例真实自然、五层复合爆炸与 5 兵种芯片完整无裁切，`ios-islands.png` / `ios-lava.png` / `ios-structures.png` 均清晰无回退。本机未执行任何验证。
 
 ## v3.29 / 实体分兵种弹药射出与五层复合爆炸动画
 
