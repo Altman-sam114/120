@@ -103,23 +103,23 @@ struct TacticalSelectionSummaryView: View {
                 attackStanceLabel(attackStanceSummary, accessibilitySummary: attackStanceAccessibilitySummary)
             }
             if units.count > 1 {
-                // Compact metallic chips keep 5+ unit types cleanly readable without clipping.
+                // Compact metallic chips keep 5+ unit types cleanly visible without clipping.
                 ScrollView(.horizontal) {
-                    HStack(spacing: TacticalHUDTheme.denseSpacing) {
+                    HStack(spacing: 3) {
                         ForEach(composition, id: \.type) { entry in
-                            HStack(spacing: 3) {
+                            HStack(spacing: 2) {
                                 TacticalUnitPortrait(unitType: entry.type)
-                                    .frame(width: 20, height: 20)
+                                    .frame(width: 17, height: 17)
                                 Text("\(entry.count)")
-                                    .font(.caption2.monospacedDigit().bold())
+                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
                                     .foregroundStyle(TacticalHUDTheme.primaryText)
                             }
-                            .padding(.horizontal, 5)
+                            .padding(.horizontal, 3.5)
                             .padding(.vertical, 2)
-                            .background(TacticalHUDTheme.metricGradient, in: .rect(cornerRadius: 4))
+                            .background(TacticalHUDTheme.metricGradient, in: .rect(cornerRadius: 3.5))
                             .overlay {
-                                RoundedRectangle(cornerRadius: 4)
-                                    .stroke(TacticalHUDTheme.chromeStroke.opacity(0.8), lineWidth: 0.8)
+                                RoundedRectangle(cornerRadius: 3.5)
+                                    .stroke(TacticalHUDTheme.chromeStroke.opacity(0.8), lineWidth: 0.75)
                             }
                             .fixedSize(horizontal: true, vertical: false)
                             .accessibilityElement(children: .ignore)

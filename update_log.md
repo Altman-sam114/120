@@ -1,10 +1,19 @@
+## v3.29 / 实体分兵种弹药射出与五层复合爆炸动画
+
+2026-11-24。响应用户对攻击特效、弹药射出与爆炸动画的重点诉求，不启动子智能体、不在本机运行验证。
+
+- **分兵种实感弹药实体与弹道动画**：在 `BattlefieldScene` 新增 `ProjectileVisualStyle`（`.armorPiercing` 金属穿甲炮弹、`.artilleryShell` 带尾翼高爆榴弹、`.autocannonTracer` 针状高速曳光弹），彻底替代旧模糊光点；将重型坦克升级为双联主炮齐射（`shotCount = 2`）；放宽直射/曲射弹药可视飞行时间窗口，并让火炮曲射炮弹沿抛物线动态调整弹头仰俯角，同时以 `GeneratedBattleVFXArt.smokePuffSprite` 写实体积烟雾替代旧灰圆尾烟。
+- **开火炮口火药散烟**：大口径武器开火瞬间在炮口前方喷出快速膨胀淡出的写实火药烟雾，增强火炮发射的金属厚重感。
+- **命中爆裂与五层复合爆炸**：`addProjectileTerminalFlash` 命中瞬间新增扩张冲击波环与放射火星；`spawnImpactEffect` 与 `spawnDestructionEffect` 不再在加载 8 帧爆炸图集后跳过层次，改为合并渲染「焦土弹坑 + 扩张冲击波环（摧毁含双波） + 炽白热核闪光 + 8 帧写实爆炸图集 + 飞溅火星与装甲残片」。
+- **多选编成芯片微调**：收紧 `TacticalSelectionSummaryView` 多选兵种芯片尺寸与间距，避免 5 兵种同屏时第 5 项右侧滚出。本轮待提交并推送 `origin/main` 后进行完整云端 native CI 验证与五场景截图复看。
+
 ## v3.28 / 军工战术 HUD 重构与写实战斗 VFX 贴图体系
 
 2026-11-24。持续迭代原生 iOS 前端视觉与战斗表现，不启动子智能体、不在本机运行验证。
 
 - **军工战术指挥台 HUD 重构**：升级 `TacticalHUDTheme` 为深曜石枪钢分层渐变与磷绿/青/琥珀遥测色板，新增 `TacticalPortraitWell` 蓝图凹槽头像框与 `TacticalCornerBracketOverlay` 四角瞄准框；全面重构顶部遥测栏、小地图边框、底栏指挥框架、选择摘要（修复多选 5+ 兵种紧凑芯片显示不裁切）、生产卡片（凹槽缩略图、荧光排队角标与底边发光进度条）、生产队列/概览/工厂科技、快捷指令与次级指令（清理残留英文 `"Attack\nMove"` 为 `"进攻\n移动"`）。保持全部 44pt 触控门槛与 23 项 UI accessibility 标识不变。
 - **5 套写实战斗 VFX 贴图与战场渲染升级**：升级 `WaterImpact` 为写实海面泡沫环，新增 `MuzzleFlashAtlas`（单管/双联/重炮/电浆 4 格）、`CraterAtlas`（4 格弹坑焦痕）、`DamageSmokeAtlas`（轻烟/浓烟/燃烧火光/蒸汽 4 格）与 `WaterWake`（炮艇 V 形白浪尾迹）。在 `GeneratedExplosionArt.swift` 新增 `GeneratedBattleVFXArt` 统一缓存与预加载；`BattlefieldScene` 接入 4 套新贴图，并将激光束升级为三层离子束 + 命中辉光、实体血条升级为带高光和护甲刻度线的军工分段血条；`BattlefieldTerrainArt` 进一步柔和孤立沙地羽化过渡。
-- **测试与文档**：扩展 `ci/effect-art.test.js` 对 4 套新 VFX 源 PNG 做真实 RGBA 透明留边/内容/零裁切回归；在 `GameController+InteractionSnapshot` 与 `RustwarIOSInteractionTests` 增加 4 套新 VFX 真实解码断言；同步更新 `ios/RustwarIOS/ARTWORK.md` 与 `md/flow/flow.md`。本轮待提交并推送 `origin/main` 后进行完整云端 native CI 验证与五场景画面复看。
+- **云端原生验证通过**：`9ed360694ed58c95e3321b654ea506856afba3fd` 在自动触发 native push run `45346768644` / attempt `1` / job `138283186020` 成功通过。已以 `Altman-sam114` 下载核对 artifact `14900550110`（`rustwar-ci-v1.2-main-9ed3606-run45346768644-attempt1`，sha256 `1ceb592b358339388b0acbe7bca2a47d3ab58e123b2c50fc7765dc80332ee73a`，17MB）至 `/private/tmp/rustwar-review-45346768644/attempt-1`。SHA、scope、JUnit（11/0/1，唯一跳过为暂无入口的 Web 浏览器回归）、Core tests、双架构 App 构建、23/23 真实 iOS UI 测试（含 4 套新 VFX 真实解码断言）、战斗水花探针（47.39% 亮泡沫像素）与全部 5 张云端新截图复看均通过；五张图清晰呈现新军工 HUD、写实海面泡沫、炮口焰、三层离子束、分段血条与受损烟雾，同时发现多选第 5 兵种芯片略向右滚出及弹药实体偏小，转入 v3.29 立即优化。本机未执行任何验证。
 
 ## v3.27 / 原创无缝地形材质、地貌小地图与建筑混凝土底盘
 

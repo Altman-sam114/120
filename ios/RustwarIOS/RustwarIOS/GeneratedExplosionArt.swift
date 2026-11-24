@@ -256,4 +256,17 @@ enum GeneratedBattleVFXArt {
         sprite.zPosition = 4.5
         return sprite
     }
+
+    static func smokePuffSprite(
+        kind: DamageSmokeKind = .lightSmoke,
+        diameter: CGFloat,
+        alpha: CGFloat
+    ) -> SKSpriteNode? {
+        guard damageSmokes.count == 4, diameter.isFinite, diameter > 0 else { return nil }
+        let sprite = SKSpriteNode(texture: damageSmokes[kind.rawValue], size: CGSize(width: diameter, height: diameter))
+        sprite.name = "generated-smoke-puff"
+        sprite.blendMode = .alpha
+        sprite.alpha = alpha
+        return sprite
+    }
 }
