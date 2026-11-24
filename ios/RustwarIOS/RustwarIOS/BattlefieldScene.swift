@@ -193,6 +193,7 @@ final class BattlefieldScene: SKScene {
         worldNode.addChild(radarNode)
         GeneratedExplosionArt.preload()
         GeneratedWaterImpactArt.preload()
+        GeneratedBattleVFXArt.preload()
     }
 
     private func drawTouchPreview(_ preview: BattlefieldTouchPreview?) {
@@ -1139,38 +1140,88 @@ final class BattlefieldScene: SKScene {
         )
         let volleyTargetPoint = target.map { spritePoint(for: $0) }
 
+        let flashKind: GeneratedBattleVFXArt.MuzzleFlashKind = if beamWidth > 0 {
+            .plasma
+        } else if shotCount > 1 {
+            .twin
+        } else if flashRadius >= 6.5 {
+            .heavy
+        } else {
+            .single
+        }
+        let useTwinSharedFlash = shotCount > 1 && flashKind == .twin && GeneratedBattleVFXArt.loadedMuzzleFlashCount == 4
+        if useTwinSharedFlash,
+           let twinFlash = GeneratedBattleVFXArt.muzzleFlashSprite(
+               kind: .twin,
+               length: CGFloat(flashRadius * 6.4),
+               heading: heading,
+               isFrozen: isFrozen,
+               reduceMotion: accessibilityReduceMotion
+           ) {
+            twinFlash.position = muzzle
+            twinFlash.zPosition = 0.5
+            container.addChild(twinFlash)
+        }
+
         for shot in 0..<shotCount {
             let lateralOffset = shotCount == 1 ? 0 : (shot == 0 ? -3.2 : 3.2)
             let origin = CGPoint(
                 x: muzzle.x + normal.dx * lateralOffset,
                 y: muzzle.y + normal.dy * lateralOffset
             )
-            let flash = BattlefieldEffectMaterials.sprite(.glow, width: flashRadius * 4,
-                                                          height: flashRadius * 4, color: .white, alpha: 0.93)
-            flash.position = origin
-            container.addChild(flash)
-            let flare = BattlefieldEffectMaterials.sprite(.flash, width: flashRadius * 6,
-                                                          height: flashRadius * 3, color: color, alpha: 0.85)
-            flare.position = origin
-            flare.zRotation = heading
-            container.addChild(flare)
-            let plume = BattlefieldEffectMaterials.sprite(.glow, width: flashRadius * 7,
-                                                          height: flashRadius * 3, color: color, alpha: 0.28)
-            plume.position = CGPoint(x: origin.x + direction.dx * flashRadius * 0.7,
-                                     y: origin.y + direction.dy * flashRadius * 0.7)
-            plume.zRotation = heading
-            plume.zPosition = -0.5
-            container.addChild(plume)
-            let flashFade = SKAction.fadeOut(withDuration: accessibilityReduceMotion ? 0.12 : 0.1)
-            if !isFrozen {
-                if accessibilityReduceMotion {
-                    flash.run(flashFade)
-                    flare.run(.fadeOut(withDuration: 0.12))
-                    plume.run(.fadeOut(withDuration: 0.12))
+            if !useTwinSharedFlash {
+                if let flashSprite = GeneratedBattleVFXArt.muzzleFlashSprite(
+                    kind: flashKind,
+                    length: CGFloat(flashRadius * (flashKind == .heavy ? 6.8 : 5.8)),
+                    heading: heading,
+                    isFrozen: isFrozen,
+                    reduceMotion: accessibilityReduceMotion
+                ) {
+                    flashSprite.position = origin
+                    flashSprite.zPosition = 0.5
+                    container.addChild(flashSprite)
+                    let coreGlow = BattlefieldEffectMaterials.sprite(
+                        .glow,
+                        width: flashRadius * 3.4,
+                        height: flashRadius * 3.4,
+                        color: color,
+                        alpha: 0.42
+                    )
+                    coreGlow.position = origin
+                    coreGlow.zPosition = -0.2
+                    container.addChild(coreGlow)
+                    if !isFrozen {
+                        coreGlow.run(.fadeOut(withDuration: 0.11))
+                    }
                 } else {
-                    flash.run(.group([flashFade, .scale(to: 1.65, duration: 0.1)]))
-                    flare.run(.fadeOut(withDuration: 0.12))
-                    plume.run(.fadeOut(withDuration: 0.14))
+                    let flash = BattlefieldEffectMaterials.sprite(.glow, width: flashRadius * 4,
+                                                                  height: flashRadius * 4, color: .white, alpha: 0.93)
+                    flash.position = origin
+                    container.addChild(flash)
+                    let flare = BattlefieldEffectMaterials.sprite(.flash, width: flashRadius * 6,
+                                                                  height: flashRadius * 3, color: color, alpha: 0.85)
+                    flare.position = origin
+                    flare.zRotation = heading
+                    container.addChild(flare)
+                    let plume = BattlefieldEffectMaterials.sprite(.glow, width: flashRadius * 7,
+                                                                  height: flashRadius * 3, color: color, alpha: 0.28)
+                    plume.position = CGPoint(x: origin.x + direction.dx * flashRadius * 0.7,
+                                             y: origin.y + direction.dy * flashRadius * 0.7)
+                    plume.zRotation = heading
+                    plume.zPosition = -0.5
+                    container.addChild(plume)
+                    let flashFade = SKAction.fadeOut(withDuration: accessibilityReduceMotion ? 0.12 : 0.1)
+                    if !isFrozen {
+                        if accessibilityReduceMotion {
+                            flash.run(flashFade)
+                            flare.run(.fadeOut(withDuration: 0.12))
+                            plume.run(.fadeOut(withDuration: 0.12))
+                        } else {
+                            flash.run(.group([flashFade, .scale(to: 1.65, duration: 0.1)]))
+                            flare.run(.fadeOut(withDuration: 0.12))
+                            plume.run(.fadeOut(withDuration: 0.14))
+                        }
+                    }
                 }
             }
 
@@ -1525,20 +1576,41 @@ final class BattlefieldScene: SKScene {
         path.move(to: origin)
         path.addLine(to: target)
 
-        let glow = SKShapeNode(path: path)
-        glow.strokeColor = color.withAlphaComponent(0.30)
-        glow.lineWidth = width * 2.5
-        glow.lineCap = .round
-        container.addChild(glow)
+        let outerHalo = SKShapeNode(path: path)
+        outerHalo.strokeColor = color.withAlphaComponent(0.24)
+        outerHalo.lineWidth = width * 4.0
+        outerHalo.lineCap = .round
+        outerHalo.blendMode = .add
+        container.addChild(outerHalo)
+
+        let midEnergy = SKShapeNode(path: path)
+        midEnergy.strokeColor = color.withAlphaComponent(0.80)
+        midEnergy.lineWidth = width * 1.7
+        midEnergy.lineCap = .round
+        midEnergy.blendMode = .add
+        container.addChild(midEnergy)
 
         let core = SKShapeNode(path: path)
-        core.strokeColor = .white.withAlphaComponent(0.92)
-        core.lineWidth = width
+        core.strokeColor = .white.withAlphaComponent(0.98)
+        core.lineWidth = Swift.max(1.1, width * 0.72)
         core.lineCap = .round
         container.addChild(core)
+
+        let tipBloom = BattlefieldEffectMaterials.sprite(
+            .glow,
+            width: width * 7.0,
+            height: width * 7.0,
+            color: color,
+            alpha: 0.82
+        )
+        tipBloom.position = target
+        container.addChild(tipBloom)
+
         if !isFrozen {
-            glow.run(.fadeOut(withDuration: 0.16))
-            core.run(.fadeOut(withDuration: 0.12))
+            outerHalo.run(.fadeOut(withDuration: 0.18))
+            midEnergy.run(.fadeOut(withDuration: 0.15))
+            core.run(.fadeOut(withDuration: 0.11))
+            tipBloom.run(.group([.scale(to: 1.45, duration: 0.14), .fadeOut(withDuration: 0.14)]))
         }
     }
 
@@ -1994,36 +2066,45 @@ final class BattlefieldScene: SKScene {
 
         let scorch = SKNode()
         scorch.position = spritePoint(for: position)
-        let outer = BattlefieldEffectMaterials.sprite(.scorch, width: radius * 2.5,
-                                                       height: radius * 1.8,
-                                                       color: SKColor(red: 0.07, green: 0.055, blue: 0.04, alpha: 1),
-                                                       alpha: isFrozen ? 0.61 : 0.48)
-        scorch.addChild(outer)
-        let crackPath = CGMutablePath()
-        for index in 0..<7 {
-            let angle = 0.31 + Double(index) * (2 * Double.pi / 7)
-            let startRadius = radius * (0.38 + Double(index % 2) * 0.08)
-            let bendRadius = radius * (0.62 + Double(index % 3) * 0.045)
-            let endRadius = radius * (0.84 + Double(index % 2) * 0.08)
-            crackPath.move(to: CGPoint(
-                x: CGFloat(cos(angle) * startRadius),
-                y: CGFloat(sin(angle) * startRadius * 0.72)
-            ))
-            crackPath.addLine(to: CGPoint(
-                x: CGFloat(cos(angle + 0.1) * bendRadius),
-                y: CGFloat(sin(angle + 0.1) * bendRadius * 0.72)
-            ))
-            crackPath.addLine(to: CGPoint(
-                x: CGFloat(cos(angle - 0.04) * endRadius),
-                y: CGFloat(sin(angle - 0.04) * endRadius * 0.72)
-            ))
+        let seed = Int((position.x * 31 + position.y * 17).rounded())
+        if let crater = GeneratedBattleVFXArt.craterSprite(
+            diameter: CGFloat(radius * 2.8),
+            seed: seed,
+            isFrozen: isFrozen
+        ) {
+            scorch.addChild(crater)
+        } else {
+            let outer = BattlefieldEffectMaterials.sprite(.scorch, width: radius * 2.5,
+                                                           height: radius * 1.8,
+                                                           color: SKColor(red: 0.07, green: 0.055, blue: 0.04, alpha: 1),
+                                                           alpha: isFrozen ? 0.61 : 0.48)
+            scorch.addChild(outer)
+            let crackPath = CGMutablePath()
+            for index in 0..<7 {
+                let angle = 0.31 + Double(index) * (2 * Double.pi / 7)
+                let startRadius = radius * (0.38 + Double(index % 2) * 0.08)
+                let bendRadius = radius * (0.62 + Double(index % 3) * 0.045)
+                let endRadius = radius * (0.84 + Double(index % 2) * 0.08)
+                crackPath.move(to: CGPoint(
+                    x: CGFloat(cos(angle) * startRadius),
+                    y: CGFloat(sin(angle) * startRadius * 0.72)
+                ))
+                crackPath.addLine(to: CGPoint(
+                    x: CGFloat(cos(angle + 0.1) * bendRadius),
+                    y: CGFloat(sin(angle + 0.1) * bendRadius * 0.72)
+                ))
+                crackPath.addLine(to: CGPoint(
+                    x: CGFloat(cos(angle - 0.04) * endRadius),
+                    y: CGFloat(sin(angle - 0.04) * endRadius * 0.72)
+                ))
+            }
+            let cracks = SKShapeNode(path: crackPath)
+            cracks.strokeColor = SKColor.black.withAlphaComponent(isFrozen ? 0.58 : 0.38)
+            cracks.lineWidth = 1
+            cracks.lineCap = .round
+            cracks.lineJoin = .round
+            scorch.addChild(cracks)
         }
-        let cracks = SKShapeNode(path: crackPath)
-        cracks.strokeColor = SKColor.black.withAlphaComponent(isFrozen ? 0.58 : 0.38)
-        cracks.lineWidth = 1
-        cracks.lineCap = .round
-        cracks.lineJoin = .round
-        scorch.addChild(cracks)
 
         decalNode.addChild(scorch)
         if !isFrozen {
@@ -2615,6 +2696,16 @@ final class BattlefieldScene: SKScene {
         node.position = spritePoint(for: unit.position)
         if controller?.runsInteractionTests == true { node.name = unit.id }
         let hullHeading = unitHeadings[unit.id] ?? defaultHeading(for: unit.team)
+        if unit.type == .gunboat,
+           let wake = GeneratedBattleVFXArt.waterWakeSprite(
+               length: CGFloat(definition.radius * 4.4),
+               width: CGFloat(definition.radius * 2.15),
+               isMoving: unit.order != nil
+           ) {
+            wake.zRotation = hullHeading
+            wake.zPosition = -2.2
+            node.addChild(wake)
+        }
         addUnitShadow(
             for: unit.type,
             radius: definition.radius,
@@ -2969,6 +3060,14 @@ final class BattlefieldScene: SKScene {
         }
         let healthFraction = Swift.max(0, Swift.min(1, currentHitPoints / maximumHitPoints))
         guard healthFraction < 0.55 else {
+            return
+        }
+
+        if let smokeSprite = GeneratedBattleVFXArt.damageSmokeSprite(
+            healthFraction: healthFraction,
+            visualScale: visualScale
+        ) {
+            node.addChild(smokeSprite)
             return
         }
 
@@ -3817,22 +3916,53 @@ final class BattlefieldScene: SKScene {
         guard max > 0, current < max else {
             return
         }
-        let height = 4.5
+        let height = 5.0
         let fraction = Swift.min(1, Swift.max(0, current / max))
-        let background = SKShapeNode(rect: CGRect(x: -width / 2, y: yOffset, width: width, height: height), cornerRadius: 2)
-        background.fillColor = .black.withAlphaComponent(0.75)
-        background.strokeColor = SKColor.black.withAlphaComponent(0.9)
+        let barRect = CGRect(x: -width / 2, y: yOffset, width: width, height: height)
+        let background = SKShapeNode(rect: barRect, cornerRadius: 1.5)
+        background.fillColor = SKColor(red: 0.04, green: 0.06, blue: 0.07, alpha: 0.88)
+        background.strokeColor = SKColor.black.withAlphaComponent(0.95)
         background.lineWidth = 1
+        background.zPosition = 6
         node.addChild(background)
 
-        let fill = SKShapeNode(
-            rect: CGRect(x: -width / 2 + 0.75, y: yOffset + 0.75, width: (width - 1.5) * fraction, height: height - 1.5),
-            cornerRadius: 1.4
-        )
-        fill.fillColor = healthColor(fraction).withAlphaComponent(0.96)
-        fill.strokeColor = fill.fillColor
-        fill.lineWidth = 0
-        node.addChild(fill)
+        let innerWidth = Swift.max(0, (width - 2.0) * fraction)
+        if innerWidth > 0.5 {
+            let fillColor = healthColor(fraction)
+            let fill = SKShapeNode(
+                rect: CGRect(x: -width / 2 + 1.0, y: yOffset + 1.0, width: innerWidth, height: height - 2.0),
+                cornerRadius: 0.8
+            )
+            fill.fillColor = fillColor.withAlphaComponent(0.96)
+            fill.strokeColor = .clear
+            fill.lineWidth = 0
+            fill.zPosition = 6.1
+            node.addChild(fill)
+
+            // Crisp top specular highlight gives the health bar a machined tactical finish.
+            let sheen = SKShapeNode(
+                rect: CGRect(x: -width / 2 + 1.0, y: yOffset + height - 1.85, width: innerWidth, height: 0.85)
+            )
+            sheen.fillColor = SKColor.white.withAlphaComponent(0.32)
+            sheen.strokeColor = .clear
+            sheen.lineWidth = 0
+            sheen.zPosition = 6.2
+            node.addChild(sheen)
+        }
+
+        // Military armor segmentation ticks improve readability at a glance.
+        let segments = width >= 46 ? 5 : 4
+        let tickPath = CGMutablePath()
+        for step in 1..<segments {
+            let x = -width / 2 + width * Double(step) / Double(segments)
+            tickPath.move(to: CGPoint(x: x, y: yOffset + 0.7))
+            tickPath.addLine(to: CGPoint(x: x, y: yOffset + height - 0.7))
+        }
+        let ticks = SKShapeNode(path: tickPath)
+        ticks.strokeColor = SKColor.black.withAlphaComponent(0.52)
+        ticks.lineWidth = 0.8
+        ticks.zPosition = 6.3
+        node.addChild(ticks)
     }
 
     private func drawBuildProgressBar(progress: Double, width: Double, yOffset: Double, on node: SKNode) {

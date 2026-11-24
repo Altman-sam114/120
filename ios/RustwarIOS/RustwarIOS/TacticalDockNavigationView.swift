@@ -23,11 +23,18 @@ struct TacticalDockNavigationView: View {
             }
         }
         .padding(.vertical, TacticalHUDTheme.denseSpacing)
-        .background(TacticalHUDTheme.chromeBackground)
+        .background {
+            TacticalHUDTheme.chromeGradient
+        }
         .overlay(alignment: .top) {
-            Rectangle()
-                .fill(TacticalHUDTheme.chromeStroke)
-                .frame(height: 1)
+            VStack(spacing: 0) {
+                Rectangle()
+                    .fill(TacticalHUDTheme.accent.opacity(0.36))
+                    .frame(height: 1)
+                Rectangle()
+                    .fill(TacticalHUDTheme.bevelHighlight)
+                    .frame(height: 0.6)
+            }
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("指挥面板导航")
@@ -36,6 +43,7 @@ struct TacticalDockNavigationView: View {
     private var destinations: some View {
         ForEach(TacticalDockDestination.allCases, id: \.self) { destination in
             let isFactory = destination == .orders && showsProducer
+            let isPrimary = destination == .orders
             Button(action: { navigate(destination) }) {
                 if dynamicTypeSize > .large {
                     Label(
@@ -48,14 +56,24 @@ struct TacticalDockNavigationView: View {
                     .frame(minHeight: TacticalHUDTheme.controlMinimumHeight)
                 } else {
                     VStack(spacing: 2) {
+                        Capsule()
+                            .fill(isPrimary ? TacticalHUDTheme.accent : Color.clear)
+                            .frame(width: 18, height: 2)
+                            .accessibilityHidden(true)
                         Image(systemName: isFactory ? "gearshape.2.fill" : destination.systemImage)
-                            .font(.body)
+                            .font(.subheadline.weight(isPrimary ? .bold : .medium))
+                            .foregroundStyle(isPrimary ? TacticalHUDTheme.accent : TacticalHUDTheme.secondaryText)
                             .accessibilityHidden(true)
                         Text(isFactory ? "工厂" : destination.title)
                             .font(.caption2.bold())
+                            .foregroundStyle(isPrimary ? TacticalHUDTheme.primaryText : TacticalHUDTheme.secondaryText)
                             .lineLimit(1)
                     }
                     .frame(maxWidth: .infinity, minHeight: TacticalHUDTheme.controlMinimumHeight)
+                    .background(
+                        isPrimary ? TacticalHUDTheme.accent.opacity(0.08) : Color.clear,
+                        in: .rect(cornerRadius: 4)
+                    )
                     .contentShape(.rect)
                 }
             }

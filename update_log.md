@@ -1,3 +1,11 @@
+## v3.28 / 军工战术 HUD 重构与写实战斗 VFX 贴图体系
+
+2026-11-24。持续迭代原生 iOS 前端视觉与战斗表现，不启动子智能体、不在本机运行验证。
+
+- **军工战术指挥台 HUD 重构**：升级 `TacticalHUDTheme` 为深曜石枪钢分层渐变与磷绿/青/琥珀遥测色板，新增 `TacticalPortraitWell` 蓝图凹槽头像框与 `TacticalCornerBracketOverlay` 四角瞄准框；全面重构顶部遥测栏、小地图边框、底栏指挥框架、选择摘要（修复多选 5+ 兵种紧凑芯片显示不裁切）、生产卡片（凹槽缩略图、荧光排队角标与底边发光进度条）、生产队列/概览/工厂科技、快捷指令与次级指令（清理残留英文 `"Attack\nMove"` 为 `"进攻\n移动"`）。保持全部 44pt 触控门槛与 23 项 UI accessibility 标识不变。
+- **5 套写实战斗 VFX 贴图与战场渲染升级**：升级 `WaterImpact` 为写实海面泡沫环，新增 `MuzzleFlashAtlas`（单管/双联/重炮/电浆 4 格）、`CraterAtlas`（4 格弹坑焦痕）、`DamageSmokeAtlas`（轻烟/浓烟/燃烧火光/蒸汽 4 格）与 `WaterWake`（炮艇 V 形白浪尾迹）。在 `GeneratedExplosionArt.swift` 新增 `GeneratedBattleVFXArt` 统一缓存与预加载；`BattlefieldScene` 接入 4 套新贴图，并将激光束升级为三层离子束 + 命中辉光、实体血条升级为带高光和护甲刻度线的军工分段血条；`BattlefieldTerrainArt` 进一步柔和孤立沙地羽化过渡。
+- **测试与文档**：扩展 `ci/effect-art.test.js` 对 4 套新 VFX 源 PNG 做真实 RGBA 透明留边/内容/零裁切回归；在 `GameController+InteractionSnapshot` 与 `RustwarIOSInteractionTests` 增加 4 套新 VFX 真实解码断言；同步更新 `ios/RustwarIOS/ARTWORK.md` 与 `md/flow/flow.md`。本轮待提交并推送 `origin/main` 后进行完整云端 native CI 验证与五场景画面复看。
+
 ## v3.27 / 原创无缝地形材质、地貌小地图与建筑混凝土底盘
 
 2026-11-24。持续迭代原生 iOS 视觉品质，不启动子智能体、不在本机运行验证。使用内置生图模型生成 7 套 1254×1254 原创直俯视无缝地形材质（草地、土路、沙滩、崖石、浅海、深海、火山熔岩）与 1 套 1254×1254 RGBA 工业混凝土建筑底盘，原图接入 `Assets.xcassets`。`BattlefieldTerrainArt` 加载 7 套真实材质并做 48px 周期边平滑融合，消除旧程序噪点斑块；升级道路/沙滩羽化边、崖壁右下投影与高光棱、海岸浅滩双层浪花及熔岩焦边，保留程序后备与 `TerrainGrid` 原有通行规则。

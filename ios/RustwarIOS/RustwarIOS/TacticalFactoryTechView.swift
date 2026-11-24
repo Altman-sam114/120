@@ -27,7 +27,7 @@ struct TacticalFactoryTechView: View {
         }
         .foregroundStyle(TacticalHUDTheme.primaryText)
         .background(
-            TacticalHUDTheme.selectionBackground,
+            TacticalHUDTheme.panelGradient,
             in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
         )
         .overlay {
@@ -167,7 +167,7 @@ struct TacticalFactoryTechView: View {
         .padding(.vertical, TacticalHUDTheme.denseSpacing)
         .foregroundStyle(TacticalHUDTheme.primaryText)
         .background(
-            TacticalHUDTheme.selectionBackground,
+            TacticalHUDTheme.panelGradient,
             in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
         )
         .overlay {

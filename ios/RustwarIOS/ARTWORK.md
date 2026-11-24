@@ -118,6 +118,15 @@ Lighting: soft overhead upper-left illumination, credible metal reflectance, amb
 
 > One square PNG transparent background sprite for a top-down illustrated strategy game: a compact white and pale aqua foam splash shaped like an irregular open radial crown with seven little disconnected droplets, viewed straight down, centered with margins. Everything between and around the foam and droplets is fully alpha transparent, including the central hole. No atmosphere, no glow, no mist, no gradient backdrop, no blue puddle, no floor, no dark color matte. Style like a hand-painted VFX flipbook single frame, very crisp foam edges and slightly translucent turquoise shading on the foam only. Silhouette only, clean cutout. No text.
 
+## 写实战斗特效图集（v3.28）
+
+- 升级 [WaterImpact](RustwarIOS/Assets.xcassets/WaterImpact.imageset/water-impact-v1.png) 为写实高清水面爆炸泡沫环，并新增 4 套原创透明战斗 VFX 贴图：
+  - [MuzzleFlashAtlas](RustwarIOS/Assets.xcassets/MuzzleFlashAtlas.imageset/muzzle-flashes-v1.png)（2×2：单管炮口焰、双联炮口焰、重炮黑烟爆燃焰、青色离子电浆焰）
+  - [CraterAtlas](RustwarIOS/Assets.xcassets/CraterAtlas.imageset/crater-decals-v1.png)（2×2：四种俯视碎石焦土弹坑贴花）
+  - [DamageSmokeAtlas](RustwarIOS/Assets.xcassets/DamageSmokeAtlas.imageset/damage-smoke-v1.png)（2×2：轻度受损烟雾、重度浓黑烟、濒危燃烧火光黑烟、蒸汽白烟）
+  - [WaterWake](RustwarIOS/Assets.xcassets/WaterWake.imageset/water-wake-v1.png)（炮艇航行 V 形白浪尾迹，船头朝右）
+- 统一由 `GeneratedBattleVFXArt` 缓存与预加载，`BattlefieldScene` 保留原可见性、冷却、预算上限与缺图几何后备；`ci/effect-art.test.js` 直接解码全部源 PNG 核对透明通道、有效像素和边界无裁切，真实 UI 断言核对 4 套图集全部解码成功。
+
 ## 原创无缝地形材质与建筑混凝土底盘
 
 - 使用内置生图工具（`boa-2/gpt-image-2.5-flare`）为 7 类地貌生成 1254×1254 原创直俯视无缝材质，原图分别存入 [TerrainGrass](RustwarIOS/Assets.xcassets/TerrainGrass.imageset/terrain-grass-v1.png)、[TerrainDirt](RustwarIOS/Assets.xcassets/TerrainDirt.imageset/terrain-dirt-v1.png)、[TerrainSand](RustwarIOS/Assets.xcassets/TerrainSand.imageset/terrain-sand-v1.png)、[TerrainRock](RustwarIOS/Assets.xcassets/TerrainRock.imageset/terrain-rock-v1.png)、[TerrainWater](RustwarIOS/Assets.xcassets/TerrainWater.imageset/terrain-water-v1.png)、[TerrainDeep](RustwarIOS/Assets.xcassets/TerrainDeep.imageset/terrain-deep-v1.png)、[TerrainLava](RustwarIOS/Assets.xcassets/TerrainLava.imageset/terrain-lava-v1.png)。

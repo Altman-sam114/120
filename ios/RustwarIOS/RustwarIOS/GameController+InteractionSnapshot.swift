@@ -69,6 +69,10 @@ extension GameController {
             "gunboatWreckArt": BattlefieldScene.loadedGunboatWreck,
             "explosionArtFrames": GeneratedExplosionArt.loadedFrameCount,
             "waterImpactArtLoaded": GeneratedWaterImpactArt.isLoaded,
+            "muzzleFlashArtCount": GeneratedBattleVFXArt.loadedMuzzleFlashCount,
+            "craterArtCount": GeneratedBattleVFXArt.loadedCraterCount,
+            "damageSmokeArtCount": GeneratedBattleVFXArt.loadedDamageSmokeCount,
+            "waterWakeArtLoaded": GeneratedBattleVFXArt.isWaterWakeLoaded,
             "projection": projection
         ]
         guard let data = try? JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys]),

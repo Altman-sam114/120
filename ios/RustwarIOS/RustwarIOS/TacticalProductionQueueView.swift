@@ -26,9 +26,15 @@ struct TacticalProductionQueueView: View {
         .padding(TacticalHUDTheme.compactPadding)
         .foregroundStyle(TacticalHUDTheme.primaryText)
         .background(
-            TacticalHUDTheme.metricBackground,
+            TacticalHUDTheme.metricGradient,
             in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius)
         )
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(TacticalHUDTheme.bevelHighlight)
+                .frame(height: 0.8)
+                .padding(.horizontal, 4)
+        }
         .overlay {
             RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
                 .stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1)
@@ -57,15 +63,19 @@ private struct TacticalCurrentProductionView: View {
     var body: some View {
         HStack(spacing: TacticalHUDTheme.compactSpacing) {
             ZStack(alignment: .topLeading) {
-                TacticalUnitPortrait(unitType: item.unitType)
-                    .frame(width: 40, height: 34)
-                    .accessibilityHidden(true)
+                TacticalPortraitWell(cornerRadius: 4, strokeColor: TacticalHUDTheme.accent.opacity(0.65)) {
+                    TacticalUnitPortrait(unitType: item.unitType)
+                        .padding(2)
+                }
+                .frame(width: 42, height: 36)
+                .accessibilityHidden(true)
                 Text("1")
                     .font(.caption2.bold())
                     .monospacedDigit()
-                    .foregroundStyle(TacticalHUDTheme.primaryText)
-                    .padding(2)
-                    .background(TacticalHUDTheme.metricBackground, in: .circle)
+                    .foregroundStyle(TacticalHUDTheme.prominentControlForeground)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(TacticalHUDTheme.accent, in: .circle)
                     .offset(x: -3, y: -3)
             }
             VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {

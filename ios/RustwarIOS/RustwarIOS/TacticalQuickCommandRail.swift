@@ -14,6 +14,11 @@ struct TacticalQuickCommandRail: View {
         VStack(alignment: .leading, spacing: TacticalHUDTheme.controlSpacing) {
             if !usesCompactRow || dynamicTypeSize.isAccessibilitySize {
                 HStack(spacing: TacticalHUDTheme.compactSpacing) {
+                    Rectangle()
+                        .fill(TacticalHUDTheme.accent)
+                        .frame(width: 4, height: 4)
+                        .rotationEffect(.degrees(45))
+                        .accessibilityHidden(true)
                     Label {
                         Text("快捷指令")
                             .lineLimit(1)
@@ -25,9 +30,12 @@ struct TacticalQuickCommandRail: View {
                         .font(.caption.bold())
                         .foregroundStyle(TacticalHUDTheme.metricLabel)
                         .layoutPriority(1)
-                    Rectangle()
-                        .fill(TacticalHUDTheme.accent.opacity(0.55))
-                        .frame(height: 1)
+                    LinearGradient(
+                        colors: [TacticalHUDTheme.accent.opacity(0.6), TacticalHUDTheme.accent.opacity(0.06)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(height: 1)
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("快捷指令")
@@ -82,10 +90,10 @@ struct TacticalQuickCommandRail: View {
             }
         }
         .padding(TacticalHUDTheme.compactPadding)
-        .background(TacticalHUDTheme.panelBackground)
+        .background(TacticalHUDTheme.panelGradient)
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(TacticalHUDTheme.chromeStroke.opacity(0.55))
+                .fill(TacticalHUDTheme.chromeStroke.opacity(0.65))
                 .frame(height: 1)
         }
         .accessibilityElement(children: .contain)

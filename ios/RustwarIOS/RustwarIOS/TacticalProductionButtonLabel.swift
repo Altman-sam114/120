@@ -16,13 +16,21 @@ struct TacticalProductionButtonLabel: View {
             .overlay(alignment: .bottomLeading) {
                 if let currentProgress {
                     GeometryReader { proxy in
-                        Capsule()
-                            .fill(TacticalHUDTheme.accent.opacity(0.18))
-                        Capsule()
-                            .fill(TacticalHUDTheme.accent)
-                            .frame(width: proxy.size.width * min(1, max(0, currentProgress)))
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 1.5)
+                                .fill(Color.black.opacity(0.45))
+                            RoundedRectangle(cornerRadius: 1.5)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [TacticalHUDTheme.accentDeep, TacticalHUDTheme.accent],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .frame(width: max(0, proxy.size.width * min(1, max(0, currentProgress))))
+                        }
                     }
-                    .frame(height: 2)
+                    .frame(height: 3)
                     .offset(y: 3)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
@@ -115,24 +123,30 @@ struct TacticalProductionButtonLabel: View {
     }
 
     private var productionIcon: some View {
-        TacticalUnitPortrait(unitType: unitType)
-            .frame(width: 40, height: 34)
-            .overlay(alignment: .topLeading) {
-                if queuedCount > 0 {
-                    Text(queuedCount.formatted())
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .foregroundStyle(TacticalHUDTheme.primaryText)
-                        .padding(.horizontal, 3)
-                        .padding(.vertical, 1)
-                        .background(TacticalHUDTheme.metricBackground, in: .rect(cornerRadius: 3))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 3)
-                                .stroke(TacticalHUDTheme.accent, lineWidth: 1)
-                        }
-                        .offset(x: -3, y: -2)
-                }
+        TacticalPortraitWell(
+            cornerRadius: 4,
+            strokeColor: queuedCount > 0 ? TacticalHUDTheme.accent.opacity(0.75) : TacticalHUDTheme.chromeStroke
+        ) {
+            TacticalUnitPortrait(unitType: unitType)
+                .padding(2)
+        }
+        .frame(width: 40, height: 34)
+        .overlay(alignment: .topLeading) {
+            if queuedCount > 0 {
+                Text(queuedCount.formatted())
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(TacticalHUDTheme.prominentControlForeground)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(TacticalHUDTheme.accent, in: .rect(cornerRadius: 3))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 3)
+                            .stroke(Color.black.opacity(0.45), lineWidth: 0.8)
+                    }
+                    .offset(x: -3, y: -3)
             }
-            .accessibilityHidden(true)
+        }
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder

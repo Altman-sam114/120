@@ -93,14 +93,29 @@ struct TacticalCommandDockView: View {
         }
         .background {
             ZStack {
-                TacticalHUDTheme.dockBackground
-                Rectangle().fill(.thinMaterial.opacity(0.28))
+                TacticalHUDTheme.dockGradient
+                Rectangle().fill(.ultraThinMaterial.opacity(0.14))
             }
         }
         .overlay(alignment: .leading) {
-            Rectangle()
-                .fill(TacticalHUDTheme.chromeStroke.opacity(0.55))
-                .frame(width: 1)
+            HStack(spacing: 0) {
+                Rectangle()
+                    .fill(TacticalHUDTheme.bevelShadow)
+                    .frame(width: 1.5)
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                TacticalHUDTheme.accent.opacity(0.45),
+                                TacticalHUDTheme.chromeStroke,
+                                TacticalHUDTheme.accent.opacity(0.22)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: 1)
+            }
         }
         .accessibilityElement(children: .contain)
     }

@@ -29,7 +29,7 @@ struct TacticalCommandsSectionView: View {
         guard !controller.isAwaitingAttackMoveTarget else {
             return controller.attackMoveCommandButtonTitle
         }
-        return primaryColumnCount == 1 ? controller.attackMoveCommandButtonTitle : "Attack\nMove"
+        return primaryColumnCount == 1 ? controller.attackMoveCommandButtonTitle : "进攻\n移动"
     }
 
     private var hasPrimaryCommands: Bool {

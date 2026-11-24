@@ -58,12 +58,16 @@ struct TacticalCommandDockHeaderView: View {
         .padding(.vertical, TacticalHUDTheme.denseSpacing)
         .background {
             ZStack {
-                TacticalHUDTheme.panelBackground
+                TacticalHUDTheme.panelGradient
                 if controller.isAwaitingTargetCommand {
-                    TacticalHUDTheme.awaitingStatusBackground.opacity(0.35)
+                    TacticalHUDTheme.awaitingStatusBackground.opacity(0.45)
                 }
-                Rectangle().fill(.ultraThinMaterial.opacity(0.30))
             }
+        }
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(controller.isAwaitingTargetCommand ? TacticalHUDTheme.attention.opacity(0.5) : TacticalHUDTheme.bevelHighlight)
+                .frame(height: 0.8)
         }
         .overlay {
             RoundedRectangle(cornerRadius: 0)
@@ -78,8 +82,8 @@ struct TacticalCommandDockHeaderView: View {
             Rectangle()
                 .fill(
                     controller.isAwaitingTargetCommand
-                        ? TacticalHUDTheme.attention.opacity(0.85)
-                        : TacticalHUDTheme.chromeStroke.opacity(0.55)
+                        ? TacticalHUDTheme.attention.opacity(0.9)
+                        : TacticalHUDTheme.chromeStroke.opacity(0.65)
                 )
                 .frame(height: controller.isAwaitingTargetCommand ? 2 : 1)
         }
@@ -88,7 +92,16 @@ struct TacticalCommandDockHeaderView: View {
     private var clearSelectionButton: some View {
         Button(action: controller.clearSelection) {
             Image(systemName: "xmark")
-                .font(.caption.weight(.semibold))
+                .font(.caption.weight(.bold))
+                .frame(width: 28, height: 28)
+                .background {
+                    RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
+                        .fill(TacticalHUDTheme.controlGradient)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
+                        .stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1)
+                }
                 .frame(width: 44, height: 44)
                 .contentShape(.rect)
         }
@@ -110,10 +123,13 @@ private struct TacticalCompactProducerHeaderView: View {
     var body: some View {
         HStack(alignment: .center, spacing: TacticalHUDTheme.compactSpacing) {
             if let building = controller.productionFocusBuilding {
-                TacticalBuildingPortrait(building: building)
-                    .frame(width: 34, height: 26)
+                TacticalPortraitWell(cornerRadius: TacticalHUDTheme.cornerRadius) {
+                    TacticalBuildingPortrait(building: building)
+                        .padding(2)
+                }
+                .frame(width: 38, height: 30)
             }
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(controller.productionFocusBuildingName ?? "单位生产")
                     .font(.subheadline.bold())
                     .lineLimit(1)
@@ -129,11 +145,17 @@ private struct TacticalCompactProducerHeaderView: View {
             }
             .layoutPriority(1)
             Spacer(minLength: 0)
-            VStack(alignment: .trailing, spacing: 0) {
+            VStack(alignment: .trailing, spacing: 2) {
                 Text(controller.productionFocusTechLabel)
-                    .font(.caption.bold())
+                    .font(.caption2.bold())
                     .monospacedDigit()
-                    .foregroundStyle(TacticalHUDTheme.primaryText)
+                    .foregroundStyle(TacticalHUDTheme.accent)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1.5)
+                    .background(TacticalHUDTheme.metricGradient, in: Capsule())
+                    .overlay {
+                        Capsule().stroke(TacticalHUDTheme.accent.opacity(0.45), lineWidth: 1)
+                    }
                 Text(productionSpeedText)
                     .font(.caption2)
                     .monospacedDigit()
@@ -143,7 +165,6 @@ private struct TacticalCompactProducerHeaderView: View {
         }
         .padding(.vertical, TacticalHUDTheme.denseSpacing)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(TacticalHUDTheme.panelBackground)
         .accessibilityElement(children: .ignore)
         .accessibilityAddTraits(.isHeader)
         .accessibilityLabel("生产建筑：\(controller.productionFocusBuildingName ?? "建筑")")

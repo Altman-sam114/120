@@ -65,6 +65,10 @@ final class RustwarIOSInteractionTests: XCTestCase {
         let resourceArtVariants: Int
         let explosionArtFrames: Int
         let waterImpactArtLoaded: Bool
+        let muzzleFlashArtCount: Int
+        let craterArtCount: Int
+        let damageSmokeArtCount: Int
+        let waterWakeArtLoaded: Bool
         let projection: Projection
         let touchTrace: [String]?
 
@@ -257,6 +261,10 @@ final class RustwarIOSInteractionTests: XCTestCase {
         XCTAssertEqual(try snapshot(app).terrainMaterialCount, 7, "All seven bundled terrain materials must decode; procedural fallback cannot satisfy this gate")
         XCTAssertEqual(try snapshot(app).explosionArtFrames, 8, "The actual explosion atlas must decode all animation frames")
         XCTAssertTrue(try snapshot(app).waterImpactArtLoaded, "The bundled water impact sprite must decode")
+        XCTAssertEqual(try snapshot(app).muzzleFlashArtCount, 4, "The bundled muzzle flash atlas must decode all 4 variants")
+        XCTAssertEqual(try snapshot(app).craterArtCount, 4, "The bundled crater atlas must decode all 4 variants")
+        XCTAssertEqual(try snapshot(app).damageSmokeArtCount, 4, "The bundled damage smoke atlas must decode all 4 variants")
+        XCTAssertTrue(try snapshot(app).waterWakeArtLoaded, "The bundled water wake sprite must decode")
         XCTAssertEqual(app.buttons["pause-play"].label, "继续")
         let metal = app.descendants(matching: .any).matching(identifier: "status-metric-metal").firstMatch
         XCTAssertEqual(metal.label, "金属")

@@ -25,41 +25,64 @@ struct TacticalStatusBarView: View {
         .padding(.vertical, TacticalHUDTheme.statusVerticalPadding)
         .background {
             ZStack {
-                TacticalHUDTheme.chromeBackground
-                Rectangle().fill(.ultraThinMaterial.opacity(0.35))
+                TacticalHUDTheme.chromeGradient
+                Rectangle().fill(.ultraThinMaterial.opacity(0.18))
             }
         }
         .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(TacticalHUDTheme.chromeStroke.opacity(0.7))
-                .frame(height: 1)
+            VStack(spacing: 0) {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                TacticalHUDTheme.accent.opacity(0.42),
+                                TacticalHUDTheme.chromeStroke.opacity(0.65),
+                                TacticalHUDTheme.accent.opacity(0.28)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(height: 1)
+                Rectangle()
+                    .fill(TacticalHUDTheme.bevelShadow)
+                    .frame(height: 1)
+            }
         }
         .accessibilityElement(children: .contain)
     }
 
     private var metricsStrip: some View {
-        ScrollView(.horizontal) {
+        let supplyTight = controller.playerEconomy.supplyCap > 0 &&
+            controller.playerEconomy.supplyUsed >= controller.playerEconomy.supplyCap
+        let hasRadarContacts = controller.playerRadarContactCount > 0
+        return ScrollView(.horizontal) {
             HStack(spacing: usesInlineMetrics ? TacticalHUDTheme.compactSpacing : TacticalHUDTheme.sectionSpacing) {
                 TacticalMetricView(
                     label: "金属",
                     value: controller.playerEconomy.metal.formatted(.number.precision(.fractionLength(0))),
                     systemImage: "hexagon.fill",
                     isInline: usesInlineMetrics,
-                    metricID: "metal"
+                    metricID: "metal",
+                    accentColor: TacticalHUDTheme.metalAccent
                 )
                 TacticalMetricView(
                     label: "收入",
                     value: "+\(controller.playerEconomy.income.formatted(.number.precision(.fractionLength(1))))",
                     systemImage: "arrow.up.right",
                     isInline: usesInlineMetrics,
-                    metricID: "income"
+                    metricID: "income",
+                    accentColor: TacticalHUDTheme.incomeAccent,
+                    valueColor: TacticalHUDTheme.incomeAccent
                 )
                 TacticalMetricView(
                     label: "人口",
                     value: "\(controller.playerEconomy.supplyUsed)/\(controller.playerEconomy.supplyCap)",
                     systemImage: "person.3.fill",
                     isInline: usesInlineMetrics,
-                    metricID: "pop"
+                    metricID: "pop",
+                    accentColor: supplyTight ? TacticalHUDTheme.unavailableForeground : TacticalHUDTheme.supplyAccent,
+                    valueColor: supplyTight ? TacticalHUDTheme.unavailableForeground : TacticalHUDTheme.primaryText
                 )
                 TacticalMetricView(
                     label: "雷达",
@@ -68,7 +91,9 @@ struct TacticalStatusBarView: View {
                     spokenLabel: "雷达情报",
                     spokenValue: controller.radarIntelAccessibilitySummary,
                     isInline: usesInlineMetrics,
-                    metricID: "radar"
+                    metricID: "radar",
+                    accentColor: TacticalHUDTheme.radarAccent,
+                    valueColor: hasRadarContacts ? TacticalHUDTheme.radarAccent : TacticalHUDTheme.primaryText
                 )
             }
             .padding(.vertical, 1)

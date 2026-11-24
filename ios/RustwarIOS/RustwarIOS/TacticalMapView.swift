@@ -163,14 +163,25 @@ struct TacticalMapView: View {
         }
         .clipShape(.rect(cornerRadius: TacticalHUDTheme.cornerRadius))
         .overlay {
-            RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
-                .stroke(
-                    controller.isAwaitingTargetCommand
-                        ? TacticalHUDTheme.attention.opacity(0.92)
-                        : TacticalHUDTheme.mapChromeStroke,
-                    lineWidth: controller.isAwaitingTargetCommand ? 2.2 : 1.1
-                )
+            ZStack {
+                RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
+                    .stroke(
+                        controller.isAwaitingTargetCommand
+                            ? TacticalHUDTheme.attention.opacity(0.95)
+                            : TacticalHUDTheme.mapChromeStroke,
+                        lineWidth: controller.isAwaitingTargetCommand ? 2.2 : 1.2
+                    )
+                if !controller.isAwaitingTargetCommand {
+                    TacticalCornerBracketOverlay(
+                        color: TacticalHUDTheme.accent.opacity(0.65),
+                        length: 8,
+                        lineWidth: 1.5
+                    )
+                    .padding(2)
+                }
+            }
         }
+        .shadow(color: .black.opacity(0.55), radius: 6, x: 0, y: 2)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("战术小地图")
         .accessibilityValue(controller.tacticalMapAccessibilityValue)

@@ -23,7 +23,13 @@ struct TacticalProductionFocusSummaryView: View {
         }
         .padding(TacticalHUDTheme.compactPadding)
         .foregroundStyle(TacticalHUDTheme.primaryText)
-        .background(TacticalHUDTheme.selectionBackground, in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius))
+        .background(TacticalHUDTheme.panelGradient, in: .rect(cornerRadius: TacticalHUDTheme.cornerRadius))
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(TacticalHUDTheme.bevelHighlight)
+                .frame(height: 0.8)
+                .padding(.horizontal, 4)
+        }
         .overlay {
             RoundedRectangle(cornerRadius: TacticalHUDTheme.cornerRadius)
                 .stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1)

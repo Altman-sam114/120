@@ -33,14 +33,11 @@ struct TacticalSelectionSummaryView: View {
         return VStack(alignment: .leading, spacing: TacticalHUDTheme.denseSpacing) {
             HStack(spacing: TacticalHUDTheme.compactSpacing) {
                 if let first = units.first {
-                    TacticalUnitPortrait(unitType: first.type)
-                        .padding(4)
-                        .frame(width: 44, height: 44)
-                        .background(TacticalHUDTheme.metricBackground, in: .rect(cornerRadius: 4))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 4)
-                                .stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1)
-                        }
+                    TacticalPortraitWell(cornerRadius: TacticalHUDTheme.cornerRadius) {
+                        TacticalUnitPortrait(unitType: first.type)
+                            .padding(4)
+                    }
+                    .frame(width: 44, height: 44)
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     Text(units.count == 1 ? GameDefinitions.unit(units[0].type).tacticalName : "已选择 \(units.count) 辆单位")
@@ -59,7 +56,7 @@ struct TacticalSelectionSummaryView: View {
                         } icon: {
                             Image(systemName: "heart.fill")
                                 .font(.system(size: 8))
-                                .foregroundStyle(fraction < 0.35 ? TacticalHUDTheme.attention : TacticalHUDTheme.metricLabel)
+                                .foregroundStyle(healthColor(for: fraction))
                         }
                         .labelStyle(.titleAndIcon)
                         .font(.caption2)
@@ -72,22 +69,33 @@ struct TacticalSelectionSummaryView: View {
                         if !dynamicTypeSize.isAccessibilitySize, let attackStanceSummary {
                             Spacer(minLength: 0)
                             Text(attackStanceSummary)
-                                .font(.caption2)
+                                .font(.caption2.weight(.medium))
                                 .fixedSize(horizontal: true, vertical: false)
-                                .foregroundStyle(TacticalHUDTheme.secondaryText)
+                                .foregroundStyle(TacticalHUDTheme.metricLabel)
                                 .accessibilityLabel("交战姿态")
                                 .accessibilityValue(attackStanceAccessibilitySummary ?? attackStanceSummary)
                         }
                     }
                     GeometryReader { proxy in
                         ZStack(alignment: .leading) {
-                            Capsule().fill(Color.black.opacity(0.4))
-                            Capsule()
-                                .fill(fraction < 0.35 ? TacticalHUDTheme.attention : Color.green)
-                                .frame(width: proxy.size.width * fraction)
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Color.black.opacity(0.55))
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [healthColor(for: fraction), healthColor(for: fraction).opacity(0.75)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .frame(width: max(0, proxy.size.width * fraction))
+                        }
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 2)
+                                .stroke(TacticalHUDTheme.chromeStroke.opacity(0.6), lineWidth: 0.5)
                         }
                     }
-                    .frame(height: 3)
+                    .frame(height: 5)
                     .accessibilityHidden(true)
                 }
             }
@@ -95,23 +103,32 @@ struct TacticalSelectionSummaryView: View {
                 attackStanceLabel(attackStanceSummary, accessibilitySummary: attackStanceAccessibilitySummary)
             }
             if units.count > 1 {
-                // At most eight stable type entries, regardless of army size.
+                // Compact metallic chips keep 5+ unit types cleanly readable without clipping.
                 ScrollView(.horizontal) {
-                    HStack(spacing: TacticalHUDTheme.compactSpacing) {
+                    HStack(spacing: TacticalHUDTheme.denseSpacing) {
                         ForEach(composition, id: \.type) { entry in
-                            HStack(spacing: 2) {
+                            HStack(spacing: 3) {
                                 TacticalUnitPortrait(unitType: entry.type)
-                                    .frame(width: 24, height: 24)
+                                    .frame(width: 20, height: 20)
                                 Text("\(entry.count)")
                                     .font(.caption2.monospacedDigit().bold())
                                     .foregroundStyle(TacticalHUDTheme.primaryText)
                             }
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(TacticalHUDTheme.metricGradient, in: .rect(cornerRadius: 4))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .stroke(TacticalHUDTheme.chromeStroke.opacity(0.8), lineWidth: 0.8)
+                            }
+                            .fixedSize(horizontal: true, vertical: false)
                             .accessibilityElement(children: .ignore)
                             .accessibilityLabel("已选择\(GameDefinitions.unit(entry.type).tacticalName)")
                             .accessibilityValue("\(entry.count)")
                             .accessibilityIdentifier("selection-type-\(entry.type.rawValue)")
                         }
                     }
+                    .padding(.vertical, 1)
                 }
                 .scrollIndicators(.hidden)
             }
@@ -157,9 +174,12 @@ struct TacticalSelectionSummaryView: View {
                     .allowsTightening(true)
                     .foregroundStyle(TacticalHUDTheme.primaryText)
             }
-            .padding(.horizontal, TacticalHUDTheme.denseSpacing)
+            .padding(.horizontal, TacticalHUDTheme.compactPadding)
             .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 5 : 4)
-            .background(TacticalHUDTheme.metricBackground, in: Capsule())
+            .background(TacticalHUDTheme.metricGradient, in: Capsule())
+            .overlay {
+                Capsule().stroke(TacticalHUDTheme.chromeStroke, lineWidth: 1)
+            }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("当前选择")
             .accessibilityValue(selectedSummary)
@@ -181,6 +201,16 @@ struct TacticalSelectionSummaryView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
+    }
+
+    private func healthColor(for fraction: Double) -> Color {
+        if fraction < 0.3 {
+            return TacticalHUDTheme.danger
+        }
+        if fraction < 0.6 {
+            return TacticalHUDTheme.attention
+        }
+        return TacticalHUDTheme.accent
     }
 
     private var selectionLabel: some View {

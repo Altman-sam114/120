@@ -81,3 +81,63 @@ test("water impact contains isolated translucent foam with padding", () => {
   assert.ok(splash.alpha(Math.floor(splash.width / 2), Math.floor(splash.height / 2)) <= 16,
     "The center must reveal the underlying water");
 });
+
+function verify2x2Atlas(relPath, label, minVisibleFraction) {
+  const atlas = rgbaPNG(path.join(__dirname, relPath));
+  assert.equal(atlas.width, atlas.height, `${label} must be a square 2x2 atlas`);
+  assert.ok(atlas.width >= 512, `${label} must have production resolution`);
+  const hashes = new Set();
+  for (let index = 0; index < 4; index += 1) {
+    const col = index % 2, row = Math.floor(index / 2);
+    const left = Math.floor(col * atlas.width / 2), right = Math.floor((col + 1) * atlas.width / 2);
+    const top = Math.floor(row * atlas.height / 2), bottom = Math.floor((row + 1) * atlas.height / 2);
+    const hash = createHash("sha256");
+    let transparent = 0, visible = 0, border = 0;
+    for (let y = top; y < bottom; y += 1) {
+      hash.update(atlas.pixels.subarray((y * atlas.width + left) * 4, (y * atlas.width + right) * 4));
+      for (let x = left; x < right; x += 1) {
+        const alpha = atlas.alpha(x, y);
+        if (alpha <= 8) transparent += 1;
+        if (alpha > 16) visible += 1;
+        if ((x === left || x === right - 1 || y === top || y === bottom - 1) && alpha > 16) border += 1;
+      }
+    }
+    const count = (right - left) * (bottom - top);
+    assert.ok(transparent > count * 0.2, `${label} cell ${index + 1} needs transparent padding`);
+    assert.ok(visible > count * minVisibleFraction, `${label} cell ${index + 1} is empty or too faint`);
+    assert.equal(border, 0, `${label} cell ${index + 1} clips or bleeds across cell edge`);
+    hashes.add(hash.digest("hex"));
+  }
+  assert.equal(hashes.size, 4, `${label} must contain 4 distinct variants`);
+}
+
+test("muzzle flash atlas contains four distinct isolated RGBA variants", () => {
+  verify2x2Atlas("../ios/RustwarIOS/RustwarIOS/Assets.xcassets/MuzzleFlashAtlas.imageset/muzzle-flashes-v1.png", "MuzzleFlashAtlas", 0.04);
+});
+
+test("crater atlas contains four distinct isolated RGBA variants", () => {
+  verify2x2Atlas("../ios/RustwarIOS/RustwarIOS/Assets.xcassets/CraterAtlas.imageset/crater-decals-v1.png", "CraterAtlas", 0.08);
+});
+
+test("damage smoke atlas contains four distinct isolated RGBA variants", () => {
+  verify2x2Atlas("../ios/RustwarIOS/RustwarIOS/Assets.xcassets/DamageSmokeAtlas.imageset/damage-smoke-v1.png", "DamageSmokeAtlas", 0.10);
+});
+
+test("water wake contains isolated translucent V-wake with padding", () => {
+  const wake = rgbaPNG(path.join(__dirname, "../ios/RustwarIOS/RustwarIOS/Assets.xcassets/WaterWake.imageset/water-wake-v1.png"));
+  assert.ok(wake.width > wake.height, "Water wake should be wider than tall along hull axis");
+  const count = wake.width * wake.height;
+  let clear = 0, visible = 0, border = 0;
+  for (let y = 0; y < wake.height; y += 1) {
+    for (let x = 0; x < wake.width; x += 1) {
+      const alpha = wake.alpha(x, y);
+      if (alpha <= 8) clear += 1;
+      if (alpha > 16) visible += 1;
+      if ((x === 0 || x === wake.width - 1 || y === 0 || y === wake.height - 1) && alpha > 16) border += 1;
+    }
+  }
+  console.log(`Water wake: ${wake.width}x${wake.height}, clear=${clear}, visible=${visible}, border=${border}.`);
+  assert.equal(border, 0, "Water wake must fade cleanly inside canvas edges");
+  assert.ok(clear > count * 0.45, "Water wake needs genuine transparent margins");
+  assert.ok(visible > count * 0.08, "Water wake foam must be visible at battlefield scale");
+});

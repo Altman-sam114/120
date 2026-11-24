@@ -322,9 +322,11 @@ enum BattlefieldTerrainArt {
                               color: UIColor(red: 0.28, green: 0.24, blue: 0.16, alpha: 0.42).cgColor)
             stroke(path, UIColor(red: 0.34, green: 0.29, blue: 0.19, alpha: 0.32), width: 6.5, context)
         case .sand:
-            context.setShadow(offset: .zero, blur: 6,
-                              color: UIColor(red: 0.56, green: 0.48, blue: 0.33, alpha: 0.40).cgColor)
-            stroke(path, UIColor(red: 0.58, green: 0.50, blue: 0.35, alpha: 0.30), width: 7.5, context)
+            context.setShadow(offset: .zero, blur: 10,
+                              color: UIColor(red: 0.56, green: 0.50, blue: 0.36, alpha: 0.42).cgColor)
+            stroke(path, UIColor(red: 0.58, green: 0.52, blue: 0.38, alpha: 0.24), width: 11, context)
+            context.setShadow(offset: .zero, blur: 0, color: nil)
+            stroke(path, UIColor(red: 0.62, green: 0.56, blue: 0.41, alpha: 0.16), width: 5.5, context)
         case .rock:
             context.setShadow(offset: CGSize(width: 2, height: 2), blur: 5,
                               color: UIColor.black.withAlphaComponent(0.42).cgColor)
