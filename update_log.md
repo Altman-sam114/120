@@ -1,3 +1,11 @@
+## v3.30 / 弹药写实军工比例精修与双指战术瞄准框
+
+2026-11-24。基于 v3.29 云端战斗截图实测反馈继续精修，不启动子智能体、不在本机运行验证。
+
+- **弹药写实军工比例精调**（`BattlefieldScene.swift`）：将穿甲炮弹与高爆榴弹缩放至约 60% 真实战车比例（收窄金属弹体、降低抛物线峰值放大系数、以细暗金属边替代厚黑描边），纤细化高速曳光弹体，兼顾清晰辨识度与写实战地质感。
+- **双指战术扫描框**（`BattlefieldView.swift`）：为多指/显式框选层新增 `selectionCornerLayer`，叠加四角加粗磷绿 L 型军工瞄准括号，与 HUD / 小地图瞄准框语言完全统一。
+- 待本提交精确 SHA 的云端 native CI 与全部五张新截图完整复验。
+
 ## v3.29 / 实体分兵种弹药射出与五层复合爆炸动画
 
 2026-11-24。响应用户对攻击特效、弹药射出与爆炸动画的重点诉求，不启动子智能体、不在本机运行验证。
@@ -5,7 +13,8 @@
 - **分兵种实感弹药实体与弹道动画**：在 `BattlefieldScene` 新增 `ProjectileVisualStyle`（`.armorPiercing` 金属穿甲炮弹、`.artilleryShell` 带尾翼高爆榴弹、`.autocannonTracer` 针状高速曳光弹），彻底替代旧模糊光点；将重型坦克升级为双联主炮齐射（`shotCount = 2`）；放宽直射/曲射弹药可视飞行时间窗口，并让火炮曲射炮弹沿抛物线动态调整弹头仰俯角，同时以 `GeneratedBattleVFXArt.smokePuffSprite` 写实体积烟雾替代旧灰圆尾烟。
 - **开火炮口火药散烟**：大口径武器开火瞬间在炮口前方喷出快速膨胀淡出的写实火药烟雾，增强火炮发射的金属厚重感。
 - **命中爆裂与五层复合爆炸**：`addProjectileTerminalFlash` 命中瞬间新增扩张冲击波环与放射火星；`spawnImpactEffect` 与 `spawnDestructionEffect` 不再在加载 8 帧爆炸图集后跳过层次，改为合并渲染「焦土弹坑 + 扩张冲击波环（摧毁含双波） + 炽白热核闪光 + 8 帧写实爆炸图集 + 飞溅火星与装甲残片」。
-- **多选编成芯片微调**：收紧 `TacticalSelectionSummaryView` 多选兵种芯片尺寸与间距，避免 5 兵种同屏时第 5 项右侧滚出。本轮待提交并推送 `origin/main` 后进行完整云端 native CI 验证与五场景截图复看。
+- **多选编成芯片微调**：收紧 `TacticalSelectionSummaryView` 多选兵种芯片尺寸与间距，避免 5 兵种同屏时第 5 项右侧滚出。
+- **云端原生验证记录**：`11f01aeb55249223b304a451e15f558be449d56e` 在自动触发 native push run `45351692697` / attempt `1` 成功通过，已以 `Altman-sam114` 下载核对 artifact `14901817945`（`rustwar-ci-v1.2-main-11f01ae-run45351692697-attempt1`，sha256 `7182d99c3e5d746caa6181a3c928297fe6a2368b654592969d3d4def5402d10b`，13.3MB）至 `/private/tmp/rustwar-review-45351692697/attempt-1`。JUnit `11/0/1`（唯一跳过为无入口的 Web 浏览器回归）、Core tests、双架构构建、23/23 真实 iOS UI 测试与水花探针（`47.39%`）均通过。逐一复看五图：`ios-combat.png` 清晰呈现重坦双联穿甲弹齐射、带尾翼高爆榴弹、写实烟柱、命中冲击波火星、五层复合爆炸与右上角 5 兵种芯片完整无裁切，`ios-islands.png` / `ios-lava.png` / `ios-structures.png` 正常；但 `ios-home.png` 恰逢模拟器首帧冷启动白屏（`mean_luminance=251.86`），故不将 `ios-home.png` 计作画面验收通过，且实感炮弹比例略大，一并在 v3.30 精修并完整复验五图。本机未执行任何验证。
 
 ## v3.28 / 军工战术 HUD 重构与写实战斗 VFX 贴图体系
 

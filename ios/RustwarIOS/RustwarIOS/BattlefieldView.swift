@@ -57,6 +57,7 @@ private final class BattlefieldInputView: SKView {
     private let battlefieldScene: BattlefieldScene
     private var session = Session()
     private let selectionLayer = CAShapeLayer()
+    private let selectionCornerLayer = CAShapeLayer()
     private var holdTask: Task<Void, Never>?
     private var viewportSize = CGSize.zero
     private var inputTrace: [String] = []
@@ -78,12 +79,19 @@ private final class BattlefieldInputView: SKView {
         battlefieldScene.isUserInteractionEnabled = false
         presentScene(battlefieldScene)
 
-        selectionLayer.fillColor = UIColor(red: 0.25, green: 1, blue: 0.58, alpha: 0.12).cgColor
-        selectionLayer.strokeColor = UIColor(red: 0.42, green: 1, blue: 0.67, alpha: 1).cgColor
-        selectionLayer.lineWidth = 1.5
-        selectionLayer.lineDashPattern = [6, 3]
+        selectionLayer.fillColor = UIColor(red: 0.25, green: 0.94, blue: 0.64, alpha: 0.12).cgColor
+        selectionLayer.strokeColor = UIColor(red: 0.38, green: 0.96, blue: 0.72, alpha: 0.65).cgColor
+        selectionLayer.lineWidth = 1.1
+        selectionLayer.lineDashPattern = [5, 3]
         selectionLayer.zPosition = 100
         layer.addSublayer(selectionLayer)
+
+        selectionCornerLayer.fillColor = UIColor.clear.cgColor
+        selectionCornerLayer.strokeColor = UIColor(red: 0.48, green: 1.0, blue: 0.76, alpha: 0.98).cgColor
+        selectionCornerLayer.lineWidth = 2.4
+        selectionCornerLayer.lineCap = .square
+        selectionCornerLayer.zPosition = 101
+        layer.addSublayer(selectionCornerLayer)
     }
 
     required init?(coder: NSCoder) {
@@ -211,9 +219,18 @@ private final class BattlefieldInputView: SKView {
             case let .selectionBox(box):
                 CATransaction.begin()
                 CATransaction.setDisableActions(true)
-                selectionLayer.path = box.map {
-                    CGPath(rect: CGRect(x: $0.minX, y: $0.minY, width: $0.maxX - $0.minX,
-                                        height: $0.maxY - $0.minY), transform: nil)
+                if let box {
+                    let rect = CGRect(
+                        x: box.minX,
+                        y: box.minY,
+                        width: box.maxX - box.minX,
+                        height: box.maxY - box.minY
+                    )
+                    selectionLayer.path = CGPath(rect: rect, transform: nil)
+                    selectionCornerLayer.path = Self.selectionCornerBracketPath(for: rect)
+                } else {
+                    selectionLayer.path = nil
+                    selectionCornerLayer.path = nil
                 }
                 CATransaction.commit()
             case let .tap(point):
@@ -240,6 +257,30 @@ private final class BattlefieldInputView: SKView {
 
     private func cgPoint(_ point: WorldPoint) -> CGPoint {
         CGPoint(x: point.x, y: point.y)
+    }
+
+    private static func selectionCornerBracketPath(for rect: CGRect) -> CGPath {
+        let len = min(14, min(rect.width, rect.height) * 0.34)
+        let path = CGMutablePath()
+        guard len > 1 else { return path }
+
+        // Top-left
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY + len))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.minX + len, y: rect.minY))
+        // Top-right
+        path.move(to: CGPoint(x: rect.maxX - len, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + len))
+        // Bottom-left
+        path.move(to: CGPoint(x: rect.minX, y: rect.maxY - len))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX + len, y: rect.maxY))
+        // Bottom-right
+        path.move(to: CGPoint(x: rect.maxX - len, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - len))
+        return path
     }
 
     private func recordTrace(_ value: String) {

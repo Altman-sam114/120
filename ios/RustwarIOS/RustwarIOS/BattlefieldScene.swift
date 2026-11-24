@@ -1471,7 +1471,7 @@ final class BattlefieldScene: SKScene {
         let initialLift = sin(.pi * initialProgress)
         projectile.position = shellPoint(at: initialProgress)
         projectile.zRotation = shellHeading(at: initialProgress)
-        projectile.setScale(1 + initialLift * 0.28)
+        projectile.setScale(1 + initialLift * 0.16)
         shadow.position = groundPoint(at: initialProgress)
         shadow.setScale(1 - initialLift * 0.3)
 
@@ -1529,7 +1529,7 @@ final class BattlefieldScene: SKScene {
                     let lift = sin(.pi * progress)
                     node.position = shellPoint(at: progress)
                     node.zRotation = shellHeading(at: progress)
-                    node.setScale(1 + lift * 0.28)
+                    node.setScale(1 + lift * 0.16)
                 },
                 .sequence([
                     .wait(forDuration: duration * 0.86),
@@ -1583,64 +1583,67 @@ final class BattlefieldScene: SKScene {
 
         switch style {
         case .armorPiercing:
-            // Machined metallic armor-piercing shell with tapered nose cone & bright thruster base
-            let shellLen = radius * 3.2
-            let shellHalfW = radius * 0.72
+            // Sleek realistic armor-piercing sabot round with glowing core and fine metallic rim
+            let shellLen = radius * 2.15
+            let shellHalfW = radius * 0.42
             let hullPath = CGMutablePath()
-            hullPath.move(to: CGPoint(x: shellLen * 0.68, y: 0))
-            hullPath.addLine(to: CGPoint(x: shellLen * 0.15, y: shellHalfW))
-            hullPath.addLine(to: CGPoint(x: -shellLen * 0.52, y: shellHalfW * 0.88))
-            hullPath.addLine(to: CGPoint(x: -shellLen * 0.52, y: -shellHalfW * 0.88))
-            hullPath.addLine(to: CGPoint(x: shellLen * 0.15, y: -shellHalfW))
+            hullPath.move(to: CGPoint(x: shellLen * 0.72, y: 0))
+            hullPath.addLine(to: CGPoint(x: shellLen * 0.12, y: shellHalfW))
+            hullPath.addLine(to: CGPoint(x: -shellLen * 0.56, y: shellHalfW * 0.85))
+            hullPath.addLine(to: CGPoint(x: -shellLen * 0.56, y: -shellHalfW * 0.85))
+            hullPath.addLine(to: CGPoint(x: shellLen * 0.12, y: -shellHalfW))
             hullPath.closeSubpath()
 
             let shell = SKShapeNode(path: hullPath)
-            shell.fillColor = SKColor(red: 0.96, green: 0.82, blue: 0.52, alpha: 1)
-            shell.strokeColor = SKColor(red: 0.14, green: 0.12, blue: 0.10, alpha: 0.92)
-            shell.lineWidth = 0.85
+            shell.fillColor = SKColor(red: 0.98, green: 0.88, blue: 0.64, alpha: 1)
+            shell.strokeColor = SKColor(red: 0.24, green: 0.19, blue: 0.12, alpha: 0.55)
+            shell.lineWidth = 0.45
             shell.zPosition = 0.4
             projectile.addChild(shell)
 
-            let hotTip = SKShapeNode(rectOf: CGSize(width: shellLen * 0.52, height: shellHalfW * 0.8), cornerRadius: CGFloat(shellHalfW * 0.4))
+            let hotTip = SKShapeNode(
+                rectOf: CGSize(width: shellLen * 0.58, height: Swift.max(1.1, shellHalfW * 0.85)),
+                cornerRadius: CGFloat(shellHalfW * 0.42)
+            )
             hotTip.fillColor = .white
             hotTip.strokeColor = .clear
-            hotTip.position.x = CGFloat(shellLen * 0.16)
+            hotTip.position.x = CGFloat(shellLen * 0.18)
             hotTip.zPosition = 0.6
             projectile.addChild(hotTip)
 
-            let thruster = BattlefieldEffectMaterials.sprite(.glow, width: radius * 3.8, height: radius * 2.6, color: color, alpha: 0.95)
-            thruster.position.x = -CGFloat(shellLen * 0.62)
+            let thruster = BattlefieldEffectMaterials.sprite(.glow, width: radius * 3.4, height: radius * 2.2, color: color, alpha: 0.96)
+            thruster.position.x = -CGFloat(shellLen * 0.65)
             thruster.zPosition = 0.3
             projectile.addChild(thruster)
 
         case .artilleryShell:
-            // Heavy fin-stabilized high-explosive mortar/artillery warhead
-            let shellLen = radius * 3.5
-            let shellHalfW = radius * 0.86
+            // Compact realistic high-explosive artillery warhead proportional to combat vehicles
+            let shellLen = radius * 2.10
+            let shellHalfW = radius * 0.48
             let warheadPath = CGMutablePath()
-            warheadPath.move(to: CGPoint(x: shellLen * 0.65, y: 0))
-            warheadPath.addQuadCurve(to: CGPoint(x: -shellLen * 0.45, y: shellHalfW), control: CGPoint(x: shellLen * 0.2, y: shellHalfW * 1.15))
-            warheadPath.addLine(to: CGPoint(x: -shellLen * 0.62, y: shellHalfW * 1.35))
-            warheadPath.addLine(to: CGPoint(x: -shellLen * 0.62, y: -shellHalfW * 1.35))
-            warheadPath.addLine(to: CGPoint(x: -shellLen * 0.45, y: -shellHalfW))
-            warheadPath.addQuadCurve(to: CGPoint(x: shellLen * 0.65, y: 0), control: CGPoint(x: shellLen * 0.2, y: -shellHalfW * 1.15))
+            warheadPath.move(to: CGPoint(x: shellLen * 0.68, y: 0))
+            warheadPath.addQuadCurve(to: CGPoint(x: -shellLen * 0.44, y: shellHalfW), control: CGPoint(x: shellLen * 0.22, y: shellHalfW * 1.12))
+            warheadPath.addLine(to: CGPoint(x: -shellLen * 0.60, y: shellHalfW * 1.24))
+            warheadPath.addLine(to: CGPoint(x: -shellLen * 0.60, y: -shellHalfW * 1.24))
+            warheadPath.addLine(to: CGPoint(x: -shellLen * 0.44, y: -shellHalfW))
+            warheadPath.addQuadCurve(to: CGPoint(x: shellLen * 0.68, y: 0), control: CGPoint(x: shellLen * 0.22, y: -shellHalfW * 1.12))
             warheadPath.closeSubpath()
 
             let warhead = SKShapeNode(path: warheadPath)
-            warhead.fillColor = SKColor(red: 0.32, green: 0.34, blue: 0.28, alpha: 1)
-            warhead.strokeColor = SKColor(red: 1.0, green: 0.65, blue: 0.25, alpha: 0.95)
-            warhead.lineWidth = 1.0
+            warhead.fillColor = SKColor(red: 0.36, green: 0.38, blue: 0.32, alpha: 1)
+            warhead.strokeColor = SKColor(red: 1.0, green: 0.68, blue: 0.28, alpha: 0.85)
+            warhead.lineWidth = 0.65
             warhead.zPosition = 0.4
             projectile.addChild(warhead)
 
-            let band = SKShapeNode(rectOf: CGSize(width: radius * 0.9, height: shellHalfW * 1.65))
+            let band = SKShapeNode(rectOf: CGSize(width: radius * 0.62, height: shellHalfW * 1.55))
             band.fillColor = SKColor.systemOrange
             band.strokeColor = .clear
             band.position.x = CGFloat(shellLen * 0.14)
             band.zPosition = 0.5
             projectile.addChild(band)
 
-            let exhaust = BattlefieldEffectMaterials.sprite(.glow, width: radius * 4.2, height: radius * 3.0, color: .systemOrange, alpha: 0.96)
+            let exhaust = BattlefieldEffectMaterials.sprite(.glow, width: radius * 3.8, height: radius * 2.6, color: .systemOrange, alpha: 0.96)
             exhaust.position.x = -CGFloat(shellLen * 0.72)
             exhaust.zPosition = 0.3
             projectile.addChild(exhaust)
@@ -1648,12 +1651,12 @@ final class BattlefieldScene: SKScene {
         case .autocannonTracer:
             // High-velocity incandescent needle tracer round
             let needle = SKShapeNode(
-                rectOf: CGSize(width: radius * 4.4, height: Swift.max(1.8, radius * 1.05)),
-                cornerRadius: CGFloat(radius * 0.52)
+                rectOf: CGSize(width: radius * 3.4, height: Swift.max(1.35, radius * 0.75)),
+                cornerRadius: CGFloat(radius * 0.38)
             )
             needle.fillColor = .white
             needle.strokeColor = color
-            needle.lineWidth = 0.9
+            needle.lineWidth = 0.65
             needle.zPosition = 0.5
             projectile.addChild(needle)
         }
