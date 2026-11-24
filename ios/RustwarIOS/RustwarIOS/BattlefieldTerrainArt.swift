@@ -3,13 +3,29 @@ import UIKit
 import OSLog
 import RustwarCore
 
-/// Original terrain materials and rounded region contours, baked at map changes.
+/// Original seamless terrain materials and natural region contours, baked at map changes.
 @MainActor
 enum BattlefieldTerrainArt {
-    private static let materialSide: CGFloat = 512
+    private static let materialSide: CGFloat = 384
+    private static let seamlessOverlap = 48
     private static let families: [TerrainKind] = [.grass, .dirt, .sand, .rock, .water, .deep, .lava]
-    private static var materials: [TerrainKind: UIImage] = [:]
+    private static let assetNames: [TerrainKind: String] = [
+        .grass: "TerrainGrass",
+        .dirt: "TerrainDirt",
+        .sand: "TerrainSand",
+        .rock: "TerrainRock",
+        .water: "TerrainWater",
+        .deep: "TerrainDeep",
+        .lava: "TerrainLava"
+    ]
+    private static var bundledMaterials: [TerrainKind: UIImage] = [:]
+    private static var attemptedBundledLoads: Set<TerrainKind> = []
+    private static var fallbackMaterials: [TerrainKind: UIImage] = [:]
     private static let logger = Logger(subsystem: "com.rustwar.terrain", category: "atlas")
+
+    static var loadedTerrainMaterialCount: Int {
+        families.filter { bundledMaterial(for: $0) != nil }.count
+    }
 
     private struct ArtRandom {
         var state: UInt64
@@ -52,7 +68,8 @@ enum BattlefieldTerrainArt {
         }
         if ProcessInfo.processInfo.arguments.contains(where: { $0.hasPrefix("--rustwar-ci-") }) {
             let elapsed = (ProcessInfo.processInfo.systemUptime - started) * 1_000
-            logger.info("atlasBakeMilliseconds=\(elapsed, privacy: .public) sourcePixelBytes=\(sourceBytes, privacy: .public) tiles=4")
+            let bundled = loadedTerrainMaterialCount
+            logger.info("atlasBakeMilliseconds=\(elapsed, privacy: .public) sourcePixelBytes=\(sourceBytes, privacy: .public) tiles=4 bundledMaterials=\(bundled, privacy: .public)")
         }
         return node
     }
@@ -259,11 +276,13 @@ enum BattlefieldTerrainArt {
             for kind in families where kind != .grass {
                 guard let path = paths[kind], !path.isEmpty else { continue }
                 drawMaterialMargin(kind, path: path, context: context)
-                if kind != .dirt && kind != .sand {
+                if kind == .rock || kind == .lava || kind == .water {
                     context.saveGState()
-                    context.setShadow(offset: CGSize(width: 0, height: kind == .rock ? 3 : 1),
-                                      blur: kind == .rock ? 7 : 4,
-                                      color: UIColor.black.withAlphaComponent(kind == .rock ? 0.26 : 0.15).cgColor)
+                    let shadowOffset = kind == .rock ? CGSize(width: 5, height: 6) : CGSize(width: 0, height: 1.5)
+                    let shadowBlur: CGFloat = kind == .rock ? 9 : (kind == .lava ? 6 : 4)
+                    let shadowAlpha: CGFloat = kind == .rock ? 0.46 : (kind == .lava ? 0.34 : 0.18)
+                    context.setShadow(offset: shadowOffset, blur: shadowBlur,
+                                      color: UIColor.black.withAlphaComponent(shadowAlpha).cgColor)
                     fill(path, baseColor(kind), context)
                     context.restoreGState()
                 }
@@ -273,17 +292,15 @@ enum BattlefieldTerrainArt {
                 if let material = material(for: kind).cgImage {
                     context.draw(material, in: CGRect(x: 0, y: 0, width: materialSide, height: materialSide), byTiling: true)
                 }
-                if kind == .deep {
-                    drawDeepWaterEdge(path, context: context)
-                }
+                drawInnerMaterialEdge(kind, path: path, context: context)
                 context.restoreGState()
             }
             if let water = paths[.water], !water.isEmpty {
                 drawWaterShelf(water, context: context)
             }
-            let colors = [UIColor(red: 0.88, green: 0.86, blue: 0.68, alpha: 0.06).cgColor,
-                          UIColor.clear.cgColor, UIColor.black.withAlphaComponent(0.10).cgColor] as CFArray
-            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.45, 1]) {
+            let colors = [UIColor(red: 0.92, green: 0.90, blue: 0.76, alpha: 0.045).cgColor,
+                          UIColor.clear.cgColor, UIColor(red: 0.02, green: 0.04, blue: 0.06, alpha: 0.085).cgColor] as CFArray
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.48, 1]) {
                 context.drawLinearGradient(gradient, start: .zero,
                                            end: CGPoint(x: GameConstants.mapWidth, y: GameConstants.mapHeight),
                                            options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
@@ -295,15 +312,58 @@ enum BattlefieldTerrainArt {
         context.saveGState()
         switch kind {
         case .water:
-            stroke(path, UIColor(red: 0.16, green: 0.21, blue: 0.17, alpha: 0.18), width: 3, context)
-            stroke(path, UIColor(red: 0.45, green: 0.43, blue: 0.29, alpha: 0.16), width: 1.5, context)
-        case .dirt, .sand, .rock:
-            context.setShadow(offset: .zero, blur: 3, color: baseColor(kind).withAlphaComponent(0.38).cgColor)
-            stroke(path, baseColor(kind).withAlphaComponent(0.28), width: 5, context)
+            context.setShadow(offset: .zero, blur: 4,
+                              color: UIColor(red: 0.09, green: 0.13, blue: 0.10, alpha: 0.34).cgColor)
+            stroke(path, UIColor(red: 0.14, green: 0.18, blue: 0.14, alpha: 0.28), width: 7, context)
+            context.setShadow(offset: .zero, blur: 0, color: nil)
+            stroke(path, UIColor(red: 0.50, green: 0.46, blue: 0.31, alpha: 0.22), width: 2.4, context)
+        case .dirt:
+            context.setShadow(offset: .zero, blur: 5,
+                              color: UIColor(red: 0.28, green: 0.24, blue: 0.16, alpha: 0.42).cgColor)
+            stroke(path, UIColor(red: 0.34, green: 0.29, blue: 0.19, alpha: 0.32), width: 6.5, context)
+        case .sand:
+            context.setShadow(offset: .zero, blur: 6,
+                              color: UIColor(red: 0.56, green: 0.48, blue: 0.33, alpha: 0.40).cgColor)
+            stroke(path, UIColor(red: 0.58, green: 0.50, blue: 0.35, alpha: 0.30), width: 7.5, context)
+        case .rock:
+            context.setShadow(offset: CGSize(width: 2, height: 2), blur: 5,
+                              color: UIColor.black.withAlphaComponent(0.42).cgColor)
+            stroke(path, UIColor(red: 0.14, green: 0.15, blue: 0.14, alpha: 0.48), width: 3.5, context)
+        case .deep:
+            context.setShadow(offset: .zero, blur: 10,
+                              color: UIColor(red: 0.04, green: 0.15, blue: 0.23, alpha: 0.48).cgColor)
+            stroke(path, UIColor(red: 0.06, green: 0.20, blue: 0.29, alpha: 0.34), width: 9, context)
+        case .lava:
+            context.setShadow(offset: .zero, blur: 7,
+                              color: UIColor(red: 0.05, green: 0.04, blue: 0.035, alpha: 0.56).cgColor)
+            stroke(path, UIColor(red: 0.12, green: 0.09, blue: 0.08, alpha: 0.46), width: 7.5, context)
         default:
             break
         }
         context.restoreGState()
+    }
+
+    private static func drawInnerMaterialEdge(_ kind: TerrainKind, path: CGPath, context: CGContext) {
+        switch kind {
+        case .dirt:
+            stroke(path, UIColor(red: 0.14, green: 0.12, blue: 0.08, alpha: 0.18), width: 3.2, context)
+        case .rock:
+            context.saveGState()
+            context.translateBy(x: 1.5, y: 1.5)
+            stroke(path, UIColor(red: 0.78, green: 0.80, blue: 0.76, alpha: 0.24), width: 2.2, context)
+            context.restoreGState()
+            stroke(path, UIColor.black.withAlphaComponent(0.32), width: 2.6, context)
+        case .deep:
+            drawDeepWaterEdge(path, context: context)
+        case .lava:
+            context.saveGState()
+            context.setShadow(offset: .zero, blur: 4,
+                              color: UIColor(red: 0.96, green: 0.32, blue: 0.06, alpha: 0.36).cgColor)
+            stroke(path, UIColor(red: 0.84, green: 0.24, blue: 0.05, alpha: 0.26), width: 3, context)
+            context.restoreGState()
+        default:
+            break
+        }
     }
 
     /// Draw over both water materials so deep water can meet a shoreline.
@@ -311,20 +371,22 @@ enum BattlefieldTerrainArt {
         context.saveGState()
         context.addPath(water)
         context.clip()
-        let shelf = UIColor(red: 0.43, green: 0.67, blue: 0.57, alpha: 1)
-        stroke(water, shelf.withAlphaComponent(0.07), width: 30, context)
-        stroke(water, shelf.withAlphaComponent(0.10), width: 19, context)
-        stroke(water, shelf.withAlphaComponent(0.14), width: 9, context)
-        context.setLineDash(phase: 0, lengths: [5, 7, 2, 5])
-        stroke(water, UIColor(red: 0.73, green: 0.84, blue: 0.74, alpha: 0.27), width: 1.6, context)
+        let shelf = UIColor(red: 0.34, green: 0.69, blue: 0.68, alpha: 1)
+        stroke(water, shelf.withAlphaComponent(0.08), width: 28, context)
+        stroke(water, shelf.withAlphaComponent(0.13), width: 16, context)
+        stroke(water, shelf.withAlphaComponent(0.20), width: 7, context)
+        context.setLineDash(phase: 0, lengths: [8, 5, 3, 6])
+        stroke(water, UIColor(red: 0.82, green: 0.93, blue: 0.91, alpha: 0.44), width: 1.9, context)
+        context.setLineDash(phase: 6, lengths: [4, 10, 2, 7])
+        stroke(water, UIColor(red: 0.74, green: 0.90, blue: 0.89, alpha: 0.20), width: 1.1, context)
         context.restoreGState()
     }
 
     private static func drawDeepWaterEdge(_ path: CGPath, context: CGContext) {
         context.saveGState()
-        context.setShadow(offset: .zero, blur: 4,
-                          color: UIColor(red: 0.06, green: 0.19, blue: 0.20, alpha: 0.22).cgColor)
-        stroke(path, UIColor(red: 0.16, green: 0.36, blue: 0.32, alpha: 0.10), width: 1.1, context)
+        context.setShadow(offset: .zero, blur: 8,
+                          color: UIColor(red: 0.03, green: 0.13, blue: 0.20, alpha: 0.36).cgColor)
+        stroke(path, UIColor(red: 0.10, green: 0.31, blue: 0.38, alpha: 0.18), width: 2.2, context)
         context.restoreGState()
     }
 
@@ -340,17 +402,132 @@ enum BattlefieldTerrainArt {
         }
     }
 
+    private static func bundledMaterial(for kind: TerrainKind) -> UIImage? {
+        let key = family(kind)
+        if let cached = bundledMaterials[key] { return cached }
+        if attemptedBundledLoads.contains(key) { return nil }
+        attemptedBundledLoads.insert(key)
+        guard let assetName = assetNames[key],
+              let source = UIImage(named: assetName)?.cgImage,
+              let tiled = seamlessTile(from: source, side: Int(materialSide), overlap: seamlessOverlap) else {
+            return nil
+        }
+        bundledMaterials[key] = tiled
+        return tiled
+    }
+
+    /// Creates a mathematically periodic tile by smoothly feathering an overlap
+    /// margin from the source texture onto the opposite edge while keeping the
+    /// interior sharp and upright for UIKit-flipped CGContext tiling.
+    private static func seamlessTile(from source: CGImage, side: Int, overlap: Int) -> UIImage? {
+        guard side > overlap, overlap > 0 else { return nil }
+        let sourceSide = side + overlap
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
+        let srcBytesPerRow = sourceSide * 4
+        var srcPixels = [UInt8](repeating: 255, count: srcBytesPerRow * sourceSide)
+        let rendered = srcPixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let baseAddress = buffer.baseAddress,
+                  let context = CGContext(
+                    data: baseAddress,
+                    width: sourceSide,
+                    height: sourceSide,
+                    bitsPerComponent: 8,
+                    bytesPerRow: srcBytesPerRow,
+                    space: colorSpace,
+                    bitmapInfo: bitmapInfo
+                  ) else { return false }
+            context.interpolationQuality = .high
+            context.translateBy(x: 0, y: CGFloat(sourceSide))
+            context.scaleBy(x: 1, y: -1)
+            context.draw(source, in: CGRect(x: 0, y: 0, width: sourceSide, height: sourceSide))
+            return true
+        }
+        guard rendered else { return nil }
+
+        let midBytesPerRow = side * 4
+        var midPixels = [UInt8](repeating: 255, count: midBytesPerRow * sourceSide)
+        for y in 0..<sourceSide {
+            let srcRow = y * srcBytesPerRow
+            let midRow = y * midBytesPerRow
+            for x in 0..<overlap {
+                let u = Double(x) / Double(overlap)
+                let t = u * u * (3 - 2 * u)
+                let inv = 1 - t
+                let left = srcRow + x * 4
+                let wrap = srcRow + (x + side) * 4
+                let dst = midRow + x * 4
+                for c in 0..<3 {
+                    let blended = Double(srcPixels[wrap + c]) * inv + Double(srcPixels[left + c]) * t
+                    midPixels[dst + c] = UInt8(min(255, max(0, Int(blended.rounded()))))
+                }
+                midPixels[dst + 3] = 255
+            }
+            for x in overlap..<side {
+                let src = srcRow + x * 4
+                let dst = midRow + x * 4
+                midPixels[dst] = srcPixels[src]
+                midPixels[dst + 1] = srcPixels[src + 1]
+                midPixels[dst + 2] = srcPixels[src + 2]
+                midPixels[dst + 3] = 255
+            }
+        }
+
+        var outPixels = [UInt8](repeating: 255, count: midBytesPerRow * side)
+        for y in 0..<overlap {
+            let v = Double(y) / Double(overlap)
+            let t = v * v * (3 - 2 * v)
+            let inv = 1 - t
+            let topRow = y * midBytesPerRow
+            let wrapRow = (y + side) * midBytesPerRow
+            let dstRow = y * midBytesPerRow
+            for x in 0..<side {
+                let top = topRow + x * 4
+                let wrap = wrapRow + x * 4
+                let dst = dstRow + x * 4
+                for c in 0..<3 {
+                    let blended = Double(midPixels[wrap + c]) * inv + Double(midPixels[top + c]) * t
+                    outPixels[dst + c] = UInt8(min(255, max(0, Int(blended.rounded()))))
+                }
+                outPixels[dst + 3] = 255
+            }
+        }
+        for y in overlap..<side {
+            let srcStart = y * midBytesPerRow
+            outPixels.replaceSubrange(srcStart..<(srcStart + midBytesPerRow),
+                                      with: midPixels[srcStart..<(srcStart + midBytesPerRow)])
+        }
+
+        guard let provider = CGDataProvider(data: Data(outPixels) as CFData),
+              let cgImage = CGImage(
+                width: side,
+                height: side,
+                bitsPerComponent: 8,
+                bitsPerPixel: 32,
+                bytesPerRow: midBytesPerRow,
+                space: colorSpace,
+                bitmapInfo: CGBitmapInfo(rawValue: bitmapInfo),
+                provider: provider,
+                decode: nil,
+                shouldInterpolate: true,
+                intent: .defaultIntent
+              ) else { return nil }
+        return UIImage(cgImage: cgImage, scale: 1, orientation: .up)
+    }
+
     private static func material(for kind: TerrainKind) -> UIImage {
-        if let cached = materials[kind] { return cached }
+        let key = family(kind)
+        if let bundled = bundledMaterial(for: key) { return bundled }
+        if let cached = fallbackMaterials[key] { return cached }
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         format.opaque = true
         format.preferredRange = .standard
-        let seed = UInt64((families.firstIndex(of: kind) ?? 0) + 1) * 1_009
+        let seed = UInt64((families.firstIndex(of: key) ?? 0) + 1) * 1_009
         let image = UIGraphicsImageRenderer(size: CGSize(width: materialSide, height: materialSide), format: format).image { renderer in
             let context = renderer.cgContext
             let rect = CGRect(x: 0, y: 0, width: materialSide, height: materialSide)
-            context.setFillColor(baseColor(kind).cgColor)
+            context.setFillColor(baseColor(key).cgColor)
             context.fill(rect)
             var random = ArtRandom(state: seed)
             let light = radialGradient(UIColor(red: 0.82, green: 0.84, blue: 0.65, alpha: 0.14))
@@ -369,7 +546,7 @@ enum BattlefieldTerrainArt {
             let lightGrain = CGMutablePath()
             for index in 0..<8_800 {
                 let center = CGPoint(x: random.range(0, materialSide), y: random.range(0, materialSide))
-                let width = random.range(0.4, kind == .sand ? 1.2 : 2)
+                let width = random.range(0.4, key == .sand ? 1.2 : 2)
                 let height = random.range(0.4, 1.5)
                 let path = index % 2 == 0 ? darkGrain : lightGrain
                 for position in periodicPositions(center, reach: 2) {
@@ -378,9 +555,9 @@ enum BattlefieldTerrainArt {
             }
             fill(darkGrain, UIColor.black.withAlphaComponent(0.10), context)
             fill(lightGrain, UIColor.white.withAlphaComponent(0.07), context)
-            addMaterialDetails(kind, random: &random, context: context)
+            addMaterialDetails(key, random: &random, context: context)
         }
-        materials[kind] = image
+        fallbackMaterials[key] = image
         return image
     }
 

@@ -2496,7 +2496,14 @@ final class BattlefieldScene: SKScene {
         let node = SKNode()
         node.position = spritePoint(for: building.position)
         if controller?.runsInteractionTests == true { node.name = building.id }
-        addBuildingShadow(size: definition.size, to: node)
+        if let pad = GeneratedBuildingArt.foundationPad(
+            for: building.type,
+            size: definition.size,
+            buildProgress: building.buildProgress
+        ) {
+            node.addChild(pad)
+        }
+        addBuildingShadow(for: building.type, size: definition.size, to: node)
         let bodySignature = "\(building.type.rawValue)|\(building.team.rawValue)|\(building.upgradeLevel)"
         let body: SKNode
         if cachedBuildingBodySignatures[building.id] == bodySignature,
@@ -2849,16 +2856,23 @@ final class BattlefieldScene: SKScene {
         hullHeading: CGFloat,
         to node: SKNode
     ) {
-        let shadow: SKShapeNode
+        let shadowContainer = SKNode()
+        // Upper-left illumination casts soft directional shadows to the lower-right.
+        let shadowOffset: CGPoint = switch type {
+        case .hover: CGPoint(x: 4.5, y: -5.2)
+        case .gunboat: CGPoint(x: 2.2, y: -2.4)
+        default: CGPoint(x: 2.6, y: -2.8)
+        }
+        let primaryPath: CGPath
         switch type {
         case .tank, .heavyTank, .aaTank, .artillery:
             let trackLength = trackedHullLength(for: type) ?? 1.55
             let path = CGMutablePath()
             path.addEllipse(in: CGRect(
-                x: -radius * trackLength * 0.5,
-                y: -radius * 0.5,
-                width: radius * trackLength,
-                height: radius
+                x: -radius * trackLength * 0.52,
+                y: -radius * 0.54,
+                width: radius * trackLength * 1.04,
+                height: radius * 1.08
             ))
             for y in [-radius * 0.62, radius * 0.62] {
                 path.addRoundedRect(
@@ -2872,35 +2886,76 @@ final class BattlefieldScene: SKScene {
                     cornerHeight: radius * 0.13
                 )
             }
-            shadow = SKShapeNode(path: path)
-            shadow.fillColor = .black.withAlphaComponent(0.27)
-            shadow.strokeColor = .black.withAlphaComponent(0.12)
-            shadow.lineWidth = 0.8
-            shadow.zRotation = hullHeading
-        case .builder, .scout, .hover, .gunboat:
-            shadow = ellipseNode(
-                CGRect(x: -radius * 0.9, y: -radius * 0.62, width: radius * 1.8, height: radius * 1.24),
-                fill: .black.withAlphaComponent(0.3),
-                stroke: .clear,
-                lineWidth: 0
+            primaryPath = path
+        case .gunboat:
+            primaryPath = CGPath(
+                ellipseIn: CGRect(x: -radius * 1.08, y: -radius * 0.44, width: radius * 2.16, height: radius * 0.88),
+                transform: nil
+            )
+        case .hover:
+            primaryPath = CGPath(
+                ellipseIn: CGRect(x: -radius * 0.96, y: -radius * 0.72, width: radius * 1.92, height: radius * 1.44),
+                transform: nil
+            )
+        case .builder, .scout:
+            primaryPath = CGPath(
+                ellipseIn: CGRect(x: -radius * 0.92, y: -radius * 0.64, width: radius * 1.84, height: radius * 1.28),
+                transform: nil
             )
         }
-        shadow.position = CGPoint(x: -2, y: -2)
-        shadow.zPosition = -2
-        node.addChild(shadow)
+
+        let ambient = SKShapeNode(path: primaryPath)
+        ambient.fillColor = .black.withAlphaComponent(type == .hover ? 0.16 : 0.18)
+        ambient.strokeColor = .clear
+        ambient.lineWidth = 0
+        ambient.setScale(1.14)
+        shadowContainer.addChild(ambient)
+
+        let core = SKShapeNode(path: primaryPath)
+        core.fillColor = .black.withAlphaComponent(type == .hover ? 0.28 : 0.34)
+        core.strokeColor = .clear
+        core.lineWidth = 0
+        shadowContainer.addChild(core)
+
+        shadowContainer.zRotation = hullHeading
+        shadowContainer.position = shadowOffset
+        shadowContainer.zPosition = -2
+        node.addChild(shadowContainer)
     }
 
-    private func addBuildingShadow(size: Double, to node: SKNode) {
-        let shadow = rectNode(
-            CGRect(x: -size * 0.48, y: -size * 0.42, width: size * 0.96, height: size * 0.84),
-            cornerRadius: 5,
-            fill: .black.withAlphaComponent(0.32),
-            stroke: .clear,
-            lineWidth: 0
-        )
-        shadow.position = CGPoint(x: -3, y: -3)
-        shadow.zPosition = -2
-        node.addChild(shadow)
+    private func addBuildingShadow(for type: BuildingType, size: Double, to node: SKNode) {
+        let shadowContainer = SKNode()
+        let shadowPath: CGPath
+        if type == .extractor {
+            shadowPath = CGPath(
+                ellipseIn: CGRect(x: -size * 0.49, y: -size * 0.49, width: size * 0.98, height: size * 0.98),
+                transform: nil
+            )
+        } else {
+            shadowPath = CGPath(
+                roundedRect: CGRect(x: -size * 0.49, y: -size * 0.45, width: size * 0.98, height: size * 0.90),
+                cornerWidth: size * 0.12,
+                cornerHeight: size * 0.12,
+                transform: nil
+            )
+        }
+
+        let ambient = SKShapeNode(path: shadowPath)
+        ambient.fillColor = .black.withAlphaComponent(0.20)
+        ambient.strokeColor = .clear
+        ambient.lineWidth = 0
+        ambient.setScale(1.08)
+        shadowContainer.addChild(ambient)
+
+        let core = SKShapeNode(path: shadowPath)
+        core.fillColor = .black.withAlphaComponent(0.36)
+        core.strokeColor = .clear
+        core.lineWidth = 0
+        shadowContainer.addChild(core)
+
+        shadowContainer.position = CGPoint(x: 3.6, y: -3.8)
+        shadowContainer.zPosition = -2
+        node.addChild(shadowContainer)
     }
 
     private func addDamageState(

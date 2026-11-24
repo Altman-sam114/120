@@ -61,6 +61,8 @@ extension GameController {
             "pending": isAwaitingTargetCommand,
             "unitArtTypes": GeneratedUnitArt.loadedTypeCount,
             "buildingArtVariants": GeneratedBuildingArt.loadedVariantCount,
+            "buildingPadArtLoaded": GeneratedBuildingArt.loadedFoundationPad,
+            "terrainMaterialCount": BattlefieldTerrainArt.loadedTerrainMaterialCount,
             "resourceArtVariants": GeneratedResourceArt.loadedVariantCount,
             "wreckArtVariants": BattlefieldScene.loadedWreckArtCount,
             "structureWreckArtVariants": BattlefieldScene.loadedStructureWreckArtCount,

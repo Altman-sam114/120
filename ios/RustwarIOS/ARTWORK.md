@@ -117,3 +117,10 @@ Lighting: soft overhead upper-left illumination, credible metal reflectance, amb
 内置 image_gen 生成两版原创俯视水花。第一版周围有较强的蓝色雾光，采用第二版轮廓清晰的泡沫图。原始透明 PNG 接入 [WaterImpact](RustwarIOS/Assets.xcassets/WaterImpact.imageset/water-impact-v1.png)。普通模式播放短促扩散和淡出，减少动态效果时仅淡出。
 
 > One square PNG transparent background sprite for a top-down illustrated strategy game: a compact white and pale aqua foam splash shaped like an irregular open radial crown with seven little disconnected droplets, viewed straight down, centered with margins. Everything between and around the foam and droplets is fully alpha transparent, including the central hole. No atmosphere, no glow, no mist, no gradient backdrop, no blue puddle, no floor, no dark color matte. Style like a hand-painted VFX flipbook single frame, very crisp foam edges and slightly translucent turquoise shading on the foam only. Silhouette only, clean cutout. No text.
+
+## 原创无缝地形材质与建筑混凝土底盘
+
+- 使用内置生图工具（`boa-2/gpt-image-2.5-flare`）为 7 类地貌生成 1254×1254 原创直俯视无缝材质，原图分别存入 [TerrainGrass](RustwarIOS/Assets.xcassets/TerrainGrass.imageset/terrain-grass-v1.png)、[TerrainDirt](RustwarIOS/Assets.xcassets/TerrainDirt.imageset/terrain-dirt-v1.png)、[TerrainSand](RustwarIOS/Assets.xcassets/TerrainSand.imageset/terrain-sand-v1.png)、[TerrainRock](RustwarIOS/Assets.xcassets/TerrainRock.imageset/terrain-rock-v1.png)、[TerrainWater](RustwarIOS/Assets.xcassets/TerrainWater.imageset/terrain-water-v1.png)、[TerrainDeep](RustwarIOS/Assets.xcassets/TerrainDeep.imageset/terrain-deep-v1.png)、[TerrainLava](RustwarIOS/Assets.xcassets/TerrainLava.imageset/terrain-lava-v1.png)。
+- `BattlefieldTerrainArt` 在地图变化时将源图缩放到 384pt 周期纹理并对 48px 边缘做平滑过渡，保证四块世界底图无缝平铺且光照方向统一为左上；同时加强土路/沙滩羽化边、崖壁立体阴影与高光、海岸浅滩浪花和熔岩焦边，保留原 `TerrainGrid` 通行规则与程序纹理后备。
+- 同批以 `background=transparent` 生成 1254×1254 RGBA 工业钢筋混凝土八角底座，原图存入 [BuildingPad](RustwarIOS/Assets.xcassets/BuildingPad.imageset/building-pad-v1.png)。`GeneratedBuildingArt` 在指挥中心、陆军工厂、雷达站和防御炮塔下方渲染底座（资源提取器直接坐落于矿床岩石上，不铺混凝土底盘），不改变 Core 碰撞脚印。
+- `ci/terrain-art.test.js` 直接解码 7 份地形 PNG 与混凝土底盘 RGBA，核对分辨率、明细方差、亮度区间、生物群落色相与零裁切透明边；云端真实 UI 断言 7 套地形材质和混凝土底盘全部真实加载。

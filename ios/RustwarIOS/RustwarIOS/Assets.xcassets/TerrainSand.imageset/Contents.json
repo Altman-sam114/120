@@ -1,0 +1,12 @@
+{
+  "images": [
+    {
+      "filename": "terrain-sand-v1.png",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

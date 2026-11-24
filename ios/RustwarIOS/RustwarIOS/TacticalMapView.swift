@@ -1,3 +1,4 @@
+import CoreGraphics
 import SwiftUI
 import RustwarCore
 
@@ -22,6 +23,11 @@ struct TacticalMapView: View {
         let callbackGeneration = mapGestureCallbackGeneration
         GeometryReader { proxy in
             let state = controller.engine.state
+            let terrainImage = TacticalMapTerrainCache.image(
+                for: state.terrain,
+                mapID: state.map.id,
+                revision: controller.mapRenderRevision
+            )
             let resources = state.resources
             let units = state.units
             let buildings = state.buildings
@@ -43,6 +49,7 @@ struct TacticalMapView: View {
                 Self.drawMap(
                     context: &context,
                     size: size,
+                    terrainImage: terrainImage,
                     resources: resources,
                     units: units,
                     buildings: buildings,
@@ -324,6 +331,7 @@ struct TacticalMapView: View {
     private static func drawMap(
         context: inout GraphicsContext,
         size: CGSize,
+        terrainImage: CGImage?,
         resources: [ResourceNode],
         units: [UnitSnapshot],
         buildings: [BuildingSnapshot],
@@ -346,7 +354,12 @@ struct TacticalMapView: View {
         }
 
         let mapRect = CGRect(origin: .zero, size: size)
-        context.fill(Path(mapRect), with: .color(.black.opacity(0.42)))
+        if let terrainImage {
+            context.draw(Image(decorative: terrainImage, scale: 1, orientation: .up), in: mapRect)
+        } else {
+            context.fill(Path(mapRect), with: .color(.black.opacity(0.42)))
+        }
+        drawTacticalGrid(in: &context, size: size)
 
         for resource in resources {
             drawResource(resource, in: &context, size: size)
@@ -464,11 +477,26 @@ struct TacticalMapView: View {
         }
 
         if hasExploredHiddenTiles {
-            context.fill(exploredFog, with: .color(.black.opacity(0.28)))
+            context.fill(exploredFog, with: .color(Color(red: 0.02, green: 0.04, blue: 0.05).opacity(0.38)))
         }
         if hasUnexploredTiles {
-            context.fill(unexploredFog, with: .color(.black.opacity(0.58)))
+            context.fill(unexploredFog, with: .color(Color(red: 0.015, green: 0.025, blue: 0.035).opacity(0.76)))
         }
+    }
+
+    private static func drawTacticalGrid(in context: inout GraphicsContext, size: CGSize) {
+        var grid = Path()
+        for column in 1..<4 {
+            let x = size.width * CGFloat(column) / 4
+            grid.move(to: CGPoint(x: x, y: 0))
+            grid.addLine(to: CGPoint(x: x, y: size.height))
+        }
+        for row in 1..<3 {
+            let y = size.height * CGFloat(row) / 3
+            grid.move(to: CGPoint(x: 0, y: y))
+            grid.addLine(to: CGPoint(x: size.width, y: y))
+        }
+        context.stroke(grid, with: .color(Color(red: 0.60, green: 0.88, blue: 0.76).opacity(0.10)), lineWidth: 0.6)
     }
 
     private static func drawRadarContacts(
@@ -856,6 +884,100 @@ struct TacticalMapView: View {
         case .enemy:
             Color(red: 0.95, green: 0.32, blue: 0.3)
         }
+    }
+}
+
+/// Caches a compact top-down terrain raster for the tactical minimap so each
+/// frame only composites dynamic units, radar, and fog without re-iterating tiles.
+@MainActor
+private enum TacticalMapTerrainCache {
+    private static var cachedMapID: MapID?
+    private static var cachedRevision = -1
+    private static var cachedTerrain: TerrainGrid?
+    private static var cachedImage: CGImage?
+
+    static func image(for terrain: TerrainGrid, mapID: MapID, revision: Int) -> CGImage? {
+        if cachedMapID == mapID, cachedRevision == revision, cachedTerrain == terrain, let cachedImage {
+            return cachedImage
+        }
+        let generated = rasterize(terrain)
+        cachedMapID = mapID
+        cachedRevision = revision
+        cachedTerrain = terrain
+        cachedImage = generated
+        return generated
+    }
+
+    private static func rasterize(_ terrain: TerrainGrid) -> CGImage? {
+        let columns = terrain.columns
+        let rows = terrain.rows
+        guard columns > 0, rows > 0 else { return nil }
+        let bytesPerRow = columns * 4
+        var pixels = [UInt8](repeating: 255, count: bytesPerRow * rows)
+
+        for row in 0..<rows {
+            for column in 0..<columns {
+                let kind = terrain.terrain(column: column, row: row)
+                let (r, g, b) = tacticalColor(for: kind, column: column, row: row, terrain: terrain)
+                let offset = (row * columns + column) * 4
+                pixels[offset] = r
+                pixels[offset + 1] = g
+                pixels[offset + 2] = b
+                pixels[offset + 3] = 255
+            }
+        }
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
+        guard let provider = CGDataProvider(data: Data(pixels) as CFData) else { return nil }
+        return CGImage(
+            width: columns,
+            height: rows,
+            bitsPerComponent: 8,
+            bitsPerPixel: 32,
+            bytesPerRow: bytesPerRow,
+            space: colorSpace,
+            bitmapInfo: bitmapInfo,
+            provider: provider,
+            decode: nil,
+            shouldInterpolate: true,
+            intent: .defaultIntent
+        )
+    }
+
+    private static func tacticalColor(
+        for kind: TerrainKind,
+        column: Int,
+        row: Int,
+        terrain: TerrainGrid
+    ) -> (UInt8, UInt8, UInt8) {
+        switch kind {
+        case .grass:
+            return (46, 74, 41)
+        case .grass2:
+            return (40, 66, 36)
+        case .dirt:
+            return (98, 82, 56)
+        case .sand:
+            return (142, 122, 82)
+        case .rock:
+            return (96, 100, 95)
+        case .water:
+            let touchesLand = !isWater(terrain.terrain(column: column - 1, row: row)) ||
+                !isWater(terrain.terrain(column: column + 1, row: row)) ||
+                !isWater(terrain.terrain(column: column, row: row - 1)) ||
+                !isWater(terrain.terrain(column: column, row: row + 1))
+            return touchesLand ? (44, 114, 126) : (26, 86, 104)
+        case .deep:
+            return (14, 48, 70)
+        case .lava:
+            let hash = (column &* 37 &+ row &* 73) & 7
+            return hash == 0 ? (196, 82, 26) : (64, 34, 24)
+        }
+    }
+
+    private static func isWater(_ kind: TerrainKind) -> Bool {
+        kind == .water || kind == .deep
     }
 }
 

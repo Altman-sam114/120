@@ -51,6 +51,13 @@ enum GeneratedBuildingArt {
     }()
     private static let baseImage = UIImage(named: "BuildingBaseAtlas")?.cgImage
     private static let weaponImage = UIImage(named: "BuildingWeapon")?.cgImage
+    private static let foundationPadTexture: SKTexture? = {
+        guard let image = UIImage(named: "BuildingPad")?.cgImage else { return nil }
+        let texture = SKTexture(cgImage: image)
+        texture.filteringMode = .linear
+        texture.usesMipmaps = true
+        return texture
+    }()
     private static let variants: [Variant] = BuildingType.allCases.flatMap { type in
         ([1] + GameDefinitions.building(type).upgrades.map(\.level)).map { Variant(type: type, level: $0) }
     }
@@ -59,6 +66,26 @@ enum GeneratedBuildingArt {
 
     static var loadedVariantCount: Int {
         variants.filter { model(for: $0) != nil }.count
+    }
+
+    static var loadedFoundationPad: Bool {
+        foundationPadTexture != nil
+    }
+
+    static func foundationPad(for type: BuildingType, size: Double, buildProgress: Double) -> SKSpriteNode? {
+        guard type != .extractor, let texture = foundationPadTexture else { return nil }
+        let scale: Double = switch type {
+        case .command, .landFactory: 1.44
+        case .radar: 1.46
+        case .turret: 1.48
+        case .extractor: 0
+        }
+        let sprite = SKSpriteNode(texture: texture, size: CGSize(width: size * scale, height: size * scale))
+        sprite.name = "generated-building-pad"
+        let clamped = min(1, max(0, buildProgress))
+        sprite.alpha = CGFloat(0.45 + 0.43 * clamped)
+        sprite.zPosition = -2.4
+        return sprite
     }
 
     static func body(for building: BuildingSnapshot, size: Double,
