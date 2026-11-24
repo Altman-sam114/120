@@ -1,3 +1,7 @@
+## v3.31.1 / 修正 GameState.elapsed 字段名编译修复
+
+2026-11-24。v3.31 提交 `789b54776b18191e70a531ed3716eaedba12821c` 在云端 native push run `45363313108` / attempt `1` 失败（artifact `14906785243`）。根因为 `BattlefieldScene.drawBuilding` 误将 `GameState.elapsed` 写作 `state.time` 导致 Swift 编译失败。定向修正为 `controller?.engine.state.elapsed ?? 0`，其余改动与测试门控不变，待新 SHA 完整云端 native 验证与五图复看。
+
 ## v3.31 / 基地建筑动态工业光效与自然风蚀沙斑地貌
 
 2026-11-24。v3.30 完整五图全绿验收后继续视觉与沉浸感迭代，不启动子智能体、不在本机运行验证。

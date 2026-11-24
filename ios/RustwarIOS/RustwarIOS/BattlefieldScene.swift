@@ -2888,7 +2888,7 @@ final class BattlefieldScene: SKScene {
                 addBuildingOperationalEffects(
                     for: building,
                     size: definition.size,
-                    time: controller?.engine.state.time ?? 0,
+                    time: controller?.engine.state.elapsed ?? 0,
                     to: node
                 )
             }
